@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { createAnonymousSupabaseClient } from "@esh-platform/supabase";
+import { createAnonymousSupabaseClient, createServiceSupabaseClient } from "@esh-platform/supabase";
+
+const uploadFields = [
+  ["personalPhoto", "personal", "personal_photo"],
+  ["vehiclePhoto", "vehicle", "vehicle_photo"],
+  ["document", "document", "reference_document"],
+] as const;
 
 export async function POST(request: Request) {
   try {
@@ -21,12 +27,28 @@ export async function POST(request: Request) {
       },
     );
     if (error) return NextResponse.json({ message: error.message }, { status: 400 });
+    if (typeof applicationId !== "string") throw new Error("Unable to create application.");
+
+    const service = createServiceSupabaseClient();
+    const { data: application, error: applicationError } = await service
+      .from("driver_applications")
+      .select("tenant_id")
+      .eq("driver_application_id", applicationId)
+      .single();
+    if (applicationError || !application) throw new Error("Unable to verify application.");
+
     const paths: Record<string, string | null> = { personal: null, vehicle: null, document: null };
-    for (const [field, key] of [
-      ["personalPhoto", "personal"],
-      ["vehiclePhoto", "vehicle"],
-      ["document", "document"],
-    ] as const) {
+    const evidence: Array<{
+      tenant_id: string;
+      driver_application_id: string;
+      evidence_type: string;
+      storage_path: string;
+      original_file_name: string;
+      mime_type: string;
+      size_bytes: number;
+    }> = [];
+
+    for (const [field, legacyKey, evidenceType] of uploadFields) {
       const file = form.get(field);
       if (!(file instanceof File) || file.size === 0) continue;
       if (
@@ -34,14 +56,31 @@ export async function POST(request: Request) {
         !["image/jpeg", "image/png", "application/pdf"].includes(file.type)
       )
         throw new Error("Files must be JPEG, PNG, or PDF and 5MB or smaller.");
-      const path = `${tenantSlug}/${applicationId}/${field}-${file.name}`;
-      const upload = await supabase.storage
+      const extension =
+        file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg";
+      const path = `${application.tenant_id}/${applicationId}/${evidenceType}-${crypto.randomUUID()}.${extension}`;
+      const upload = await service.storage
         .from("driver-application-files")
         .upload(path, file, { upsert: false });
       if (upload.error) throw upload.error;
-      paths[key] = path;
+      paths[legacyKey] = path;
+      evidence.push({
+        tenant_id: application.tenant_id,
+        driver_application_id: applicationId,
+        evidence_type: evidenceType,
+        storage_path: path,
+        original_file_name: file.name,
+        mime_type: file.type,
+        size_bytes: file.size,
+      });
     }
-    const attach = await supabase.rpc("attach_driver_application_files", {
+
+    if (evidence.length > 0) {
+      const { error: evidenceError } = await service.from("driver_evidence").insert(evidence);
+      if (evidenceError) throw evidenceError;
+    }
+
+    const attach = await service.rpc("attach_driver_application_files", {
       target_application_id: applicationId,
       personal_path: paths.personal ?? null,
       vehicle_path: paths.vehicle ?? null,

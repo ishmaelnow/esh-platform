@@ -861,18 +861,47 @@ function DriverApplicationsPanel({
   session: SupabaseAuthSession;
   summary: TenantSummary;
 }) {
-  const [fileUrls, setFileUrls] = useState<Record<string, string[]>>({});
-  async function viewFiles(applicationId: string) {
+  const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
+
+  async function viewEvidence(evidenceId: string) {
     const response = await fetch(
-      `/api/tenant-admin/drivers?tenantId=${summary.tenant.tenant_id}&applicationId=${applicationId}`,
+      `/api/tenant-admin/drivers/evidence?tenantId=${summary.tenant.tenant_id}&evidenceId=${evidenceId}`,
       { headers: { Authorization: `Bearer ${session.access_token}` } },
     );
-    const result = (await response.json()) as { urls?: string[]; message?: string };
+    const result = (await response.json()) as { url?: string; message?: string };
     if (!response.ok) window.alert(result.message ?? "Unable to load files.");
-    else {
-      const urls = result.urls ?? [];
-      setFileUrls((current) => ({ ...current, [applicationId]: urls }));
-    }
+    else if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+  }
+
+  async function reviewEvidence(evidenceId: string, status: "approved" | "rejected") {
+    const notes =
+      status === "rejected"
+        ? window.prompt("Why is this evidence rejected?")?.trim()
+        : window.prompt("Optional review note")?.trim();
+    if (status === "rejected" && !notes) return;
+    const expiresOn =
+      status === "approved"
+        ? window.prompt("Optional expiration date (YYYY-MM-DD)")?.trim() || null
+        : null;
+    setActiveEvidenceId(evidenceId);
+    const response = await fetch("/api/tenant-admin/drivers/evidence", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tenantId: summary.tenant.tenant_id,
+        evidenceId,
+        status,
+        notes: notes || null,
+        expiresOn,
+      }),
+    });
+    const result = (await response.json().catch(() => null)) as { message?: string } | null;
+    setActiveEvidenceId(null);
+    if (!response.ok) window.alert(result?.message ?? "Unable to review evidence.");
+    else onRefresh();
   }
   async function approve(applicationId: string) {
     const response = await fetch("/api/tenant-admin/drivers", {
@@ -907,41 +936,75 @@ function DriverApplicationsPanel({
             </tr>
           </thead>
           <tbody>
-            {summary.driverApplications.map((application) => (
-              <tr key={application.driver_application_id}>
-                <td>{application.full_name}</td>
-                <td>
-                  {application.email}
-                  <span>{application.phone ?? "No phone"}</span>
-                </td>
-                <td>{application.application_status}</td>
-                <td>
-                  <div className="row-actions">
-                    <button
-                      className="secondary-button"
-                      disabled={!canManageTenant}
-                      onClick={() => void viewFiles(application.driver_application_id)}
-                      type="button"
-                    >
-                      View files
-                    </button>
-                    {fileUrls[application.driver_application_id]?.map((url, index) => (
-                      <a href={url} key={url} rel="noreferrer" target="_blank">
-                        Open file {index + 1}
-                      </a>
-                    ))}
-                    <button
-                      className="primary-button"
-                      disabled={!canManageTenant || application.application_status === "approved"}
-                      onClick={() => void approve(application.driver_application_id)}
-                      type="button"
-                    >
-                      Approve and create draft
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {summary.driverApplications.map((application) => {
+              const evidence = summary.driverEvidence.filter(
+                ({ driver_application_id }) =>
+                  driver_application_id === application.driver_application_id,
+              );
+              return (
+                <tr key={application.driver_application_id}>
+                  <td>{application.full_name}</td>
+                  <td>
+                    {application.email}
+                    <span>{application.phone ?? "No phone"}</span>
+                  </td>
+                  <td>{application.application_status}</td>
+                  <td>
+                    <div className="row-actions">
+                      {evidence.map((item) => {
+                        const required = summary.driverEvidenceRequirements.some(
+                          ({ evidence_type, required_for_activation }) =>
+                            evidence_type === item.evidence_type && required_for_activation,
+                        );
+                        return (
+                          <div className="onboarding-checklist" key={item.evidence_id}>
+                            <strong>{item.evidence_type.replaceAll("_", " ")}</strong>
+                            <span>
+                              {item.review_status}
+                              {required ? " · required" : " · optional"}
+                              {item.expires_on ? ` · expires ${item.expires_on}` : ""}
+                            </span>
+                            {item.review_notes ? <span>{item.review_notes}</span> : null}
+                            <button
+                              className="secondary-button"
+                              onClick={() => void viewEvidence(item.evidence_id)}
+                              type="button"
+                            >
+                              Open
+                            </button>
+                            <button
+                              className="secondary-button"
+                              disabled={!canManageTenant || activeEvidenceId === item.evidence_id}
+                              onClick={() => void reviewEvidence(item.evidence_id, "approved")}
+                              type="button"
+                            >
+                              Approve evidence
+                            </button>
+                            <button
+                              className="danger-button"
+                              disabled={!canManageTenant || activeEvidenceId === item.evidence_id}
+                              onClick={() => void reviewEvidence(item.evidence_id, "rejected")}
+                              type="button"
+                            >
+                              Reject evidence
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {evidence.length === 0 ? <span>No evidence submitted.</span> : null}
+                      <button
+                        className="primary-button"
+                        disabled={!canManageTenant || application.application_status === "approved"}
+                        onClick={() => void approve(application.driver_application_id)}
+                        type="button"
+                      >
+                        Approve and create draft
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -973,6 +1036,7 @@ function DriversPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [checklists, setChecklists] = useState(summary.driverOnboarding);
+  const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
 
   useEffect(() => setChecklists(summary.driverOnboarding), [summary.driverOnboarding]);
 
@@ -1020,8 +1084,7 @@ function DriversPanel({
       | "personalDetailsComplete"
       | "personalPhotoComplete"
       | "vehicleDetailsComplete"
-      | "vehiclePhotoComplete"
-      | "documentsReviewed",
+      | "vehiclePhotoComplete",
     value: boolean,
   ) {
     const result = await updateDriverOnboarding(
@@ -1042,7 +1105,6 @@ function DriversPanel({
                   personalPhotoComplete: "personal_photo_complete",
                   vehicleDetailsComplete: "vehicle_details_complete",
                   vehiclePhotoComplete: "vehicle_photo_complete",
-                  documentsReviewed: "documents_reviewed",
                 }[field]]: value,
               }
             : item,
@@ -1068,6 +1130,67 @@ function DriversPanel({
             : item,
         ),
       );
+  }
+
+  async function uploadEvidence(
+    driverProfileId: string,
+    evidenceType: "personal_photo" | "reference_document" | "vehicle_photo",
+    file: File,
+  ) {
+    const form = new FormData();
+    form.set("tenantId", summary.tenant.tenant_id);
+    form.set("driverProfileId", driverProfileId);
+    form.set("evidenceType", evidenceType);
+    form.set("file", file);
+    const response = await fetch("/api/tenant-admin/drivers/evidence", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: form,
+    });
+    const result = (await response.json().catch(() => null)) as { message?: string } | null;
+    if (!response.ok) window.alert(result?.message ?? "Unable to upload evidence.");
+    else onRefresh();
+  }
+
+  async function openDriverEvidence(evidenceId: string) {
+    const response = await fetch(
+      `/api/tenant-admin/drivers/evidence?tenantId=${summary.tenant.tenant_id}&evidenceId=${evidenceId}`,
+      { headers: { Authorization: `Bearer ${session.access_token}` } },
+    );
+    const result = (await response.json()) as { url?: string; message?: string };
+    if (!response.ok) window.alert(result.message ?? "Unable to open evidence.");
+    else if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+  }
+
+  async function reviewDriverEvidence(evidenceId: string, status: "approved" | "rejected") {
+    const notes =
+      status === "rejected"
+        ? window.prompt("Why is this evidence rejected?")?.trim()
+        : window.prompt("Optional review note")?.trim();
+    if (status === "rejected" && !notes) return;
+    const expiresOn =
+      status === "approved"
+        ? window.prompt("Optional expiration date (YYYY-MM-DD)")?.trim() || null
+        : null;
+    setActiveEvidenceId(evidenceId);
+    const response = await fetch("/api/tenant-admin/drivers/evidence", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tenantId: summary.tenant.tenant_id,
+        evidenceId,
+        status,
+        notes: notes || null,
+        expiresOn,
+      }),
+    });
+    const result = (await response.json().catch(() => null)) as { message?: string } | null;
+    setActiveEvidenceId(null);
+    if (!response.ok) window.alert(result?.message ?? "Unable to review evidence.");
+    else onRefresh();
   }
 
   return (
@@ -1255,7 +1378,6 @@ function DriversPanel({
                                 "personal_photo_complete",
                                 "vehicle_details_complete",
                                 "vehicle_photo_complete",
-                                "documents_reviewed",
                               ] as const
                             ).map((field) => (
                               <label key={field}>
@@ -1271,7 +1393,6 @@ function DriversPanel({
                                           personal_photo_complete: "personalPhotoComplete",
                                           vehicle_details_complete: "vehicleDetailsComplete",
                                           vehicle_photo_complete: "vehiclePhotoComplete",
-                                          documents_reviewed: "documentsReviewed",
                                         } as const
                                       )[field],
                                       event.target.checked,
@@ -1280,6 +1401,81 @@ function DriversPanel({
                                   type="checkbox"
                                 />
                                 {field.replaceAll("_", " ")}
+                              </label>
+                            ))}
+                            <span>
+                              Document compliance:{" "}
+                              {checklist.documents_reviewed ? "satisfied" : "pending"}
+                            </span>
+                            {summary.driverEvidence
+                              .filter(
+                                ({ driver_profile_id }) =>
+                                  driver_profile_id === driver.driver_profile_id,
+                              )
+                              .map((evidence) => (
+                                <div className="row-actions" key={evidence.evidence_id}>
+                                  <span>
+                                    {evidence.evidence_type.replaceAll("_", " ")} ·{" "}
+                                    {evidence.review_status}
+                                    {evidence.expires_on ? ` · expires ${evidence.expires_on}` : ""}
+                                  </span>
+                                  <button
+                                    className="secondary-button"
+                                    onClick={() => void openDriverEvidence(evidence.evidence_id)}
+                                    type="button"
+                                  >
+                                    Open
+                                  </button>
+                                  <button
+                                    className="secondary-button"
+                                    disabled={
+                                      !canManageTenant || activeEvidenceId === evidence.evidence_id
+                                    }
+                                    onClick={() =>
+                                      void reviewDriverEvidence(evidence.evidence_id, "approved")
+                                    }
+                                    type="button"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    className="danger-button"
+                                    disabled={
+                                      !canManageTenant || activeEvidenceId === evidence.evidence_id
+                                    }
+                                    onClick={() =>
+                                      void reviewDriverEvidence(evidence.evidence_id, "rejected")
+                                    }
+                                    type="button"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              ))}
+                            {(
+                              [
+                                ["personal_photo", "Upload personal photo"],
+                                ["reference_document", "Upload reference document"],
+                                ["vehicle_photo", "Upload vehicle photo"],
+                              ] as const
+                            ).map(([evidenceType, label]) => (
+                              <label key={evidenceType}>
+                                {label}
+                                <input
+                                  accept="image/jpeg,image/png,application/pdf"
+                                  disabled={!canManageTenant || !enabled}
+                                  onChange={(event) => {
+                                    const file = event.target.files?.[0];
+                                    if (file)
+                                      void uploadEvidence(
+                                        driver.driver_profile_id,
+                                        evidenceType,
+                                        file,
+                                      );
+                                    event.target.value = "";
+                                  }}
+                                  type="file"
+                                />
                               </label>
                             ))}
                             <button

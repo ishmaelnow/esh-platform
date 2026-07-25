@@ -17,6 +17,8 @@ export async function loadTenantSummary(
     driversResult,
     onboardingResult,
     applicationsResult,
+    evidenceResult,
+    evidenceRequirementsResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -57,6 +59,16 @@ export async function loadTenantSummary(
       .select("*")
       .eq("tenant_id", tenantId)
       .order("submitted_at", { ascending: false }),
+    supabase
+      .from("driver_evidence")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("submitted_at", { ascending: false }),
+    supabase
+      .from("driver_evidence_requirements")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("evidence_type", { ascending: true }),
   ]);
 
   if (tenantResult.error) {
@@ -98,6 +110,13 @@ export async function loadTenantSummary(
   }
   if (applicationsResult.error && !applicationsResult.error.message.includes("driver_applications"))
     throw applicationsResult.error;
+  if (evidenceResult.error && !evidenceResult.error.message.includes("driver_evidence"))
+    throw evidenceResult.error;
+  if (
+    evidenceRequirementsResult.error &&
+    !evidenceRequirementsResult.error.message.includes("driver_evidence_requirements")
+  )
+    throw evidenceRequirementsResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -117,6 +136,8 @@ export async function loadTenantSummary(
     drivers: driversResult.data ?? [],
     driverOnboarding: onboardingResult.data ?? [],
     driverApplications: applicationsResult.data ?? [],
+    driverEvidence: evidenceResult.data ?? [],
+    driverEvidenceRequirements: evidenceRequirementsResult.data ?? [],
   };
 }
 

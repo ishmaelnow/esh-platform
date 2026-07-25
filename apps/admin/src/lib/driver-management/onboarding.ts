@@ -5,7 +5,6 @@ export type DriverOnboardingUpdate = {
   personalPhotoComplete?: boolean;
   vehicleDetailsComplete?: boolean;
   vehiclePhotoComplete?: boolean;
-  documentsReviewed?: boolean;
   reviewStatus?: "pending" | "approved" | "rejected";
   reviewNotes?: string | null;
 };

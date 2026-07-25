@@ -10,7 +10,6 @@ const fields = {
   personalPhotoComplete: "personal_photo_complete",
   vehicleDetailsComplete: "vehicle_details_complete",
   vehiclePhotoComplete: "vehicle_photo_complete",
-  documentsReviewed: "documents_reviewed",
   reviewStatus: "review_status",
   reviewNotes: "review_notes",
 } as const;

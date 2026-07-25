@@ -115,6 +115,12 @@ describe("Tenant Administration core workflows", () => {
       expect(
         summary.capabilities.find(({ capability_key }) => capability_key === "app.driver")?.enabled,
       ).toBe(false);
+      expect(
+        summary.driverEvidenceRequirements
+          .filter(({ required_for_activation }) => required_for_activation)
+          .map(({ evidence_type }) => evidence_type)
+          .sort(),
+      ).toEqual(["personal_photo", "reference_document"]);
 
       await expect(
         supabase
