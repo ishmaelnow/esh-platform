@@ -862,6 +862,10 @@ function DriverApplicationsPanel({
   summary: TenantSummary;
 }) {
   const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [reviewOverrides, setReviewOverrides] = useState<Record<string, "approved" | "rejected">>(
+    {},
+  );
 
   async function viewEvidence(evidenceId: string) {
     const response = await fetch(
@@ -878,30 +882,41 @@ function DriverApplicationsPanel({
       status === "rejected"
         ? window.prompt("Why is this evidence rejected?")?.trim()
         : window.prompt("Optional review note")?.trim();
-    if (status === "rejected" && !notes) return;
+    if (status === "rejected" && !notes) {
+      setReviewMessage("A rejection reason is required; no change was made.");
+      return;
+    }
     const expiresOn =
       status === "approved"
         ? window.prompt("Optional expiration date (YYYY-MM-DD)")?.trim() || null
         : null;
     setActiveEvidenceId(evidenceId);
-    const response = await fetch("/api/tenant-admin/drivers/evidence", {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tenantId: summary.tenant.tenant_id,
-        evidenceId,
-        status,
-        notes: notes || null,
-        expiresOn,
-      }),
-    });
-    const result = (await response.json().catch(() => null)) as { message?: string } | null;
-    setActiveEvidenceId(null);
-    if (!response.ok) window.alert(result?.message ?? "Unable to review evidence.");
-    else onRefresh();
+    setReviewMessage(`${status === "approved" ? "Approving" : "Rejecting"} evidence…`);
+    try {
+      const response = await fetch("/api/tenant-admin/drivers/evidence", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tenantId: summary.tenant.tenant_id,
+          evidenceId,
+          status,
+          notes: notes || null,
+          expiresOn,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to review evidence.");
+      setReviewOverrides((current) => ({ ...current, [evidenceId]: status }));
+      setReviewMessage(`Evidence ${status}.`);
+      onRefresh();
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : "Unable to review evidence.");
+    } finally {
+      setActiveEvidenceId(null);
+    }
   }
   async function approve(applicationId: string) {
     const response = await fetch("/api/tenant-admin/drivers", {
@@ -925,6 +940,7 @@ function DriverApplicationsPanel({
         title="Driver applications"
         description="Review applicants before creating draft driver profiles."
       />
+      {reviewMessage ? <p className="notice">{reviewMessage}</p> : null}
       <div className="table-wrap">
         <table>
           <thead>
@@ -960,7 +976,7 @@ function DriverApplicationsPanel({
                           <div className="onboarding-checklist" key={item.evidence_id}>
                             <strong>{item.evidence_type.replaceAll("_", " ")}</strong>
                             <span>
-                              {item.review_status}
+                              {reviewOverrides[item.evidence_id] ?? item.review_status}
                               {required ? " · required" : " · optional"}
                               {item.expires_on ? ` · expires ${item.expires_on}` : ""}
                             </span>
