@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         application_tenant_slug: tenantSlug,
         applicant_name: fullName,
         applicant_email: email,
-        applicant_phone: typeof phone === "string" ? phone : null,
+        ...(typeof phone === "string" && phone ? { applicant_phone: phone } : {}),
       },
     );
     if (error) return NextResponse.json({ message: error.message }, { status: 400 });
@@ -82,9 +82,9 @@ export async function POST(request: Request) {
 
     const attach = await service.rpc("attach_driver_application_files", {
       target_application_id: applicationId,
-      personal_path: paths.personal ?? null,
-      vehicle_path: paths.vehicle ?? null,
-      document_path_value: paths.document ?? null,
+      ...(paths.personal ? { personal_path: paths.personal } : {}),
+      ...(paths.vehicle ? { vehicle_path: paths.vehicle } : {}),
+      ...(paths.document ? { document_path_value: paths.document } : {}),
     });
     if (attach.error) throw attach.error;
     return NextResponse.json({ ok: true });
