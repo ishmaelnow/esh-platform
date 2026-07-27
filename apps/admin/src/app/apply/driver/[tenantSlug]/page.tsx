@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
+import {
+  createIsolatedBrowserSupabaseClient,
+  type SupabaseAuthSession,
+} from "@esh-platform/supabase";
 import { adminPublicConfig } from "@/lib/config";
 
 export default function DriverApplicationPage({
@@ -14,7 +17,15 @@ export default function DriverApplicationPage({
   const [verificationEmail, setVerificationEmail] = useState("");
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const [submitted, setSubmitted] = useState(false);
+  const supabase = useMemo(
+    () =>
+      createIsolatedBrowserSupabaseClient(
+        "esh-driver-application-auth",
+        adminPublicConfig.supabase,
+      ),
+    [],
+  );
 
   useEffect(() => {
     void params.then(({ tenantSlug: slug }) => setTenantSlug(slug));
@@ -83,7 +94,8 @@ export default function DriverApplicationPage({
       });
       const result = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) throw new Error(result?.message ?? "Unable to submit application.");
-      setMessage("Application submitted for review.");
+      setSubmitted(true);
+      setMessage(null);
       formElement.reset();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to submit application.");
@@ -114,7 +126,7 @@ export default function DriverApplicationPage({
             </button>
           </form>
         ) : null}
-        {session ? (
+        {session && !submitted ? (
           <div className="notice">
             <strong>Verified email:</strong> {session.user.email}
             <button
@@ -126,7 +138,24 @@ export default function DriverApplicationPage({
             </button>
           </div>
         ) : null}
-        {session ? (
+        {session && submitted ? (
+          <div className="content-stack" role="status">
+            <h2>Application received</h2>
+            <p>
+              Your application was submitted successfully using the verified email{" "}
+              <strong>{session.user.email}</strong>.
+            </p>
+            <p>
+              The company will review your information and evidence. You do not need to submit
+              another application.
+            </p>
+            <p className="notice">
+              Keep access to this email address. Account activation and any requests for replacement
+              evidence will be sent there.
+            </p>
+          </div>
+        ) : null}
+        {session && !submitted ? (
           <form className="settings-grid" onSubmit={(event) => void submit(event)}>
             <label>
               Full name

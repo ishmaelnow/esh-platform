@@ -64,6 +64,22 @@ export function createBrowserSupabaseClient(config?: PublicSupabaseClientConfig)
   return globalThis.__eshPlatformBrowserSupabaseClient;
 }
 
+export function createIsolatedBrowserSupabaseClient(
+  storageKey: string,
+  config?: PublicSupabaseClientConfig,
+) {
+  const { url, anonKey } = config ?? getPublicSupabaseConfig();
+
+  return createClient<Database>(url, anonKey, {
+    auth: {
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      persistSession: true,
+      storageKey,
+    },
+  });
+}
+
 export function createAuthenticatedSupabaseClient(
   accessToken: string,
   source: NodeJS.ProcessEnv = process.env,
