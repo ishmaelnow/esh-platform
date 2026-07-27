@@ -1094,6 +1094,10 @@ function DriversPanel({
   const [activeTransitionId, setActiveTransitionId] = useState<string | null>(null);
   const [checklists, setChecklists] = useState(summary.driverOnboarding);
   const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
+  const [evidenceMessage, setEvidenceMessage] = useState<string | null>(null);
+  const [evidenceReviewOverrides, setEvidenceReviewOverrides] = useState<
+    Record<string, "approved" | "rejected">
+  >({});
   const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
 
   useEffect(() => setChecklists(summary.driverOnboarding), [summary.driverOnboarding]);
@@ -1238,30 +1242,55 @@ function DriversPanel({
       status === "rejected"
         ? window.prompt("Why is this evidence rejected?")?.trim()
         : window.prompt("Optional review note")?.trim();
-    if (status === "rejected" && !notes) return;
+    if (status === "rejected" && !notes) {
+      setEvidenceMessage("A rejection reason is required; no change was made.");
+      return;
+    }
     const expiresOn =
       status === "approved"
         ? window.prompt("Optional expiration date (YYYY-MM-DD)")?.trim() || null
         : null;
     setActiveEvidenceId(evidenceId);
-    const response = await fetch("/api/tenant-admin/drivers/evidence", {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tenantId: summary.tenant.tenant_id,
-        evidenceId,
-        status,
-        notes: notes || null,
-        expiresOn,
-      }),
-    });
-    const result = (await response.json().catch(() => null)) as { message?: string } | null;
-    setActiveEvidenceId(null);
-    if (!response.ok) window.alert(result?.message ?? "Unable to review evidence.");
-    else onRefresh();
+    setEvidenceMessage(`${status === "approved" ? "Approving" : "Rejecting"} evidence…`);
+    try {
+      const response = await fetch("/api/tenant-admin/drivers/evidence", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tenantId: summary.tenant.tenant_id,
+          evidenceId,
+          status,
+          notes: notes || null,
+          expiresOn,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to review evidence.");
+      setEvidenceReviewOverrides((current) => ({ ...current, [evidenceId]: status }));
+      setEvidenceMessage(`Evidence ${status}.`);
+      onRefresh();
+    } catch (error) {
+      setEvidenceMessage(error instanceof Error ? error.message : "Unable to review evidence.");
+    } finally {
+      setActiveEvidenceId(null);
+    }
+  }
+
+  function activationBlockers(driverProfileId: string) {
+    const checklist = checklists.find((item) => item.driver_profile_id === driverProfileId);
+    if (!checklist) return ["onboarding checklist"];
+
+    const blockers: string[] = [];
+    if (!checklist.personal_details_complete) blockers.push("personal details");
+    if (!checklist.personal_photo_complete) blockers.push("personal photo");
+    if (!checklist.vehicle_details_complete) blockers.push("vehicle details");
+    if (!checklist.vehicle_photo_complete) blockers.push("vehicle photo");
+    if (!checklist.documents_reviewed) blockers.push("document compliance");
+    if (checklist.review_status !== "approved") blockers.push("onboarding approval");
+    return blockers;
   }
 
   return (
@@ -1372,6 +1401,7 @@ function DriversPanel({
         {message ? <p className="form-error">{message}</p> : null}
       </section>
       <section className="panel">
+        {evidenceMessage ? <p className="notice">{evidenceMessage}</p> : null}
         <div className="table-wrap">
           <table>
             <thead>
@@ -1440,8 +1470,18 @@ function DriversPanel({
                       {driver.status === "onboarding" ? (
                         <button
                           className="secondary-button"
-                          disabled={!canManageTenant || !enabled}
+                          disabled={
+                            !canManageTenant ||
+                            !enabled ||
+                            activeTransitionId === driver.driver_profile_id ||
+                            activationBlockers(driver.driver_profile_id).length > 0
+                          }
                           onClick={() => void changeStatus(driver.driver_profile_id, "active")}
+                          title={
+                            activationBlockers(driver.driver_profile_id).length > 0
+                              ? `Complete: ${activationBlockers(driver.driver_profile_id).join(", ")}`
+                              : "Activate driver"
+                          }
                           type="button"
                         >
                           Activate
@@ -1478,6 +1518,7 @@ function DriversPanel({
                           checklist.vehicle_details_complete &&
                           checklist.vehicle_photo_complete &&
                           checklist.documents_reviewed;
+                        const blockers = activationBlockers(driver.driver_profile_id);
                         return (
                           <div className="onboarding-checklist">
                             <span>Onboarding: {checklist.review_status}</span>
@@ -1516,60 +1557,72 @@ function DriversPanel({
                               Document compliance:{" "}
                               {checklist.documents_reviewed ? "satisfied" : "pending"}
                             </span>
+                            {driver.status === "onboarding" && blockers.length > 0 ? (
+                              <span className="form-error">
+                                Activation requires: {blockers.join(", ")}.
+                              </span>
+                            ) : null}
                             {summary.driverEvidence
                               .filter(
                                 ({ driver_profile_id }) =>
                                   driver_profile_id === driver.driver_profile_id,
                               )
-                              .map((evidence) => (
-                                <div className="row-actions" key={evidence.evidence_id}>
-                                  <span>
-                                    {evidence.evidence_type.replaceAll("_", " ")} ·{" "}
-                                    {evidence.review_status}
-                                    {evidence.expires_on ? ` · expires ${evidence.expires_on}` : ""}
-                                  </span>
-                                  <button
-                                    className="secondary-button"
-                                    onClick={() =>
-                                      void openDriverEvidence(
-                                        evidence.evidence_id,
-                                        evidence.evidence_type.replaceAll("_", " "),
-                                      )
-                                    }
-                                    type="button"
-                                  >
-                                    Open
-                                  </button>
-                                  <button
-                                    className="secondary-button"
-                                    disabled={
-                                      !canManageTenant ||
-                                      activeEvidenceId === evidence.evidence_id ||
-                                      evidence.review_status === "approved"
-                                    }
-                                    onClick={() =>
-                                      void reviewDriverEvidence(evidence.evidence_id, "approved")
-                                    }
-                                    type="button"
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    className="danger-button"
-                                    disabled={
-                                      !canManageTenant ||
-                                      activeEvidenceId === evidence.evidence_id ||
-                                      evidence.review_status === "rejected"
-                                    }
-                                    onClick={() =>
-                                      void reviewDriverEvidence(evidence.evidence_id, "rejected")
-                                    }
-                                    type="button"
-                                  >
-                                    Reject
-                                  </button>
-                                </div>
-                              ))}
+                              .map((evidence) => {
+                                const currentReviewStatus =
+                                  evidenceReviewOverrides[evidence.evidence_id] ??
+                                  evidence.review_status;
+                                return (
+                                  <div className="row-actions" key={evidence.evidence_id}>
+                                    <span>
+                                      {evidence.evidence_type.replaceAll("_", " ")} ·{" "}
+                                      {currentReviewStatus}
+                                      {evidence.expires_on
+                                        ? ` · expires ${evidence.expires_on}`
+                                        : ""}
+                                    </span>
+                                    <button
+                                      className="secondary-button"
+                                      onClick={() =>
+                                        void openDriverEvidence(
+                                          evidence.evidence_id,
+                                          evidence.evidence_type.replaceAll("_", " "),
+                                        )
+                                      }
+                                      type="button"
+                                    >
+                                      Open
+                                    </button>
+                                    <button
+                                      className="secondary-button"
+                                      disabled={
+                                        !canManageTenant ||
+                                        activeEvidenceId === evidence.evidence_id ||
+                                        currentReviewStatus === "approved"
+                                      }
+                                      onClick={() =>
+                                        void reviewDriverEvidence(evidence.evidence_id, "approved")
+                                      }
+                                      type="button"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      className="danger-button"
+                                      disabled={
+                                        !canManageTenant ||
+                                        activeEvidenceId === evidence.evidence_id ||
+                                        currentReviewStatus === "rejected"
+                                      }
+                                      onClick={() =>
+                                        void reviewDriverEvidence(evidence.evidence_id, "rejected")
+                                      }
+                                      type="button"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                );
+                              })}
                             {(
                               [
                                 ["personal_photo", "Upload personal photo"],

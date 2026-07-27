@@ -16,6 +16,14 @@ describe("driver evidence", () => {
     });
   });
 
+  it("allows a previously rejected item to be approved without notes or expiration", () => {
+    expect(parseDriverEvidenceReview({ status: "approved" })).toEqual({
+      status: "approved",
+      notes: null,
+      expiresOn: null,
+    });
+  });
+
   it("requires rejection notes and a real ISO date", () => {
     expect(() => parseDriverEvidenceReview({ status: "rejected" })).toThrow(
       /rejection reason is required/i,
