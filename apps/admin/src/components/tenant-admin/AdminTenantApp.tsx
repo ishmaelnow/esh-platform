@@ -863,19 +863,20 @@ function DriverApplicationsPanel({
 }) {
   const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
   const [activeApplicationId, setActiveApplicationId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [reviewOverrides, setReviewOverrides] = useState<Record<string, "approved" | "rejected">>(
     {},
   );
 
-  async function viewEvidence(evidenceId: string) {
+  async function viewEvidence(evidenceId: string, title: string) {
     const response = await fetch(
       `/api/tenant-admin/drivers/evidence?tenantId=${summary.tenant.tenant_id}&evidenceId=${evidenceId}`,
       { headers: { Authorization: `Bearer ${session.access_token}` } },
     );
     const result = (await response.json()) as { url?: string; message?: string };
     if (!response.ok) window.alert(result.message ?? "Unable to load files.");
-    else if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+    else if (result.url) setPreview({ title, url: result.url });
   }
 
   async function reviewEvidence(evidenceId: string, status: "approved" | "rejected") {
@@ -997,7 +998,12 @@ function DriverApplicationsPanel({
                             {item.review_notes ? <span>{item.review_notes}</span> : null}
                             <button
                               className="secondary-button"
-                              onClick={() => void viewEvidence(item.evidence_id)}
+                              onClick={() =>
+                                void viewEvidence(
+                                  item.evidence_id,
+                                  item.evidence_type.replaceAll("_", " "),
+                                )
+                              }
                               type="button"
                             >
                               Open
@@ -1054,6 +1060,9 @@ function DriverApplicationsPanel({
           </tbody>
         </table>
       </div>
+      {preview ? (
+        <EvidencePreview onClose={() => setPreview(null)} title={preview.title} url={preview.url} />
+      ) : null}
     </section>
   );
 }
@@ -1083,6 +1092,7 @@ function DriversPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [checklists, setChecklists] = useState(summary.driverOnboarding);
   const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
 
   useEffect(() => setChecklists(summary.driverOnboarding), [summary.driverOnboarding]);
 
@@ -1198,14 +1208,14 @@ function DriversPanel({
     else onRefresh();
   }
 
-  async function openDriverEvidence(evidenceId: string) {
+  async function openDriverEvidence(evidenceId: string, title: string) {
     const response = await fetch(
       `/api/tenant-admin/drivers/evidence?tenantId=${summary.tenant.tenant_id}&evidenceId=${evidenceId}`,
       { headers: { Authorization: `Bearer ${session.access_token}` } },
     );
     const result = (await response.json()) as { url?: string; message?: string };
     if (!response.ok) window.alert(result.message ?? "Unable to open evidence.");
-    else if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+    else if (result.url) setPreview({ title, url: result.url });
   }
 
   async function reviewDriverEvidence(evidenceId: string, status: "approved" | "rejected") {
@@ -1467,7 +1477,12 @@ function DriversPanel({
                                   </span>
                                   <button
                                     className="secondary-button"
-                                    onClick={() => void openDriverEvidence(evidence.evidence_id)}
+                                    onClick={() =>
+                                      void openDriverEvidence(
+                                        evidence.evidence_id,
+                                        evidence.evidence_type.replaceAll("_", " "),
+                                      )
+                                    }
                                     type="button"
                                   >
                                     Open
@@ -1562,7 +1577,67 @@ function DriversPanel({
           <EmptyState message="No drivers have been created." />
         ) : null}
       </section>
+      {preview ? (
+        <EvidencePreview onClose={() => setPreview(null)} title={preview.title} url={preview.url} />
+      ) : null}
     </section>
+  );
+}
+
+function EvidencePreview({
+  onClose,
+  title,
+  url,
+}: {
+  onClose: () => void;
+  title: string;
+  url: string;
+}) {
+  const isPdf = new URL(url).pathname.toLowerCase().endsWith(".pdf");
+
+  useEffect(() => {
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      aria-label={`${title} preview`}
+      aria-modal="true"
+      className="evidence-preview-backdrop"
+      onMouseDown={(event) => {
+        if (event.currentTarget === event.target) onClose();
+      }}
+      role="dialog"
+    >
+      <section className="evidence-preview">
+        <header>
+          <div>
+            <p className="eyebrow">Private evidence</p>
+            <h3>{title}</h3>
+          </div>
+          <button className="secondary-button" onClick={onClose} type="button">
+            Close
+          </button>
+        </header>
+        {isPdf ? (
+          <iframe src={url} title={`${title} document`} />
+        ) : (
+          // The URL is short-lived and is never placed in the browser address bar.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img alt={title} src={url} />
+        )}
+        <footer>
+          <a className="secondary-button" download href={url}>
+            Download
+          </a>
+          <span>Private link expires shortly.</span>
+        </footer>
+      </section>
+    </div>
   );
 }
 
