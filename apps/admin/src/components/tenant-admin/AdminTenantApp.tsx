@@ -1090,6 +1090,8 @@ function DriversPanel({
   });
   const [message, setMessage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [activeTransitionId, setActiveTransitionId] = useState<string | null>(null);
   const [checklists, setChecklists] = useState(summary.driverOnboarding);
   const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
@@ -1114,7 +1116,9 @@ function DriversPanel({
       return;
     }
     setEditingId(null);
+    setShowManualForm(false);
     setForm({ driverNumber: "", displayName: "", email: "", phone: "", onboardingDate: "" });
+    setMessage(editingId ? "Driver saved." : "Manual driver created.");
     onRefresh();
   }
 
@@ -1126,12 +1130,23 @@ function DriversPanel({
       ? window.prompt("Reason required")
       : null;
     if (["suspended", "inactive", "archived"].includes(status) && !reason) return;
+    setActiveTransitionId(driverProfileId);
     const result = await transitionDriver(session, summary.tenant.tenant_id, driverProfileId, {
       status,
       reason,
     });
+    setActiveTransitionId(null);
     if (!result.ok) window.alert(result.message);
-    else onRefresh();
+    else {
+      onRefresh();
+      window.setTimeout(
+        () =>
+          document
+            .getElementById(`driver-${driverProfileId}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+        100,
+      );
+    }
   }
 
   async function updateChecklist(
@@ -1254,75 +1269,106 @@ function DriversPanel({
       <section className="panel">
         <PanelHeader
           title="Drivers"
-          description="Manage existing drivers or add a driver manually without an application."
+          description="Move approved applicants from draft through onboarding to active service."
         />
+        <button
+          aria-expanded={showManualForm}
+          className="secondary-button"
+          disabled={!enabled || !canManageTenant}
+          onClick={() => {
+            setEditingId(null);
+            setMessage(null);
+            setShowManualForm((current) => !current);
+            setForm({
+              driverNumber: "",
+              displayName: "",
+              email: "",
+              phone: "",
+              onboardingDate: "",
+            });
+          }}
+          type="button"
+        >
+          {showManualForm ? "Close manual entry" : "Add driver manually"}
+        </button>
         {!enabled ? (
           <p className="notice">Driver Management is not enabled for this tenant.</p>
         ) : null}
-        <form className="settings-grid" onSubmit={(event) => void submit(event)}>
-          <DriverTextInput
-            disabled={!enabled || !canManageTenant}
-            label="Driver number"
-            name="driverNumber"
-            placeholder="001"
-            setForm={(u) => setForm((current) => u(current))}
-            value={form.driverNumber}
-          />
-          <DriverTextInput
-            disabled={!enabled || !canManageTenant}
-            label="Display name"
-            name="displayName"
-            setForm={(u) => setForm((current) => u(current))}
-            value={form.displayName}
-          />
-          <DriverTextInput
-            disabled={!enabled || !canManageTenant}
-            label="Email"
-            name="email"
-            type="email"
-            setForm={(u) => setForm((current) => u(current))}
-            value={form.email}
-          />
-          <DriverTextInput
-            disabled={!enabled || !canManageTenant}
-            label="Phone"
-            name="phone"
-            setForm={(u) => setForm((current) => u(current))}
-            value={form.phone}
-          />
-          <label>
-            Onboarding date
-            <input
+        {showManualForm ? (
+          <form
+            className="settings-grid"
+            id="manual-driver-form"
+            onSubmit={(event) => void submit(event)}
+          >
+            <DriverTextInput
               disabled={!enabled || !canManageTenant}
-              type="date"
-              value={form.onboardingDate}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, onboardingDate: event.target.value }))
-              }
+              label="Driver number"
+              name="driverNumber"
+              placeholder="001"
+              setForm={(u) => setForm((current) => u(current))}
+              value={form.driverNumber}
             />
-          </label>
-          <button className="primary-button" disabled={!enabled || !canManageTenant} type="submit">
-            {editingId ? "Save driver" : "Create manual driver"}
-          </button>
-          {editingId ? (
+            <DriverTextInput
+              disabled={!enabled || !canManageTenant}
+              label="Display name"
+              name="displayName"
+              setForm={(u) => setForm((current) => u(current))}
+              value={form.displayName}
+            />
+            <DriverTextInput
+              disabled={!enabled || !canManageTenant}
+              label="Email"
+              name="email"
+              type="email"
+              setForm={(u) => setForm((current) => u(current))}
+              value={form.email}
+            />
+            <DriverTextInput
+              disabled={!enabled || !canManageTenant}
+              label="Phone"
+              name="phone"
+              setForm={(u) => setForm((current) => u(current))}
+              value={form.phone}
+            />
+            <label>
+              Onboarding date
+              <input
+                disabled={!enabled || !canManageTenant}
+                type="date"
+                value={form.onboardingDate}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, onboardingDate: event.target.value }))
+                }
+              />
+            </label>
             <button
-              className="secondary-button"
-              onClick={() => {
-                setEditingId(null);
-                setForm({
-                  driverNumber: "",
-                  displayName: "",
-                  email: "",
-                  phone: "",
-                  onboardingDate: "",
-                });
-              }}
-              type="button"
+              className="primary-button"
+              disabled={!enabled || !canManageTenant}
+              type="submit"
             >
-              Cancel edit
+              {editingId ? "Save driver" : "Create manual driver"}
             </button>
-          ) : null}
-        </form>
+            {editingId ? (
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setEditingId(null);
+                  setShowManualForm(false);
+                  setForm({
+                    driverNumber: "",
+                    displayName: "",
+                    email: "",
+                    phone: "",
+                    onboardingDate: "",
+                  });
+                }}
+                type="button"
+              >
+                Cancel edit
+              </button>
+            ) : null}
+          </form>
+        ) : null}
         {message ? <p className="form-error">{message}</p> : null}
       </section>
       <section className="panel">
@@ -1339,7 +1385,7 @@ function DriversPanel({
             </thead>
             <tbody>
               {summary.drivers.map((driver) => (
-                <tr key={driver.driver_profile_id}>
+                <tr id={`driver-${driver.driver_profile_id}`} key={driver.driver_profile_id}>
                   <td>{driver.driver_number}</td>
                   <td>
                     <strong>{driver.display_name}</strong>
@@ -1355,6 +1401,7 @@ function DriversPanel({
                         onClick={(event) => {
                           event.preventDefault();
                           setEditingId(driver.driver_profile_id);
+                          setShowManualForm(true);
                           setForm({
                             driverNumber: driver.driver_number,
                             displayName: driver.display_name,
@@ -1365,7 +1412,7 @@ function DriversPanel({
                           window.setTimeout(
                             () =>
                               document
-                                .querySelector("form.settings-grid")
+                                .getElementById("manual-driver-form")
                                 ?.scrollIntoView({ behavior: "smooth", block: "center" }),
                             0,
                           );
@@ -1377,11 +1424,17 @@ function DriversPanel({
                       {driver.status === "draft" ? (
                         <button
                           className="secondary-button"
-                          disabled={!canManageTenant || !enabled}
+                          disabled={
+                            !canManageTenant ||
+                            !enabled ||
+                            activeTransitionId === driver.driver_profile_id
+                          }
                           onClick={() => void changeStatus(driver.driver_profile_id, "onboarding")}
                           type="button"
                         >
-                          Start onboarding
+                          {activeTransitionId === driver.driver_profile_id
+                            ? "Starting…"
+                            : "Start onboarding"}
                         </button>
                       ) : null}
                       {driver.status === "onboarding" ? (
