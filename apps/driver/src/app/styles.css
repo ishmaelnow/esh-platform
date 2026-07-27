@@ -190,6 +190,15 @@ h3 {
   padding: 10px;
 }
 
+.upload-message {
+  background: #eff6ff;
+  border-radius: 8px;
+  color: #1e40af;
+  line-height: 1.5;
+  margin: 0;
+  padding: 10px;
+}
+
 .upload-control {
   background: #111827;
   border-radius: 8px;

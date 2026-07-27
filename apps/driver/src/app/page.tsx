@@ -43,6 +43,7 @@ export default function DriverHome() {
   const [message, setMessage] = useState("Sign in with the email used for your application.");
   const [summary, setSummary] = useState<DriverSummary | null>(null);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -102,16 +103,16 @@ export default function DriverHome() {
   async function uploadEvidence(document: DriverDocument, file: File) {
     if (!summary || !supabase || !session) return;
     if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
-      setMessage("Files must be JPEG, PNG, or PDF.");
+      setUploadMessage("Files must be JPEG, PNG, or PDF.");
       return;
     }
     if (file.size === 0 || file.size > 5_000_000) {
-      setMessage("Choose a file that is 5MB or smaller.");
+      setUploadMessage("Choose a file that is 5MB or smaller.");
       return;
     }
 
     setUploadingType(document.evidenceType);
-    setMessage(`Uploading ${evidenceLabel(document.evidenceType).toLowerCase()}…`);
+    setUploadMessage(`Uploading ${evidenceLabel(document.evidenceType).toLowerCase()}…`);
     const extension =
       file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg";
     const path = [
@@ -124,7 +125,7 @@ export default function DriverHome() {
       .from("driver-application-files")
       .upload(path, file, { upsert: false });
     if (upload.error) {
-      setMessage(upload.error.message);
+      setUploadMessage(`Upload failed: ${upload.error.message}`);
       setUploadingType(null);
       return;
     }
@@ -138,13 +139,13 @@ export default function DriverHome() {
       target_size_bytes: file.size,
     });
     if (submission.error) {
-      setMessage(submission.error.message);
+      setUploadMessage(`Submission failed: ${submission.error.message}`);
       setUploadingType(null);
       return;
     }
 
     await activateAndLoad();
-    setMessage(`${evidenceLabel(document.evidenceType)} submitted for review.`);
+    setUploadMessage(`${evidenceLabel(document.evidenceType)} submitted for review.`);
     setUploadingType(null);
   }
 
@@ -195,6 +196,7 @@ export default function DriverHome() {
                 Upload a replacement when evidence is missing, rejected, or expired. JPEG, PNG, and
                 PDF files up to 5MB are accepted.
               </p>
+              {uploadMessage ? <p className="upload-message">{uploadMessage}</p> : null}
               {(summary.documents ?? []).map((document) => (
                 <article className="document-card" key={document.evidenceType}>
                   <div className="document-heading">
