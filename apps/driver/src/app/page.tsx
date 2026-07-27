@@ -18,7 +18,14 @@ type DriverSummary = {
 };
 
 export default function DriverHome() {
-  const supabase = useMemo(() => createIsolatedBrowserSupabaseClient("esh-driver-portal-auth"), []);
+  const supabase = useMemo(
+    () =>
+      createIsolatedBrowserSupabaseClient("esh-driver-portal-auth", {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+      }),
+    [],
+  );
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("Sign in with the email used for your application.");
