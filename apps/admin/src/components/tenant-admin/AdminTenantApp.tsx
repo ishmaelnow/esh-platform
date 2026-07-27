@@ -1098,6 +1098,7 @@ function DriversPanel({
   const [evidenceReviewOverrides, setEvidenceReviewOverrides] = useState<
     Record<string, "approved" | "rejected">
   >({});
+  const [evidenceUploadDriverId, setEvidenceUploadDriverId] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
 
   useEffect(() => setChecklists(summary.driverOnboarding), [summary.driverOnboarding]);
@@ -1224,7 +1225,10 @@ function DriversPanel({
     });
     const result = (await response.json().catch(() => null)) as { message?: string } | null;
     if (!response.ok) window.alert(result?.message ?? "Unable to upload evidence.");
-    else onRefresh();
+    else {
+      setEvidenceUploadDriverId(null);
+      onRefresh();
+    }
   }
 
   async function openDriverEvidence(evidenceId: string, title: string) {
@@ -1623,41 +1627,67 @@ function DriversPanel({
                                   </div>
                                 );
                               })}
-                            {(
-                              [
-                                ["personal_photo", "Upload personal photo"],
-                                ["reference_document", "Upload reference document"],
-                                ["vehicle_photo", "Upload vehicle photo"],
-                              ] as const
-                            ).map(([evidenceType, label]) => (
-                              <label key={evidenceType}>
-                                {label}
-                                <input
-                                  accept="image/jpeg,image/png,application/pdf"
-                                  disabled={!canManageTenant || !enabled}
-                                  onChange={(event) => {
-                                    const file = event.target.files?.[0];
-                                    if (file)
-                                      void uploadEvidence(
-                                        driver.driver_profile_id,
-                                        evidenceType,
-                                        file,
-                                      );
-                                    event.target.value = "";
-                                  }}
-                                  type="file"
-                                />
-                              </label>
-                            ))}
+                            <button
+                              aria-expanded={evidenceUploadDriverId === driver.driver_profile_id}
+                              className="secondary-button"
+                              disabled={!canManageTenant || !enabled}
+                              onClick={() =>
+                                setEvidenceUploadDriverId((current) =>
+                                  current === driver.driver_profile_id
+                                    ? null
+                                    : driver.driver_profile_id,
+                                )
+                              }
+                              type="button"
+                            >
+                              {evidenceUploadDriverId === driver.driver_profile_id
+                                ? "Close evidence upload"
+                                : "Replace or add evidence"}
+                            </button>
+                            {evidenceUploadDriverId === driver.driver_profile_id
+                              ? (
+                                  [
+                                    ["personal_photo", "Upload personal photo"],
+                                    ["reference_document", "Upload reference document"],
+                                    ["vehicle_photo", "Upload vehicle photo"],
+                                  ] as const
+                                ).map(([evidenceType, label]) => (
+                                  <label key={evidenceType}>
+                                    {label}
+                                    <input
+                                      accept="image/jpeg,image/png,application/pdf"
+                                      disabled={!canManageTenant || !enabled}
+                                      onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (file)
+                                          void uploadEvidence(
+                                            driver.driver_profile_id,
+                                            evidenceType,
+                                            file,
+                                          );
+                                        event.target.value = "";
+                                      }}
+                                      type="file"
+                                    />
+                                  </label>
+                                ))
+                              : null}
                             <button
                               className="secondary-button"
-                              disabled={!canManageTenant || !enabled || !complete}
+                              disabled={
+                                !canManageTenant ||
+                                !enabled ||
+                                !complete ||
+                                checklist.review_status === "approved"
+                              }
                               onClick={() =>
                                 void reviewChecklist(driver.driver_profile_id, "approved")
                               }
                               type="button"
                             >
-                              Approve onboarding
+                              {checklist.review_status === "approved"
+                                ? "Onboarding approved"
+                                : "Approve onboarding"}
                             </button>
                             <button
                               className="danger-button"
