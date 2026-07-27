@@ -980,6 +980,8 @@ function DriverApplicationsPanel({
                   <td>
                     <div className="row-actions">
                       {evidence.map((item) => {
+                        const currentReviewStatus =
+                          reviewOverrides[item.evidence_id] ?? item.review_status;
                         const required = summary.driverEvidenceRequirements.some(
                           ({ evidence_type, required_for_activation }) =>
                             evidence_type === item.evidence_type && required_for_activation,
@@ -988,7 +990,7 @@ function DriverApplicationsPanel({
                           <div className="onboarding-checklist" key={item.evidence_id}>
                             <strong>{item.evidence_type.replaceAll("_", " ")}</strong>
                             <span>
-                              {reviewOverrides[item.evidence_id] ?? item.review_status}
+                              {currentReviewStatus}
                               {required ? " · required" : " · optional"}
                               {item.expires_on ? ` · expires ${item.expires_on}` : ""}
                             </span>
@@ -1002,7 +1004,11 @@ function DriverApplicationsPanel({
                             </button>
                             <button
                               className="secondary-button"
-                              disabled={!canManageTenant || activeEvidenceId === item.evidence_id}
+                              disabled={
+                                !canManageTenant ||
+                                activeEvidenceId === item.evidence_id ||
+                                currentReviewStatus === "approved"
+                              }
                               onClick={() => void reviewEvidence(item.evidence_id, "approved")}
                               type="button"
                             >
@@ -1010,7 +1016,11 @@ function DriverApplicationsPanel({
                             </button>
                             <button
                               className="danger-button"
-                              disabled={!canManageTenant || activeEvidenceId === item.evidence_id}
+                              disabled={
+                                !canManageTenant ||
+                                activeEvidenceId === item.evidence_id ||
+                                currentReviewStatus === "rejected"
+                              }
                               onClick={() => void reviewEvidence(item.evidence_id, "rejected")}
                               type="button"
                             >
@@ -1030,9 +1040,11 @@ function DriverApplicationsPanel({
                         onClick={() => void approve(application.driver_application_id)}
                         type="button"
                       >
-                        {activeApplicationId === application.driver_application_id
-                          ? "Approving…"
-                          : "Approve and create draft"}
+                        {application.application_status === "approved"
+                          ? "Draft created"
+                          : activeApplicationId === application.driver_application_id
+                            ? "Approving…"
+                            : "Approve and create draft"}
                       </button>
                     </div>
                   </td>
@@ -1232,7 +1244,7 @@ function DriversPanel({
       <section className="panel">
         <PanelHeader
           title="Drivers"
-          description="Tenant-scoped driver profiles and administrative lifecycle."
+          description="Manage existing drivers or add a driver manually without an application."
         />
         {!enabled ? (
           <p className="notice">Driver Management is not enabled for this tenant.</p>
@@ -1280,7 +1292,7 @@ function DriversPanel({
             />
           </label>
           <button className="primary-button" disabled={!enabled || !canManageTenant} type="submit">
-            {editingId ? "Save driver" : "Create driver"}
+            {editingId ? "Save driver" : "Create manual driver"}
           </button>
           {editingId ? (
             <button
@@ -1463,7 +1475,9 @@ function DriversPanel({
                                   <button
                                     className="secondary-button"
                                     disabled={
-                                      !canManageTenant || activeEvidenceId === evidence.evidence_id
+                                      !canManageTenant ||
+                                      activeEvidenceId === evidence.evidence_id ||
+                                      evidence.review_status === "approved"
                                     }
                                     onClick={() =>
                                       void reviewDriverEvidence(evidence.evidence_id, "approved")
@@ -1475,7 +1489,9 @@ function DriversPanel({
                                   <button
                                     className="danger-button"
                                     disabled={
-                                      !canManageTenant || activeEvidenceId === evidence.evidence_id
+                                      !canManageTenant ||
+                                      activeEvidenceId === evidence.evidence_id ||
+                                      evidence.review_status === "rejected"
                                     }
                                     onClick={() =>
                                       void reviewDriverEvidence(evidence.evidence_id, "rejected")
