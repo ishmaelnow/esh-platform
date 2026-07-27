@@ -19,7 +19,7 @@ export default function TransportApplicationDirectory() {
           {tenants.map((tenant) => (
             <a
               className="primary-button"
-              href={`/apply/transport/${tenant.tenant_slug}`}
+              href={`/apply/driver/${tenant.tenant_slug}`}
               key={tenant.tenant_slug}
             >
               {tenant.display_name}

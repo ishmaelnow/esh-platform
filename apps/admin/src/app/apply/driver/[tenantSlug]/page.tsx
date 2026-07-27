@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
+import { adminPublicConfig } from "@/lib/config";
 
 export default function DriverApplicationPage({
   params,
@@ -9,9 +11,47 @@ export default function DriverApplicationPage({
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [tenantSlug, setTenantSlug] = useState("");
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [session, setSession] = useState<SupabaseAuthSession | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+
   useEffect(() => {
     void params.then(({ tenantSlug: slug }) => setTenantSlug(slug));
   }, [params]);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthLoading(false);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  async function requestVerification(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("Sending verification email…");
+    const redirectUrl = new URL(window.location.href);
+    redirectUrl.hash = "";
+    const { error } = await supabase.auth.signInWithOtp({
+      email: verificationEmail.trim().toLowerCase(),
+      options: {
+        emailRedirectTo: redirectUrl.toString(),
+        shouldCreateUser: true,
+      },
+    });
+    setMessage(
+      error
+        ? error.message
+        : "Verification email sent. Open the link on this device to continue your application.",
+    );
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
@@ -35,7 +75,12 @@ export default function DriverApplicationPage({
           "The selected files are still too large. Use a reference document smaller than 1 MB.",
         );
       }
-      const response = await fetch("/api/applications/driver", { method: "POST", body: form });
+      if (!session) throw new Error("Verify your email before submitting.");
+      const response = await fetch("/api/applications/driver", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
       const result = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) throw new Error(result?.message ?? "Unable to submit application.");
       setMessage("Application submitted for review.");
@@ -50,54 +95,86 @@ export default function DriverApplicationPage({
     <main className="auth-shell">
       <section className="panel">
         <h1>Apply to drive</h1>
-        <p>Submit your details and required files.</p>
-        <form className="settings-grid" onSubmit={(event) => void submit(event)}>
-          <label>
-            Full name
-            <input name="fullName" required />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" required />
-          </label>
-          <label>
-            Phone
-            <input name="phone" />
-          </label>
-          <label>
-            Personal photo
-            <input
-              accept="image/jpeg,image/png"
-              capture="user"
-              name="personalPhoto"
-              type="file"
-              required
-            />
-          </label>
-          <label>
-            Vehicle photo
-            <input
-              accept="image/jpeg,image/png"
-              capture="environment"
-              name="vehiclePhoto"
-              type="file"
-              required
-            />
-          </label>
-          <label>
-            Reference document
-            <input
-              accept="image/jpeg,image/png,application/pdf"
-              capture="environment"
-              name="document"
-              type="file"
-              required
-            />
-          </label>
-          <button className="primary-button" disabled={submitting || !tenantSlug} type="submit">
-            {submitting ? "Submitting…" : "Submit application"}
-          </button>
-        </form>
+        <p>Verify your email before submitting personal details and evidence.</p>
+        {authLoading ? <p className="notice">Checking verification status…</p> : null}
+        {!authLoading && !session ? (
+          <form className="settings-grid" onSubmit={(event) => void requestVerification(event)}>
+            <label>
+              Email
+              <input
+                autoComplete="email"
+                onChange={(event) => setVerificationEmail(event.target.value)}
+                required
+                type="email"
+                value={verificationEmail}
+              />
+            </label>
+            <button className="primary-button" type="submit">
+              Verify email to continue
+            </button>
+          </form>
+        ) : null}
+        {session ? (
+          <div className="notice">
+            <strong>Verified email:</strong> {session.user.email}
+            <button
+              className="secondary-button"
+              onClick={() => void supabase.auth.signOut()}
+              type="button"
+            >
+              Use a different email
+            </button>
+          </div>
+        ) : null}
+        {session ? (
+          <form className="settings-grid" onSubmit={(event) => void submit(event)}>
+            <label>
+              Full name
+              <input name="fullName" required />
+            </label>
+            <label>
+              Email
+              <input name="email" readOnly required type="email" value={session.user.email ?? ""} />
+            </label>
+            <label>
+              Phone
+              <input name="phone" />
+            </label>
+            <label>
+              Personal photo
+              <input
+                accept="image/jpeg,image/png"
+                capture="user"
+                name="personalPhoto"
+                type="file"
+                required
+              />
+            </label>
+            <label>
+              Vehicle photo
+              <input
+                accept="image/jpeg,image/png"
+                capture="environment"
+                name="vehiclePhoto"
+                type="file"
+                required
+              />
+            </label>
+            <label>
+              Reference document
+              <input
+                accept="image/jpeg,image/png,application/pdf"
+                capture="environment"
+                name="document"
+                type="file"
+                required
+              />
+            </label>
+            <button className="primary-button" disabled={submitting || !tenantSlug} type="submit">
+              {submitting ? "Submitting…" : "Submit application"}
+            </button>
+          </form>
+        ) : null}
         {message ? <p className="notice">{message}</p> : null}
       </section>
     </main>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createAnonymousSupabaseClient, createServiceSupabaseClient } from "@esh-platform/supabase";
+import { createServiceSupabaseClient } from "@esh-platform/supabase";
+import { createRequestSupabaseClient, getBearerToken } from "@/lib/tenant-admin/server";
 
 const uploadFields = [
   ["personalPhoto", "personal", "personal_photo"],
@@ -9,13 +10,24 @@ const uploadFields = [
 
 export async function POST(request: Request) {
   try {
+    const token = getBearerToken(request);
+    if (!token) throw new Error("Verify your email before submitting an application.");
+    const supabase = createRequestSupabaseClient({ accessToken: token });
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user?.email || !user.email_confirmed_at)
+      throw new Error("A verified email session is required.");
+
     const form = await request.formData();
     const tenantSlug = form.get("tenantSlug");
     const fullName = form.get("fullName");
     const email = form.get("email");
     if (typeof tenantSlug !== "string" || typeof fullName !== "string" || typeof email !== "string")
       throw new Error("Application link, name, and email are required.");
-    const supabase = createAnonymousSupabaseClient();
+    if (email.trim().toLowerCase() !== user.email.trim().toLowerCase())
+      throw new Error("Application email must match the verified email.");
     const phone = form.get("phone");
     const { data: applicationId, error } = await supabase.rpc(
       "submit_transport_driver_application",

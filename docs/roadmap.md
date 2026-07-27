@@ -36,25 +36,29 @@ Explicitly deferred:
 
 ## Next Milestones
 
-1. **Fleet and Vehicle Management**
+1. **Driver Identity and Application Access**
+   - Verify applicant email ownership before collecting evidence.
+   - Bind applications to authenticated Supabase identities.
+   - Add driver account activation and self-service application status.
+2. **Fleet and Vehicle Management**
    - Tenant-scoped vehicle identity and lifecycle.
    - Driver/vehicle assignment history.
    - Vehicle evidence and compliance requirements.
-2. **Notification Foundation**
+3. **Notification Foundation**
    - Generalize invitation delivery into reusable notification contracts.
    - Add delivery preferences, templates, retries, and scheduled compliance reminders.
-3. **Realtime and Service Areas**
+4. **Realtime and Service Areas**
    - Privacy and consent contracts.
    - Driver availability, service areas, and location exposure policy.
-4. **Dispatch and Trip Core**
+5. **Dispatch and Trip Core**
    - Booking/trip lifecycle, offers, assignments, reassignment, and operational audit.
-5. **Reputation**
+6. **Reputation**
    - Product-specific criteria on generic reputation primitives.
-6. **Money and Ledger**
+7. **Money and Ledger**
    - Currency types, immutable ledger, payments, wallet, and reconciliation.
-7. **Pricing and Billing**
+8. **Pricing and Billing**
    - Pricing, subscriptions, usage metering, and tenant billing.
-8. **Optimization**
+9. **Optimization**
    - Demand intelligence, performance, levels, loyalty, and incentives.
 
 ## Release Gates for the Current Milestone

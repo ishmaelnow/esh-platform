@@ -56,6 +56,15 @@ https://tenant.example.com/**
 The exact production domains may change. Keep `INVITATION_BASE_URL` and `TENANT_ADMIN_BASE_URL`
 environment-driven.
 
+Driver applicant email verification returns to the tenant-specific application page. Add this production
+Supabase Auth redirect pattern:
+
+```text
+https://admin.eshapp.com/apply/driver/**
+```
+
+Use explicitly authorized origins for preview deployments rather than arbitrary redirect destinations.
+
 ## Password Recovery
 
 Password recovery starts from the invitation page. The app asks Supabase Auth to send the recovery

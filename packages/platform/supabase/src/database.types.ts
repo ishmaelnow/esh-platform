@@ -80,12 +80,14 @@ export type Database = {
       }
       driver_applications: {
         Row: {
+          applicant_auth_user_id: string | null
           application_status: string
           created_at: string
           document_path: string | null
           driver_application_id: string
           driver_profile_id: string | null
           email: string
+          email_verified_at: string | null
           full_name: string
           personal_photo_path: string | null
           phone: string | null
@@ -98,12 +100,14 @@ export type Database = {
           vehicle_photo_path: string | null
         }
         Insert: {
+          applicant_auth_user_id?: string | null
           application_status?: string
           created_at?: string
           document_path?: string | null
           driver_application_id?: string
           driver_profile_id?: string | null
           email: string
+          email_verified_at?: string | null
           full_name: string
           personal_photo_path?: string | null
           phone?: string | null
@@ -116,12 +120,14 @@ export type Database = {
           vehicle_photo_path?: string | null
         }
         Update: {
+          applicant_auth_user_id?: string | null
           application_status?: string
           created_at?: string
           document_path?: string | null
           driver_application_id?: string
           driver_profile_id?: string | null
           email?: string
+          email_verified_at?: string | null
           full_name?: string
           personal_photo_path?: string | null
           phone?: string | null
