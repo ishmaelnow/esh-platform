@@ -862,6 +862,7 @@ function DriverApplicationsPanel({
   summary: TenantSummary;
 }) {
   const [activeEvidenceId, setActiveEvidenceId] = useState<string | null>(null);
+  const [activeApplicationId, setActiveApplicationId] = useState<string | null>(null);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [reviewOverrides, setReviewOverrides] = useState<Record<string, "approved" | "rejected">>(
     {},
@@ -919,20 +920,31 @@ function DriverApplicationsPanel({
     }
   }
   async function approve(applicationId: string) {
-    const response = await fetch("/api/tenant-admin/drivers", {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        kind: "approve_application",
-        tenantId: summary.tenant.tenant_id,
-        applicationId,
-      }),
-    });
-    if (!response.ok) window.alert("Unable to approve application.");
-    else onRefresh();
+    if (activeApplicationId) return;
+    setActiveApplicationId(applicationId);
+    setReviewMessage("Approving application and creating draft driver…");
+    try {
+      const response = await fetch("/api/tenant-admin/drivers", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          kind: "approve_application",
+          tenantId: summary.tenant.tenant_id,
+          applicationId,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to approve application.");
+      setReviewMessage("Application approved and draft driver created.");
+      onRefresh();
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : "Unable to approve application.");
+    } finally {
+      setActiveApplicationId(null);
+    }
   }
   return (
     <section className="panel">
@@ -1010,11 +1022,17 @@ function DriverApplicationsPanel({
                       {evidence.length === 0 ? <span>No evidence submitted.</span> : null}
                       <button
                         className="primary-button"
-                        disabled={!canManageTenant || application.application_status === "approved"}
+                        disabled={
+                          !canManageTenant ||
+                          application.application_status === "approved" ||
+                          activeApplicationId !== null
+                        }
                         onClick={() => void approve(application.driver_application_id)}
                         type="button"
                       >
-                        Approve and create draft
+                        {activeApplicationId === application.driver_application_id
+                          ? "Approving…"
+                          : "Approve and create draft"}
                       </button>
                     </div>
                   </td>
