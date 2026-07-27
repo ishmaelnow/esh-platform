@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
@@ -15,23 +15,60 @@ type DriverSummary = {
   status: string;
   onboardingStatus: string;
   documentCompliance: boolean;
+  documents: DriverDocument[];
+};
+
+type DriverDocument = {
+  evidenceType: string;
+  requiredForActivation: boolean;
+  reviewStatus: "missing" | "pending" | "approved" | "rejected" | "expired";
+  reviewNotes: string | null;
+  expiresOn: string | null;
+  submittedAt: string | null;
+  originalFileName: string | null;
 };
 
 export default function DriverHome() {
-  const supabase = useMemo(
-    () =>
-      createIsolatedBrowserSupabaseClient("esh-driver-portal-auth", {
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-      }),
-    [],
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabase = useMemo(() => {
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+    return createIsolatedBrowserSupabaseClient("esh-driver-portal-auth", {
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+    });
+  }, [supabaseAnonKey, supabaseUrl]);
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("Sign in with the email used for your application.");
   const [summary, setSummary] = useState<DriverSummary | null>(null);
+  const [uploadingType, setUploadingType] = useState<string | null>(null);
+
+  const activateAndLoad = useCallback(async () => {
+    if (!supabase) {
+      setMessage("Driver portal configuration is unavailable.");
+      return;
+    }
+    setMessage("Connecting your approved driver account…");
+    const activation = await supabase.rpc("activate_my_driver_account");
+    if (activation.error) {
+      setMessage(activation.error.message);
+      return;
+    }
+    const result = await supabase.rpc("my_driver_portal_summary");
+    if (result.error || !result.data) {
+      setMessage(result.error?.message ?? "Driver profile is unavailable.");
+      return;
+    }
+    setSummary(result.data as unknown as DriverSummary);
+    setMessage("Driver account connected.");
+  }, [supabase]);
 
   useEffect(() => {
+    if (!supabase) {
+      setMessage("Driver portal configuration is unavailable.");
+      return;
+    }
     void supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
       data: { subscription },
@@ -45,25 +82,14 @@ export default function DriverHome() {
       return;
     }
     void activateAndLoad();
-    async function activateAndLoad() {
-      setMessage("Connecting your approved driver account…");
-      const activation = await supabase.rpc("activate_my_driver_account");
-      if (activation.error) {
-        setMessage(activation.error.message);
-        return;
-      }
-      const result = await supabase.rpc("my_driver_portal_summary");
-      if (result.error || !result.data) {
-        setMessage(result.error?.message ?? "Driver profile is unavailable.");
-        return;
-      }
-      setSummary(result.data as unknown as DriverSummary);
-      setMessage("Driver account connected.");
-    }
-  }, [session, supabase]);
+  }, [activateAndLoad, session]);
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!supabase) {
+      setMessage("Driver portal configuration is unavailable.");
+      return;
+    }
     const redirectUrl = new URL(window.location.href);
     redirectUrl.hash = "";
     const { error } = await supabase.auth.signInWithOtp({
@@ -71,6 +97,55 @@ export default function DriverHome() {
       options: { emailRedirectTo: redirectUrl.toString(), shouldCreateUser: false },
     });
     setMessage(error ? error.message : "Check your email for the secure sign-in link.");
+  }
+
+  async function uploadEvidence(document: DriverDocument, file: File) {
+    if (!summary || !supabase || !session) return;
+    if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
+      setMessage("Files must be JPEG, PNG, or PDF.");
+      return;
+    }
+    if (file.size === 0 || file.size > 5_000_000) {
+      setMessage("Choose a file that is 5MB or smaller.");
+      return;
+    }
+
+    setUploadingType(document.evidenceType);
+    setMessage(`Uploading ${evidenceLabel(document.evidenceType).toLowerCase()}…`);
+    const extension =
+      file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg";
+    const path = [
+      "driver-self-service",
+      session.user.id,
+      summary.driverProfileId,
+      `${document.evidenceType}-${crypto.randomUUID()}.${extension}`,
+    ].join("/");
+    const upload = await supabase.storage
+      .from("driver-application-files")
+      .upload(path, file, { upsert: false });
+    if (upload.error) {
+      setMessage(upload.error.message);
+      setUploadingType(null);
+      return;
+    }
+
+    const submission = await supabase.rpc("submit_my_driver_evidence", {
+      target_driver_profile_id: summary.driverProfileId,
+      target_evidence_type: document.evidenceType,
+      target_storage_path: path,
+      target_original_file_name: file.name,
+      target_mime_type: file.type,
+      target_size_bytes: file.size,
+    });
+    if (submission.error) {
+      setMessage(submission.error.message);
+      setUploadingType(null);
+      return;
+    }
+
+    await activateAndLoad();
+    setMessage(`${evidenceLabel(document.evidenceType)} submitted for review.`);
+    setUploadingType(null);
   }
 
   return (
@@ -111,9 +186,53 @@ export default function DriverHome() {
                 <dd>{summary.documentCompliance ? "satisfied" : "pending"}</dd>
               </div>
             </dl>
+            <section className="documents">
+              <div>
+                <p className="eyebrow">Documents</p>
+                <h3>Evidence status</h3>
+              </div>
+              <p className="document-help">
+                Upload a replacement when evidence is missing, rejected, or expired. JPEG, PNG, and
+                PDF files up to 5MB are accepted.
+              </p>
+              {(summary.documents ?? []).map((document) => (
+                <article className="document-card" key={document.evidenceType}>
+                  <div className="document-heading">
+                    <strong>{evidenceLabel(document.evidenceType)}</strong>
+                    <span className={`status status-${document.reviewStatus}`}>
+                      {document.reviewStatus}
+                    </span>
+                  </div>
+                  {document.originalFileName ? <span>{document.originalFileName}</span> : null}
+                  {document.expiresOn ? <span>Expires {document.expiresOn}</span> : null}
+                  {document.reviewNotes ? (
+                    <p className="rejection-note">Review note: {document.reviewNotes}</p>
+                  ) : null}
+                  {["missing", "rejected", "expired"].includes(document.reviewStatus) ? (
+                    <label className="upload-control">
+                      <span>
+                        {uploadingType === document.evidenceType
+                          ? "Uploading…"
+                          : "Choose replacement"}
+                      </span>
+                      <input
+                        accept="image/jpeg,image/png,application/pdf"
+                        disabled={uploadingType !== null}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void uploadEvidence(document, file);
+                          event.target.value = "";
+                        }}
+                        type="file"
+                      />
+                    </label>
+                  ) : null}
+                </article>
+              ))}
+            </section>
             <button
               className="secondary"
-              onClick={() => void supabase.auth.signOut()}
+              onClick={() => void supabase?.auth.signOut()}
               type="button"
             >
               Sign out
@@ -124,4 +243,13 @@ export default function DriverHome() {
       </section>
     </main>
   );
+}
+
+function evidenceLabel(evidenceType: string) {
+  const labels: Record<string, string> = {
+    personal_photo: "Personal photo",
+    reference_document: "Reference document",
+    vehicle_photo: "Vehicle photo",
+  };
+  return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
 }

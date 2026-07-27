@@ -83,6 +83,11 @@ input {
   padding: 12px;
 }
 
+input[type="file"] {
+  border: 0;
+  padding: 0;
+}
+
 button {
   background: #111827;
   border: 0;
@@ -112,4 +117,103 @@ dt {
 dd {
   font-weight: 700;
   margin: 0;
+}
+
+h3 {
+  margin: 0;
+}
+
+.documents {
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.documents .eyebrow {
+  margin-bottom: 6px;
+}
+
+.document-help,
+.document-card span {
+  color: #586174;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.document-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.document-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.status {
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.status-approved {
+  background: #dcfce7;
+  color: #166534 !important;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e !important;
+}
+
+.status-missing,
+.status-rejected,
+.status-expired {
+  background: #fee2e2;
+  color: #991b1b !important;
+}
+
+.rejection-note {
+  background: #fff7ed;
+  border-radius: 8px;
+  color: #9a3412;
+  line-height: 1.5;
+  margin: 0;
+  padding: 10px;
+}
+
+.upload-control {
+  background: #111827;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.upload-control input {
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
+@media (max-width: 600px) {
+  .shell {
+    padding: 20px;
+  }
+
+  .portal-card {
+    padding: 22px;
+  }
 }

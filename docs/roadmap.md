@@ -42,7 +42,9 @@ Explicitly deferred:
    - Add driver account activation and self-service application status.
    - Current delivery: approved applicants can activate the existing identity link and view driver,
      onboarding, and document-compliance status in the Driver app.
-   - Remaining: driver-owned evidence replacement and administrator-triggered activation notification.
+   - Current delivery: drivers can see requirement-level evidence status and submit private
+     replacements for administrator review.
+   - Remaining: administrator-triggered activation and evidence-status notifications.
 2. **Fleet and Vehicle Management**
    - Tenant-scoped vehicle identity and lifecycle.
    - Driver/vehicle assignment history.
