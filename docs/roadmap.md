@@ -40,6 +40,9 @@ Explicitly deferred:
    - Verify applicant email ownership before collecting evidence.
    - Bind applications to authenticated Supabase identities.
    - Add driver account activation and self-service application status.
+   - Current delivery: approved applicants can activate the existing identity link and view driver,
+     onboarding, and document-compliance status in the Driver app.
+   - Remaining: driver-owned evidence replacement and administrator-triggered activation notification.
 2. **Fleet and Vehicle Management**
    - Tenant-scoped vehicle identity and lifecycle.
    - Driver/vehicle assignment history.

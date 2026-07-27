@@ -61,6 +61,7 @@ Supabase Auth redirect pattern:
 
 ```text
 https://admin.eshapp.com/apply/driver/**
+https://driver.eshapp.com/**
 ```
 
 Use explicitly authorized origins for preview deployments rather than arbitrary redirect destinations.

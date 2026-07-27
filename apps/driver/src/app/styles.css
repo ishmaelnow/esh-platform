@@ -50,3 +50,66 @@ h1 {
   margin: 20px 0 0;
   max-width: 620px;
 }
+
+.portal-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgb(15 23 42 / 8%);
+  margin: auto;
+  max-width: 680px;
+  padding: 32px;
+  width: 100%;
+}
+
+form,
+.status-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+label,
+dl,
+dl div {
+  display: grid;
+  gap: 8px;
+}
+
+input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+  padding: 12px;
+}
+
+button {
+  background: #111827;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 12px 16px;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+dl div {
+  border-bottom: 1px solid #e5e7eb;
+  grid-template-columns: 1fr auto;
+  padding: 12px 0;
+}
+
+dt {
+  color: #586174;
+}
+
+dd {
+  font-weight: 700;
+  margin: 0;
+}

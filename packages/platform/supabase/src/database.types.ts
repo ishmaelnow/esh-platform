@@ -1035,6 +1035,7 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      activate_my_driver_account: { Args: never; Returns: string }
       approve_driver_application: {
         Args: { actor_id: string; target_application_id: string }
         Returns: string
@@ -1115,6 +1116,7 @@ export type Database = {
           tenant_slug: string
         }[]
       }
+      my_driver_portal_summary: { Args: never; Returns: Json }
       provision_tenant_with_owner_invitation: {
         Args: {
           correlation_id: string
