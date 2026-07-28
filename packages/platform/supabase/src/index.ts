@@ -38,6 +38,7 @@ export type DriverApplicationRow = Tables<"driver_applications">;
 export type DriverEvidenceRow = Tables<"driver_evidence">;
 export type DriverEvidenceRequirementRow = Tables<"driver_evidence_requirements">;
 export type DriverOnboardingChecklistRow = Tables<"driver_onboarding_checklists">;
+export type DriverNotificationPreferenceRow = Tables<"driver_notification_preferences">;
 export type NotificationOutboxRow = Tables<"notification_outbox">;
 export type TenantRow = Tables<"tenants">;
 export type TenantConfigurationRow = Tables<"tenant_configurations">;

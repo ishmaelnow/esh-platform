@@ -16,6 +16,9 @@ type DriverSummary = {
   onboardingStatus: string;
   documentCompliance: boolean;
   documents: DriverDocument[];
+  notificationPreferences: {
+    expirationRemindersEnabled: boolean;
+  };
 };
 
 type DriverDocument = {
@@ -44,6 +47,8 @@ export default function DriverHome() {
   const [summary, setSummary] = useState<DriverSummary | null>(null);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
+  const [updatingPreferences, setUpdatingPreferences] = useState(false);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -149,6 +154,33 @@ export default function DriverHome() {
     setUploadingType(null);
   }
 
+  async function updateExpirationReminders(enabled: boolean) {
+    if (!supabase) return;
+    setUpdatingPreferences(true);
+    setPreferenceMessage("Saving reminder preference…");
+    const result = await supabase.rpc("set_my_driver_notification_preferences", {
+      expiration_reminders_enabled_value: enabled,
+    });
+    if (result.error) {
+      setPreferenceMessage(result.error.message);
+    } else {
+      setSummary((current) =>
+        current
+          ? {
+              ...current,
+              notificationPreferences: {
+                expirationRemindersEnabled: enabled,
+              },
+            }
+          : current,
+      );
+      setPreferenceMessage(
+        enabled ? "Expiration reminders enabled." : "Expiration reminders disabled.",
+      );
+    }
+    setUpdatingPreferences(false);
+  }
+
   return (
     <main className="shell">
       <section className="portal-card">
@@ -231,6 +263,23 @@ export default function DriverHome() {
                   ) : null}
                 </article>
               ))}
+            </section>
+            <section className="notification-preferences">
+              <div>
+                <p className="eyebrow">Notifications</p>
+                <h3>Email preferences</h3>
+              </div>
+              <label>
+                <input
+                  checked={summary.notificationPreferences?.expirationRemindersEnabled ?? true}
+                  disabled={updatingPreferences}
+                  onChange={(event) => void updateExpirationReminders(event.target.checked)}
+                  type="checkbox"
+                />
+                Email me before required evidence expires
+              </label>
+              <p>Essential account, rejection, and activation notices remain enabled.</p>
+              {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
             </section>
             <button
               className="secondary"

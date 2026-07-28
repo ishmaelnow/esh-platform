@@ -123,11 +123,29 @@ h3 {
   margin: 0;
 }
 
-.documents {
+.documents,
+.notification-preferences {
   border-top: 1px solid #e5e7eb;
   display: grid;
   gap: 16px;
   padding-top: 24px;
+}
+
+.notification-preferences label {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.notification-preferences input {
+  height: 18px;
+  width: 18px;
+}
+
+.notification-preferences > p {
+  color: #586174;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .documents .eyebrow {

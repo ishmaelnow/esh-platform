@@ -46,7 +46,9 @@ Explicitly deferred:
      replacements for administrator review.
    - Current delivery: administrator-triggered activation and evidence-status notification outbox,
      Resend delivery, retry controls, and webhook-tracked delivery state.
-   - Remaining: delivery preferences and scheduled evidence-expiration reminders.
+   - Current delivery: driver-controlled expiration reminders at 30 days, 7 days, and expiration,
+     with automatic daily delivery and retry.
+   - Remaining: additional delivery channels and tenant-configurable reminder schedules.
 2. **Fleet and Vehicle Management**
    - Tenant-scoped vehicle identity and lifecycle.
    - Driver/vehicle assignment history.
@@ -55,7 +57,8 @@ Explicitly deferred:
    - Generalize invitation delivery into reusable notification contracts.
    - Current delivery: durable driver notification contracts, templates, retries, history, and
      webhook-tracked delivery.
-   - Remaining: delivery preferences and scheduled compliance reminders.
+   - Current delivery: driver expiration-reminder preferences and scheduled compliance reminders.
+   - Remaining: additional delivery channels and tenant-configurable reminder schedules.
 4. **Realtime and Service Areas**
    - Privacy and consent contracts.
    - Driver availability, service areas, and location exposure policy.

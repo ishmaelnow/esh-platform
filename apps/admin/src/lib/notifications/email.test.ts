@@ -23,4 +23,19 @@ describe("driver notification email content", () => {
       buildDriverNotificationContent("unknown", {}, "https://driver.eshapp.com"),
     ).toThrow("Unsupported driver notification type.");
   });
+
+  it("builds an expiration reminder with the evidence date", () => {
+    const content = buildDriverNotificationContent(
+      "driver_evidence_expiring_7d",
+      {
+        driver_name: "Test Driver",
+        evidence_type: "reference_document",
+        expires_on: "2026-08-03",
+      },
+      "https://driver.eshapp.com",
+    );
+
+    expect(content.subject).toContain("within 7 days");
+    expect(content.text).toContain("Expiration date: 2026-08-03");
+  });
 });

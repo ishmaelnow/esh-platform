@@ -52,6 +52,7 @@ export function buildDriverNotificationContent(
   const driverName = textValue(payload.driver_name) || "Driver";
   const evidenceType = (textValue(payload.evidence_type) || "document").replaceAll("_", " ");
   const reviewNotes = textValue(payload.review_notes);
+  const expiresOn = textValue(payload.expires_on);
   const portalUrl = new URL("/", driverAppUrl).toString();
   const messages: Record<string, { subject: string; intro: string; detail?: string }> = {
     driver_account_ready: {
@@ -66,6 +67,21 @@ export function buildDriverNotificationContent(
       subject: `Action required for your ${evidenceType}`,
       intro: `${driverName}, your ${evidenceType} needs a replacement.`,
       ...(reviewNotes ? { detail: `Review note: ${reviewNotes}` } : {}),
+    },
+    driver_evidence_expiring_30d: {
+      subject: `Your ${evidenceType} expires soon`,
+      intro: `${driverName}, your ${evidenceType} expires within 30 days.`,
+      ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
+    },
+    driver_evidence_expiring_7d: {
+      subject: `Your ${evidenceType} expires within 7 days`,
+      intro: `${driverName}, your ${evidenceType} expires within 7 days.`,
+      ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
+    },
+    driver_evidence_expired: {
+      subject: `Your ${evidenceType} has expired`,
+      intro: `${driverName}, your ${evidenceType} has expired and requires replacement.`,
+      ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
     },
     driver_activated: {
       subject: "Your ESH driver profile is active",

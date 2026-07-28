@@ -17,6 +17,7 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `INVITATION_BASE_URL`           | Admin server routes | `apps/admin/.env.local` | Admin only           | Public Admin origin used in invitation links; no trailing path.              |
 | `TENANT_ADMIN_BASE_URL`         | Admin server routes | `apps/admin/.env.local` | Admin only           | Public tenant/Rider origin used after invitation acceptance.                 |
 | `NEXT_PUBLIC_DRIVER_APP_URL`    | Admin notifications | `apps/admin/.env.local` | Admin only           | Driver portal origin used in driver notification links.                      |
+| `CRON_SECRET`                   | Admin scheduled job | `apps/admin/.env.local` | Admin only           | Authenticates Vercel's daily driver-notification cron request.               |
 
 `NODE_ENV` is set by Next.js/Vercel and normally should not be entered manually. `NEXT_PUBLIC_APP_ENV` (`local`, `staging`, or `production`) and `LOG_LEVEL` (`debug`, `info`, `warn`, or `error`) have defaults but may be set per app when shared configuration consumes them.
 

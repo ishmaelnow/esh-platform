@@ -447,6 +447,45 @@ export type Database = {
           },
         ]
       }
+      driver_notification_preferences: {
+        Row: {
+          created_at: string
+          driver_profile_id: string
+          expiration_reminders_enabled: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_profile_id: string
+          expiration_reminders_enabled?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_profile_id?: string
+          expiration_reminders_enabled?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_notification_preferences_driver_profile_id_fkey"
+            columns: ["driver_profile_id"]
+            isOneToOne: true
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["driver_profile_id"]
+          },
+          {
+            foreignKeyName: "driver_notification_preferences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       notification_outbox: {
         Row: {
           attempt_count: number
@@ -1202,6 +1241,14 @@ export type Database = {
         }[]
       }
       my_driver_portal_summary: { Args: never; Returns: Json }
+      queue_driver_expiration_notifications: {
+        Args: { target_date?: string }
+        Returns: number
+      }
+      set_my_driver_notification_preferences: {
+        Args: { expiration_reminders_enabled_value: boolean }
+        Returns: boolean
+      }
       submit_my_driver_evidence: {
         Args: {
           target_driver_profile_id: string
