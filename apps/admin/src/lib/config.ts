@@ -16,6 +16,7 @@ export type AdminServerConfig = AdminPublicConfig & {
   };
   redirects: {
     tenantAdminBaseUrl: string;
+    driverAppUrl: string;
   };
 };
 
@@ -28,7 +29,8 @@ type AdminConfigKey =
   | "RESEND_WEBHOOK_SECRET"
   | "INVITATION_FROM_EMAIL"
   | "INVITATION_BASE_URL"
-  | "TENANT_ADMIN_BASE_URL";
+  | "TENANT_ADMIN_BASE_URL"
+  | "NEXT_PUBLIC_DRIVER_APP_URL";
 
 let cachedServerConfig: AdminServerConfig | null = null;
 
@@ -82,6 +84,12 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
   const invitationFromEmail = requiredString(source, "INVITATION_FROM_EMAIL", errors);
   const invitationBaseUrl = requiredUrl(source, "INVITATION_BASE_URL", errors);
   const tenantAdminBaseUrl = requiredUrl(source, "TENANT_ADMIN_BASE_URL", errors);
+  const driverAppUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_DRIVER_APP_URL",
+    "https://driver.eshapp.com",
+    errors,
+  );
 
   assertNoConfigErrors(errors);
 
@@ -100,8 +108,24 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
     },
     redirects: {
       tenantAdminBaseUrl,
+      driverAppUrl,
     },
   };
+}
+
+function optionalUrl(
+  source: AdminConfigSource,
+  key: AdminConfigKey,
+  fallback: string,
+  errors: string[],
+) {
+  const value = source[key]?.trim() || fallback;
+  try {
+    return new URL(value).toString().replace(/\/$/, "");
+  } catch {
+    errors.push(`${key} must be a valid URL`);
+    return "";
+  }
 }
 
 function requiredString(source: AdminConfigSource, key: AdminConfigKey, errors: string[]) {

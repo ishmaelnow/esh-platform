@@ -1,0 +1,26 @@
+import { describe, expect, it } from "vitest";
+import { buildDriverNotificationContent } from "./email";
+
+describe("driver notification email content", () => {
+  it("includes rejection context and the portal link", () => {
+    const content = buildDriverNotificationContent(
+      "driver_evidence_rejected",
+      {
+        driver_name: "Test Driver",
+        evidence_type: "reference_document",
+        review_notes: "Upload a clearer copy.",
+      },
+      "https://driver.eshapp.com",
+    );
+
+    expect(content.subject).toContain("reference document");
+    expect(content.text).toContain("Upload a clearer copy.");
+    expect(content.text).toContain("https://driver.eshapp.com/");
+  });
+
+  it("rejects unknown notification types", () => {
+    expect(() =>
+      buildDriverNotificationContent("unknown", {}, "https://driver.eshapp.com"),
+    ).toThrow("Unsupported driver notification type.");
+  });
+});

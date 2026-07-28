@@ -1,7 +1,11 @@
 import { createServiceSupabaseClient } from "@esh-platform/supabase";
 import { NextResponse } from "next/server";
 import { getAdminServerConfig } from "@/lib/config";
-import { getInvitationDeliveryUpdate, verifyResendWebhook } from "@/lib/invitations/resend-webhook";
+import {
+  getInvitationDeliveryUpdate,
+  getNotificationDeliveryUpdate,
+  verifyResendWebhook,
+} from "@/lib/invitations/resend-webhook";
 
 export async function POST(request: Request) {
   const payload = await request.text();
@@ -21,12 +25,36 @@ export async function POST(request: Request) {
       config.resend.webhookSecret,
     );
     const update = getInvitationDeliveryUpdate(event);
+    const notificationUpdate = getNotificationDeliveryUpdate(event);
 
-    if (!update) {
+    if (!update && !notificationUpdate) {
       return NextResponse.json({ ok: true });
     }
 
     const supabase = createServiceSupabaseClient();
+    if (notificationUpdate) {
+      const { data: current, error: readError } = await supabase
+        .from("notification_outbox")
+        .select("delivery_status")
+        .eq("notification_id", notificationUpdate.notificationId)
+        .maybeSingle();
+      if (readError) throw new Error(readError.message);
+      if (!current || current.delivery_status === "delivered") {
+        return NextResponse.json({ ok: true });
+      }
+      const { error } = await supabase
+        .from("notification_outbox")
+        .update({
+          delivery_status: notificationUpdate.status,
+          delivered_at: notificationUpdate.deliveredAt,
+          delivery_error: notificationUpdate.error,
+        })
+        .eq("notification_id", notificationUpdate.notificationId);
+      if (error) throw new Error(error.message);
+      return NextResponse.json({ ok: true });
+    }
+
+    if (!update) return NextResponse.json({ ok: true });
     const { data: invitation, error: readError } = await supabase
       .from("tenant_invitations")
       .select("email_delivery_status")

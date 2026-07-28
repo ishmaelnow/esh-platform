@@ -447,6 +447,91 @@ export type Database = {
           },
         ]
       }
+      notification_outbox: {
+        Row: {
+          attempt_count: number
+          available_at: string
+          created_at: string
+          dedupe_key: string
+          delivered_at: string | null
+          delivery_error: string | null
+          delivery_status: string
+          driver_profile_id: string | null
+          last_attempted_at: string | null
+          notification_id: string
+          notification_type: string
+          payload: Json
+          person_id: string | null
+          provider_message_id: string | null
+          recipient_email: string
+          sent_at: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          available_at?: string
+          created_at?: string
+          dedupe_key: string
+          delivered_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string
+          driver_profile_id?: string | null
+          last_attempted_at?: string | null
+          notification_id?: string
+          notification_type: string
+          payload?: Json
+          person_id?: string | null
+          provider_message_id?: string | null
+          recipient_email: string
+          sent_at?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          available_at?: string
+          created_at?: string
+          dedupe_key?: string
+          delivered_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string
+          driver_profile_id?: string | null
+          last_attempted_at?: string | null
+          notification_id?: string
+          notification_type?: string
+          payload?: Json
+          person_id?: string | null
+          provider_message_id?: string | null
+          recipient_email?: string
+          sent_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_outbox_driver_profile_id_fkey"
+            columns: ["driver_profile_id"]
+            isOneToOne: false
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["driver_profile_id"]
+          },
+          {
+            foreignKeyName: "notification_outbox_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "person_profiles"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "notification_outbox_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       person_profiles: {
         Row: {
           activated_at: string | null

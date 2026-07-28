@@ -90,3 +90,33 @@ export function getInvitationDeliveryUpdate(event: ResendEmailEvent): {
 
   return null;
 }
+
+export function getNotificationDeliveryUpdate(event: ResendEmailEvent): {
+  notificationId: string;
+  status: "sent" | "delivered" | "failed";
+  deliveredAt: string | null;
+  error: string | null;
+} | null {
+  const notificationId = event.data.tags?.notification_id;
+  if (!notificationId) return null;
+  if (event.type === "email.delivered") {
+    return { notificationId, status: "delivered", deliveredAt: event.created_at, error: null };
+  }
+  if (event.type === "email.delivery_delayed") {
+    return {
+      notificationId,
+      status: "sent",
+      deliveredAt: null,
+      error: "Resend reported that delivery is delayed.",
+    };
+  }
+  if (["email.bounced", "email.failed", "email.suppressed"].includes(event.type)) {
+    return {
+      notificationId,
+      status: "failed",
+      deliveredAt: null,
+      error: `Resend reported ${event.type.replace("email.", "")}.`,
+    };
+  }
+  return null;
+}

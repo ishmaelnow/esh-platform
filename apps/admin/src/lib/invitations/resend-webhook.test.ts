@@ -1,6 +1,10 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { getInvitationDeliveryUpdate, verifyResendWebhook } from "./resend-webhook";
+import {
+  getInvitationDeliveryUpdate,
+  getNotificationDeliveryUpdate,
+  verifyResendWebhook,
+} from "./resend-webhook";
 
 describe("Resend invitation webhooks", () => {
   it("verifies a signed raw payload", () => {
@@ -46,5 +50,20 @@ describe("Resend invitation webhooks", () => {
         data: { tags: { invitation_id: "invitation-id" } },
       }),
     ).toMatchObject({ status: "failed", deliveredAt: null });
+  });
+
+  it("maps notification delivery using its unique tag", () => {
+    expect(
+      getNotificationDeliveryUpdate({
+        type: "email.delivered",
+        created_at: "2026-07-27T20:00:00Z",
+        data: { tags: { notification_id: "notification-id" } },
+      }),
+    ).toEqual({
+      notificationId: "notification-id",
+      status: "delivered",
+      deliveredAt: "2026-07-27T20:00:00Z",
+      error: null,
+    });
   });
 });

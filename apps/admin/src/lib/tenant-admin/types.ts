@@ -13,6 +13,7 @@ import type {
   DriverApplicationRow,
   DriverEvidenceRequirementRow,
   DriverEvidenceRow,
+  NotificationOutboxRow,
 } from "@esh-platform/supabase";
 
 export const foundationTenantRoles = ["tenant_owner", "tenant_admin", "tenant_member"] as const;
@@ -51,6 +52,7 @@ export type TenantSummary = {
   driverApplications: DriverApplicationRow[];
   driverEvidence: DriverEvidenceRow[];
   driverEvidenceRequirements: DriverEvidenceRequirementRow[];
+  notifications: NotificationOutboxRow[];
 };
 
 export type ActiveTenantOption = {

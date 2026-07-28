@@ -44,14 +44,18 @@ Explicitly deferred:
      onboarding, and document-compliance status in the Driver app.
    - Current delivery: drivers can see requirement-level evidence status and submit private
      replacements for administrator review.
-   - Remaining: administrator-triggered activation and evidence-status notifications.
+   - Current delivery: administrator-triggered activation and evidence-status notification outbox,
+     Resend delivery, retry controls, and webhook-tracked delivery state.
+   - Remaining: delivery preferences and scheduled evidence-expiration reminders.
 2. **Fleet and Vehicle Management**
    - Tenant-scoped vehicle identity and lifecycle.
    - Driver/vehicle assignment history.
    - Vehicle evidence and compliance requirements.
 3. **Notification Foundation**
    - Generalize invitation delivery into reusable notification contracts.
-   - Add delivery preferences, templates, retries, and scheduled compliance reminders.
+   - Current delivery: durable driver notification contracts, templates, retries, history, and
+     webhook-tracked delivery.
+   - Remaining: delivery preferences and scheduled compliance reminders.
 4. **Realtime and Service Areas**
    - Privacy and consent contracts.
    - Driver availability, service areas, and location exposure policy.
