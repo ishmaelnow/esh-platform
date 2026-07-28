@@ -259,6 +259,7 @@ export type Database = {
         Row: {
           created_at: string
           evidence_type: string
+          expiration_required: boolean
           required_for_activation: boolean
           tenant_id: string
           updated_at: string
@@ -267,6 +268,7 @@ export type Database = {
         Insert: {
           created_at?: string
           evidence_type: string
+          expiration_required?: boolean
           required_for_activation?: boolean
           tenant_id: string
           updated_at?: string
@@ -275,6 +277,7 @@ export type Database = {
         Update: {
           created_at?: string
           evidence_type?: string
+          expiration_required?: boolean
           required_for_activation?: boolean
           tenant_id?: string
           updated_at?: string

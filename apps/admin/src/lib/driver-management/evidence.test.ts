@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isEvidenceCurrentlyApproved, parseDriverEvidenceReview } from "./evidence";
+import {
+  isEvidenceCurrentlyApproved,
+  parseDriverEvidenceReview,
+  validateEvidenceExpiration,
+} from "./evidence";
 
 describe("driver evidence", () => {
   it("normalizes an approval with an expiration date", () => {
@@ -46,5 +50,20 @@ describe("driver evidence", () => {
         "2026-07-24",
       ),
     ).toBe(true);
+  });
+
+  it("requires a future date only for expiration-managed approvals", () => {
+    const approval = { status: "approved" as const, notes: null, expiresOn: null };
+    expect(() => validateEvidenceExpiration(approval, true, "2026-07-28")).toThrow(
+      /future expiration date/i,
+    );
+    expect(validateEvidenceExpiration(approval, false, "2026-07-28")).toBe(approval);
+    expect(
+      validateEvidenceExpiration(
+        { status: "approved", notes: null, expiresOn: "2026-07-29" },
+        true,
+        "2026-07-28",
+      ),
+    ).toMatchObject({ expiresOn: "2026-07-29" });
   });
 });

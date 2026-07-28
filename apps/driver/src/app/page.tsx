@@ -24,7 +24,8 @@ type DriverSummary = {
 type DriverDocument = {
   evidenceType: string;
   requiredForActivation: boolean;
-  reviewStatus: "missing" | "pending" | "approved" | "rejected" | "expired";
+  expirationRequired: boolean;
+  reviewStatus: "missing" | "pending" | "approved" | "rejected" | "expired" | "expiration_missing";
   reviewNotes: string | null;
   expiresOn: string | null;
   submittedAt: string | null;
@@ -234,15 +235,20 @@ export default function DriverHome() {
                   <div className="document-heading">
                     <strong>{evidenceLabel(document.evidenceType)}</strong>
                     <span className={`status status-${document.reviewStatus}`}>
-                      {document.reviewStatus}
+                      {document.reviewStatus.replaceAll("_", " ")}
                     </span>
                   </div>
                   {document.originalFileName ? <span>{document.originalFileName}</span> : null}
                   {document.expiresOn ? <span>Expires {document.expiresOn}</span> : null}
+                  {document.expirationRequired && !document.expiresOn ? (
+                    <span>Expiration date required after approval</span>
+                  ) : null}
                   {document.reviewNotes ? (
                     <p className="rejection-note">Review note: {document.reviewNotes}</p>
                   ) : null}
-                  {["missing", "rejected", "expired"].includes(document.reviewStatus) ? (
+                  {["missing", "rejected", "expired", "expiration_missing"].includes(
+                    document.reviewStatus,
+                  ) ? (
                     <label className="upload-control">
                       <span>
                         {uploadingType === document.evidenceType

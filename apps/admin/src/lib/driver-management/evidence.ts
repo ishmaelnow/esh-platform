@@ -6,8 +6,13 @@ export const driverEvidenceTypes = [
 
 export type DriverEvidenceType = (typeof driverEvidenceTypes)[number];
 export type DriverEvidenceReviewStatus = "approved" | "rejected";
+export type DriverEvidenceReview = {
+  status: DriverEvidenceReviewStatus;
+  notes: string | null;
+  expiresOn: string | null;
+};
 
-export function parseDriverEvidenceReview(input: Record<string, unknown>) {
+export function parseDriverEvidenceReview(input: Record<string, unknown>): DriverEvidenceReview {
   const status = input.status;
   const notes = typeof input.notes === "string" ? input.notes.trim() : "";
   const expiresOn =
@@ -26,7 +31,7 @@ export function parseDriverEvidenceReview(input: Record<string, unknown>) {
   }
 
   return {
-    status: status satisfies DriverEvidenceReviewStatus,
+    status,
     notes: notes || null,
     expiresOn,
   };
@@ -40,6 +45,21 @@ export function isEvidenceCurrentlyApproved(
     evidence.reviewStatus === "approved" &&
     (evidence.expiresOn === null || evidence.expiresOn >= today)
   );
+}
+
+export function validateEvidenceExpiration(
+  review: DriverEvidenceReview,
+  expirationRequired: boolean,
+  today: string,
+) {
+  if (
+    review.status === "approved" &&
+    expirationRequired &&
+    (!review.expiresOn || review.expiresOn <= today)
+  ) {
+    throw new Error("A future expiration date is required for this evidence type.");
+  }
+  return review;
 }
 
 function isIsoDate(value: string) {

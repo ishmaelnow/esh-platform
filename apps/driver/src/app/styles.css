@@ -194,7 +194,8 @@ h3 {
 
 .status-missing,
 .status-rejected,
-.status-expired {
+.status-expired,
+.status-expiration_missing {
   background: #fee2e2;
   color: #991b1b !important;
 }

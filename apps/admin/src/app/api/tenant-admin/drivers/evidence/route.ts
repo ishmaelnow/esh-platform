@@ -5,7 +5,11 @@ import {
   getBearerToken,
   validateTenantId,
 } from "@/lib/tenant-admin/server";
-import { driverEvidenceTypes, parseDriverEvidenceReview } from "@/lib/driver-management/evidence";
+import {
+  driverEvidenceTypes,
+  parseDriverEvidenceReview,
+  validateEvidenceExpiration,
+} from "@/lib/driver-management/evidence";
 
 const evidenceTypes = new Set<string>(driverEvidenceTypes);
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "application/pdf"]);
@@ -112,9 +116,29 @@ export async function PATCH(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     const tenantId = validateTenantId(body.tenantId);
     const evidenceId = validateTenantId(body.evidenceId);
-    const review = parseDriverEvidenceReview(body);
+    const parsedReview = parseDriverEvidenceReview(body);
 
     const { supabase, personId } = await authorizedClient(request);
+    const { data: evidence, error: evidenceReadError } = await supabase
+      .from("driver_evidence")
+      .select("evidence_type")
+      .eq("tenant_id", tenantId)
+      .eq("evidence_id", evidenceId)
+      .single();
+    if (evidenceReadError || !evidence)
+      return NextResponse.json({ message: "Evidence not found." }, { status: 404 });
+    const { data: requirement, error: requirementError } = await supabase
+      .from("driver_evidence_requirements")
+      .select("expiration_required")
+      .eq("tenant_id", tenantId)
+      .eq("evidence_type", evidence.evidence_type)
+      .maybeSingle();
+    if (requirementError) throw requirementError;
+    const review = validateEvidenceExpiration(
+      parsedReview,
+      requirement?.expiration_required ?? false,
+      new Date().toISOString().slice(0, 10),
+    );
     const { data, error } = await supabase
       .from("driver_evidence")
       .update({

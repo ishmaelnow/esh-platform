@@ -2,7 +2,7 @@
 
 The Admin Vercel project runs `/api/cron/driver-notifications` daily at 14:00 UTC. The job:
 
-1. identifies the latest approved required evidence for each driver;
+1. identifies the latest approved evidence for requirements configured to require expiration;
 2. queues deduplicated reminders when evidence is within 30 days, within 7 days, or expired;
 3. recovers interrupted notification claims and retries eligible failures; and
 4. delivers up to 50 queued notifications through Resend.
@@ -17,6 +17,10 @@ its own reminder lifecycle.
 
 Drivers can disable expiration reminders in the Driver portal. Essential account-ready, rejection,
 approval, and activation notices remain enabled.
+
+`reference_document` requirements default to expiration-required. Personal and vehicle photos default
+to non-expiring. Admin approval requires a future `expires_on` date whenever the tenant requirement
+has `expiration_required` enabled; the API and database trigger both enforce this rule.
 
 ## Production verification
 

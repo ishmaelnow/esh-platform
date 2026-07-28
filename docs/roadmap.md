@@ -48,6 +48,7 @@ Explicitly deferred:
      Resend delivery, retry controls, and webhook-tracked delivery state.
    - Current delivery: driver-controlled expiration reminders at 30 days, 7 days, and expiration,
      with automatic daily delivery and retry.
+   - Current delivery: requirement-driven expiration rules with enforced future dates during review.
    - Remaining: additional delivery channels and tenant-configurable reminder schedules.
 2. **Fleet and Vehicle Management**
    - Tenant-scoped vehicle identity and lifecycle.

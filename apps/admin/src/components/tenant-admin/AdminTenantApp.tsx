@@ -888,10 +888,21 @@ function DriverApplicationsPanel({
       setReviewMessage("A rejection reason is required; no change was made.");
       return;
     }
+    const expirationRequired = evidenceRequiresExpiration(summary, evidenceId);
     const expiresOn =
       status === "approved"
-        ? window.prompt("Optional expiration date (YYYY-MM-DD)")?.trim() || null
+        ? window
+            .prompt(
+              expirationRequired
+                ? "Required future expiration date (YYYY-MM-DD)"
+                : "Optional expiration date (YYYY-MM-DD)",
+            )
+            ?.trim() || null
         : null;
+    if (status === "approved" && expirationRequired && !expiresOn) {
+      setReviewMessage("A future expiration date is required; no change was made.");
+      return;
+    }
     setActiveEvidenceId(evidenceId);
     setReviewMessage(`${status === "approved" ? "Approving" : "Rejecting"} evidence…`);
     try {
@@ -987,12 +998,17 @@ function DriverApplicationsPanel({
                           ({ evidence_type, required_for_activation }) =>
                             evidence_type === item.evidence_type && required_for_activation,
                         );
+                        const expirationRequired = summary.driverEvidenceRequirements.some(
+                          ({ evidence_type, expiration_required }) =>
+                            evidence_type === item.evidence_type && expiration_required,
+                        );
                         return (
                           <div className="onboarding-checklist" key={item.evidence_id}>
                             <strong>{item.evidence_type.replaceAll("_", " ")}</strong>
                             <span>
                               {currentReviewStatus}
                               {required ? " · required" : " · optional"}
+                              {expirationRequired ? " · expiration required" : ""}
                               {item.expires_on ? ` · expires ${item.expires_on}` : ""}
                             </span>
                             {item.review_notes ? <span>{item.review_notes}</span> : null}
@@ -1013,7 +1029,8 @@ function DriverApplicationsPanel({
                               disabled={
                                 !canManageTenant ||
                                 activeEvidenceId === item.evidence_id ||
-                                currentReviewStatus === "approved"
+                                (currentReviewStatus === "approved" &&
+                                  (!expirationRequired || item.expires_on !== null))
                               }
                               onClick={() => void reviewEvidence(item.evidence_id, "approved")}
                               type="button"
@@ -1280,10 +1297,21 @@ function DriversPanel({
       setEvidenceMessage("A rejection reason is required; no change was made.");
       return;
     }
+    const expirationRequired = evidenceRequiresExpiration(summary, evidenceId);
     const expiresOn =
       status === "approved"
-        ? window.prompt("Optional expiration date (YYYY-MM-DD)")?.trim() || null
+        ? window
+            .prompt(
+              expirationRequired
+                ? "Required future expiration date (YYYY-MM-DD)"
+                : "Optional expiration date (YYYY-MM-DD)",
+            )
+            ?.trim() || null
         : null;
+    if (status === "approved" && expirationRequired && !expiresOn) {
+      setEvidenceMessage("A future expiration date is required; no change was made.");
+      return;
+    }
     setActiveEvidenceId(evidenceId);
     setEvidenceMessage(`${status === "approved" ? "Approving" : "Rejecting"} evidence…`);
     try {
@@ -1660,11 +1688,16 @@ function DriversPanel({
                                 const currentReviewStatus =
                                   evidenceReviewOverrides[evidence.evidence_id] ??
                                   evidence.review_status;
+                                const expirationRequired = summary.driverEvidenceRequirements.some(
+                                  ({ evidence_type, expiration_required }) =>
+                                    evidence_type === evidence.evidence_type && expiration_required,
+                                );
                                 return (
                                   <div className="row-actions" key={evidence.evidence_id}>
                                     <span>
                                       {evidence.evidence_type.replaceAll("_", " ")} ·{" "}
                                       {currentReviewStatus}
+                                      {expirationRequired ? " · expiration required" : ""}
                                       {evidence.expires_on
                                         ? ` · expires ${evidence.expires_on}`
                                         : ""}
@@ -1686,7 +1719,8 @@ function DriversPanel({
                                       disabled={
                                         !canManageTenant ||
                                         activeEvidenceId === evidence.evidence_id ||
-                                        currentReviewStatus === "approved"
+                                        (currentReviewStatus === "approved" &&
+                                          (!expirationRequired || evidence.expires_on !== null))
                                       }
                                       onClick={() =>
                                         void reviewDriverEvidence(evidence.evidence_id, "approved")
@@ -1802,6 +1836,14 @@ function DriversPanel({
         <EvidencePreview onClose={() => setPreview(null)} title={preview.title} url={preview.url} />
       ) : null}
     </section>
+  );
+}
+
+function evidenceRequiresExpiration(summary: TenantSummary, evidenceId: string) {
+  const evidence = summary.driverEvidence.find(({ evidence_id }) => evidence_id === evidenceId);
+  return summary.driverEvidenceRequirements.some(
+    ({ evidence_type, expiration_required }) =>
+      evidence_type === evidence?.evidence_type && expiration_required,
   );
 }
 
