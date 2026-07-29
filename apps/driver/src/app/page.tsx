@@ -45,6 +45,23 @@ type DriverDocument = {
   originalFileName: string | null;
 };
 
+type VehicleComplianceDocument = {
+  evidenceType: string;
+  requiredForService: boolean;
+  expirationRequired: boolean;
+  reviewStatus: "missing" | "pending" | "approved" | "rejected" | "expired" | "expiration_missing";
+  reviewNotes: string | null;
+  expiresOn: string | null;
+  submittedAt: string | null;
+  originalFileName: string | null;
+};
+
+type VehicleCompliance = {
+  vehicleId: string;
+  compliant: boolean;
+  documents: VehicleComplianceDocument[];
+};
+
 export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -65,6 +82,7 @@ export default function DriverHome() {
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
   const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
+  const [vehicleCompliance, setVehicleCompliance] = useState<VehicleCompliance | null>(null);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -84,6 +102,12 @@ export default function DriverHome() {
     }
     const nextSummary = result.data as unknown as DriverSummary;
     setSummary(nextSummary);
+    const compliance = await supabase.rpc("my_assigned_vehicle_compliance");
+    setVehicleCompliance(
+      compliance.error || !compliance.data
+        ? null
+        : (compliance.data as unknown as VehicleCompliance),
+    );
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setMessage("Driver account connected.");
@@ -296,6 +320,54 @@ export default function DriverHome() {
     setUploadingType(null);
   }
 
+  async function uploadVehicleEvidence(document: VehicleComplianceDocument, file: File) {
+    if (!summary?.vehicle || !supabase || !session) return;
+    if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
+      setUploadMessage("Vehicle documents must be JPEG, PNG, or PDF.");
+      return;
+    }
+    if (file.size < 1 || file.size > 5_000_000) {
+      setUploadMessage("Choose a vehicle document that is 5MB or smaller.");
+      return;
+    }
+    setUploadingType(`vehicle_${document.evidenceType}`);
+    setUploadMessage(`Uploading ${vehicleEvidenceLabel(document.evidenceType).toLowerCase()}…`);
+    const extension =
+      file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg";
+    const path = [
+      "vehicle-compliance",
+      session.user.id,
+      summary.vehicle.vehicleId,
+      `${document.evidenceType}-${crypto.randomUUID()}.${extension}`,
+    ].join("/");
+    const upload = await supabase.storage
+      .from("driver-application-files")
+      .upload(path, file, { upsert: false });
+    if (upload.error) {
+      setUploadMessage(`Vehicle document upload failed: ${upload.error.message}`);
+      setUploadingType(null);
+      return;
+    }
+    const submission = await supabase.rpc("submit_my_vehicle_evidence", {
+      target_vehicle_id: summary.vehicle.vehicleId,
+      target_evidence_type: document.evidenceType,
+      target_storage_path: path,
+      target_original_file_name: file.name,
+      target_mime_type: file.type,
+      target_size_bytes: file.size,
+    });
+    if (submission.error) {
+      setUploadMessage(`Vehicle document submission failed: ${submission.error.message}`);
+      setUploadingType(null);
+      return;
+    }
+    const compliance = await supabase.rpc("my_assigned_vehicle_compliance");
+    if (!compliance.error && compliance.data)
+      setVehicleCompliance(compliance.data as unknown as VehicleCompliance);
+    setUploadMessage(`${vehicleEvidenceLabel(document.evidenceType)} submitted for review.`);
+    setUploadingType(null);
+  }
+
   async function updateExpirationReminders(enabled: boolean) {
     if (!supabase) return;
     setUpdatingPreferences(true);
@@ -484,6 +556,60 @@ export default function DriverHome() {
                 </article>
               ))}
             </section>
+            {summary.vehicle && vehicleCompliance ? (
+              <section className="documents">
+                <div>
+                  <p className="eyebrow">Vehicle compliance</p>
+                  <h3>{vehicleCompliance.compliant ? "Ready for service" : "Action required"}</h3>
+                </div>
+                <p className="document-help">
+                  Keep the documents for your assigned vehicle current. Replacements are reviewed by
+                  the tenant administrator.
+                </p>
+                {(vehicleCompliance.documents ?? []).map((document) => (
+                  <article className="document-card" key={document.evidenceType}>
+                    <div className="document-heading">
+                      <strong>{vehicleEvidenceLabel(document.evidenceType)}</strong>
+                      <span className={`status status-${document.reviewStatus}`}>
+                        {document.reviewStatus.replaceAll("_", " ")}
+                      </span>
+                    </div>
+                    <span>
+                      {document.requiredForService ? "Required for service" : "Optional"}
+                      {document.expirationRequired ? " · expiration required" : ""}
+                    </span>
+                    {document.originalFileName ? <span>{document.originalFileName}</span> : null}
+                    {document.expiresOn ? <span>Expires {document.expiresOn}</span> : null}
+                    {document.reviewNotes ? (
+                      <p className="rejection-note">Review note: {document.reviewNotes}</p>
+                    ) : null}
+                    {["missing", "rejected", "expired", "expiration_missing"].includes(
+                      document.reviewStatus,
+                    ) ? (
+                      <label className="upload-control">
+                        <span>
+                          {uploadingType === `vehicle_${document.evidenceType}`
+                            ? "Uploading…"
+                            : document.reviewStatus === "missing"
+                              ? "Upload document"
+                              : "Choose replacement"}
+                        </span>
+                        <input
+                          accept="image/jpeg,image/png,application/pdf"
+                          disabled={uploadingType !== null}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) void uploadVehicleEvidence(document, file);
+                            event.target.value = "";
+                          }}
+                          type="file"
+                        />
+                      </label>
+                    ) : null}
+                  </article>
+                ))}
+              </section>
+            ) : null}
             <section className="notification-preferences">
               <div>
                 <p className="eyebrow">Notifications</p>
@@ -521,6 +647,16 @@ function evidenceLabel(evidenceType: string) {
     personal_photo: "Personal photo",
     reference_document: "Reference document",
     vehicle_photo: "Onboarding vehicle evidence",
+  };
+  return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
+}
+
+function vehicleEvidenceLabel(evidenceType: string) {
+  const labels: Record<string, string> = {
+    registration: "Vehicle registration",
+    insurance: "Vehicle insurance",
+    inspection: "Safety inspection",
+    operating_permit: "Operating permit",
   };
   return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
 }

@@ -2010,6 +2010,131 @@ function VehiclesPanel({
     }
   }
 
+  async function updateVehicleRequirement(
+    evidenceType: string,
+    requiredForService: boolean,
+    expirationRequired: boolean,
+  ) {
+    setBusyId(`requirement-${evidenceType}`);
+    try {
+      const response = await fetch("/api/tenant-admin/vehicle-evidence", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          kind: "requirement",
+          tenantId: summary.tenant.tenant_id,
+          evidenceType,
+          requiredForService,
+          expirationRequired,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to update requirement.");
+      setMessage("Vehicle compliance requirement updated.");
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to update requirement.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function uploadVehicleEvidence(vehicleId: string, evidenceType: string, file: File) {
+    const form = new FormData();
+    form.set("tenantId", summary.tenant.tenant_id);
+    form.set("vehicleId", vehicleId);
+    form.set("evidenceType", evidenceType);
+    form.set("file", file);
+    setBusyId(`evidence-${vehicleId}-${evidenceType}`);
+    try {
+      const response = await fetch("/api/tenant-admin/vehicle-evidence", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to upload vehicle evidence.");
+      setMessage("Vehicle evidence submitted for review.");
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to upload vehicle evidence.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function openVehicleEvidence(evidenceId: string, title: string) {
+    const response = await fetch(
+      `/api/tenant-admin/vehicle-evidence?tenantId=${summary.tenant.tenant_id}&evidenceId=${evidenceId}`,
+      {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      },
+    );
+    const result = (await response.json()) as { url?: string; message?: string };
+    if (!response.ok || !result.url) window.alert(result.message ?? "Unable to open evidence.");
+    else setPreview({ title, url: result.url });
+  }
+
+  async function reviewVehicleEvidence(
+    evidenceId: string,
+    evidenceType: string,
+    status: "approved" | "rejected",
+  ) {
+    const notes =
+      status === "rejected"
+        ? window.prompt("Rejection reason required")?.trim()
+        : window.prompt("Optional review note")?.trim();
+    if (status === "rejected" && !notes) return;
+    const expirationRequired =
+      summary.vehicleEvidenceRequirements.find(
+        (requirement) => requirement.evidence_type === evidenceType,
+      )?.expiration_required ?? false;
+    const expiresOn =
+      status === "approved"
+        ? window
+            .prompt(
+              expirationRequired
+                ? "Required future expiration date (YYYY-MM-DD)"
+                : "Optional expiration date (YYYY-MM-DD)",
+            )
+            ?.trim() || null
+        : null;
+    if (status === "approved" && expirationRequired && !expiresOn) {
+      setMessage("A future expiration date is required.");
+      return;
+    }
+    setBusyId(`review-${evidenceId}`);
+    try {
+      const response = await fetch("/api/tenant-admin/vehicle-evidence", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          kind: "review",
+          tenantId: summary.tenant.tenant_id,
+          evidenceId,
+          status,
+          notes: notes || null,
+          expiresOn,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to review vehicle evidence.");
+      setMessage(`Vehicle evidence ${status}.`);
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to review vehicle evidence.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <section className="content-stack">
       <section className="panel">
@@ -2021,6 +2146,49 @@ function VehiclesPanel({
           <p className="notice">Vehicle Management is not enabled for this tenant.</p>
         ) : null}
         {message ? <p className="notice">{message}</p> : null}
+        <section className="notification-summary">
+          <div>
+            <strong>Vehicle compliance requirements</strong>
+            <span>Control which documents are required before future dispatch eligibility.</span>
+          </div>
+          <div className="notification-list">
+            {summary.vehicleEvidenceRequirements.map((requirement) => (
+              <div key={requirement.evidence_type}>
+                <strong>{vehicleEvidenceLabel(requirement.evidence_type)}</strong>
+                <label>
+                  <input
+                    checked={requirement.required_for_service}
+                    disabled={!canManageTenant || busyId !== null}
+                    onChange={(event) =>
+                      void updateVehicleRequirement(
+                        requirement.evidence_type,
+                        event.target.checked,
+                        requirement.expiration_required,
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  Required for service
+                </label>
+                <label>
+                  <input
+                    checked={requirement.expiration_required}
+                    disabled={!canManageTenant || busyId !== null}
+                    onChange={(event) =>
+                      void updateVehicleRequirement(
+                        requirement.evidence_type,
+                        requirement.required_for_service,
+                        event.target.checked,
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  Expiration required
+                </label>
+              </div>
+            ))}
+          </div>
+        </section>
         <button
           aria-expanded={showForm}
           className="secondary-button"
@@ -2097,6 +2265,23 @@ function VehiclesPanel({
                   ({ vehicle_id, ended_at }) =>
                     vehicle_id === vehicle.vehicle_id && ended_at !== null,
                 );
+                const latestEvidence = summary.vehicleEvidenceRequirements.map((requirement) => ({
+                  requirement,
+                  evidence: summary.vehicleEvidence.find(
+                    (candidate) =>
+                      candidate.vehicle_id === vehicle.vehicle_id &&
+                      candidate.evidence_type === requirement.evidence_type,
+                  ),
+                }));
+                const compliant = latestEvidence
+                  .filter(({ requirement }) => requirement.required_for_service)
+                  .every(
+                    ({ requirement, evidence }) =>
+                      evidence?.review_status === "approved" &&
+                      (!requirement.expiration_required || Boolean(evidence.expires_on)) &&
+                      (!evidence.expires_on ||
+                        evidence.expires_on > new Date().toISOString().slice(0, 10)),
+                  );
                 return (
                   <tr key={vehicle.vehicle_id}>
                     <td>
@@ -2123,7 +2308,10 @@ function VehiclesPanel({
                       {vehicle.license_plate}
                       <span>VIN {vehicle.vin}</span>
                     </td>
-                    <td>{vehicle.status}</td>
+                    <td>
+                      {vehicle.status}
+                      <span>Compliance: {compliant ? "satisfied" : "action required"}</span>
+                    </td>
                     <td>
                       {driver ? (
                         <>
@@ -2310,6 +2498,95 @@ function VehiclesPanel({
                             Retire
                           </button>
                         ) : null}
+                        <details>
+                          <summary>Compliance documents</summary>
+                          {latestEvidence.map(({ requirement, evidence }) => {
+                            const expired =
+                              evidence?.expires_on &&
+                              evidence.expires_on <= new Date().toISOString().slice(0, 10);
+                            const displayStatus = expired
+                              ? "expired"
+                              : (evidence?.review_status ?? "missing");
+                            return (
+                              <div className="onboarding-checklist" key={requirement.evidence_type}>
+                                <strong>{vehicleEvidenceLabel(requirement.evidence_type)}</strong>
+                                <span>
+                                  {displayStatus}
+                                  {requirement.required_for_service ? " · required" : " · optional"}
+                                  {requirement.expiration_required ? " · expiration required" : ""}
+                                  {evidence?.expires_on ? ` · expires ${evidence.expires_on}` : ""}
+                                </span>
+                                {evidence ? (
+                                  <>
+                                    <span>
+                                      {evidence.original_file_name} · submitted{" "}
+                                      {new Date(evidence.submitted_at).toLocaleDateString()}
+                                    </span>
+                                    <button
+                                      className="secondary-button"
+                                      onClick={() =>
+                                        void openVehicleEvidence(
+                                          evidence.evidence_id,
+                                          vehicleEvidenceLabel(evidence.evidence_type),
+                                        )
+                                      }
+                                      type="button"
+                                    >
+                                      Open
+                                    </button>
+                                    <button
+                                      className="secondary-button"
+                                      disabled={!canManageTenant || busyId !== null}
+                                      onClick={() =>
+                                        void reviewVehicleEvidence(
+                                          evidence.evidence_id,
+                                          evidence.evidence_type,
+                                          "approved",
+                                        )
+                                      }
+                                      type="button"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      className="danger-button"
+                                      disabled={!canManageTenant || busyId !== null}
+                                      onClick={() =>
+                                        void reviewVehicleEvidence(
+                                          evidence.evidence_id,
+                                          evidence.evidence_type,
+                                          "rejected",
+                                        )
+                                      }
+                                      type="button"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                ) : null}
+                                <label className="secondary-button">
+                                  {evidence ? "Replace document" : "Upload document"}
+                                  <input
+                                    accept="image/jpeg,image/png,application/pdf"
+                                    disabled={!canManageTenant || busyId !== null}
+                                    hidden
+                                    onChange={(event) => {
+                                      const file = event.target.files?.[0];
+                                      if (file)
+                                        void uploadVehicleEvidence(
+                                          vehicle.vehicle_id,
+                                          requirement.evidence_type,
+                                          file,
+                                        );
+                                      event.target.value = "";
+                                    }}
+                                    type="file"
+                                  />
+                                </label>
+                              </div>
+                            );
+                          })}
+                        </details>
                       </div>
                     </td>
                   </tr>
@@ -2335,6 +2612,16 @@ function evidenceRequiresExpiration(summary: TenantSummary, evidenceId: string) 
     ({ evidence_type, expiration_required }) =>
       evidence_type === evidence?.evidence_type && expiration_required,
   );
+}
+
+function vehicleEvidenceLabel(evidenceType: string) {
+  const labels: Record<string, string> = {
+    registration: "Vehicle registration",
+    insurance: "Vehicle insurance",
+    inspection: "Safety inspection",
+    operating_permit: "Operating permit",
+  };
+  return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
 }
 
 function EvidencePreview({

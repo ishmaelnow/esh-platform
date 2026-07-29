@@ -56,7 +56,9 @@ Explicitly deferred:
    - Current delivery: private vehicle photos, tenant-admin lifecycle controls, one active
      driver/vehicle assignment with preserved history, and assigned-vehicle display in the Driver
      portal.
-   - Vehicle evidence and compliance requirements.
+   - Current delivery: configurable registration, insurance, inspection, and operating-permit
+     requirements; assigned-driver uploads; tenant-admin review; derived vehicle compliance; and
+     scheduled expiration reminders.
 3. **Notification Foundation**
    - Generalize invitation delivery into reusable notification contracts.
    - Current delivery: durable driver notification contracts, templates, retries, history, and

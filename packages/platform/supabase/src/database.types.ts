@@ -558,6 +558,99 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_evidence: {
+        Row: {
+          created_at: string
+          evidence_id: string
+          evidence_type: string
+          expires_on: string | null
+          mime_type: string
+          original_file_name: string
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by_person_id: string | null
+          size_bytes: number
+          storage_bucket: string
+          storage_path: string
+          submitted_at: string
+          submitted_by_person_id: string | null
+          tenant_id: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          evidence_id?: string
+          evidence_type: string
+          expires_on?: string | null
+          mime_type: string
+          original_file_name: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by_person_id?: string | null
+          size_bytes: number
+          storage_bucket?: string
+          storage_path: string
+          submitted_at?: string
+          submitted_by_person_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          evidence_id?: string
+          evidence_type?: string
+          expires_on?: string | null
+          mime_type?: string
+          original_file_name?: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by_person_id?: string | null
+          size_bytes?: number
+          storage_bucket?: string
+          storage_path?: string
+          submitted_at?: string
+          submitted_by_person_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_evidence_requirements: {
+        Row: {
+          created_at: string
+          evidence_type: string
+          expiration_required: boolean
+          required_for_service: boolean
+          tenant_id: string
+          updated_at: string
+          updated_by_person_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          evidence_type: string
+          expiration_required?: boolean
+          required_for_service?: boolean
+          tenant_id: string
+          updated_at?: string
+          updated_by_person_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          evidence_type?: string
+          expiration_required?: boolean
+          required_for_service?: boolean
+          tenant_id?: string
+          updated_at?: string
+          updated_by_person_id?: string | null
+        }
+        Relationships: []
+      }
       driver_notification_preferences: {
         Row: {
           created_at: string
@@ -1360,6 +1453,7 @@ export type Database = {
         }[]
       }
       my_driver_portal_summary: { Args: never; Returns: Json }
+      my_assigned_vehicle_compliance: { Args: never; Returns: Json }
       queue_driver_expiration_notifications: {
         Args: { target_date?: string }
         Returns: number
@@ -1388,6 +1482,25 @@ export type Database = {
           target_vehicle_id: string
         }
         Returns: boolean
+      }
+      submit_my_vehicle_evidence: {
+        Args: {
+          target_evidence_type: string
+          target_mime_type: string
+          target_original_file_name: string
+          target_size_bytes: number
+          target_storage_path: string
+          target_vehicle_id: string
+        }
+        Returns: string
+      }
+      vehicle_compliance_satisfied: {
+        Args: { target_vehicle_id: string }
+        Returns: boolean
+      }
+      queue_vehicle_expiration_notifications: {
+        Args: { target_date?: string }
+        Returns: number
       }
       provision_tenant_with_owner_invitation: {
         Args: {

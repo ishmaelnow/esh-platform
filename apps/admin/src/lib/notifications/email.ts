@@ -87,6 +87,30 @@ export function buildDriverNotificationContent(
       subject: "Your ESH driver profile is active",
       intro: `${driverName}, your driver profile is now active.`,
     },
+    vehicle_evidence_approved: {
+      subject: `Your vehicle ${evidenceType} was approved`,
+      intro: `${driverName}, your assigned vehicle's ${evidenceType} has been approved.`,
+    },
+    vehicle_evidence_rejected: {
+      subject: `Action required for your vehicle ${evidenceType}`,
+      intro: `${driverName}, your assigned vehicle's ${evidenceType} needs a replacement.`,
+      ...(reviewNotes ? { detail: `Review note: ${reviewNotes}` } : {}),
+    },
+    vehicle_evidence_expiring_30d: {
+      subject: `Your vehicle ${evidenceType} expires soon`,
+      intro: `${driverName}, your assigned vehicle's ${evidenceType} expires within 30 days.`,
+      ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
+    },
+    vehicle_evidence_expiring_7d: {
+      subject: `Your vehicle ${evidenceType} expires within 7 days`,
+      intro: `${driverName}, your assigned vehicle's ${evidenceType} expires within 7 days.`,
+      ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
+    },
+    vehicle_evidence_expired: {
+      subject: `Your vehicle ${evidenceType} has expired`,
+      intro: `${driverName}, your assigned vehicle's ${evidenceType} has expired and requires replacement.`,
+      ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
+    },
   };
   const message = messages[notificationType];
   if (!message) throw new Error("Unsupported driver notification type.");
