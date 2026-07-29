@@ -86,12 +86,6 @@ export default function DriverHome() {
     setSummary(nextSummary);
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
-    if (nextSummary.vehicle?.photoStorageBucket && nextSummary.vehicle.photoStoragePath) {
-      const photo = await supabase.storage
-        .from(nextSummary.vehicle.photoStorageBucket)
-        .createSignedUrl(nextSummary.vehicle.photoStoragePath, 600);
-      if (photo.data?.signedUrl) setVehiclePhotoUrl(`${photo.data.signedUrl}&v=${Date.now()}`);
-    }
     setMessage("Driver account connected.");
   }, [supabase]);
 
@@ -114,6 +108,42 @@ export default function DriverHome() {
     }
     void activateAndLoad();
   }, [activateAndLoad, session]);
+
+  useEffect(() => {
+    const bucket = summary?.vehicle?.photoStorageBucket;
+    const path = summary?.vehicle?.photoStoragePath;
+    if (!supabase || !session || !bucket || !path) {
+      if (!summary?.vehicle?.hasPhoto) setVehiclePhotoUrl(null);
+      return;
+    }
+
+    const client = supabase;
+    const photoBucket = bucket;
+    const photoPath = path;
+    let active = true;
+    async function refreshVehiclePhoto() {
+      const photo = await client.storage.from(photoBucket).createSignedUrl(photoPath, 600);
+      if (!active) return;
+      if (photo.error || !photo.data?.signedUrl) {
+        setVehiclePhotoError(true);
+        return;
+      }
+      setVehiclePhotoError(false);
+      setVehiclePhotoUrl(`${photo.data.signedUrl}&v=${Date.now()}`);
+    }
+
+    void refreshVehiclePhoto();
+    const interval = window.setInterval(() => void refreshVehiclePhoto(), 8 * 60 * 1000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshVehiclePhoto();
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [session, summary?.vehicle, supabase]);
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
