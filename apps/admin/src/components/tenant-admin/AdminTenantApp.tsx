@@ -868,6 +868,7 @@ function DriverApplicationsPanel({
   const [reviewOverrides, setReviewOverrides] = useState<Record<string, "approved" | "rejected">>(
     {},
   );
+  const [expirationOverrides, setExpirationOverrides] = useState<Record<string, string | null>>({});
 
   async function viewEvidence(evidenceId: string, title: string) {
     const response = await fetch(
@@ -923,6 +924,7 @@ function DriverApplicationsPanel({
       const result = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) throw new Error(result?.message ?? "Unable to review evidence.");
       setReviewOverrides((current) => ({ ...current, [evidenceId]: status }));
+      setExpirationOverrides((current) => ({ ...current, [evidenceId]: expiresOn }));
       setReviewMessage(`Evidence ${status}.`);
       onRefresh();
     } catch (error) {
@@ -994,6 +996,10 @@ function DriverApplicationsPanel({
                       {evidence.map((item) => {
                         const currentReviewStatus =
                           reviewOverrides[item.evidence_id] ?? item.review_status;
+                        const currentExpiration =
+                          item.evidence_id in expirationOverrides
+                            ? expirationOverrides[item.evidence_id]
+                            : item.expires_on;
                         const required = summary.driverEvidenceRequirements.some(
                           ({ evidence_type, required_for_activation }) =>
                             evidence_type === item.evidence_type && required_for_activation,
@@ -1009,7 +1015,11 @@ function DriverApplicationsPanel({
                               {currentReviewStatus}
                               {required ? " · required" : " · optional"}
                               {expirationRequired ? " · expiration required" : ""}
-                              {item.expires_on ? ` · expires ${item.expires_on}` : ""}
+                              {currentExpiration ? ` · expires ${currentExpiration}` : ""}
+                            </span>
+                            <span>
+                              {item.original_file_name} · submitted{" "}
+                              {new Date(item.submitted_at).toLocaleDateString()}
                             </span>
                             {item.review_notes ? <span>{item.review_notes}</span> : null}
                             <button
@@ -1030,7 +1040,7 @@ function DriverApplicationsPanel({
                                 !canManageTenant ||
                                 activeEvidenceId === item.evidence_id ||
                                 (currentReviewStatus === "approved" &&
-                                  (!expirationRequired || item.expires_on !== null))
+                                  (!expirationRequired || currentExpiration !== null))
                               }
                               onClick={() => void reviewEvidence(item.evidence_id, "approved")}
                               type="button"
@@ -1114,6 +1124,9 @@ function DriversPanel({
   const [evidenceMessage, setEvidenceMessage] = useState<string | null>(null);
   const [evidenceReviewOverrides, setEvidenceReviewOverrides] = useState<
     Record<string, "approved" | "rejected">
+  >({});
+  const [evidenceExpirationOverrides, setEvidenceExpirationOverrides] = useState<
+    Record<string, string | null>
   >({});
   const [evidenceUploadDriverId, setEvidenceUploadDriverId] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
@@ -1332,6 +1345,7 @@ function DriversPanel({
       const result = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) throw new Error(result?.message ?? "Unable to review evidence.");
       setEvidenceReviewOverrides((current) => ({ ...current, [evidenceId]: status }));
+      setEvidenceExpirationOverrides((current) => ({ ...current, [evidenceId]: expiresOn }));
       setEvidenceMessage(`Evidence ${status}.`);
       onRefresh();
     } catch (error) {
@@ -1688,6 +1702,16 @@ function DriversPanel({
                                 const currentReviewStatus =
                                   evidenceReviewOverrides[evidence.evidence_id] ??
                                   evidence.review_status;
+                                const currentExpiration =
+                                  evidence.evidence_id in evidenceExpirationOverrides
+                                    ? evidenceExpirationOverrides[evidence.evidence_id]
+                                    : evidence.expires_on;
+                                const isLatestEvidence =
+                                  summary.driverEvidence.find(
+                                    (candidate) =>
+                                      candidate.driver_profile_id === evidence.driver_profile_id &&
+                                      candidate.evidence_type === evidence.evidence_type,
+                                  )?.evidence_id === evidence.evidence_id;
                                 const expirationRequired = summary.driverEvidenceRequirements.some(
                                   ({ evidence_type, expiration_required }) =>
                                     evidence_type === evidence.evidence_type && expiration_required,
@@ -1697,10 +1721,13 @@ function DriversPanel({
                                     <span>
                                       {evidence.evidence_type.replaceAll("_", " ")} ·{" "}
                                       {currentReviewStatus}
+                                      {isLatestEvidence ? " · current upload" : " · older upload"}
                                       {expirationRequired ? " · expiration required" : ""}
-                                      {evidence.expires_on
-                                        ? ` · expires ${evidence.expires_on}`
-                                        : ""}
+                                      {currentExpiration ? ` · expires ${currentExpiration}` : ""}
+                                    </span>
+                                    <span>
+                                      {evidence.original_file_name} · submitted{" "}
+                                      {new Date(evidence.submitted_at).toLocaleDateString()}
                                     </span>
                                     <button
                                       className="secondary-button"
@@ -1720,7 +1747,7 @@ function DriversPanel({
                                         !canManageTenant ||
                                         activeEvidenceId === evidence.evidence_id ||
                                         (currentReviewStatus === "approved" &&
-                                          (!expirationRequired || evidence.expires_on !== null))
+                                          (!expirationRequired || currentExpiration !== null))
                                       }
                                       onClick={() =>
                                         void reviewDriverEvidence(evidence.evidence_id, "approved")
