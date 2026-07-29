@@ -450,6 +450,114 @@ export type Database = {
           },
         ]
       }
+      driver_vehicle_assignments: {
+        Row: {
+          assigned_at: string
+          assignment_id: string
+          assignment_notes: string | null
+          created_at: string
+          created_by_person_id: string
+          driver_profile_id: string
+          ended_at: string | null
+          ended_by_person_id: string | null
+          tenant_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assignment_id?: string
+          assignment_notes?: string | null
+          created_at?: string
+          created_by_person_id: string
+          driver_profile_id: string
+          ended_at?: string | null
+          ended_by_person_id?: string | null
+          tenant_id: string
+          vehicle_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assignment_id?: string
+          assignment_notes?: string | null
+          created_at?: string
+          created_by_person_id?: string
+          driver_profile_id?: string
+          ended_at?: string | null
+          ended_by_person_id?: string | null
+          tenant_id?: string
+          vehicle_id?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          color: string
+          created_at: string
+          created_by_person_id: string
+          license_plate: string
+          make: string
+          model: string
+          model_year: number
+          photo_mime_type: string | null
+          photo_original_file_name: string | null
+          photo_size_bytes: number | null
+          photo_storage_bucket: string | null
+          photo_storage_path: string | null
+          status: string
+          status_reason: string | null
+          tenant_id: string
+          updated_at: string
+          updated_by_person_id: string
+          vehicle_id: string
+          vehicle_number: string
+          vin: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          created_by_person_id: string
+          license_plate: string
+          make: string
+          model: string
+          model_year: number
+          photo_mime_type?: string | null
+          photo_original_file_name?: string | null
+          photo_size_bytes?: number | null
+          photo_storage_bucket?: string | null
+          photo_storage_path?: string | null
+          status?: string
+          status_reason?: string | null
+          tenant_id: string
+          updated_at?: string
+          updated_by_person_id: string
+          vehicle_id?: string
+          vehicle_number: string
+          vin: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by_person_id?: string
+          license_plate?: string
+          make?: string
+          model?: string
+          model_year?: number
+          photo_mime_type?: string | null
+          photo_original_file_name?: string | null
+          photo_size_bytes?: number | null
+          photo_storage_bucket?: string | null
+          photo_storage_path?: string | null
+          status?: string
+          status_reason?: string | null
+          tenant_id?: string
+          updated_at?: string
+          updated_by_person_id?: string
+          vehicle_id?: string
+          vehicle_number?: string
+          vin?: string
+        }
+        Relationships: []
+      }
       driver_notification_preferences: {
         Row: {
           created_at: string
@@ -1189,6 +1297,14 @@ export type Database = {
         Returns: boolean
       }
       can_read_driver_management: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      can_manage_vehicle_management: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      can_read_vehicle_management: {
         Args: { target_tenant_id: string }
         Returns: boolean
       }

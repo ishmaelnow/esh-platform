@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createIsolatedBrowserSupabaseClient,
@@ -19,6 +20,19 @@ type DriverSummary = {
   notificationPreferences: {
     expirationRemindersEnabled: boolean;
   };
+  vehicle: {
+    vehicleId: string;
+    vehicleNumber: string;
+    make: string;
+    model: string;
+    modelYear: number;
+    color: string;
+    licensePlate: string;
+    status: string;
+    hasPhoto: boolean;
+    photoStorageBucket: string | null;
+    photoStoragePath: string | null;
+  } | null;
 };
 
 type DriverDocument = {
@@ -50,6 +64,7 @@ export default function DriverHome() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
+  const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -67,7 +82,15 @@ export default function DriverHome() {
       setMessage(result.error?.message ?? "Driver profile is unavailable.");
       return;
     }
-    setSummary(result.data as unknown as DriverSummary);
+    const nextSummary = result.data as unknown as DriverSummary;
+    setSummary(nextSummary);
+    setVehiclePhotoUrl(null);
+    if (nextSummary.vehicle?.photoStorageBucket && nextSummary.vehicle.photoStoragePath) {
+      const photo = await supabase.storage
+        .from(nextSummary.vehicle.photoStorageBucket)
+        .createSignedUrl(nextSummary.vehicle.photoStoragePath, 600);
+      if (photo.data?.signedUrl) setVehiclePhotoUrl(photo.data.signedUrl);
+    }
     setMessage("Driver account connected.");
   }, [supabase]);
 
@@ -220,6 +243,51 @@ export default function DriverHome() {
                 <dd>{summary.documentCompliance ? "satisfied" : "pending"}</dd>
               </div>
             </dl>
+            <section className="assigned-vehicle">
+              <div>
+                <p className="eyebrow">Assigned vehicle</p>
+                <h3>
+                  {summary.vehicle
+                    ? `${summary.vehicle.modelYear} ${summary.vehicle.make} ${summary.vehicle.model}`
+                    : "No vehicle assigned"}
+                </h3>
+              </div>
+              {summary.vehicle ? (
+                <>
+                  {vehiclePhotoUrl ? (
+                    <Image
+                      alt={`${summary.vehicle.make} ${summary.vehicle.model}`}
+                      height={675}
+                      src={vehiclePhotoUrl}
+                      unoptimized
+                      width={1200}
+                    />
+                  ) : null}
+                  <dl>
+                    <div>
+                      <dt>Fleet number</dt>
+                      <dd>{summary.vehicle.vehicleNumber}</dd>
+                    </div>
+                    <div>
+                      <dt>Color</dt>
+                      <dd>{summary.vehicle.color}</dd>
+                    </div>
+                    <div>
+                      <dt>License plate</dt>
+                      <dd>{summary.vehicle.licensePlate}</dd>
+                    </div>
+                    <div>
+                      <dt>Status</dt>
+                      <dd>{summary.vehicle.status}</dd>
+                    </div>
+                  </dl>
+                </>
+              ) : (
+                <p className="document-help">
+                  Your tenant administrator has not assigned a vehicle yet.
+                </p>
+              )}
+            </section>
             <section className="documents">
               <div>
                 <p className="eyebrow">Documents</p>

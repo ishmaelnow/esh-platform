@@ -15,7 +15,7 @@ remain independent of transportation-specific workflows.
 
 ## Current Milestone: Driver Evidence and Compliance MVP
 
-Status: **implemented in the repository; migration and production rollout pending**.
+Status: **implemented and rolled out to production**.
 
 Scope:
 
@@ -53,6 +53,9 @@ Explicitly deferred:
 2. **Fleet and Vehicle Management**
    - Tenant-scoped vehicle identity and lifecycle.
    - Driver/vehicle assignment history.
+   - Current delivery: private vehicle photos, tenant-admin lifecycle controls, one active
+     driver/vehicle assignment with preserved history, and assigned-vehicle display in the Driver
+     portal.
    - Vehicle evidence and compliance requirements.
 3. **Notification Foundation**
    - Generalize invitation delivery into reusable notification contracts.

@@ -37,6 +37,7 @@ type ViewKey =
   | "capabilities"
   | "audit"
   | "drivers"
+  | "vehicles"
   | "applications";
 
 const views: { key: ViewKey; label: string }[] = [
@@ -48,6 +49,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "capabilities", label: "Capabilities" },
   { key: "audit", label: "Audit" },
   { key: "drivers", label: "Drivers" },
+  { key: "vehicles", label: "Vehicles" },
   { key: "applications", label: "Applications" },
 ];
 
@@ -401,6 +403,14 @@ function ResolvedWorkspace({
       {activeView === "audit" ? <AuditPanel summary={summary} /> : null}
       {activeView === "drivers" ? (
         <DriversPanel
+          canManageTenant={canManageTenant}
+          onRefresh={onRefresh}
+          session={session}
+          summary={summary}
+        />
+      ) : null}
+      {activeView === "vehicles" ? (
+        <VehiclesPanel
           canManageTenant={canManageTenant}
           onRefresh={onRefresh}
           session={session}
@@ -1857,6 +1867,415 @@ function DriversPanel({
         </div>
         {summary.drivers.length === 0 ? (
           <EmptyState message="No drivers have been created." />
+        ) : null}
+      </section>
+      {preview ? (
+        <EvidencePreview onClose={() => setPreview(null)} title={preview.title} url={preview.url} />
+      ) : null}
+    </section>
+  );
+}
+
+function VehiclesPanel({
+  canManageTenant,
+  onRefresh,
+  session,
+  summary,
+}: {
+  canManageTenant: boolean;
+  onRefresh: () => void;
+  session: SupabaseAuthSession;
+  summary: TenantSummary;
+}) {
+  const enabled = summary.capabilities.some(
+    ({ capability_key, enabled }) => capability_key === "vehicle.management" && enabled,
+  );
+  const [showForm, setShowForm] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
+
+  async function createVehicle(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setBusyId("create");
+    setMessage("Creating vehicle and securing its photo…");
+    try {
+      const response = await fetch("/api/tenant-admin/vehicles", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: new FormData(form),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to create vehicle.");
+      form.reset();
+      setShowForm(false);
+      setMessage("Vehicle created.");
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to create vehicle.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function updateVehicle(
+    vehicleId: string,
+    body: Record<string, string | null>,
+    successMessage: string,
+  ) {
+    setBusyId(vehicleId);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/tenant-admin/vehicles", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tenantId: summary.tenant.tenant_id, vehicleId, ...body }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to update vehicle.");
+      setMessage(successMessage);
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to update vehicle.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function openPhoto(vehicleId: string, title: string) {
+    const response = await fetch(
+      `/api/tenant-admin/vehicles?tenantId=${summary.tenant.tenant_id}&vehicleId=${vehicleId}`,
+      { headers: { Authorization: `Bearer ${session.access_token}` } },
+    );
+    const result = (await response.json()) as { url?: string; message?: string };
+    if (!response.ok || !result.url) window.alert(result.message ?? "Unable to open photo.");
+    else setPreview({ title, url: result.url });
+  }
+
+  async function replacePhoto(vehicleId: string, photo: File) {
+    const form = new FormData();
+    form.set("tenantId", summary.tenant.tenant_id);
+    form.set("vehicleId", vehicleId);
+    form.set("photo", photo);
+    setBusyId(vehicleId);
+    setMessage("Replacing vehicle photo…");
+    try {
+      const response = await fetch("/api/tenant-admin/vehicles", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to replace vehicle photo.");
+      setMessage("Vehicle photo replaced.");
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to replace vehicle photo.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <section className="content-stack">
+      <section className="panel">
+        <PanelHeader
+          title="Vehicles"
+          description="Manage the tenant fleet, vehicle photos, lifecycle, and driver assignments."
+        />
+        {!enabled ? (
+          <p className="notice">Vehicle Management is not enabled for this tenant.</p>
+        ) : null}
+        {message ? <p className="notice">{message}</p> : null}
+        <button
+          aria-expanded={showForm}
+          className="secondary-button"
+          disabled={!enabled || !canManageTenant}
+          onClick={() => setShowForm((current) => !current)}
+          type="button"
+        >
+          {showForm ? "Close vehicle form" : "Add vehicle"}
+        </button>
+        {showForm ? (
+          <form className="settings-grid" onSubmit={(event) => void createVehicle(event)}>
+            <input name="tenantId" type="hidden" value={summary.tenant.tenant_id} />
+            {[
+              ["vehicleNumber", "Vehicle number", "VH-001"],
+              ["make", "Make", "Toyota"],
+              ["model", "Model", "Sienna"],
+              ["color", "Color", "Silver"],
+              ["licensePlate", "License plate", "ABC123"],
+              ["vin", "VIN (17 characters)", "1HGBH41JXMN109186"],
+            ].map(([name, label, placeholder]) => (
+              <label key={name}>
+                {label}
+                <input disabled={busyId !== null} name={name} placeholder={placeholder} required />
+              </label>
+            ))}
+            <label>
+              Model year
+              <input
+                disabled={busyId !== null}
+                max="2100"
+                min="1900"
+                name="modelYear"
+                required
+                type="number"
+              />
+            </label>
+            <label>
+              Vehicle photo
+              <input
+                accept="image/jpeg,image/png"
+                disabled={busyId !== null}
+                name="photo"
+                required
+                type="file"
+              />
+            </label>
+            <button className="primary-button" disabled={busyId !== null} type="submit">
+              {busyId === "create" ? "Creating…" : "Create vehicle"}
+            </button>
+          </form>
+        ) : null}
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Vehicle</th>
+                <th>Identification</th>
+                <th>Status</th>
+                <th>Driver assignment</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.vehicles.map((vehicle) => {
+                const assignment = summary.driverVehicleAssignments.find(
+                  ({ vehicle_id, ended_at }) =>
+                    vehicle_id === vehicle.vehicle_id && ended_at === null,
+                );
+                const driver = summary.drivers.find(
+                  ({ driver_profile_id }) => driver_profile_id === assignment?.driver_profile_id,
+                );
+                const pastAssignments = summary.driverVehicleAssignments.filter(
+                  ({ vehicle_id, ended_at }) =>
+                    vehicle_id === vehicle.vehicle_id && ended_at !== null,
+                );
+                return (
+                  <tr key={vehicle.vehicle_id}>
+                    <td>
+                      <strong>
+                        {vehicle.model_year} {vehicle.make} {vehicle.model}
+                      </strong>
+                      <span>
+                        {vehicle.color} · #{vehicle.vehicle_number}
+                      </span>
+                    </td>
+                    <td>
+                      {vehicle.license_plate}
+                      <span>VIN {vehicle.vin}</span>
+                    </td>
+                    <td>{vehicle.status}</td>
+                    <td>
+                      {driver ? (
+                        <>
+                          {driver.display_name}
+                          <span>Driver #{driver.driver_number}</span>
+                        </>
+                      ) : (
+                        "Unassigned"
+                      )}
+                      {pastAssignments.length > 0 ? (
+                        <details>
+                          <summary>{pastAssignments.length} previous assignment(s)</summary>
+                          {pastAssignments.map((past) => {
+                            const pastDriver = summary.drivers.find(
+                              ({ driver_profile_id }) =>
+                                driver_profile_id === past.driver_profile_id,
+                            );
+                            return (
+                              <span key={past.assignment_id}>
+                                {pastDriver?.display_name ?? "Unknown driver"} ·{" "}
+                                {new Date(past.assigned_at).toLocaleDateString()}–{" "}
+                                {past.ended_at
+                                  ? new Date(past.ended_at).toLocaleDateString()
+                                  : "present"}
+                              </span>
+                            );
+                          })}
+                        </details>
+                      ) : null}
+                    </td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          className="secondary-button"
+                          onClick={() =>
+                            void openPhoto(vehicle.vehicle_id, `${vehicle.make} ${vehicle.model}`)
+                          }
+                          type="button"
+                        >
+                          View photo
+                        </button>
+                        <label className="secondary-button">
+                          Replace photo
+                          <input
+                            accept="image/jpeg,image/png"
+                            disabled={!canManageTenant || busyId !== null}
+                            hidden
+                            onChange={(event) => {
+                              const photo = event.target.files?.[0];
+                              if (photo) void replacePhoto(vehicle.vehicle_id, photo);
+                              event.target.value = "";
+                            }}
+                            type="file"
+                          />
+                        </label>
+                        {vehicle.status === "draft" ? (
+                          <button
+                            className="secondary-button"
+                            disabled={!canManageTenant || busyId !== null}
+                            onClick={() =>
+                              void updateVehicle(
+                                vehicle.vehicle_id,
+                                { kind: "status", status: "active", reason: null },
+                                "Vehicle activated.",
+                              )
+                            }
+                            type="button"
+                          >
+                            Activate
+                          </button>
+                        ) : null}
+                        {vehicle.status === "active" && !assignment ? (
+                          <label>
+                            Assign driver
+                            <select
+                              defaultValue=""
+                              disabled={!canManageTenant || busyId !== null}
+                              onChange={(event) => {
+                                if (event.target.value)
+                                  void updateVehicle(
+                                    vehicle.vehicle_id,
+                                    {
+                                      kind: "assign",
+                                      driverProfileId: event.target.value,
+                                      notes: null,
+                                    },
+                                    "Vehicle assigned.",
+                                  );
+                              }}
+                            >
+                              <option value="">Select driver</option>
+                              {summary.drivers
+                                .filter(
+                                  (candidate) =>
+                                    !["suspended", "inactive", "archived"].includes(
+                                      candidate.status,
+                                    ) &&
+                                    !summary.driverVehicleAssignments.some(
+                                      (existing) =>
+                                        existing.driver_profile_id ===
+                                          candidate.driver_profile_id && existing.ended_at === null,
+                                    ),
+                                )
+                                .map((candidate) => (
+                                  <option
+                                    key={candidate.driver_profile_id}
+                                    value={candidate.driver_profile_id}
+                                  >
+                                    {candidate.display_name} (#{candidate.driver_number})
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                        ) : null}
+                        {assignment ? (
+                          <button
+                            className="secondary-button"
+                            disabled={!canManageTenant || busyId !== null}
+                            onClick={() =>
+                              void updateVehicle(
+                                vehicle.vehicle_id,
+                                {
+                                  kind: "unassign",
+                                  assignmentId: assignment.assignment_id,
+                                },
+                                "Vehicle unassigned; history preserved.",
+                              )
+                            }
+                            type="button"
+                          >
+                            Unassign
+                          </button>
+                        ) : null}
+                        {vehicle.status === "active" ? (
+                          <button
+                            className="danger-button"
+                            disabled={!canManageTenant || busyId !== null || Boolean(assignment)}
+                            onClick={() => {
+                              const reason = window.prompt("Suspension reason required")?.trim();
+                              if (reason)
+                                void updateVehicle(
+                                  vehicle.vehicle_id,
+                                  { kind: "status", status: "suspended", reason },
+                                  "Vehicle suspended.",
+                                );
+                            }}
+                            type="button"
+                          >
+                            Suspend
+                          </button>
+                        ) : null}
+                        {vehicle.status === "suspended" ? (
+                          <button
+                            className="secondary-button"
+                            disabled={!canManageTenant || busyId !== null}
+                            onClick={() =>
+                              void updateVehicle(
+                                vehicle.vehicle_id,
+                                { kind: "status", status: "active", reason: null },
+                                "Vehicle reactivated.",
+                              )
+                            }
+                            type="button"
+                          >
+                            Reactivate
+                          </button>
+                        ) : null}
+                        {!assignment && vehicle.status !== "retired" ? (
+                          <button
+                            className="danger-button"
+                            disabled={!canManageTenant || busyId !== null}
+                            onClick={() => {
+                              const reason = window.prompt("Retirement reason required")?.trim();
+                              if (reason)
+                                void updateVehicle(
+                                  vehicle.vehicle_id,
+                                  { kind: "status", status: "retired", reason },
+                                  "Vehicle retired.",
+                                );
+                            }}
+                            type="button"
+                          >
+                            Retire
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {summary.vehicles.length === 0 ? (
+          <EmptyState message="No vehicles have been created." />
         ) : null}
       </section>
       {preview ? (

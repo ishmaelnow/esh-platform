@@ -20,6 +20,8 @@ export async function loadTenantSummary(
     evidenceResult,
     evidenceRequirementsResult,
     notificationsResult,
+    vehiclesResult,
+    assignmentsResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -76,6 +78,12 @@ export async function loadTenantSummary(
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
       .limit(20),
+    supabase.from("vehicles").select("*").eq("tenant_id", tenantId).order("created_at"),
+    supabase
+      .from("driver_vehicle_assignments")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("assigned_at", { ascending: false }),
   ]);
 
   if (tenantResult.error) {
@@ -129,6 +137,13 @@ export async function loadTenantSummary(
     !notificationsResult.error.message.includes("notification_outbox")
   )
     throw notificationsResult.error;
+  if (vehiclesResult.error && !vehiclesResult.error.message.includes("vehicles"))
+    throw vehiclesResult.error;
+  if (
+    assignmentsResult.error &&
+    !assignmentsResult.error.message.includes("driver_vehicle_assignments")
+  )
+    throw assignmentsResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -151,6 +166,8 @@ export async function loadTenantSummary(
     driverEvidence: evidenceResult.data ?? [],
     driverEvidenceRequirements: evidenceRequirementsResult.data ?? [],
     notifications: notificationsResult.data ?? [],
+    vehicles: vehiclesResult.data ?? [],
+    driverVehicleAssignments: assignmentsResult.data ?? [],
   };
 }
 

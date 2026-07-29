@@ -538,6 +538,29 @@ function PlatformProvisioningPanel({
                                 : "Enable drivers"}
                             </button>
                           ) : null}
+                          {item.capabilities.some(
+                            ({ capability_key }) => capability_key === "vehicle.management",
+                          ) ? (
+                            <button
+                              className="secondary-button"
+                              type="button"
+                              onClick={() =>
+                                void handleCapability(
+                                  item.tenant.tenant_id,
+                                  "vehicle.management",
+                                  !item.capabilities.find(
+                                    ({ capability_key }) => capability_key === "vehicle.management",
+                                  )?.enabled,
+                                )
+                              }
+                            >
+                              {item.capabilities.find(
+                                ({ capability_key }) => capability_key === "vehicle.management",
+                              )?.enabled
+                                ? "Disable vehicles"
+                                : "Enable vehicles"}
+                            </button>
+                          ) : null}
                         </span>
                       </td>
                       <td>

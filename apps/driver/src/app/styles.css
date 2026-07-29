@@ -124,11 +124,24 @@ h3 {
 }
 
 .documents,
+.assigned-vehicle,
 .notification-preferences {
   border-top: 1px solid #e5e7eb;
   display: grid;
   gap: 16px;
   padding-top: 24px;
+}
+
+.assigned-vehicle {
+  display: grid;
+  gap: 16px;
+}
+
+.assigned-vehicle img {
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  object-fit: cover;
+  width: 100%;
 }
 
 .notification-preferences label {
