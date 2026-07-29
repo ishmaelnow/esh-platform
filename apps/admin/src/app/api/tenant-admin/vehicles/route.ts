@@ -74,20 +74,23 @@ export async function POST(request: Request) {
     if (!Number.isInteger(modelYear) || modelYear < 1900 || modelYear > 2100) {
       throw new Error("Enter a valid model year.");
     }
-    if (!(photo instanceof File) || !imageTypes.has(photo.type) || photo.size < 1) {
-      throw new Error("A JPEG or PNG vehicle photo is required.");
-    }
-    if (photo.size > 5_000_000) throw new Error("Vehicle photo must be 5MB or smaller.");
+    const hasPhoto = photo instanceof File && photo.size > 0;
+    if (hasPhoto && !imageTypes.has(photo.type))
+      throw new Error("Vehicle photo must be JPEG or PNG.");
+    if (hasPhoto && photo.size > 5_000_000)
+      throw new Error("Vehicle photo must be 5MB or smaller.");
 
     const { supabase, personId } = await authorize(request, tenantId);
     const vehicleId = crypto.randomUUID();
-    const extension = photo.type === "image/png" ? "png" : "jpg";
-    uploadedPath = `${tenantId}/vehicles/${vehicleId}/photo-${crypto.randomUUID()}.${extension}`;
-    const service = createServiceSupabaseClient();
-    const { error: uploadError } = await service.storage
-      .from("driver-application-files")
-      .upload(uploadedPath, photo, { upsert: false });
-    if (uploadError) throw uploadError;
+    if (hasPhoto) {
+      const extension = photo.type === "image/png" ? "png" : "jpg";
+      uploadedPath = `${tenantId}/vehicles/${vehicleId}/photo-${crypto.randomUUID()}.${extension}`;
+      const service = createServiceSupabaseClient();
+      const { error: uploadError } = await service.storage
+        .from("driver-application-files")
+        .upload(uploadedPath, photo, { upsert: false });
+      if (uploadError) throw uploadError;
+    }
     const { error } = await supabase.from("vehicles").insert({
       vehicle_id: vehicleId,
       tenant_id: tenantId,
@@ -98,16 +101,19 @@ export async function POST(request: Request) {
       color,
       license_plate: licensePlate,
       vin,
-      photo_storage_bucket: "driver-application-files",
+      photo_storage_bucket: hasPhoto ? "driver-application-files" : null,
       photo_storage_path: uploadedPath,
-      photo_original_file_name: photo.name,
-      photo_mime_type: photo.type,
-      photo_size_bytes: photo.size,
+      photo_original_file_name: hasPhoto ? photo.name : null,
+      photo_mime_type: hasPhoto ? photo.type : null,
+      photo_size_bytes: hasPhoto ? photo.size : null,
       created_by_person_id: personId,
       updated_by_person_id: personId,
     });
     if (error) {
-      await service.storage.from("driver-application-files").remove([uploadedPath]);
+      if (uploadedPath)
+        await createServiceSupabaseClient()
+          .storage.from("driver-application-files")
+          .remove([uploadedPath]);
       throw error;
     }
     return NextResponse.json({ ok: true, vehicleId });

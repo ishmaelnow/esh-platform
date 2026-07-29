@@ -1379,6 +1379,16 @@ export type Database = {
         }
         Returns: string
       }
+      submit_my_vehicle_photo: {
+        Args: {
+          target_mime_type: string
+          target_original_file_name: string
+          target_size_bytes: number
+          target_storage_path: string
+          target_vehicle_id: string
+        }
+        Returns: boolean
+      }
       provision_tenant_with_owner_invitation: {
         Args: {
           correlation_id: string

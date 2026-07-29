@@ -69,7 +69,7 @@ export function AdminTenantApp() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(
-    async (activeSession: SupabaseAuthSession | null) => {
+    async (activeSession: SupabaseAuthSession | null, showLoading = true) => {
       if (!supabase) {
         return;
       }
@@ -81,7 +81,7 @@ export function AdminTenantApp() {
         return;
       }
 
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
 
       try {
@@ -98,7 +98,7 @@ export function AdminTenantApp() {
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Unable to load tenant administration.");
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     },
     [supabase],
@@ -226,7 +226,7 @@ export function AdminTenantApp() {
           <ResolvedWorkspace
             activeView={activeView}
             canManageTenant={canManageTenant}
-            onRefresh={() => void refresh(session)}
+            onRefresh={() => void refresh(session, false)}
             resolution={resolution}
             selectedTenant={selectedTenant}
             session={session}
@@ -2033,9 +2033,9 @@ function VehiclesPanel({
                 accept="image/jpeg,image/png"
                 disabled={busyId !== null}
                 name="photo"
-                required
                 type="file"
               />
+              <span>Optional for Admin; the assigned driver can upload it later.</span>
             </label>
             <button className="primary-button" disabled={busyId !== null} type="submit">
               {busyId === "create" ? "Creating…" : "Create vehicle"}
@@ -2115,12 +2115,13 @@ function VehiclesPanel({
                       <div className="row-actions">
                         <button
                           className="secondary-button"
+                          disabled={!vehicle.photo_storage_path}
                           onClick={() =>
                             void openPhoto(vehicle.vehicle_id, `${vehicle.make} ${vehicle.model}`)
                           }
                           type="button"
                         >
-                          View photo
+                          {vehicle.photo_storage_path ? "View photo" : "No photo yet"}
                         </button>
                         <label className="secondary-button">
                           Replace photo

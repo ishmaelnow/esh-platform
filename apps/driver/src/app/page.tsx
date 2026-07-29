@@ -178,6 +178,50 @@ export default function DriverHome() {
     setUploadingType(null);
   }
 
+  async function uploadVehiclePhoto(file: File) {
+    if (!summary?.vehicle || !supabase || !session) return;
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setUploadMessage("Vehicle photo must be JPEG or PNG.");
+      return;
+    }
+    if (file.size === 0 || file.size > 5_000_000) {
+      setUploadMessage("Choose a vehicle photo that is 5MB or smaller.");
+      return;
+    }
+    setUploadingType("assigned_vehicle_photo");
+    setUploadMessage("Uploading vehicle photo…");
+    const extension = file.type === "image/png" ? "png" : "jpg";
+    const path = [
+      "vehicle-self-service",
+      session.user.id,
+      summary.vehicle.vehicleId,
+      `photo-${crypto.randomUUID()}.${extension}`,
+    ].join("/");
+    const upload = await supabase.storage
+      .from("driver-application-files")
+      .upload(path, file, { upsert: false });
+    if (upload.error) {
+      setUploadMessage(`Vehicle photo upload failed: ${upload.error.message}`);
+      setUploadingType(null);
+      return;
+    }
+    const submission = await supabase.rpc("submit_my_vehicle_photo", {
+      target_vehicle_id: summary.vehicle.vehicleId,
+      target_storage_path: path,
+      target_original_file_name: file.name,
+      target_mime_type: file.type,
+      target_size_bytes: file.size,
+    });
+    if (submission.error) {
+      setUploadMessage(`Vehicle photo submission failed: ${submission.error.message}`);
+      setUploadingType(null);
+      return;
+    }
+    await activateAndLoad();
+    setUploadMessage("Vehicle photo saved.");
+    setUploadingType(null);
+  }
+
   async function updateExpirationReminders(enabled: boolean) {
     if (!supabase) return;
     setUpdatingPreferences(true);
@@ -281,6 +325,25 @@ export default function DriverHome() {
                       <dd>{summary.vehicle.status}</dd>
                     </div>
                   </dl>
+                  <label className="upload-control">
+                    <span>
+                      {uploadingType === "assigned_vehicle_photo"
+                        ? "Uploading vehicle photo…"
+                        : summary.vehicle.hasPhoto
+                          ? "Replace vehicle photo"
+                          : "Upload vehicle photo"}
+                    </span>
+                    <input
+                      accept="image/jpeg,image/png"
+                      disabled={uploadingType !== null}
+                      onChange={(event) => {
+                        const photo = event.target.files?.[0];
+                        if (photo) void uploadVehiclePhoto(photo);
+                        event.target.value = "";
+                      }}
+                      type="file"
+                    />
+                  </label>
                 </>
               ) : (
                 <p className="document-help">
