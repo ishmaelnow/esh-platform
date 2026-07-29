@@ -1910,7 +1910,7 @@ function VehiclesPanel({
       if (!response.ok) throw new Error(result?.message ?? "Unable to create vehicle.");
       form.reset();
       setShowForm(false);
-      setMessage("Vehicle created.");
+      setMessage("Vehicle created as draft. Activate and assign it before the driver can see it.");
       onRefresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to create vehicle.");

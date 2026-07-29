@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       .from(vehicle.photo_storage_bucket)
       .createSignedUrl(vehicle.photo_storage_path, 600);
     if (signedError) throw signedError;
-    return NextResponse.json({ url: data.signedUrl });
+    return NextResponse.json({ url: `${data.signedUrl}&v=${Date.now()}` });
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Unable to open vehicle photo." },

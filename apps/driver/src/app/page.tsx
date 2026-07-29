@@ -89,7 +89,7 @@ export default function DriverHome() {
       const photo = await supabase.storage
         .from(nextSummary.vehicle.photoStorageBucket)
         .createSignedUrl(nextSummary.vehicle.photoStoragePath, 600);
-      if (photo.data?.signedUrl) setVehiclePhotoUrl(photo.data.signedUrl);
+      if (photo.data?.signedUrl) setVehiclePhotoUrl(`${photo.data.signedUrl}&v=${Date.now()}`);
     }
     setMessage("Driver account connected.");
   }, [supabase]);
@@ -289,7 +289,7 @@ export default function DriverHome() {
             </dl>
             <section className="assigned-vehicle">
               <div>
-                <p className="eyebrow">Assigned vehicle</p>
+                <p className="eyebrow">Assigned fleet vehicle</p>
                 <h3>
                   {summary.vehicle
                     ? `${summary.vehicle.modelYear} ${summary.vehicle.make} ${summary.vehicle.model}`
@@ -330,8 +330,8 @@ export default function DriverHome() {
                       {uploadingType === "assigned_vehicle_photo"
                         ? "Uploading vehicle photo…"
                         : summary.vehicle.hasPhoto
-                          ? "Replace vehicle photo"
-                          : "Upload vehicle photo"}
+                          ? "Replace assigned car photo"
+                          : "Upload assigned car photo"}
                     </span>
                     <input
                       accept="image/jpeg,image/png"
@@ -437,7 +437,7 @@ function evidenceLabel(evidenceType: string) {
   const labels: Record<string, string> = {
     personal_photo: "Personal photo",
     reference_document: "Reference document",
-    vehicle_photo: "Vehicle photo",
+    vehicle_photo: "Onboarding vehicle evidence",
   };
   return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
 }
