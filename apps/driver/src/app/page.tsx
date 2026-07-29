@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createIsolatedBrowserSupabaseClient,
@@ -65,6 +64,7 @@ export default function DriverHome() {
   const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
+  const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -85,6 +85,7 @@ export default function DriverHome() {
     const nextSummary = result.data as unknown as DriverSummary;
     setSummary(nextSummary);
     setVehiclePhotoUrl(null);
+    setVehiclePhotoError(false);
     if (nextSummary.vehicle?.photoStorageBucket && nextSummary.vehicle.photoStoragePath) {
       const photo = await supabase.storage
         .from(nextSummary.vehicle.photoStorageBucket)
@@ -190,6 +191,7 @@ export default function DriverHome() {
     }
     const previousPhotoUrl = vehiclePhotoUrl;
     const localPreviewUrl = URL.createObjectURL(file);
+    setVehiclePhotoError(false);
     setVehiclePhotoUrl(localPreviewUrl);
     setUploadingType("assigned_vehicle_photo");
     setUploadMessage("Uploading vehicle photo…");
@@ -256,6 +258,7 @@ export default function DriverHome() {
     }
     URL.revokeObjectURL(localPreviewUrl);
     setSummary(nextSummary);
+    setVehiclePhotoError(false);
     setVehiclePhotoUrl(`${savedPhoto.data.signedUrl}&v=${Date.now()}`);
     setUploadMessage(
       `Vehicle photo saved for ${nextSummary.vehicle.vehicleNumber}. Admin will update within 15 seconds.`,
@@ -340,13 +343,22 @@ export default function DriverHome() {
               {summary.vehicle ? (
                 <>
                   {vehiclePhotoUrl ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element -- signed and blob URLs bypass optimization
+                    <img
                       alt={`${summary.vehicle.make} ${summary.vehicle.model}`}
-                      height={675}
+                      onError={() => setVehiclePhotoError(true)}
+                      onLoad={() => setVehiclePhotoError(false)}
                       src={vehiclePhotoUrl}
-                      unoptimized
-                      width={1200}
                     />
+                  ) : null}
+                  {vehiclePhotoError ? (
+                    <p className="rejection-note">
+                      The assigned vehicle photo could not be displayed. Replace it or sign in again
+                      to refresh its secure link.
+                    </p>
+                  ) : null}
+                  {!vehiclePhotoUrl && summary.vehicle.hasPhoto ? (
+                    <p className="document-help">Loading the assigned vehicle photo…</p>
                   ) : null}
                   <dl>
                     <div>
