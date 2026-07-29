@@ -68,6 +68,10 @@ Explicitly deferred:
 4. **Realtime and Service Areas**
    - Privacy and consent contracts.
    - Driver availability, service areas, and location exposure policy.
+   - Current delivery: driver-controlled online/offline availability, database-enforced driver and
+     vehicle compliance eligibility, tenant-admin visibility, and availability audit history.
+   - Remaining: tenant service-area configuration, explicit location consent, bounded location
+     exposure, and realtime presence.
 5. **Dispatch and Trip Core**
    - Booking/trip lifecycle, offers, assignments, reassignment, and operational audit.
 6. **Reputation**

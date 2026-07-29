@@ -62,6 +62,14 @@ type VehicleCompliance = {
   documents: VehicleComplianceDocument[];
 };
 
+type DriverAvailability = {
+  requestedStatus: "online" | "offline";
+  effectiveStatus: "online" | "offline";
+  eligible: boolean;
+  blockers: string[];
+  statusChangedAt: string;
+};
+
 export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -83,6 +91,9 @@ export default function DriverHome() {
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
   const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
   const [vehicleCompliance, setVehicleCompliance] = useState<VehicleCompliance | null>(null);
+  const [availability, setAvailability] = useState<DriverAvailability | null>(null);
+  const [updatingAvailability, setUpdatingAvailability] = useState(false);
+  const [availabilityMessage, setAvailabilityMessage] = useState<string | null>(null);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -107,6 +118,12 @@ export default function DriverHome() {
       compliance.error || !compliance.data
         ? null
         : (compliance.data as unknown as VehicleCompliance),
+    );
+    const availabilityResult = await supabase.rpc("my_driver_availability");
+    setAvailability(
+      availabilityResult.error || !availabilityResult.data
+        ? null
+        : (availabilityResult.data as unknown as DriverAvailability),
     );
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
@@ -395,6 +412,33 @@ export default function DriverHome() {
     setUpdatingPreferences(false);
   }
 
+  async function updateAvailability(targetStatus: "online" | "offline") {
+    if (!supabase) return;
+    setUpdatingAvailability(true);
+    setAvailabilityMessage(
+      targetStatus === "online" ? "Checking service eligibility…" : "Going offline…",
+    );
+    const result = await supabase.rpc("set_my_driver_availability", {
+      target_status: targetStatus,
+    });
+    if (result.error || !result.data) {
+      setAvailabilityMessage(
+        result.error
+          ? availabilityErrorMessage(result.error.message)
+          : "Availability could not be updated.",
+      );
+    } else {
+      const next = result.data as unknown as DriverAvailability;
+      setAvailability(next);
+      setAvailabilityMessage(
+        next.effectiveStatus === "online"
+          ? "You are online and ready for service."
+          : "You are offline.",
+      );
+    }
+    setUpdatingAvailability(false);
+  }
+
   return (
     <main className="shell">
       <section className="portal-card">
@@ -433,6 +477,62 @@ export default function DriverHome() {
                 <dd>{summary.documentCompliance ? "satisfied" : "pending"}</dd>
               </div>
             </dl>
+            <section className="availability-card">
+              <div className="availability-heading">
+                <div>
+                  <p className="eyebrow">Availability</p>
+                  <h3>
+                    {availability?.effectiveStatus === "online"
+                      ? "You are online"
+                      : "You are offline"}
+                  </h3>
+                </div>
+                <span
+                  className={`availability-indicator ${
+                    availability?.effectiveStatus === "online" ? "online" : "offline"
+                  }`}
+                >
+                  {availability?.effectiveStatus ?? "offline"}
+                </span>
+              </div>
+              {availability && !availability.eligible ? (
+                <div className="eligibility-blockers">
+                  <strong>Complete these before going online:</strong>
+                  <ul>
+                    {availability.blockers.map((blocker) => (
+                      <li key={blocker}>{availabilityBlockerLabel(blocker)}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="document-help">
+                  Going online tells your tenant administrator you are ready for service. Location
+                  sharing is not enabled yet.
+                </p>
+              )}
+              <button
+                className={availability?.effectiveStatus === "online" ? "secondary" : undefined}
+                disabled={
+                  updatingAvailability ||
+                  (!availability?.eligible && availability?.requestedStatus !== "online")
+                }
+                onClick={() =>
+                  void updateAvailability(
+                    availability?.requestedStatus === "online" ? "offline" : "online",
+                  )
+                }
+                type="button"
+              >
+                {updatingAvailability
+                  ? "Updating…"
+                  : availability?.requestedStatus === "online"
+                    ? "Go offline"
+                    : "Go online"}
+              </button>
+              {availabilityMessage ? (
+                <p className="upload-message">{availabilityMessage}</p>
+              ) : null}
+            </section>
             <section className="assigned-vehicle">
               <div>
                 <p className="eyebrow">Assigned fleet vehicle</p>
@@ -659,4 +759,26 @@ function vehicleEvidenceLabel(evidenceType: string) {
     operating_permit: "Operating permit",
   };
   return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
+}
+
+function availabilityBlockerLabel(blocker: string) {
+  const labels: Record<string, string> = {
+    driver_profile_missing: "Driver profile is unavailable",
+    driver_not_active: "Driver account must be active",
+    driver_documents_incomplete: "Driver documents must be approved and current",
+    vehicle_not_assigned: "An active vehicle must be assigned",
+    vehicle_not_active: "Assigned vehicle must be active",
+    vehicle_documents_incomplete: "Vehicle documents must be approved and current",
+  };
+  return labels[blocker] ?? blocker.replaceAll("_", " ");
+}
+
+function availabilityErrorMessage(message: string) {
+  const marker = "cannot go online:";
+  if (!message.toLowerCase().includes(marker)) return message;
+  const blockerText = message.slice(message.toLowerCase().indexOf(marker) + marker.length);
+  return `Cannot go online. ${blockerText
+    .split(",")
+    .map((blocker) => availabilityBlockerLabel(blocker.trim()))
+    .join("; ")}.`;
 }

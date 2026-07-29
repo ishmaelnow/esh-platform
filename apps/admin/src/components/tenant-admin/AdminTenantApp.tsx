@@ -1145,6 +1145,10 @@ function DriversPanel({
   const [deliveringNotifications, setDeliveringNotifications] = useState(false);
 
   useEffect(() => setChecklists(summary.driverOnboarding), [summary.driverOnboarding]);
+  useEffect(() => {
+    const interval = window.setInterval(onRefresh, 15_000);
+    return () => window.clearInterval(interval);
+  }, [onRefresh]);
 
   async function deliverNotifications(notificationId?: string) {
     setDeliveringNotifications(true);
@@ -1551,6 +1555,7 @@ function DriversPanel({
                 <th>Number</th>
                 <th>Driver</th>
                 <th>Status</th>
+                <th>Availability</th>
                 <th>Contact</th>
                 <th>Actions</th>
               </tr>
@@ -1564,6 +1569,20 @@ function DriversPanel({
                     <span>{driver.email ?? "No email"}</span>
                   </td>
                   <td>{driver.status}</td>
+                  <td>
+                    {(() => {
+                      const availability = driverAvailabilityStatus(
+                        summary,
+                        driver.driver_profile_id,
+                      );
+                      return (
+                        <>
+                          <strong>{availability.status}</strong>
+                          {availability.note ? <span>{availability.note}</span> : null}
+                        </>
+                      );
+                    })()}
+                  </td>
                   <td>{driver.phone ?? "No phone"}</td>
                   <td>
                     <div className="row-actions">
@@ -2625,6 +2644,51 @@ function evidenceRequiresExpiration(summary: TenantSummary, evidenceId: string) 
     ({ evidence_type, expiration_required }) =>
       evidence_type === evidence?.evidence_type && expiration_required,
   );
+}
+
+function driverAvailabilityStatus(summary: TenantSummary, driverProfileId: string) {
+  const requested =
+    summary.driverAvailability.find((item) => item.driver_profile_id === driverProfileId)
+      ?.requested_status ?? "offline";
+  if (requested !== "online") return { status: "Offline", note: null };
+
+  const driver = summary.drivers.find((item) => item.driver_profile_id === driverProfileId);
+  const checklist = summary.driverOnboarding.find(
+    (item) => item.driver_profile_id === driverProfileId,
+  );
+  const assignment = summary.driverVehicleAssignments.find(
+    (item) => item.driver_profile_id === driverProfileId && item.ended_at === null,
+  );
+  const vehicle = summary.vehicles.find(
+    (item) => item.vehicle_id === assignment?.vehicle_id,
+  );
+  const today = new Date().toISOString().slice(0, 10);
+  const vehicleCompliant =
+    vehicle !== undefined &&
+    !summary.vehicleEvidenceRequirements.some((requirement) => {
+      if (!requirement.required_for_service) return false;
+      const latest = summary.vehicleEvidence
+        .filter(
+          (evidence) =>
+            evidence.vehicle_id === vehicle.vehicle_id &&
+            evidence.evidence_type === requirement.evidence_type,
+        )
+        .sort((left, right) => right.submitted_at.localeCompare(left.submitted_at))[0];
+      return (
+        !latest ||
+        latest.review_status !== "approved" ||
+        (requirement.expiration_required && !latest.expires_on) ||
+        (latest.expires_on !== null && latest.expires_on <= today)
+      );
+    });
+  const eligible =
+    driver?.status === "active" &&
+    checklist?.documents_reviewed === true &&
+    vehicle?.status === "active" &&
+    vehicleCompliant;
+  return eligible
+    ? { status: "Online", note: "Ready for service" }
+    : { status: "Offline", note: "Eligibility changed" };
 }
 
 function vehicleEvidenceLabel(evidenceType: string) {

@@ -15,6 +15,7 @@ export async function loadTenantSummary(
     roleAssignmentsResult,
     auditResult,
     driversResult,
+    driverAvailabilityResult,
     onboardingResult,
     applicationsResult,
     evidenceResult,
@@ -58,6 +59,7 @@ export async function loadTenantSummary(
       .select("*")
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false }),
+    supabase.from("driver_availability").select("*").eq("tenant_id", tenantId),
     supabase.from("driver_onboarding_checklists").select("*").eq("tenant_id", tenantId),
     supabase
       .from("driver_applications")
@@ -130,6 +132,12 @@ export async function loadTenantSummary(
     throw driversResult.error;
   }
   if (
+    driverAvailabilityResult.error &&
+    !driverAvailabilityResult.error.message.includes("driver_availability")
+  ) {
+    throw driverAvailabilityResult.error;
+  }
+  if (
     onboardingResult.error &&
     !onboardingResult.error.message.includes("driver_onboarding_checklists")
   ) {
@@ -183,6 +191,7 @@ export async function loadTenantSummary(
     roleAssignments,
     auditEvents: auditResult.data ?? [],
     drivers: driversResult.data ?? [],
+    driverAvailability: driverAvailabilityResult.data ?? [],
     driverOnboarding: onboardingResult.data ?? [],
     driverApplications: applicationsResult.data ?? [],
     driverEvidence: evidenceResult.data ?? [],

@@ -163,6 +163,61 @@ export type Database = {
           },
         ]
       }
+      driver_availability: {
+        Row: {
+          created_at: string
+          driver_profile_id: string
+          last_offline_at: string
+          last_online_at: string | null
+          requested_status: string
+          status_changed_at: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_profile_id: string
+          last_offline_at?: string
+          last_online_at?: string | null
+          requested_status?: string
+          status_changed_at?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_profile_id?: string
+          last_offline_at?: string
+          last_online_at?: string | null
+          requested_status?: string
+          status_changed_at?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_availability_driver_fk"
+            columns: ["tenant_id", "driver_profile_id"]
+            isOneToOne: true
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["tenant_id", "driver_profile_id"]
+          },
+          {
+            foreignKeyName: "driver_availability_driver_profile_id_fkey"
+            columns: ["driver_profile_id"]
+            isOneToOne: true
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["driver_profile_id"]
+          },
+          {
+            foreignKeyName: "driver_availability_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       driver_evidence: {
         Row: {
           created_at: string
@@ -1423,6 +1478,10 @@ export type Database = {
         Args: { target_driver_profile_id: string }
         Returns: boolean
       }
+      driver_service_blockers: {
+        Args: { target_driver_profile_id: string }
+        Returns: string[]
+      }
       has_active_platform_role: {
         Args: { required_roles: string[] }
         Returns: boolean
@@ -1453,6 +1512,7 @@ export type Database = {
         }[]
       }
       my_driver_portal_summary: { Args: never; Returns: Json }
+      my_driver_availability: { Args: never; Returns: Json }
       my_assigned_vehicle_compliance: { Args: never; Returns: Json }
       queue_driver_expiration_notifications: {
         Args: { target_date?: string }
@@ -1461,6 +1521,10 @@ export type Database = {
       set_my_driver_notification_preferences: {
         Args: { expiration_reminders_enabled_value: boolean }
         Returns: boolean
+      }
+      set_my_driver_availability: {
+        Args: { target_status: string }
+        Returns: Json
       }
       submit_my_driver_evidence: {
         Args: {
