@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
 import { adminPublicConfig } from "@/lib/config";
@@ -1894,6 +1895,32 @@ function VehiclesPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
+  const [vehiclePhotoUrls, setVehiclePhotoUrls] = useState<Record<string, string>>({});
+
+  const loadVehiclePhotos = useCallback(async () => {
+    const results = await Promise.all(
+      summary.vehicles.map(async (vehicle) => {
+        const response = await fetch(
+          `/api/tenant-admin/vehicles?tenantId=${summary.tenant.tenant_id}&vehicleId=${vehicle.vehicle_id}`,
+          { headers: { Authorization: `Bearer ${session.access_token}` } },
+        );
+        if (!response.ok) return [vehicle.vehicle_id, null] as const;
+        const result = (await response.json()) as { url?: string };
+        return [vehicle.vehicle_id, result.url ?? null] as const;
+      }),
+    );
+    setVehiclePhotoUrls(
+      Object.fromEntries(
+        results.filter((result): result is readonly [string, string] => result[1] !== null),
+      ),
+    );
+  }, [session.access_token, summary.tenant.tenant_id, summary.vehicles]);
+
+  useEffect(() => {
+    void loadVehiclePhotos();
+    const interval = window.setInterval(() => void loadVehiclePhotos(), 15_000);
+    return () => window.clearInterval(interval);
+  }, [loadVehiclePhotos]);
 
   async function createVehicle(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2055,6 +2082,7 @@ function VehiclesPanel({
             </thead>
             <tbody>
               {summary.vehicles.map((vehicle) => {
+                const photoUrl = vehiclePhotoUrls[vehicle.vehicle_id];
                 const assignment = summary.driverVehicleAssignments.find(
                   ({ vehicle_id, ended_at }) =>
                     vehicle_id === vehicle.vehicle_id && ended_at === null,
@@ -2069,6 +2097,18 @@ function VehiclesPanel({
                 return (
                   <tr key={vehicle.vehicle_id}>
                     <td>
+                      {photoUrl ? (
+                        <Image
+                          alt={`${vehicle.make} ${vehicle.model}`}
+                          className="vehicle-thumbnail"
+                          height={180}
+                          src={photoUrl}
+                          unoptimized
+                          width={320}
+                        />
+                      ) : (
+                        <span>No vehicle photo uploaded</span>
+                      )}
                       <strong>
                         {vehicle.model_year} {vehicle.make} {vehicle.model}
                       </strong>

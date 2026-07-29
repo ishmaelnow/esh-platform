@@ -224,6 +224,16 @@ select:disabled {
   text-transform: uppercase;
 }
 
+.vehicle-thumbnail {
+  aspect-ratio: 16 / 9;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 8px;
+  object-fit: cover;
+  width: 160px;
+}
+
 .status-pill.active {
   background: #daf4e8;
   color: #116149;
