@@ -1925,6 +1925,11 @@ function VehiclesPanel({
     return () => window.clearInterval(interval);
   }, [loadVehiclePhotos]);
 
+  useEffect(() => {
+    const interval = window.setInterval(onRefresh, 15_000);
+    return () => window.clearInterval(interval);
+  }, [onRefresh]);
+
   async function createVehicle(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -2282,6 +2287,9 @@ function VehiclesPanel({
                       (!evidence.expires_on ||
                         evidence.expires_on > new Date().toISOString().slice(0, 10)),
                   );
+                const pendingReviewCount = latestEvidence.filter(
+                  ({ evidence }) => evidence?.review_status === "pending",
+                ).length;
                 return (
                   <tr key={vehicle.vehicle_id}>
                     <td>
@@ -2498,8 +2506,13 @@ function VehiclesPanel({
                             Retire
                           </button>
                         ) : null}
-                        <details>
-                          <summary>Compliance documents</summary>
+                        <details open={pendingReviewCount > 0 ? true : undefined}>
+                          <summary>
+                            Compliance documents
+                            {pendingReviewCount > 0
+                              ? ` · ${pendingReviewCount} awaiting review`
+                              : ""}
+                          </summary>
                           {latestEvidence.map(({ requirement, evidence }) => {
                             const expired =
                               evidence?.expires_on &&
