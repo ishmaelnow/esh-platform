@@ -1729,6 +1729,9 @@ function DriversPanel({
                                   evidence.evidence_id in evidenceExpirationOverrides
                                     ? evidenceExpirationOverrides[evidence.evidence_id]
                                     : evidence.expires_on;
+                                const expirationChanged =
+                                  evidence.evidence_id in evidenceExpirationOverrides &&
+                                  currentExpiration !== evidence.expires_on;
                                 const isLatestEvidence =
                                   summary.driverEvidence.find(
                                     (candidate) =>
@@ -1786,7 +1789,8 @@ function DriversPanel({
                                         !canManageTenant ||
                                         activeEvidenceId === evidence.evidence_id ||
                                         (currentReviewStatus === "approved" &&
-                                          (!expirationRequired || currentExpiration !== null))
+                                          (!expirationRequired || evidence.expires_on !== null) &&
+                                          !expirationChanged)
                                       }
                                       onClick={() =>
                                         void reviewDriverEvidence(evidence.evidence_id, "approved")
@@ -1794,11 +1798,11 @@ function DriversPanel({
                                       type="button"
                                     >
                                       {currentReviewStatus === "approved" &&
-                                      (!expirationRequired || currentExpiration !== null)
+                                      (!expirationRequired || evidence.expires_on !== null) &&
+                                      !expirationChanged
                                         ? "Approved"
                                         : currentReviewStatus === "approved" &&
-                                            expirationRequired &&
-                                            currentExpiration === null
+                                            expirationRequired
                                           ? "Save expiration date"
                                           : "Approve"}
                                     </button>
