@@ -188,6 +188,9 @@ export default function DriverHome() {
       setUploadMessage("Choose a vehicle photo that is 5MB or smaller.");
       return;
     }
+    const previousPhotoUrl = vehiclePhotoUrl;
+    const localPreviewUrl = URL.createObjectURL(file);
+    setVehiclePhotoUrl(localPreviewUrl);
     setUploadingType("assigned_vehicle_photo");
     setUploadMessage("Uploading vehicle photo…");
     const extension = file.type === "image/png" ? "png" : "jpg";
@@ -201,6 +204,8 @@ export default function DriverHome() {
       .from("driver-application-files")
       .upload(path, file, { upsert: false });
     if (upload.error) {
+      URL.revokeObjectURL(localPreviewUrl);
+      setVehiclePhotoUrl(previousPhotoUrl);
       setUploadMessage(`Vehicle photo upload failed: ${upload.error.message}`);
       setUploadingType(null);
       return;
@@ -213,12 +218,48 @@ export default function DriverHome() {
       target_size_bytes: file.size,
     });
     if (submission.error) {
+      URL.revokeObjectURL(localPreviewUrl);
+      setVehiclePhotoUrl(previousPhotoUrl);
       setUploadMessage(`Vehicle photo submission failed: ${submission.error.message}`);
       setUploadingType(null);
       return;
     }
-    await activateAndLoad();
-    setUploadMessage("Vehicle photo saved.");
+    const refreshed = await supabase.rpc("my_driver_portal_summary");
+    const nextSummary = refreshed.data as unknown as DriverSummary | null;
+    if (
+      refreshed.error ||
+      !nextSummary?.vehicle ||
+      nextSummary.vehicle.vehicleId !== summary.vehicle.vehicleId ||
+      nextSummary.vehicle.photoStoragePath !== path
+    ) {
+      URL.revokeObjectURL(localPreviewUrl);
+      setVehiclePhotoUrl(previousPhotoUrl);
+      setUploadMessage(
+        refreshed.error
+          ? `Vehicle photo verification failed: ${refreshed.error.message}`
+          : "Vehicle photo verification failed: the assigned vehicle did not save the new file.",
+      );
+      setUploadingType(null);
+      return;
+    }
+    const savedPhoto = await supabase.storage
+      .from("driver-application-files")
+      .createSignedUrl(path, 600);
+    if (savedPhoto.error || !savedPhoto.data?.signedUrl) {
+      URL.revokeObjectURL(localPreviewUrl);
+      setVehiclePhotoUrl(previousPhotoUrl);
+      setUploadMessage(
+        `Vehicle photo verification failed: ${savedPhoto.error?.message ?? "saved file is unavailable"}`,
+      );
+      setUploadingType(null);
+      return;
+    }
+    URL.revokeObjectURL(localPreviewUrl);
+    setSummary(nextSummary);
+    setVehiclePhotoUrl(`${savedPhoto.data.signedUrl}&v=${Date.now()}`);
+    setUploadMessage(
+      `Vehicle photo saved for ${nextSummary.vehicle.vehicleNumber}. Admin will update within 15 seconds.`,
+    );
     setUploadingType(null);
   }
 

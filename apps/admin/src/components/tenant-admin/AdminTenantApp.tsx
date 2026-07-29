@@ -1902,7 +1902,10 @@ function VehiclesPanel({
       summary.vehicles.map(async (vehicle) => {
         const response = await fetch(
           `/api/tenant-admin/vehicles?tenantId=${summary.tenant.tenant_id}&vehicleId=${vehicle.vehicle_id}`,
-          { headers: { Authorization: `Bearer ${session.access_token}` } },
+          {
+            cache: "no-store",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          },
         );
         if (!response.ok) return [vehicle.vehicle_id, null] as const;
         const result = (await response.json()) as { url?: string };
