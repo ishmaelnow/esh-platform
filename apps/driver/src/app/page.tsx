@@ -90,6 +90,7 @@ export default function DriverHome() {
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
   const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
+  const [vehiclePhotoMessage, setVehiclePhotoMessage] = useState<string | null>(null);
   const [vehicleCompliance, setVehicleCompliance] = useState<VehicleCompliance | null>(null);
   const [availability, setAvailability] = useState<DriverAvailability | null>(null);
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
@@ -127,6 +128,7 @@ export default function DriverHome() {
     );
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
+    setVehiclePhotoMessage(null);
     setMessage("Driver account connected.");
   }, [supabase]);
 
@@ -162,15 +164,38 @@ export default function DriverHome() {
     const photoBucket = bucket;
     const photoPath = path;
     let active = true;
+    let objectUrl: string | null = null;
     async function refreshVehiclePhoto() {
       const photo = await client.storage.from(photoBucket).createSignedUrl(photoPath, 600);
       if (!active) return;
-      if (photo.error || !photo.data?.signedUrl) {
-        setVehiclePhotoError(true);
+      if (!photo.error && photo.data?.signedUrl) {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+        }
+        setVehiclePhotoError(false);
+        setVehiclePhotoMessage(null);
+        setVehiclePhotoUrl(`${photo.data.signedUrl}&v=${Date.now()}`);
         return;
       }
+
+      const fallback = await client.storage.from(photoBucket).download(photoPath);
+      if (!active) return;
+      if (fallback.error || !fallback.data) {
+        setVehiclePhotoUrl(null);
+        setVehiclePhotoError(true);
+        setVehiclePhotoMessage(
+          fallback.error?.message ??
+            photo.error?.message ??
+            "The current assigned vehicle photo is unavailable.",
+        );
+        return;
+      }
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(fallback.data);
       setVehiclePhotoError(false);
-      setVehiclePhotoUrl(`${photo.data.signedUrl}&v=${Date.now()}`);
+      setVehiclePhotoMessage(null);
+      setVehiclePhotoUrl(objectUrl);
     }
 
     void refreshVehiclePhoto();
@@ -181,6 +206,7 @@ export default function DriverHome() {
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
       active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
@@ -555,8 +581,13 @@ export default function DriverHome() {
                   ) : null}
                   {vehiclePhotoError ? (
                     <p className="rejection-note">
-                      The assigned vehicle photo could not be displayed. Replace it or sign in again
-                      to refresh its secure link.
+                      The assigned vehicle photo could not be displayed
+                      {vehiclePhotoMessage ? `: ${vehiclePhotoMessage}` : "."}
+                    </p>
+                  ) : null}
+                  {!vehiclePhotoUrl && !summary.vehicle.hasPhoto ? (
+                    <p className="document-help">
+                      No photo is saved for this assigned vehicle yet.
                     </p>
                   ) : null}
                   {!vehiclePhotoUrl && summary.vehicle.hasPhoto ? (

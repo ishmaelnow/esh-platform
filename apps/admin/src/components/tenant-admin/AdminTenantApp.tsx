@@ -1056,7 +1056,10 @@ function DriverApplicationsPanel({
                               onClick={() => void reviewEvidence(item.evidence_id, "approved")}
                               type="button"
                             >
-                              Approve evidence
+                              {currentReviewStatus === "approved" &&
+                              (!expirationRequired || currentExpiration !== null)
+                                ? "Approved"
+                                : "Approve evidence"}
                             </button>
                             <button
                               className="danger-button"
@@ -1145,10 +1148,6 @@ function DriversPanel({
   const [deliveringNotifications, setDeliveringNotifications] = useState(false);
 
   useEffect(() => setChecklists(summary.driverOnboarding), [summary.driverOnboarding]);
-  useEffect(() => {
-    const interval = window.setInterval(onRefresh, 15_000);
-    return () => window.clearInterval(interval);
-  }, [onRefresh]);
 
   async function deliverNotifications(notificationId?: string) {
     setDeliveringNotifications(true);
@@ -1784,7 +1783,10 @@ function DriversPanel({
                                       }
                                       type="button"
                                     >
-                                      Approve
+                                      {currentReviewStatus === "approved" &&
+                                      (!expirationRequired || currentExpiration !== null)
+                                        ? "Approved"
+                                        : "Approve"}
                                     </button>
                                     <button
                                       className="danger-button"
@@ -2568,7 +2570,11 @@ function VehiclesPanel({
                                     </button>
                                     <button
                                       className="secondary-button"
-                                      disabled={!canManageTenant || busyId !== null}
+                                      disabled={
+                                        !canManageTenant ||
+                                        busyId !== null ||
+                                        displayStatus === "approved"
+                                      }
                                       onClick={() =>
                                         void reviewVehicleEvidence(
                                           evidence.evidence_id,
@@ -2578,7 +2584,7 @@ function VehiclesPanel({
                                       }
                                       type="button"
                                     >
-                                      Approve
+                                      {displayStatus === "approved" ? "Approved" : "Approve"}
                                     </button>
                                     <button
                                       className="danger-button"
