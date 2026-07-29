@@ -1319,7 +1319,7 @@ function DriversPanel({
     const notes =
       status === "rejected"
         ? window.prompt("Why is this evidence rejected?")?.trim()
-        : window.prompt("Optional review note")?.trim();
+        : null;
     if (status === "rejected" && !notes) {
       setEvidenceMessage("A rejection reason is required; no change was made.");
       return;
@@ -1327,13 +1327,7 @@ function DriversPanel({
     const expirationRequired = evidenceRequiresExpiration(summary, evidenceId);
     const expiresOn =
       status === "approved"
-        ? window
-            .prompt(
-              expirationRequired
-                ? "Required future expiration date (YYYY-MM-DD)"
-                : "Optional expiration date (YYYY-MM-DD)",
-            )
-            ?.trim() || null
+        ? evidenceExpirationOverrides[evidenceId] || null
         : null;
     if (status === "approved" && expirationRequired && !expiresOn) {
       setEvidenceMessage("A future expiration date is required; no change was made.");
@@ -1758,6 +1752,22 @@ function DriversPanel({
                                       {evidence.original_file_name} · submitted{" "}
                                       {new Date(evidence.submitted_at).toLocaleDateString()}
                                     </span>
+                                    {expirationRequired && isLatestEvidence ? (
+                                      <label>
+                                        Expiration date
+                                        <input
+                                          min={tomorrowDate()}
+                                          onChange={(event) =>
+                                            setEvidenceExpirationOverrides((current) => ({
+                                              ...current,
+                                              [evidence.evidence_id]: event.target.value || null,
+                                            }))
+                                          }
+                                          type="date"
+                                          value={currentExpiration ?? ""}
+                                        />
+                                      </label>
+                                    ) : null}
                                     <button
                                       className="secondary-button"
                                       onClick={() =>
@@ -1786,7 +1796,11 @@ function DriversPanel({
                                       {currentReviewStatus === "approved" &&
                                       (!expirationRequired || currentExpiration !== null)
                                         ? "Approved"
-                                        : "Approve"}
+                                        : currentReviewStatus === "approved" &&
+                                            expirationRequired &&
+                                            currentExpiration === null
+                                          ? "Save expiration date"
+                                          : "Approve"}
                                     </button>
                                     <button
                                       className="danger-button"
@@ -2650,6 +2664,12 @@ function evidenceRequiresExpiration(summary: TenantSummary, evidenceId: string) 
     ({ evidence_type, expiration_required }) =>
       evidence_type === evidence?.evidence_type && expiration_required,
   );
+}
+
+function tomorrowDate() {
+  const tomorrow = new Date();
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  return tomorrow.toISOString().slice(0, 10);
 }
 
 function driverAvailabilityStatus(summary: TenantSummary, driverProfileId: string) {

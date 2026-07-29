@@ -166,9 +166,12 @@ export default function DriverHome() {
     let active = true;
     let objectUrl: string | null = null;
     async function refreshVehiclePhoto() {
-      const photo = await client.storage.from(photoBucket).createSignedUrl(photoPath, 600);
+      const photo = await withTimeout(
+        client.storage.from(photoBucket).createSignedUrl(photoPath, 600),
+        10_000,
+      );
       if (!active) return;
-      if (!photo.error && photo.data?.signedUrl) {
+      if (photo && !photo.error && photo.data?.signedUrl) {
         if (objectUrl) {
           URL.revokeObjectURL(objectUrl);
           objectUrl = null;
@@ -179,15 +182,18 @@ export default function DriverHome() {
         return;
       }
 
-      const fallback = await client.storage.from(photoBucket).download(photoPath);
+      const fallback = await withTimeout(
+        client.storage.from(photoBucket).download(photoPath),
+        10_000,
+      );
       if (!active) return;
-      if (fallback.error || !fallback.data) {
+      if (!fallback || fallback.error || !fallback.data) {
         setVehiclePhotoUrl(null);
         setVehiclePhotoError(true);
         setVehiclePhotoMessage(
-          fallback.error?.message ??
-            photo.error?.message ??
-            "The current assigned vehicle photo is unavailable.",
+          fallback?.error?.message ??
+            photo?.error?.message ??
+            "The photo request timed out. Refresh the page to try again.",
         );
         return;
       }
@@ -812,4 +818,11 @@ function availabilityErrorMessage(message: string) {
     .split(",")
     .map((blocker) => availabilityBlockerLabel(blocker.trim()))
     .join("; ")}.`;
+}
+
+async function withTimeout<T>(request: PromiseLike<T>, timeoutMs: number): Promise<T | null> {
+  return Promise.race([
+    Promise.resolve(request),
+    new Promise<null>((resolve) => window.setTimeout(() => resolve(null), timeoutMs)),
+  ]);
 }
