@@ -39,6 +39,7 @@ type ViewKey =
   | "audit"
   | "drivers"
   | "vehicles"
+  | "serviceAreas"
   | "applications";
 
 const views: { key: ViewKey; label: string }[] = [
@@ -51,6 +52,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "audit", label: "Audit" },
   { key: "drivers", label: "Drivers" },
   { key: "vehicles", label: "Vehicles" },
+  { key: "serviceAreas", label: "Service Areas" },
   { key: "applications", label: "Applications" },
 ];
 
@@ -412,6 +414,14 @@ function ResolvedWorkspace({
       ) : null}
       {activeView === "vehicles" ? (
         <VehiclesPanel
+          canManageTenant={canManageTenant}
+          onRefresh={onRefresh}
+          session={session}
+          summary={summary}
+        />
+      ) : null}
+      {activeView === "serviceAreas" ? (
+        <ServiceAreasPanel
           canManageTenant={canManageTenant}
           onRefresh={onRefresh}
           session={session}
@@ -1961,6 +1971,337 @@ function DriversPanel({
       {preview ? (
         <EvidencePreview onClose={() => setPreview(null)} title={preview.title} url={preview.url} />
       ) : null}
+    </section>
+  );
+}
+
+function ServiceAreasPanel({
+  canManageTenant,
+  onRefresh,
+  session,
+  summary,
+}: {
+  canManageTenant: boolean;
+  onRefresh: () => void;
+  session: SupabaseAuthSession;
+  summary: TenantSummary;
+}) {
+  const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+  const editingArea = summary.serviceAreas.find(
+    ({ service_area_id }) => service_area_id === editingAreaId,
+  );
+
+  async function saveArea(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const value = (name: string) => {
+      const field = form.get(name);
+      return typeof field === "string" ? field : "";
+    };
+    const payload = {
+      tenantId: summary.tenant.tenant_id,
+      name: value("name"),
+      description: value("description"),
+      centerLatitude: value("centerLatitude"),
+      centerLongitude: value("centerLongitude"),
+      radiusKm: value("radiusKm"),
+      ...(editingAreaId ? { kind: "service_area_update", serviceAreaId: editingAreaId } : {}),
+    };
+    setBusyId(editingAreaId ?? "create");
+    setMessage(editingAreaId ? "Saving service area…" : "Creating service area…");
+    try {
+      const response = await fetch("/api/tenant-admin/settings", {
+        method: editingAreaId ? "PATCH" : "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to save service area.");
+      setMessage(editingAreaId ? "Service area updated." : "Service area created.");
+      setEditingAreaId(null);
+      setShowForm(false);
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save service area.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function updateArea(
+    serviceAreaId: string,
+    body: Record<string, string>,
+    successMessage: string,
+  ) {
+    setBusyId(serviceAreaId);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/tenant-admin/settings", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tenantId: summary.tenant.tenant_id,
+          serviceAreaId,
+          ...body,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to update service area.");
+      setMessage(successMessage);
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to update service area.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const formKey = editingArea?.service_area_id ?? "new";
+  return (
+    <section className="content-stack">
+      <section className="panel">
+        <PanelHeader
+          title="Service areas"
+          description="Define circular operating boundaries and assign drivers. Location sharing is not enabled."
+        />
+        <button
+          className="primary-button"
+          disabled={!canManageTenant}
+          onClick={() => {
+            setEditingAreaId(null);
+            setShowForm((current) => !current);
+          }}
+          type="button"
+        >
+          {showForm && !editingAreaId ? "Close form" : "Add service area"}
+        </button>
+        {message ? <p className="notice">{message}</p> : null}
+        {showForm ? (
+          <form className="settings-grid" key={formKey} onSubmit={(event) => void saveArea(event)}>
+            <label>
+              Name
+              <input defaultValue={editingArea?.name ?? ""} maxLength={120} name="name" required />
+            </label>
+            <label>
+              Description
+              <input
+                defaultValue={editingArea?.description ?? ""}
+                maxLength={500}
+                name="description"
+              />
+            </label>
+            <label>
+              Center latitude
+              <input
+                defaultValue={editingArea?.center_latitude ?? ""}
+                max="90"
+                min="-90"
+                name="centerLatitude"
+                required
+                step="0.000001"
+                type="number"
+              />
+            </label>
+            <label>
+              Center longitude
+              <input
+                defaultValue={editingArea?.center_longitude ?? ""}
+                max="180"
+                min="-180"
+                name="centerLongitude"
+                required
+                step="0.000001"
+                type="number"
+              />
+            </label>
+            <label>
+              Radius (km)
+              <input
+                defaultValue={editingArea?.radius_km ?? ""}
+                max="1000"
+                min="0.01"
+                name="radiusKm"
+                required
+                step="0.01"
+                type="number"
+              />
+            </label>
+            <button className="primary-button" disabled={busyId !== null} type="submit">
+              {editingAreaId ? "Save service area" : "Create service area"}
+            </button>
+            {editingAreaId ? (
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setEditingAreaId(null);
+                  setShowForm(false);
+                }}
+                type="button"
+              >
+                Cancel edit
+              </button>
+            ) : null}
+          </form>
+        ) : null}
+      </section>
+      {summary.serviceAreas.length === 0 ? (
+        <section className="panel">
+          <p className="muted">No service areas are configured for this tenant.</p>
+        </section>
+      ) : (
+        summary.serviceAreas.map((area) => {
+          const activeAssignments = summary.driverServiceAreaAssignments.filter(
+            (assignment) =>
+              assignment.service_area_id === area.service_area_id && assignment.ended_at === null,
+          );
+          const assignedDriverIds = new Set(
+            activeAssignments.map(({ driver_profile_id }) => driver_profile_id),
+          );
+          const availableDrivers = summary.drivers.filter(
+            (driver) => !assignedDriverIds.has(driver.driver_profile_id),
+          );
+          return (
+            <section className="panel" key={area.service_area_id}>
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Service area</p>
+                  <h3>{area.name}</h3>
+                  <p className="muted">{area.description ?? "No description"}</p>
+                </div>
+                <span className={`status-pill ${area.status}`}>{area.status}</span>
+              </div>
+              <dl className="details-grid">
+                <div>
+                  <dt>Center</dt>
+                  <dd>
+                    {area.center_latitude}, {area.center_longitude}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Radius</dt>
+                  <dd>{area.radius_km} km</dd>
+                </div>
+                <div>
+                  <dt>Assigned drivers</dt>
+                  <dd>{activeAssignments.length}</dd>
+                </div>
+              </dl>
+              <div className="row-actions">
+                <button
+                  className="secondary-button"
+                  disabled={!canManageTenant || busyId === area.service_area_id}
+                  onClick={() => {
+                    setEditingAreaId(area.service_area_id);
+                    setShowForm(true);
+                  }}
+                  type="button"
+                >
+                  Edit
+                </button>
+                <button
+                  className={area.status === "active" ? "danger-button" : "secondary-button"}
+                  disabled={!canManageTenant || busyId === area.service_area_id}
+                  onClick={() =>
+                    void updateArea(
+                      area.service_area_id,
+                      {
+                        kind: "service_area_status",
+                        status: area.status === "active" ? "inactive" : "active",
+                      },
+                      `Service area ${area.status === "active" ? "deactivated" : "activated"}.`,
+                    )
+                  }
+                  type="button"
+                >
+                  {area.status === "active" ? "Deactivate" : "Activate"}
+                </button>
+              </div>
+              <div className="onboarding-checklist">
+                <strong>Driver assignments</strong>
+                {activeAssignments.map((assignment) => {
+                  const driver = summary.drivers.find(
+                    ({ driver_profile_id }) => driver_profile_id === assignment.driver_profile_id,
+                  );
+                  return (
+                    <div className="row-actions" key={assignment.assignment_id}>
+                      <span>{driver?.display_name ?? assignment.driver_profile_id}</span>
+                      <button
+                        className="danger-button"
+                        disabled={!canManageTenant || busyId === area.service_area_id}
+                        onClick={() =>
+                          void updateArea(
+                            area.service_area_id,
+                            {
+                              kind: "service_area_unassign",
+                              assignmentId: assignment.assignment_id,
+                            },
+                            "Driver removed from service area.",
+                          )
+                        }
+                        type="button"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  );
+                })}
+                {area.status === "active" && availableDrivers.length > 0 ? (
+                  <div className="row-actions">
+                    <select
+                      aria-label={`Driver for ${area.name}`}
+                      onChange={(event) =>
+                        setSelectedDrivers((current) => ({
+                          ...current,
+                          [area.service_area_id]: event.target.value,
+                        }))
+                      }
+                      value={selectedDrivers[area.service_area_id] ?? ""}
+                    >
+                      <option value="">Select driver</option>
+                      {availableDrivers.map((driver) => (
+                        <option key={driver.driver_profile_id} value={driver.driver_profile_id}>
+                          {driver.display_name} · #{driver.driver_number}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className="primary-button"
+                      disabled={
+                        !canManageTenant ||
+                        busyId === area.service_area_id ||
+                        !selectedDrivers[area.service_area_id]
+                      }
+                      onClick={() =>
+                        void updateArea(
+                          area.service_area_id,
+                          {
+                            kind: "service_area_assign",
+                            driverProfileId: selectedDrivers[area.service_area_id] ?? "",
+                          },
+                          "Driver assigned to service area.",
+                        )
+                      }
+                      type="button"
+                    >
+                      Assign driver
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          );
+        })
+      )}
     </section>
   );
 }

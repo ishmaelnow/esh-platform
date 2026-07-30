@@ -76,6 +76,16 @@ type DriverAvailability = {
   statusChangedAt: string;
 };
 
+type DriverServiceArea = {
+  serviceAreaId: string;
+  name: string;
+  description: string | null;
+  centerLatitude: number;
+  centerLongitude: number;
+  radiusKm: number;
+  assignedAt: string;
+};
+
 export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -101,6 +111,7 @@ export default function DriverHome() {
   const [availability, setAvailability] = useState<DriverAvailability | null>(null);
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState<string | null>(null);
+  const [serviceAreas, setServiceAreas] = useState<DriverServiceArea[]>([]);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -132,6 +143,12 @@ export default function DriverHome() {
         ? null
         : (availabilityResult.data as unknown as DriverAvailability),
     );
+    const serviceAreaResult = await supabase.rpc("my_driver_service_areas");
+    setServiceAreas(
+      serviceAreaResult.error || !serviceAreaResult.data
+        ? []
+        : (serviceAreaResult.data as unknown as DriverServiceArea[]),
+    );
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -153,6 +170,7 @@ export default function DriverHome() {
   useEffect(() => {
     if (!session) {
       setSummary(null);
+      setServiceAreas([]);
       return;
     }
     void activateAndLoad();
@@ -576,6 +594,32 @@ export default function DriverHome() {
                     : "Go online"}
               </button>
               {availabilityMessage ? <p className="upload-message">{availabilityMessage}</p> : null}
+            </section>
+            <section className="documents">
+              <div>
+                <p className="eyebrow">Service areas</p>
+                <h3>{serviceAreas.length > 0 ? "Assigned operating areas" : "No area assigned"}</h3>
+              </div>
+              {serviceAreas.length > 0 ? (
+                serviceAreas.map((area) => (
+                  <article className="document-card" key={area.serviceAreaId}>
+                    <div className="document-heading">
+                      <strong>{area.name}</strong>
+                      <span className="status status-approved">active</span>
+                    </div>
+                    {area.description ? <span>{area.description}</span> : null}
+                    <span>
+                      Center {area.centerLatitude}, {area.centerLongitude} · {area.radiusKm} km
+                      radius
+                    </span>
+                  </article>
+                ))
+              ) : (
+                <p className="document-help">
+                  Your tenant administrator has not assigned an active service area. Location
+                  sharing is not enabled.
+                </p>
+              )}
             </section>
             <section className="assigned-vehicle">
               <div>

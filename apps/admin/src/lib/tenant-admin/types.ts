@@ -19,6 +19,8 @@ import type {
   DriverVehicleAssignmentRow,
   VehicleEvidenceRow,
   VehicleEvidenceRequirementRow,
+  ServiceAreaRow,
+  DriverServiceAreaAssignmentRow,
 } from "@esh-platform/supabase";
 
 export const foundationTenantRoles = ["tenant_owner", "tenant_admin", "tenant_member"] as const;
@@ -63,6 +65,8 @@ export type TenantSummary = {
   driverVehicleAssignments: DriverVehicleAssignmentRow[];
   vehicleEvidence: VehicleEvidenceRow[];
   vehicleEvidenceRequirements: VehicleEvidenceRequirementRow[];
+  serviceAreas: ServiceAreaRow[];
+  driverServiceAreaAssignments: DriverServiceAreaAssignmentRow[];
 };
 
 export type ActiveTenantOption = {

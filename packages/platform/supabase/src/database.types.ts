@@ -544,6 +544,90 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_service_area_assignments: {
+        Row: {
+          assigned_at: string
+          assignment_id: string
+          assignment_notes: string | null
+          created_at: string
+          created_by_person_id: string
+          driver_profile_id: string
+          ended_at: string | null
+          ended_by_person_id: string | null
+          service_area_id: string
+          tenant_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assignment_id?: string
+          assignment_notes?: string | null
+          created_at?: string
+          created_by_person_id: string
+          driver_profile_id: string
+          ended_at?: string | null
+          ended_by_person_id?: string | null
+          service_area_id: string
+          tenant_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assignment_id?: string
+          assignment_notes?: string | null
+          created_at?: string
+          created_by_person_id?: string
+          driver_profile_id?: string
+          ended_at?: string | null
+          ended_by_person_id?: string | null
+          service_area_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      service_areas: {
+        Row: {
+          center_latitude: number
+          center_longitude: number
+          created_at: string
+          created_by_person_id: string
+          description: string | null
+          name: string
+          radius_km: number
+          service_area_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by_person_id: string
+        }
+        Insert: {
+          center_latitude: number
+          center_longitude: number
+          created_at?: string
+          created_by_person_id: string
+          description?: string | null
+          name: string
+          radius_km: number
+          service_area_id?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by_person_id: string
+        }
+        Update: {
+          center_latitude?: number
+          center_longitude?: number
+          created_at?: string
+          created_by_person_id?: string
+          description?: string | null
+          name?: string
+          radius_km?: number
+          service_area_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by_person_id?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           color: string
@@ -1436,6 +1520,10 @@ export type Database = {
         Args: { target_tenant_id: string }
         Returns: boolean
       }
+      can_manage_service_areas: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
       can_manage_tenant_memberships: {
         Args: { target_tenant_id: string }
         Returns: boolean
@@ -1445,6 +1533,10 @@ export type Database = {
         Returns: boolean
       }
       can_read_driver_management: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      can_read_service_areas: {
         Args: { target_tenant_id: string }
         Returns: boolean
       }
@@ -1513,6 +1605,7 @@ export type Database = {
       }
       my_driver_portal_summary: { Args: never; Returns: Json }
       my_driver_availability: { Args: never; Returns: Json }
+      my_driver_service_areas: { Args: never; Returns: Json }
       my_assigned_vehicle_compliance: { Args: never; Returns: Json }
       queue_driver_expiration_notifications: {
         Args: { target_date?: string }
