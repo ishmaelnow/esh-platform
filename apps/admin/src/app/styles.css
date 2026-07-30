@@ -416,6 +416,15 @@ td span {
   margin-top: 3px;
 }
 
+.availability-cell {
+  display: grid;
+  gap: 3px;
+}
+
+.availability-cell span {
+  margin-top: 0;
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;

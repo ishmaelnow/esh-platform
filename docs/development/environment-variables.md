@@ -32,6 +32,10 @@ These variables are not production deployment settings:
   `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, `E2E_DRIVER_EMAIL`, and
   `E2E_DRIVER_PASSWORD`. Use an isolated, fully compliant test driver; the test always returns the
   driver to offline.
+- The manually dispatched `Driver Availability E2E` GitHub Actions workflow reads
+  `DRIVER_APP_URL` from the production environment variables and the four `E2E_*` values from
+  production environment secrets. Protect that GitHub environment with required reviewers so the
+  workflow cannot change production driver state without approval.
 - `RUN_SUPABASE_RLS_TESTS=true` enables local database RLS integration tests. `SUPABASE_TEST_DB_HOST`, `SUPABASE_TEST_DB_PORT`, `SUPABASE_TEST_DB_USER`, `SUPABASE_TEST_DB_PASSWORD`, and `SUPABASE_TEST_DB_NAME` override the local Supabase database defaults.
 - `RUN_SUPABASE_ADMIN_TESTS=true` enables Admin integration tests and requires `ADMIN_INTEGRATION_SUPABASE_URL` plus `ADMIN_INTEGRATION_SUPABASE_SERVICE_ROLE_KEY` in the shell running the tests.
 - `CI` is supplied automatically by CI providers and changes Playwright retry, worker, and reporter behavior.

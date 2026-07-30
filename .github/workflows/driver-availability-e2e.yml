@@ -1,0 +1,52 @@
+name: Driver Availability E2E
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-driver-availability-e2e
+  cancel-in-progress: false
+
+jobs:
+  availability:
+    name: Verify production driver availability
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ vars.DRIVER_APP_URL }}
+      E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      E2E_DRIVER_EMAIL: ${{ secrets.E2E_DRIVER_EMAIL }}
+      E2E_DRIVER_PASSWORD: ${{ secrets.E2E_DRIVER_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate production test configuration
+        run: |
+          test -n "$PLAYWRIGHT_BASE_URL"
+          test -n "$E2E_SUPABASE_URL"
+          test -n "$E2E_SUPABASE_ANON_KEY"
+          test -n "$E2E_DRIVER_EMAIL"
+          test -n "$E2E_DRIVER_PASSWORD"
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test driver availability
+        run: pnpm exec playwright test tests/e2e/driver-availability.spec.ts --project=chromium

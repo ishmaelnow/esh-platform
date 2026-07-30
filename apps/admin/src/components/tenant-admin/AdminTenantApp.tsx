@@ -1600,7 +1600,7 @@ function DriversPanel({
                     <span>{driver.email ?? "No email"}</span>
                   </td>
                   <td>{driver.status}</td>
-                  <td>
+                  <td className="availability-cell">
                     {(() => {
                       const availability = driverAvailabilityStatus(
                         summary,
