@@ -5,6 +5,12 @@ import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
+import {
+  availabilityBlockerDetails,
+  availabilityErrorMessage,
+  evidenceLabel,
+  vehicleEvidenceLabel,
+} from "../lib/availability";
 
 type DriverSummary = {
   driverProfileId: string;
@@ -531,9 +537,17 @@ export default function DriverHome() {
                 <div className="eligibility-blockers">
                   <strong>Complete these before going online:</strong>
                   <ul>
-                    {availability.blockers.map((blocker) => (
-                      <li key={blocker}>{availabilityBlockerLabel(blocker)}</li>
-                    ))}
+                    {availability.blockers
+                      .flatMap((blocker) =>
+                        availabilityBlockerDetails(
+                          blocker,
+                          summary.documents,
+                          vehicleCompliance?.documents ?? [],
+                        ),
+                      )
+                      .map((blocker, index) => (
+                        <li key={`${blocker}-${index}`}>{blocker}</li>
+                      ))}
                   </ul>
                 </div>
               ) : (
@@ -561,9 +575,7 @@ export default function DriverHome() {
                     ? "Go offline"
                     : "Go online"}
               </button>
-              {availabilityMessage ? (
-                <p className="upload-message">{availabilityMessage}</p>
-              ) : null}
+              {availabilityMessage ? <p className="upload-message">{availabilityMessage}</p> : null}
             </section>
             <section className="assigned-vehicle">
               <div>
@@ -777,47 +789,6 @@ export default function DriverHome() {
       </section>
     </main>
   );
-}
-
-function evidenceLabel(evidenceType: string) {
-  const labels: Record<string, string> = {
-    personal_photo: "Personal photo",
-    reference_document: "Reference document",
-    vehicle_photo: "Onboarding vehicle evidence",
-  };
-  return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
-}
-
-function vehicleEvidenceLabel(evidenceType: string) {
-  const labels: Record<string, string> = {
-    registration: "Vehicle registration",
-    insurance: "Vehicle insurance",
-    inspection: "Safety inspection",
-    operating_permit: "Operating permit",
-  };
-  return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
-}
-
-function availabilityBlockerLabel(blocker: string) {
-  const labels: Record<string, string> = {
-    driver_profile_missing: "Driver profile is unavailable",
-    driver_not_active: "Driver account must be active",
-    driver_documents_incomplete: "Driver documents must be approved and current",
-    vehicle_not_assigned: "An active vehicle must be assigned",
-    vehicle_not_active: "Assigned vehicle must be active",
-    vehicle_documents_incomplete: "Vehicle documents must be approved and current",
-  };
-  return labels[blocker] ?? blocker.replaceAll("_", " ");
-}
-
-function availabilityErrorMessage(message: string) {
-  const marker = "cannot go online:";
-  if (!message.toLowerCase().includes(marker)) return message;
-  const blockerText = message.slice(message.toLowerCase().indexOf(marker) + marker.length);
-  return `Cannot go online. ${blockerText
-    .split(",")
-    .map((blocker) => availabilityBlockerLabel(blocker.trim()))
-    .join("; ")}.`;
 }
 
 async function withTimeout<T>(request: PromiseLike<T>, timeoutMs: number): Promise<T | null> {

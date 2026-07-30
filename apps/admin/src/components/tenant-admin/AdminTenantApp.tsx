@@ -891,28 +891,23 @@ function DriverApplicationsPanel({
     else if (result.url) setPreview({ title, url: result.url });
   }
 
-  async function reviewEvidence(evidenceId: string, status: "approved" | "rejected") {
+  async function reviewEvidence(
+    evidenceId: string,
+    status: "approved" | "rejected",
+    currentExpiration: string | null,
+  ) {
     const notes =
-      status === "rejected"
-        ? window.prompt("Why is this evidence rejected?")?.trim()
-        : window.prompt("Optional review note")?.trim();
+      status === "rejected" ? window.prompt("Why is this evidence rejected?")?.trim() : null;
     if (status === "rejected" && !notes) {
       setReviewMessage("A rejection reason is required; no change was made.");
       return;
     }
     const expirationRequired = evidenceRequiresExpiration(summary, evidenceId);
-    const expiresOn =
-      status === "approved"
-        ? window
-            .prompt(
-              expirationRequired
-                ? "Required future expiration date (YYYY-MM-DD)"
-                : "Optional expiration date (YYYY-MM-DD)",
-            )
-            ?.trim() || null
-        : null;
+    const expiresOn = status === "approved" ? currentExpiration : null;
     if (status === "approved" && expirationRequired && !expiresOn) {
-      setReviewMessage("A future expiration date is required; no change was made.");
+      const message = "Enter a future expiration date before approving this evidence.";
+      setReviewMessage(message);
+      window.alert(message);
       return;
     }
     setActiveEvidenceId(evidenceId);
@@ -937,9 +932,12 @@ function DriverApplicationsPanel({
       setReviewOverrides((current) => ({ ...current, [evidenceId]: status }));
       setExpirationOverrides((current) => ({ ...current, [evidenceId]: expiresOn }));
       setReviewMessage(`Evidence ${status}.`);
+      window.alert(`Evidence ${status} successfully.`);
       onRefresh();
     } catch (error) {
-      setReviewMessage(error instanceof Error ? error.message : "Unable to review evidence.");
+      const message = error instanceof Error ? error.message : "Unable to review evidence.";
+      setReviewMessage(message);
+      window.alert(message);
     } finally {
       setActiveEvidenceId(null);
     }
@@ -1008,9 +1006,12 @@ function DriverApplicationsPanel({
                         const currentReviewStatus =
                           reviewOverrides[item.evidence_id] ?? item.review_status;
                         const currentExpiration =
-                          item.evidence_id in expirationOverrides
+                          (item.evidence_id in expirationOverrides
                             ? expirationOverrides[item.evidence_id]
-                            : item.expires_on;
+                            : item.expires_on) ?? null;
+                        const expirationChanged =
+                          item.evidence_id in expirationOverrides &&
+                          currentExpiration !== item.expires_on;
                         const required = summary.driverEvidenceRequirements.some(
                           ({ evidence_type, required_for_activation }) =>
                             evidence_type === item.evidence_type && required_for_activation,
@@ -1019,6 +1020,10 @@ function DriverApplicationsPanel({
                           ({ evidence_type, expiration_required }) =>
                             evidence_type === item.evidence_type && expiration_required,
                         );
+                        const isLatestEvidence =
+                          evidence.find(
+                            (candidate) => candidate.evidence_type === item.evidence_type,
+                          )?.evidence_id === item.evidence_id;
                         return (
                           <div className="onboarding-checklist" key={item.evidence_id}>
                             <strong>{item.evidence_type.replaceAll("_", " ")}</strong>
@@ -1026,6 +1031,7 @@ function DriverApplicationsPanel({
                               {currentReviewStatus}
                               {required ? " · required" : " · optional"}
                               {expirationRequired ? " · expiration required" : ""}
+                              {isLatestEvidence ? " · current upload" : " · older upload"}
                               {currentExpiration ? ` · expires ${currentExpiration}` : ""}
                             </span>
                             <span>
@@ -1033,6 +1039,22 @@ function DriverApplicationsPanel({
                               {new Date(item.submitted_at).toLocaleDateString()}
                             </span>
                             {item.review_notes ? <span>{item.review_notes}</span> : null}
+                            {expirationRequired && isLatestEvidence ? (
+                              <label>
+                                Expiration date
+                                <input
+                                  min={tomorrowDate()}
+                                  onChange={(event) =>
+                                    setExpirationOverrides((current) => ({
+                                      ...current,
+                                      [item.evidence_id]: event.target.value || null,
+                                    }))
+                                  }
+                                  type="date"
+                                  value={currentExpiration ?? ""}
+                                />
+                              </label>
+                            ) : null}
                             <button
                               className="secondary-button"
                               onClick={() =>
@@ -1049,26 +1071,38 @@ function DriverApplicationsPanel({
                               className="secondary-button"
                               disabled={
                                 !canManageTenant ||
+                                !isLatestEvidence ||
                                 activeEvidenceId === item.evidence_id ||
                                 (currentReviewStatus === "approved" &&
-                                  (!expirationRequired || currentExpiration !== null))
+                                  (!expirationRequired || item.expires_on !== null) &&
+                                  !expirationChanged)
                               }
-                              onClick={() => void reviewEvidence(item.evidence_id, "approved")}
+                              onClick={() =>
+                                void reviewEvidence(item.evidence_id, "approved", currentExpiration)
+                              }
                               type="button"
                             >
-                              {currentReviewStatus === "approved" &&
-                              (!expirationRequired || currentExpiration !== null)
-                                ? "Approved"
-                                : "Approve evidence"}
+                              {!isLatestEvidence
+                                ? "Superseded"
+                                : currentReviewStatus === "approved" &&
+                                    (!expirationRequired || item.expires_on !== null) &&
+                                    !expirationChanged
+                                  ? "Approved"
+                                  : currentReviewStatus === "approved" && expirationRequired
+                                    ? "Save expiration date"
+                                    : "Approve evidence"}
                             </button>
                             <button
                               className="danger-button"
                               disabled={
                                 !canManageTenant ||
+                                !isLatestEvidence ||
                                 activeEvidenceId === item.evidence_id ||
                                 currentReviewStatus === "rejected"
                               }
-                              onClick={() => void reviewEvidence(item.evidence_id, "rejected")}
+                              onClick={() =>
+                                void reviewEvidence(item.evidence_id, "rejected", null)
+                              }
                               type="button"
                             >
                               Reject evidence
@@ -1315,22 +1349,23 @@ function DriversPanel({
     else if (result.url) setPreview({ title, url: result.url });
   }
 
-  async function reviewDriverEvidence(evidenceId: string, status: "approved" | "rejected") {
+  async function reviewDriverEvidence(
+    evidenceId: string,
+    status: "approved" | "rejected",
+    currentExpiration: string | null,
+  ) {
     const notes =
-      status === "rejected"
-        ? window.prompt("Why is this evidence rejected?")?.trim()
-        : null;
+      status === "rejected" ? window.prompt("Why is this evidence rejected?")?.trim() : null;
     if (status === "rejected" && !notes) {
       setEvidenceMessage("A rejection reason is required; no change was made.");
       return;
     }
     const expirationRequired = evidenceRequiresExpiration(summary, evidenceId);
-    const expiresOn =
-      status === "approved"
-        ? evidenceExpirationOverrides[evidenceId] || null
-        : null;
+    const expiresOn = status === "approved" ? currentExpiration : null;
     if (status === "approved" && expirationRequired && !expiresOn) {
-      setEvidenceMessage("A future expiration date is required; no change was made.");
+      const message = "Enter a future expiration date before approving this evidence.";
+      setEvidenceMessage(message);
+      window.alert(message);
       return;
     }
     setActiveEvidenceId(evidenceId);
@@ -1355,9 +1390,12 @@ function DriversPanel({
       setEvidenceReviewOverrides((current) => ({ ...current, [evidenceId]: status }));
       setEvidenceExpirationOverrides((current) => ({ ...current, [evidenceId]: expiresOn }));
       setEvidenceMessage(`Evidence ${status}.`);
+      window.alert(`Evidence ${status} successfully.`);
       onRefresh();
     } catch (error) {
-      setEvidenceMessage(error instanceof Error ? error.message : "Unable to review evidence.");
+      const message = error instanceof Error ? error.message : "Unable to review evidence.";
+      setEvidenceMessage(message);
+      window.alert(message);
     } finally {
       setActiveEvidenceId(null);
     }
@@ -1726,9 +1764,9 @@ function DriversPanel({
                                   evidenceReviewOverrides[evidence.evidence_id] ??
                                   evidence.review_status;
                                 const currentExpiration =
-                                  evidence.evidence_id in evidenceExpirationOverrides
+                                  (evidence.evidence_id in evidenceExpirationOverrides
                                     ? evidenceExpirationOverrides[evidence.evidence_id]
-                                    : evidence.expires_on;
+                                    : evidence.expires_on) ?? null;
                                 const expirationChanged =
                                   evidence.evidence_id in evidenceExpirationOverrides &&
                                   currentExpiration !== evidence.expires_on;
@@ -1787,34 +1825,45 @@ function DriversPanel({
                                       className="secondary-button"
                                       disabled={
                                         !canManageTenant ||
+                                        !isLatestEvidence ||
                                         activeEvidenceId === evidence.evidence_id ||
                                         (currentReviewStatus === "approved" &&
                                           (!expirationRequired || evidence.expires_on !== null) &&
                                           !expirationChanged)
                                       }
                                       onClick={() =>
-                                        void reviewDriverEvidence(evidence.evidence_id, "approved")
+                                        void reviewDriverEvidence(
+                                          evidence.evidence_id,
+                                          "approved",
+                                          currentExpiration,
+                                        )
                                       }
                                       type="button"
                                     >
-                                      {currentReviewStatus === "approved" &&
-                                      (!expirationRequired || evidence.expires_on !== null) &&
-                                      !expirationChanged
-                                        ? "Approved"
+                                      {!isLatestEvidence
+                                        ? "Superseded"
                                         : currentReviewStatus === "approved" &&
-                                            expirationRequired
-                                          ? "Save expiration date"
-                                          : "Approve"}
+                                            (!expirationRequired || evidence.expires_on !== null) &&
+                                            !expirationChanged
+                                          ? "Approved"
+                                          : currentReviewStatus === "approved" && expirationRequired
+                                            ? "Save expiration date"
+                                            : "Approve"}
                                     </button>
                                     <button
                                       className="danger-button"
                                       disabled={
                                         !canManageTenant ||
+                                        !isLatestEvidence ||
                                         activeEvidenceId === evidence.evidence_id ||
                                         currentReviewStatus === "rejected"
                                       }
                                       onClick={() =>
-                                        void reviewDriverEvidence(evidence.evidence_id, "rejected")
+                                        void reviewDriverEvidence(
+                                          evidence.evidence_id,
+                                          "rejected",
+                                          null,
+                                        )
                                       }
                                       type="button"
                                     >
@@ -2689,9 +2738,7 @@ function driverAvailabilityStatus(summary: TenantSummary, driverProfileId: strin
   const assignment = summary.driverVehicleAssignments.find(
     (item) => item.driver_profile_id === driverProfileId && item.ended_at === null,
   );
-  const vehicle = summary.vehicles.find(
-    (item) => item.vehicle_id === assignment?.vehicle_id,
-  );
+  const vehicle = summary.vehicles.find((item) => item.vehicle_id === assignment?.vehicle_id);
   const today = new Date().toISOString().slice(0, 10);
   const vehicleCompliant =
     vehicle !== undefined &&

@@ -28,6 +28,10 @@ The shared Stripe package requires `STRIPE_SECRET_KEY` when a runtime creates a 
 These variables are not production deployment settings:
 
 - `PLAYWRIGHT_BASE_URL` optionally points Playwright at a running Admin deployment; it defaults to `http://127.0.0.1:3000`.
+- Driver availability E2E uses `PLAYWRIGHT_BASE_URL` for the Driver deployment plus
+  `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, `E2E_DRIVER_EMAIL`, and
+  `E2E_DRIVER_PASSWORD`. Use an isolated, fully compliant test driver; the test always returns the
+  driver to offline.
 - `RUN_SUPABASE_RLS_TESTS=true` enables local database RLS integration tests. `SUPABASE_TEST_DB_HOST`, `SUPABASE_TEST_DB_PORT`, `SUPABASE_TEST_DB_USER`, `SUPABASE_TEST_DB_PASSWORD`, and `SUPABASE_TEST_DB_NAME` override the local Supabase database defaults.
 - `RUN_SUPABASE_ADMIN_TESTS=true` enables Admin integration tests and requires `ADMIN_INTEGRATION_SUPABASE_URL` plus `ADMIN_INTEGRATION_SUPABASE_SERVICE_ROLE_KEY` in the shell running the tests.
 - `CI` is supplied automatically by CI providers and changes Playwright retry, worker, and reporter behavior.

@@ -26,13 +26,22 @@ Scope:
 - Derived document-compliance status.
 - Database enforcement preventing activation before onboarding and evidence approval.
 
-Explicitly deferred:
+Deferred from this milestone:
 
 - OCR and automatic classification.
 - External identity or background-check providers.
-- Scheduled expiration reminders.
-- Full vehicle records and vehicle-specific compliance.
 - Dispatch eligibility and location.
+
+Scheduled expiration reminders, fleet records, and vehicle-specific compliance were originally
+deferred from this milestone and were delivered under the later milestones below.
+
+## Current Stabilization Focus
+
+- Make evidence review operate only on the newest upload for each document type.
+- Show the exact driver or vehicle document blocking service availability.
+- Verify eligible drivers can move online and offline without weakening database enforcement.
+- Add automated browser coverage for the core availability transition.
+- Keep test credentials isolated from production and return test drivers offline after verification.
 
 ## Next Milestones
 
