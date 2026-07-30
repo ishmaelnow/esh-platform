@@ -83,7 +83,8 @@ type DriverServiceArea = {
   centerLatitude: number;
   centerLongitude: number;
   radiusKm: number;
-  assignedAt: string;
+  coverageMode: "all_drivers" | "selected_drivers";
+  assignedAt: string | null;
 };
 
 export default function DriverHome() {
@@ -598,7 +599,9 @@ export default function DriverHome() {
             <section className="documents">
               <div>
                 <p className="eyebrow">Service areas</p>
-                <h3>{serviceAreas.length > 0 ? "Assigned operating areas" : "No area assigned"}</h3>
+                <h3>
+                  {serviceAreas.length > 0 ? "Available operating areas" : "No area available"}
+                </h3>
               </div>
               {serviceAreas.length > 0 ? (
                 serviceAreas.map((area) => (
@@ -612,12 +615,17 @@ export default function DriverHome() {
                       Center {area.centerLatitude}, {area.centerLongitude} · {area.radiusKm} km
                       radius
                     </span>
+                    <span>
+                      {area.coverageMode === "all_drivers"
+                        ? "Available to all active tenant drivers"
+                        : "Access granted by your tenant administrator"}
+                    </span>
                   </article>
                 ))
               ) : (
                 <p className="document-help">
-                  Your tenant administrator has not assigned an active service area. Location
-                  sharing is not enabled.
+                  Your tenant does not currently have an active service area available to you.
+                  Location sharing is not enabled.
                 </p>
               )}
             </section>

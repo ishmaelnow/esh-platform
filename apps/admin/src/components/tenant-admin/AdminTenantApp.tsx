@@ -2016,6 +2016,7 @@ function ServiceAreasPanel({
       centerLatitude: value("centerLatitude"),
       centerLongitude: value("centerLongitude"),
       radiusKm: value("radiusKm"),
+      coverageMode: value("coverageMode"),
       ...(editingAreaId ? { kind: "service_area_update", serviceAreaId: editingAreaId } : {}),
     };
     setBusyId(editingAreaId ?? "create");
@@ -2079,7 +2080,7 @@ function ServiceAreasPanel({
       <section className="panel">
         <PanelHeader
           title="Service areas"
-          description="Define circular operating boundaries and assign drivers. Location sharing is not enabled."
+          description="Define tenant operating boundaries for all active drivers or restrict coverage to selected drivers. Location sharing is not enabled."
         />
         <button
           className="primary-button"
@@ -2153,6 +2154,16 @@ function ServiceAreasPanel({
                 type="number"
               />
             </label>
+            <label>
+              Driver coverage
+              <select
+                defaultValue={editingArea?.coverage_mode ?? "all_drivers"}
+                name="coverageMode"
+              >
+                <option value="all_drivers">All active tenant drivers</option>
+                <option value="selected_drivers">Selected drivers only</option>
+              </select>
+            </label>
             <button className="primary-button" disabled={busyId !== null} type="submit">
               {editingAreaId ? "Save service area" : "Create service area"}
             </button>
@@ -2209,8 +2220,14 @@ function ServiceAreasPanel({
                   <dd>{area.radius_km} km</dd>
                 </div>
                 <div>
-                  <dt>Assigned drivers</dt>
-                  <dd>{activeAssignments.length}</dd>
+                  <dt>Driver coverage</dt>
+                  <dd>
+                    {area.coverage_mode === "all_drivers"
+                      ? "All active tenant drivers"
+                      : `${activeAssignments.length} selected driver${
+                          activeAssignments.length === 1 ? "" : "s"
+                        }`}
+                  </dd>
                 </div>
               </dl>
               <div className="row-actions">
@@ -2242,79 +2259,113 @@ function ServiceAreasPanel({
                 >
                   {area.status === "active" ? "Deactivate" : "Activate"}
                 </button>
+                <button
+                  className="secondary-button"
+                  disabled={!canManageTenant || busyId === area.service_area_id}
+                  onClick={() =>
+                    void updateArea(
+                      area.service_area_id,
+                      {
+                        kind: "service_area_coverage",
+                        coverageMode:
+                          area.coverage_mode === "all_drivers" ? "selected_drivers" : "all_drivers",
+                      },
+                      area.coverage_mode === "all_drivers"
+                        ? "Coverage restricted to selected drivers."
+                        : "Coverage opened to all active tenant drivers.",
+                    )
+                  }
+                  type="button"
+                >
+                  {area.coverage_mode === "all_drivers"
+                    ? "Restrict to selected drivers"
+                    : "Allow all active drivers"}
+                </button>
               </div>
-              <div className="onboarding-checklist">
-                <strong>Driver assignments</strong>
-                {activeAssignments.map((assignment) => {
-                  const driver = summary.drivers.find(
-                    ({ driver_profile_id }) => driver_profile_id === assignment.driver_profile_id,
-                  );
-                  return (
-                    <div className="row-actions" key={assignment.assignment_id}>
-                      <span>{driver?.display_name ?? assignment.driver_profile_id}</span>
+              {area.coverage_mode === "selected_drivers" ? (
+                <div className="onboarding-checklist">
+                  <strong>Selected drivers</strong>
+                  {activeAssignments.map((assignment) => {
+                    const driver = summary.drivers.find(
+                      ({ driver_profile_id }) => driver_profile_id === assignment.driver_profile_id,
+                    );
+                    return (
+                      <div className="row-actions" key={assignment.assignment_id}>
+                        <span>{driver?.display_name ?? assignment.driver_profile_id}</span>
+                        <button
+                          className="danger-button"
+                          disabled={!canManageTenant || busyId === area.service_area_id}
+                          onClick={() =>
+                            void updateArea(
+                              area.service_area_id,
+                              {
+                                kind: "service_area_unassign",
+                                assignmentId: assignment.assignment_id,
+                              },
+                              "Driver removed from service area.",
+                            )
+                          }
+                          type="button"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {area.status === "active" && availableDrivers.length > 0 ? (
+                    <div className="row-actions">
+                      <select
+                        aria-label={`Driver for ${area.name}`}
+                        onChange={(event) =>
+                          setSelectedDrivers((current) => ({
+                            ...current,
+                            [area.service_area_id]: event.target.value,
+                          }))
+                        }
+                        value={selectedDrivers[area.service_area_id] ?? ""}
+                      >
+                        <option value="">Select driver</option>
+                        {availableDrivers.map((driver) => (
+                          <option key={driver.driver_profile_id} value={driver.driver_profile_id}>
+                            {driver.display_name} · #{driver.driver_number}
+                          </option>
+                        ))}
+                      </select>
                       <button
-                        className="danger-button"
-                        disabled={!canManageTenant || busyId === area.service_area_id}
+                        className="primary-button"
+                        disabled={
+                          !canManageTenant ||
+                          busyId === area.service_area_id ||
+                          !selectedDrivers[area.service_area_id]
+                        }
                         onClick={() =>
                           void updateArea(
                             area.service_area_id,
                             {
-                              kind: "service_area_unassign",
-                              assignmentId: assignment.assignment_id,
+                              kind: "service_area_assign",
+                              driverProfileId: selectedDrivers[area.service_area_id] ?? "",
                             },
-                            "Driver removed from service area.",
+                            "Driver assigned to service area.",
                           )
                         }
                         type="button"
                       >
-                        Remove
+                        Assign driver
                       </button>
                     </div>
-                  );
-                })}
-                {area.status === "active" && availableDrivers.length > 0 ? (
-                  <div className="row-actions">
-                    <select
-                      aria-label={`Driver for ${area.name}`}
-                      onChange={(event) =>
-                        setSelectedDrivers((current) => ({
-                          ...current,
-                          [area.service_area_id]: event.target.value,
-                        }))
-                      }
-                      value={selectedDrivers[area.service_area_id] ?? ""}
-                    >
-                      <option value="">Select driver</option>
-                      {availableDrivers.map((driver) => (
-                        <option key={driver.driver_profile_id} value={driver.driver_profile_id}>
-                          {driver.display_name} · #{driver.driver_number}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      className="primary-button"
-                      disabled={
-                        !canManageTenant ||
-                        busyId === area.service_area_id ||
-                        !selectedDrivers[area.service_area_id]
-                      }
-                      onClick={() =>
-                        void updateArea(
-                          area.service_area_id,
-                          {
-                            kind: "service_area_assign",
-                            driverProfileId: selectedDrivers[area.service_area_id] ?? "",
-                          },
-                          "Driver assigned to service area.",
-                        )
-                      }
-                      type="button"
-                    >
-                      Assign driver
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+                  ) : null}
+                  {activeAssignments.length === 0 ? (
+                    <p className="muted">
+                      No drivers are selected. This area is currently unavailable to drivers.
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="notice">
+                  Every active driver in this tenant can operate in this service area. Saved driver
+                  selections will be restored if coverage is restricted again.
+                </p>
+              )}
             </section>
           );
         })

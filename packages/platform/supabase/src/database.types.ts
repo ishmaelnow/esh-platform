@@ -587,6 +587,7 @@ export type Database = {
         Row: {
           center_latitude: number
           center_longitude: number
+          coverage_mode: string
           created_at: string
           created_by_person_id: string
           description: string | null
@@ -601,6 +602,7 @@ export type Database = {
         Insert: {
           center_latitude: number
           center_longitude: number
+          coverage_mode?: string
           created_at?: string
           created_by_person_id: string
           description?: string | null
@@ -615,6 +617,7 @@ export type Database = {
         Update: {
           center_latitude?: number
           center_longitude?: number
+          coverage_mode?: string
           created_at?: string
           created_by_person_id?: string
           description?: string | null

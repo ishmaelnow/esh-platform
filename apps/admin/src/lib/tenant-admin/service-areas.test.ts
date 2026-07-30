@@ -10,6 +10,7 @@ describe("service area input", () => {
         centerLatitude: "32.7767",
         centerLongitude: -96.797,
         radiusKm: "25",
+        coverageMode: "all_drivers",
       }),
     ).toEqual({
       name: "Downtown",
@@ -17,6 +18,7 @@ describe("service area input", () => {
       centerLatitude: 32.7767,
       centerLongitude: -96.797,
       radiusKm: 25,
+      coverageMode: "all_drivers",
     });
   });
 
@@ -27,6 +29,7 @@ describe("service area input", () => {
         centerLatitude: 91,
         centerLongitude: 0,
         radiusKm: 10,
+        coverageMode: "all_drivers",
       }),
     ).toThrow(/latitude/i);
     expect(() =>
@@ -35,7 +38,20 @@ describe("service area input", () => {
         centerLatitude: 0,
         centerLongitude: 0,
         radiusKm: 0,
+        coverageMode: "all_drivers",
       }),
     ).toThrow(/radius/i);
+  });
+
+  it("requires a supported driver coverage mode", () => {
+    expect(() =>
+      parseServiceAreaInput({
+        name: "Downtown",
+        centerLatitude: 32.7767,
+        centerLongitude: -96.797,
+        radiusKm: 25,
+        coverageMode: "some_drivers",
+      }),
+    ).toThrow(/eligible drivers/i);
   });
 });

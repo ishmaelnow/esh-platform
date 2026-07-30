@@ -37,6 +37,7 @@ export async function POST(request: Request) {
         center_latitude: input.centerLatitude,
         center_longitude: input.centerLongitude,
         radius_km: input.radiusKm,
+        coverage_mode: input.coverageMode,
         created_by_person_id: personId,
         updated_by_person_id: personId,
       })
@@ -81,6 +82,7 @@ export async function PATCH(request: Request) {
             center_latitude: input.centerLatitude,
             center_longitude: input.centerLongitude,
             radius_km: input.radiusKm,
+            coverage_mode: input.coverageMode,
             updated_by_person_id: personId,
           })
           .eq("tenant_id", tenantId)
@@ -92,6 +94,15 @@ export async function PATCH(request: Request) {
         const { error } = await supabase
           .from("service_areas")
           .update({ status: record.status, updated_by_person_id: personId })
+          .eq("tenant_id", tenantId)
+          .eq("service_area_id", serviceAreaId);
+        if (error) throw error;
+      } else if (record.kind === "service_area_coverage") {
+        if (record.coverageMode !== "all_drivers" && record.coverageMode !== "selected_drivers")
+          throw new Error("Unsupported service area coverage mode.");
+        const { error } = await supabase
+          .from("service_areas")
+          .update({ coverage_mode: record.coverageMode, updated_by_person_id: personId })
           .eq("tenant_id", tenantId)
           .eq("service_area_id", serviceAreaId);
         if (error) throw error;

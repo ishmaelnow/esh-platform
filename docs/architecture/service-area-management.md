@@ -2,9 +2,9 @@
 
 ## Scope
 
-Service Area Management defines tenant-owned circular operating boundaries and preserves driver
-assignment history. It does not collect driver coordinates, imply location consent, expose drivers
-to riders, or perform dispatch matching.
+Service Area Management defines tenant-owned circular operating boundaries, tenant-wide or
+restricted driver coverage, and assignment history. It does not collect driver coordinates, imply
+location consent, expose drivers to riders, or perform dispatch matching.
 
 ## Ownership and boundaries
 
@@ -13,7 +13,8 @@ to riders, or perform dispatch matching.
 - Driver Management entitlement gates the first version because service-area assignment is an
   operational driver-management function.
 - Tenant owners and tenant administrators manage areas and assignments.
-- Drivers receive only their own active assignments through `my_driver_service_areas()`.
+- Drivers receive active tenant-wide areas plus their own active restricted-area assignments
+  through `my_driver_service_areas()`.
 
 ## Area model
 
@@ -26,16 +27,23 @@ history. Inactive areas are excluded from the Driver portal.
 
 ## Assignment model
 
-Drivers may be assigned to multiple active areas. Only one active assignment may exist for the same
-driver and area. Removing a driver ends the assignment with an actor and timestamp; it does not
-delete history.
+Each area has a driver coverage mode:
+
+- `all_drivers` makes the area available to every active driver in the tenant.
+- `selected_drivers` restricts the area to drivers with an active assignment.
+
+Drivers may be selected for multiple active areas. Only one active assignment may exist for the
+same driver and area. Removing a driver ends the assignment with an actor and timestamp; it does
+not delete history. Active selections remain stored while an area uses `all_drivers`, allowing an
+administrator to restore the prior restricted set without rebuilding it.
 
 ## Security and audit
 
 - RLS requires active tenant membership for reads.
 - Mutations require `tenant_owner` or `tenant_admin` plus the Driver Management capability.
 - Cross-tenant foreign keys prevent mismatched driver and area records.
-- Creation, update, status changes, assignment, and unassignment create tenant audit events.
+- Creation, update, status and coverage changes, assignment, and unassignment create tenant audit
+  events.
 - The Driver RPC resolves the driver through `auth.uid()` and never accepts a caller-supplied driver
   or tenant identifier.
 

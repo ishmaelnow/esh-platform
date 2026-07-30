@@ -4,6 +4,7 @@ export type ServiceAreaInput = {
   centerLatitude: number;
   centerLongitude: number;
   radiusKm: number;
+  coverageMode: "all_drivers" | "selected_drivers";
 };
 
 export function parseServiceAreaInput(input: Record<string, unknown>): ServiceAreaInput {
@@ -12,6 +13,7 @@ export function parseServiceAreaInput(input: Record<string, unknown>): ServiceAr
   const centerLatitude = number(input.centerLatitude);
   const centerLongitude = number(input.centerLongitude);
   const radiusKm = number(input.radiusKm);
+  const coverageMode = input.coverageMode;
 
   if (!name) throw new Error("Service area name is required.");
   if (name.length > 120) throw new Error("Service area name must be 120 characters or fewer.");
@@ -23,8 +25,10 @@ export function parseServiceAreaInput(input: Record<string, unknown>): ServiceAr
     throw new Error("Longitude must be between -180 and 180.");
   if (radiusKm <= 0 || radiusKm > 1000)
     throw new Error("Radius must be greater than 0 and no more than 1000 km.");
+  if (coverageMode !== "all_drivers" && coverageMode !== "selected_drivers")
+    throw new Error("Choose all eligible drivers or selected drivers only.");
 
-  return { name, description, centerLatitude, centerLongitude, radiusKm };
+  return { name, description, centerLatitude, centerLongitude, radiusKm, coverageMode };
 }
 
 function text(value: unknown) {

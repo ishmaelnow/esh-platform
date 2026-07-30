@@ -79,8 +79,9 @@ deferred from this milestone and were delivered under the later milestones below
    - Driver availability, service areas, and location exposure policy.
    - Current delivery: driver-controlled online/offline availability, database-enforced driver and
      vehicle compliance eligibility, tenant-admin visibility, and availability audit history.
-   - Current delivery: tenant-managed circular service areas, active/inactive lifecycle, preserved
-     driver assignment history, and assigned-area visibility in the Driver portal.
+   - Current delivery: tenant-managed circular service areas, active/inactive lifecycle,
+     tenant-wide or selected-driver coverage, preserved assignment history, and available-area
+     visibility in the Driver portal.
    - Remaining: explicit location consent, bounded location exposure, polygon boundaries, and
      realtime presence.
 5. **Dispatch and Trip Core**
