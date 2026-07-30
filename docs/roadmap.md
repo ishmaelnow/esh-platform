@@ -82,6 +82,8 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: tenant-managed circular service areas, active/inactive lifecycle,
      tenant-wide or selected-driver coverage, preserved assignment history, and available-area
      visibility in the Driver portal.
+   - Current delivery: driver choice of one authorized operating area, automatic choice when only
+     one area is available, offline-only switching, and area-aware availability visibility.
    - Remaining: explicit location consent, bounded location exposure, polygon boundaries, and
      realtime presence.
 5. **Dispatch and Trip Core**

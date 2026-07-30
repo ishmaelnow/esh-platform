@@ -45,6 +45,8 @@ export function availabilityBlockerLabel(blocker: string) {
     vehicle_not_assigned: "An active vehicle must be assigned",
     vehicle_not_active: "Assigned vehicle must be active",
     vehicle_documents_incomplete: "Vehicle documents must be approved and current",
+    service_area_not_selected: "Select an operating service area",
+    service_area_unavailable: "The selected service area is no longer available",
   };
   return labels[blocker] ?? blocker.replaceAll("_", " ");
 }

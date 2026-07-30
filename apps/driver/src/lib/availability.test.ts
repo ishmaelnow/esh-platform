@@ -63,6 +63,9 @@ describe("driver availability messaging", () => {
     expect(availabilityBlockerDetails("vehicle_not_assigned", [], [])).toEqual([
       "An active vehicle must be assigned",
     ]);
+    expect(availabilityBlockerDetails("service_area_not_selected", [], [])).toEqual([
+      "Select an operating service area",
+    ]);
   });
 
   it("keeps all document states actionable", () => {

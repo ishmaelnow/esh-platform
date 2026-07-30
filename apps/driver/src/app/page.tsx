@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
@@ -74,6 +74,8 @@ type DriverAvailability = {
   eligible: boolean;
   blockers: string[];
   statusChangedAt: string;
+  selectedServiceAreaId: string | null;
+  selectedServiceAreaName: string | null;
 };
 
 type DriverServiceArea = {
@@ -85,6 +87,7 @@ type DriverServiceArea = {
   radiusKm: number;
   coverageMode: "all_drivers" | "selected_drivers";
   assignedAt: string | null;
+  selected: boolean;
 };
 
 export default function DriverHome() {
@@ -113,6 +116,9 @@ export default function DriverHome() {
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState<string | null>(null);
   const [serviceAreas, setServiceAreas] = useState<DriverServiceArea[]>([]);
+  const [updatingServiceArea, setUpdatingServiceArea] = useState(false);
+  const [serviceAreaMessage, setServiceAreaMessage] = useState<string | null>(null);
+  const automaticAreaAttempt = useRef<string | null>(null);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -496,6 +502,45 @@ export default function DriverHome() {
     setUpdatingAvailability(false);
   }
 
+  const selectServiceArea = useCallback(
+    async (serviceAreaId: string, automatic = false) => {
+      if (!supabase || !serviceAreaId) return;
+      setUpdatingServiceArea(true);
+      setServiceAreaMessage(automatic ? "Selecting your only available area…" : "Saving area…");
+      const result = await supabase.rpc("set_my_driver_service_area", {
+        target_service_area_id: serviceAreaId,
+      });
+      if (result.error || !result.data) {
+        setServiceAreaMessage(result.error?.message ?? "Service area could not be selected.");
+      } else {
+        setServiceAreas(result.data as unknown as DriverServiceArea[]);
+        const availabilityResult = await supabase.rpc("my_driver_availability");
+        if (!availabilityResult.error && availabilityResult.data) {
+          setAvailability(availabilityResult.data as unknown as DriverAvailability);
+        }
+        setServiceAreaMessage(
+          automatic ? "Your only available area was selected." : "Operating area selected.",
+        );
+      }
+      setUpdatingServiceArea(false);
+    },
+    [supabase],
+  );
+
+  useEffect(() => {
+    const soleArea = serviceAreas.length === 1 ? serviceAreas[0] : undefined;
+    if (
+      soleArea &&
+      !soleArea.selected &&
+      availability?.requestedStatus === "offline" &&
+      !updatingServiceArea &&
+      automaticAreaAttempt.current !== soleArea.serviceAreaId
+    ) {
+      automaticAreaAttempt.current = soleArea.serviceAreaId;
+      void selectServiceArea(soleArea.serviceAreaId, true);
+    }
+  }, [availability?.requestedStatus, selectServiceArea, serviceAreas, updatingServiceArea]);
+
   return (
     <main className="shell">
       <section className="portal-card">
@@ -571,8 +616,10 @@ export default function DriverHome() {
                 </div>
               ) : (
                 <p className="document-help">
-                  Going online tells your tenant administrator you are ready for service. Location
-                  sharing is not enabled yet.
+                  {availability?.selectedServiceAreaName
+                    ? `Going online tells your tenant administrator you are ready in ${availability.selectedServiceAreaName}. `
+                    : "Going online tells your tenant administrator you are ready for service. "}
+                  Location sharing is not enabled.
                 </p>
               )}
               <button
@@ -604,11 +651,40 @@ export default function DriverHome() {
                 </h3>
               </div>
               {serviceAreas.length > 0 ? (
+                <label>
+                  Active operating area
+                  <select
+                    disabled={updatingServiceArea || availability?.requestedStatus === "online"}
+                    onChange={(event) => void selectServiceArea(event.target.value)}
+                    value={
+                      serviceAreas.find((area) => area.selected)?.serviceAreaId ??
+                      availability?.selectedServiceAreaId ??
+                      ""
+                    }
+                  >
+                    <option value="" disabled>
+                      Select where you will operate
+                    </option>
+                    {serviceAreas.map((area) => (
+                      <option key={area.serviceAreaId} value={area.serviceAreaId}>
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {availability?.requestedStatus === "online" ? (
+                <p className="document-help">Go offline before changing your operating area.</p>
+              ) : null}
+              {serviceAreaMessage ? <p className="upload-message">{serviceAreaMessage}</p> : null}
+              {serviceAreas.length > 0 ? (
                 serviceAreas.map((area) => (
                   <article className="document-card" key={area.serviceAreaId}>
                     <div className="document-heading">
                       <strong>{area.name}</strong>
-                      <span className="status status-approved">active</span>
+                      <span className="status status-approved">
+                        {area.selected ? "selected" : "available"}
+                      </span>
                     </div>
                     {area.description ? <span>{area.description}</span> : null}
                     <span>

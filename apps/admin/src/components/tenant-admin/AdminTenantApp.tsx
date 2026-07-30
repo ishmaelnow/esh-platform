@@ -3135,12 +3135,25 @@ function tomorrowDate() {
 }
 
 function driverAvailabilityStatus(summary: TenantSummary, driverProfileId: string) {
-  const requested =
-    summary.driverAvailability.find((item) => item.driver_profile_id === driverProfileId)
-      ?.requested_status ?? "offline";
+  const availability = summary.driverAvailability.find(
+    (item) => item.driver_profile_id === driverProfileId,
+  );
+  const requested = availability?.requested_status ?? "offline";
   if (requested !== "online") return { status: "Offline", note: null };
 
   const driver = summary.drivers.find((item) => item.driver_profile_id === driverProfileId);
+  const selectedArea = summary.serviceAreas.find(
+    (area) => area.service_area_id === availability?.selected_service_area_id,
+  );
+  const selectedAreaAssignment = summary.driverServiceAreaAssignments.some(
+    (assignment) =>
+      assignment.driver_profile_id === driverProfileId &&
+      assignment.service_area_id === selectedArea?.service_area_id &&
+      assignment.ended_at === null,
+  );
+  const serviceAreaAvailable =
+    selectedArea?.status === "active" &&
+    (selectedArea.coverage_mode === "all_drivers" || selectedAreaAssignment);
   const checklist = summary.driverOnboarding.find(
     (item) => item.driver_profile_id === driverProfileId,
   );
@@ -3171,9 +3184,10 @@ function driverAvailabilityStatus(summary: TenantSummary, driverProfileId: strin
     driver?.status === "active" &&
     checklist?.documents_reviewed === true &&
     vehicle?.status === "active" &&
-    vehicleCompliant;
+    vehicleCompliant &&
+    serviceAreaAvailable;
   return eligible
-    ? { status: "Online", note: "Ready for service" }
+    ? { status: "Online", note: selectedArea?.name ?? "Ready for service" }
     : { status: "Offline", note: "Eligibility changed" };
 }
 

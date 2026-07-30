@@ -170,6 +170,7 @@ export type Database = {
           last_offline_at: string
           last_online_at: string | null
           requested_status: string
+          selected_service_area_id: string | null
           status_changed_at: string
           tenant_id: string
           updated_at: string
@@ -180,6 +181,7 @@ export type Database = {
           last_offline_at?: string
           last_online_at?: string | null
           requested_status?: string
+          selected_service_area_id?: string | null
           status_changed_at?: string
           tenant_id: string
           updated_at?: string
@@ -190,11 +192,19 @@ export type Database = {
           last_offline_at?: string
           last_online_at?: string | null
           requested_status?: string
+          selected_service_area_id?: string | null
           status_changed_at?: string
           tenant_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "driver_availability_selected_service_area_fk"
+            columns: ["tenant_id", "selected_service_area_id"]
+            isOneToOne: false
+            referencedRelation: "service_areas"
+            referencedColumns: ["tenant_id", "service_area_id"]
+          },
           {
             foreignKeyName: "driver_availability_driver_fk"
             columns: ["tenant_id", "driver_profile_id"]
@@ -1617,6 +1627,10 @@ export type Database = {
       set_my_driver_notification_preferences: {
         Args: { expiration_reminders_enabled_value: boolean }
         Returns: boolean
+      }
+      set_my_driver_service_area: {
+        Args: { target_service_area_id: string }
+        Returns: Json
       }
       set_my_driver_availability: {
         Args: { target_status: string }
