@@ -129,8 +129,15 @@ export function AdminTenantApp() {
         setLoading(false);
       });
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
+
+      // A refreshed access token does not change tenant data. Reloading the
+      // workspace here unmounts active forms and discards in-progress input.
+      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        return;
+      }
+
       void refresh(nextSession);
     });
 
@@ -2090,7 +2097,13 @@ function ServiceAreasPanel({
           <form className="settings-grid" key={formKey} onSubmit={(event) => void saveArea(event)}>
             <label>
               Name
-              <input defaultValue={editingArea?.name ?? ""} maxLength={120} name="name" required />
+              <input
+                defaultValue={editingArea?.name ?? ""}
+                maxLength={120}
+                name="name"
+                placeholder="Example: Dallas Core"
+                required
+              />
             </label>
             <label>
               Description
@@ -2098,6 +2111,7 @@ function ServiceAreasPanel({
                 defaultValue={editingArea?.description ?? ""}
                 maxLength={500}
                 name="description"
+                placeholder="Example: Primary service zone covering central Dallas"
               />
             </label>
             <label>
@@ -2107,6 +2121,7 @@ function ServiceAreasPanel({
                 max="90"
                 min="-90"
                 name="centerLatitude"
+                placeholder="Example: 32.776700"
                 required
                 step="0.000001"
                 type="number"
@@ -2119,6 +2134,7 @@ function ServiceAreasPanel({
                 max="180"
                 min="-180"
                 name="centerLongitude"
+                placeholder="Example: -96.797000"
                 required
                 step="0.000001"
                 type="number"
@@ -2131,6 +2147,7 @@ function ServiceAreasPanel({
                 max="1000"
                 min="0.01"
                 name="radiusKm"
+                placeholder="Example: 25"
                 required
                 step="0.01"
                 type="number"
