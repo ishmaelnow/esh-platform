@@ -151,11 +151,17 @@ export default function DriverHome() {
         : (availabilityResult.data as unknown as DriverAvailability),
     );
     const serviceAreaResult = await supabase.rpc("my_driver_service_areas");
-    setServiceAreas(
-      serviceAreaResult.error || !serviceAreaResult.data
-        ? []
-        : (serviceAreaResult.data as unknown as DriverServiceArea[]),
-    );
+    if (serviceAreaResult.error || !serviceAreaResult.data) {
+      setServiceAreas([]);
+      setServiceAreaMessage(
+        serviceAreaResult.error
+          ? `Service areas could not be loaded: ${serviceAreaResult.error.message}`
+          : "Service areas could not be loaded.",
+      );
+    } else {
+      setServiceAreas(serviceAreaResult.data as unknown as DriverServiceArea[]);
+      setServiceAreaMessage(null);
+    }
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -597,17 +603,51 @@ export default function DriverHome() {
                   {availability?.effectiveStatus ?? "offline"}
                 </span>
               </div>
+              {serviceAreas.length > 0 ? (
+                <label>
+                  Active operating area
+                  <select
+                    disabled={updatingServiceArea || availability?.requestedStatus === "online"}
+                    onChange={(event) => void selectServiceArea(event.target.value)}
+                    value={
+                      serviceAreas.find((area) => area.selected)?.serviceAreaId ??
+                      availability?.selectedServiceAreaId ??
+                      ""
+                    }
+                  >
+                    <option value="" disabled>
+                      Select where you will operate
+                    </option>
+                    {serviceAreas.map((area) => (
+                      <option key={area.serviceAreaId} value={area.serviceAreaId}>
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <p className="eligibility-blockers">
+                  No active service area is currently available to your driver account. Contact your
+                  tenant administrator.
+                </p>
+              )}
+              {availability?.requestedStatus === "online" ? (
+                <p className="document-help">Go offline before changing your operating area.</p>
+              ) : null}
+              {serviceAreaMessage ? <p className="upload-message">{serviceAreaMessage}</p> : null}
               {availability && !availability.eligible ? (
                 <div className="eligibility-blockers">
                   <strong>Complete these before going online:</strong>
                   <ul>
                     {availability.blockers
                       .flatMap((blocker) =>
-                        availabilityBlockerDetails(
-                          blocker,
-                          summary.documents,
-                          vehicleCompliance?.documents ?? [],
-                        ),
+                        blocker === "service_area_not_selected" && serviceAreas.length === 0
+                          ? ["Tenant administrator must make an active service area available"]
+                          : availabilityBlockerDetails(
+                              blocker,
+                              summary.documents,
+                              vehicleCompliance?.documents ?? [],
+                            ),
                       )
                       .map((blocker, index) => (
                         <li key={`${blocker}-${index}`}>{blocker}</li>
@@ -650,33 +690,6 @@ export default function DriverHome() {
                   {serviceAreas.length > 0 ? "Available operating areas" : "No area available"}
                 </h3>
               </div>
-              {serviceAreas.length > 0 ? (
-                <label>
-                  Active operating area
-                  <select
-                    disabled={updatingServiceArea || availability?.requestedStatus === "online"}
-                    onChange={(event) => void selectServiceArea(event.target.value)}
-                    value={
-                      serviceAreas.find((area) => area.selected)?.serviceAreaId ??
-                      availability?.selectedServiceAreaId ??
-                      ""
-                    }
-                  >
-                    <option value="" disabled>
-                      Select where you will operate
-                    </option>
-                    {serviceAreas.map((area) => (
-                      <option key={area.serviceAreaId} value={area.serviceAreaId}>
-                        {area.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              {availability?.requestedStatus === "online" ? (
-                <p className="document-help">Go offline before changing your operating area.</p>
-              ) : null}
-              {serviceAreaMessage ? <p className="upload-message">{serviceAreaMessage}</p> : null}
               {serviceAreas.length > 0 ? (
                 serviceAreas.map((area) => (
                   <article className="document-card" key={area.serviceAreaId}>
