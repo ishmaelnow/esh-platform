@@ -31,8 +31,17 @@ automatic activation, and transactional email.
 
 ## Current test checkpoint
 
-The project owner is manually testing Scheduled Rider Bookings in production. No individual test
-case result has been reported yet in this checkpoint.
+Scheduled Rider Bookings production testing is complete. All tested scheduled-booking behavior
+passed except Admin notification discoverability.
+
+Reported failure:
+
+- No dedicated **Transactional notifications** tab or clearly discoverable navigation action was
+  visible in Admin.
+- Notification records and delivery controls currently live inside the Drivers view, which does
+  not match the operational scope or the manual test expectation.
+- Treat this as an Admin information-architecture/usability defect, not evidence that scheduled
+  notification enqueueing or delivery failed.
 
 Use the professional test plan already provided in the active conversation. If that conversation
 is unavailable, reconstruct it from `docs/architecture/scheduled-rider-bookings.md` and verify at
@@ -80,8 +89,11 @@ one-time links.
 
 ## Open issues
 
-No unresolved scheduled-booking defect has been reported yet. Treat the next manual-test result as
-the source of truth and update this section immediately if a failure appears.
+- Add a dedicated Admin **Notifications** tab for tenant-wide Driver, vehicle, dispatch, and Rider
+  transactional notifications.
+- Move the existing notification summary, delivery action, status/history, errors, and retry
+  controls out of the Drivers view into that tab.
+- Preserve the current tenant authorization and shared outbox behavior.
 
 ## Cleanup still required after testing
 
@@ -93,8 +105,8 @@ the source of truth and update this section immediately if a failure appears.
 
 ## Exact next action
 
-Receive the next production test result, record the test case and evidence, diagnose any failure
-without disturbing successful flows, and update this handoff with the new checkpoint.
+Implement and validate the dedicated Admin Notifications tab, then repeat only the notification
+visibility, manual delivery, failure/retry, and Rider scheduled-email test cases.
 
 ## Required reading for recovery
 
