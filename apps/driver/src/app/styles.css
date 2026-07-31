@@ -161,6 +161,30 @@ h3 {
   color: #b45309;
 }
 
+.sound-controls {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.sound-controls > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.sound-controls > div:first-child span {
+  color: #586174;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .documents,
 .assigned-vehicle,
 .availability-card,

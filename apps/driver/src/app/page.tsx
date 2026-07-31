@@ -123,6 +123,8 @@ type DriverDispatch = {
 
 type DriverPortalTab = "overview" | "dispatch" | "service_areas" | "documents" | "vehicle";
 
+const tripSoundPreferenceKey = "esh-driver-trip-sounds-enabled";
+
 export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -157,6 +159,9 @@ export default function DriverHome() {
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
+  const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
+  const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
+  const knownDispatchOfferIds = useRef<Set<string>>(new Set());
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -202,7 +207,9 @@ export default function DriverHome() {
     }
     const dispatchResult = await supabase.rpc("my_driver_dispatch");
     if (!dispatchResult.error && dispatchResult.data) {
-      setDispatch(dispatchResult.data as unknown as DriverDispatch);
+      const nextDispatch = dispatchResult.data as unknown as DriverDispatch;
+      setDispatch(nextDispatch);
+      knownDispatchOfferIds.current = new Set(nextDispatch.offers.map(({ offerId }) => offerId));
     }
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
@@ -221,6 +228,10 @@ export default function DriverHome() {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
     return () => subscription.unsubscribe();
   }, [supabase]);
+
+  useEffect(() => {
+    setTripSoundsEnabled(window.localStorage.getItem(tripSoundPreferenceKey) === "true");
+  }, []);
 
   useEffect(() => {
     if (!session) {
@@ -595,12 +606,24 @@ export default function DriverHome() {
     const interval = window.setInterval(() => {
       void supabase.rpc("my_driver_dispatch").then((result) => {
         if (!result.error && result.data) {
-          setDispatch(result.data as unknown as DriverDispatch);
+          const nextDispatch = result.data as unknown as DriverDispatch;
+          const newOffers = nextDispatch.offers.filter(
+            ({ offerId }) => !knownDispatchOfferIds.current.has(offerId),
+          );
+          nextDispatch.offers.forEach(({ offerId }) => knownDispatchOfferIds.current.add(offerId));
+          setDispatch(nextDispatch);
+          if (newOffers.length > 0 && tripSoundsEnabled) {
+            void playTripOfferSound().catch(() => {
+              setTripSoundMessage(
+                "A new offer arrived, but the browser blocked sound. Use Test sound to restore it.",
+              );
+            });
+          }
         }
       });
     }, 5_000);
     return () => window.clearInterval(interval);
-  }, [session, supabase]);
+  }, [session, supabase, tripSoundsEnabled]);
 
   useEffect(() => {
     if (dispatch.offers.length === 0) return;
@@ -626,6 +649,32 @@ export default function DriverHome() {
     setDispatchBusy(false);
   }
 
+  async function enableTripSounds() {
+    try {
+      await playTripOfferSound();
+      window.localStorage.setItem(tripSoundPreferenceKey, "true");
+      setTripSoundsEnabled(true);
+      setTripSoundMessage("Trip sounds enabled on this browser.");
+    } catch {
+      setTripSoundMessage("This browser could not enable trip sounds.");
+    }
+  }
+
+  function disableTripSounds() {
+    window.localStorage.setItem(tripSoundPreferenceKey, "false");
+    setTripSoundsEnabled(false);
+    setTripSoundMessage("Trip sounds disabled.");
+  }
+
+  async function testTripSound() {
+    try {
+      await playTripOfferSound();
+      setTripSoundMessage("Test sound played.");
+    } catch {
+      setTripSoundMessage("The browser blocked the test sound.");
+    }
+  }
+
   async function refreshDispatch() {
     if (!supabase) return;
     setDispatchBusy(true);
@@ -634,7 +683,21 @@ export default function DriverHome() {
     if (result.error || !result.data) {
       setDispatchMessage(result.error?.message ?? "Dispatch could not be refreshed.");
     } else {
-      setDispatch(result.data as unknown as DriverDispatch);
+      const nextDispatch = result.data as unknown as DriverDispatch;
+      const newOffers = nextDispatch.offers.filter(
+        ({ offerId }) => !knownDispatchOfferIds.current.has(offerId),
+      );
+      nextDispatch.offers.forEach(({ offerId }) => knownDispatchOfferIds.current.add(offerId));
+      setDispatch(nextDispatch);
+      if (newOffers.length > 0 && tripSoundsEnabled) {
+        try {
+          await playTripOfferSound();
+        } catch {
+          setTripSoundMessage(
+            "A new offer arrived, but the browser blocked sound. Use Test sound to restore it.",
+          );
+        }
+      }
       setDispatchMessage("Dispatch updated.");
     }
     setDispatchBusy(false);
@@ -842,6 +905,34 @@ export default function DriverHome() {
                         ? "Active trip"
                         : "No active trip"}
                   </h3>
+                </div>
+                <div className="sound-controls">
+                  <div>
+                    <strong>Trip offer sound</strong>
+                    <span>{tripSoundsEnabled ? "Enabled on this browser" : "Disabled"}</span>
+                  </div>
+                  <div className="row-actions">
+                    <button
+                      className={tripSoundsEnabled ? "secondary" : undefined}
+                      onClick={() =>
+                        tripSoundsEnabled ? disableTripSounds() : void enableTripSounds()
+                      }
+                      type="button"
+                    >
+                      {tripSoundsEnabled ? "Disable sound" : "Enable trip sounds"}
+                    </button>
+                    <button
+                      className="secondary"
+                      onClick={() => void testTripSound()}
+                      type="button"
+                    >
+                      Test sound
+                    </button>
+                  </div>
+                  <p className="document-help">
+                    Sound plays once for each new offer. Visual and email alerts remain active.
+                  </p>
+                  {tripSoundMessage ? <p className="upload-message">{tripSoundMessage}</p> : null}
                 </div>
                 <button
                   className="secondary"
@@ -1192,4 +1283,35 @@ async function withTimeout<T>(request: PromiseLike<T>, timeoutMs: number): Promi
     Promise.resolve(request),
     new Promise<null>((resolve) => window.setTimeout(() => resolve(null), timeoutMs)),
   ]);
+}
+
+let tripAudioContext: AudioContext | null = null;
+
+async function playTripOfferSound() {
+  const AudioContextClass =
+    window.AudioContext ??
+    (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) throw new Error("Web Audio is unavailable.");
+  tripAudioContext ??= new AudioContextClass();
+  if (tripAudioContext.state === "suspended") await tripAudioContext.resume();
+
+  const startAt = tripAudioContext.currentTime;
+  const notes = [
+    { frequency: 659.25, offset: 0 },
+    { frequency: 880, offset: 0.18 },
+  ];
+  notes.forEach(({ frequency, offset }) => {
+    const oscillator = tripAudioContext!.createOscillator();
+    const gain = tripAudioContext!.createGain();
+    const noteStart = startAt + offset;
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, noteStart);
+    gain.gain.setValueAtTime(0.0001, noteStart);
+    gain.gain.exponentialRampToValueAtTime(0.18, noteStart + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.22);
+    oscillator.connect(gain);
+    gain.connect(tripAudioContext!.destination);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + 0.24);
+  });
 }

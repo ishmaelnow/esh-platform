@@ -28,6 +28,11 @@ seconds while open, and the Driver portal shows a live countdown. An expired off
 accepted; expiration returns the booking to `requested` for another manual offer. The manual
 refresh controls remain available as a fallback.
 
+The Driver portal also offers an opt-in Web Audio chime. Browser autoplay rules require a driver
+gesture to enable or test sound. The preference is stored only in that browser, and each new offer
+ID sounds at most once during the active portal session. Visual and email alerts remain available
+when sound is disabled or blocked.
+
 ## Enforcement
 
 - Only tenant owners and tenant administrators with Driver Management enabled can create, offer,
