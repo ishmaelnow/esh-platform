@@ -1000,6 +1000,7 @@ export type Database = {
           person_id: string | null
           provider_message_id: string | null
           recipient_email: string
+          rider_profile_id: string | null
           sent_at: string | null
           tenant_id: string
           updated_at: string
@@ -1020,6 +1021,7 @@ export type Database = {
           person_id?: string | null
           provider_message_id?: string | null
           recipient_email: string
+          rider_profile_id?: string | null
           sent_at?: string | null
           tenant_id: string
           updated_at?: string
@@ -1040,6 +1042,7 @@ export type Database = {
           person_id?: string | null
           provider_message_id?: string | null
           recipient_email?: string
+          rider_profile_id?: string | null
           sent_at?: string | null
           tenant_id?: string
           updated_at?: string
@@ -1060,6 +1063,13 @@ export type Database = {
             referencedColumns: ["person_id"]
           },
           {
+            foreignKeyName: "notification_outbox_rider_fk"
+            columns: ["tenant_id", "rider_profile_id"]
+            isOneToOne: false
+            referencedRelation: "rider_profiles"
+            referencedColumns: ["tenant_id", "rider_profile_id"]
+          },
+          {
             foreignKeyName: "notification_outbox_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -1067,6 +1077,30 @@ export type Database = {
             referencedColumns: ["tenant_id"]
           },
         ]
+      }
+      rider_notification_preferences: {
+        Row: {
+          created_at: string
+          rider_profile_id: string
+          tenant_id: string
+          trip_updates_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          rider_profile_id: string
+          tenant_id: string
+          trip_updates_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          rider_profile_id?: string
+          tenant_id?: string
+          trip_updates_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       person_profiles: {
         Row: {
@@ -1818,6 +1852,10 @@ export type Database = {
         Args: { target_tenant_slug: string }
         Returns: Json
       }
+      my_rider_notification_preferences: {
+        Args: { target_tenant_slug: string }
+        Returns: Json
+      }
       my_assigned_vehicle_compliance: { Args: never; Returns: Json }
       queue_driver_expiration_notifications: {
         Args: { target_date?: string }
@@ -1842,6 +1880,13 @@ export type Database = {
       set_my_driver_availability: {
         Args: { target_status: string }
         Returns: Json
+      }
+      set_my_rider_notification_preferences: {
+        Args: {
+          target_tenant_slug: string
+          trip_updates_enabled_value: boolean
+        }
+        Returns: boolean
       }
       upsert_my_rider_profile: {
         Args: {

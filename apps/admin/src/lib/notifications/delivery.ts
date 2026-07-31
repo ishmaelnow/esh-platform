@@ -1,6 +1,6 @@
 import type { PlatformSupabaseClient } from "@esh-platform/supabase";
 import type { AdminServerConfig } from "@/lib/config";
-import { sendDriverNotificationEmail } from "./email";
+import { sendNotificationEmail } from "./email";
 
 export type DeliveryScope = {
   tenantId?: string;
@@ -60,7 +60,7 @@ export async function deliverQueuedNotifications(
     if (!claimed) continue;
 
     try {
-      const result = await sendDriverNotificationEmail(config, {
+      const result = await sendNotificationEmail(config, {
         notificationId: notification.notification_id,
         notificationType: notification.notification_type,
         recipientEmail: notification.recipient_email,

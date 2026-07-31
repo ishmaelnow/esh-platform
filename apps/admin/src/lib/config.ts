@@ -17,6 +17,7 @@ export type AdminServerConfig = AdminPublicConfig & {
   redirects: {
     tenantAdminBaseUrl: string;
     driverAppUrl: string;
+    riderAppUrl: string;
   };
 };
 
@@ -30,7 +31,8 @@ type AdminConfigKey =
   | "INVITATION_FROM_EMAIL"
   | "INVITATION_BASE_URL"
   | "TENANT_ADMIN_BASE_URL"
-  | "NEXT_PUBLIC_DRIVER_APP_URL";
+  | "NEXT_PUBLIC_DRIVER_APP_URL"
+  | "NEXT_PUBLIC_RIDER_APP_URL";
 
 let cachedServerConfig: AdminServerConfig | null = null;
 
@@ -90,6 +92,12 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
     "https://driver.eshapp.com",
     errors,
   );
+  const riderAppUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_RIDER_APP_URL",
+    "https://rider.eshapp.com",
+    errors,
+  );
 
   assertNoConfigErrors(errors);
 
@@ -109,6 +117,7 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
     redirects: {
       tenantAdminBaseUrl,
       driverAppUrl,
+      riderAppUrl,
     },
   };
 }

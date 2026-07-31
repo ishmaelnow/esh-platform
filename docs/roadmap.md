@@ -97,8 +97,11 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: verified-email Rider access, tenant-scoped rider profiles, service-area trip
      requests, rider cancellation before trip start, booking history/status, and post-acceptance
      driver and vehicle disclosure.
+   - Current delivery: preference-controlled Rider trip emails for booking receipt, continued
+     driver search, acceptance, arrival, trip start, completion, and cancellation, using the shared
+     durable outbox, retries, delivery history, and Resend webhook tracking.
    - Remaining: scheduled bookings, automatic matching, realtime location, routing, pricing,
-     payments, and customer notifications.
+     payments, SMS/push delivery, and scheduled-trip reminders.
 6. **Reputation**
    - Product-specific criteria on generic reputation primitives.
 7. **Money and Ledger**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDriverNotificationContent } from "./email";
+import { buildDriverNotificationContent, buildRiderNotificationContent } from "./email";
 
 describe("driver notification email content", () => {
   it("includes rejection context and the portal link", () => {
@@ -71,5 +71,50 @@ describe("driver notification email content", () => {
     expect(content.text).toContain("Dallas Core");
     expect(content.text).toContain("Pickup: 100 Main St");
     expect(content.text).toContain("DFW Terminal A");
+  });
+});
+
+describe("rider notification email content", () => {
+  it("includes accepted driver details and a tenant-scoped Rider link", () => {
+    const content = buildRiderNotificationContent(
+      "rider_driver_accepted",
+      {
+        rider_name: "Manual Test Rider",
+        tenant_slug: "dallas-rides",
+        pickup_address: "100 Main St",
+        destination_address: "DFW Terminal A",
+        driver_name: "Test Driver",
+        driver_number: "334525",
+        vehicle_description: "Black 2025 Toyota Sienna · ABC1234",
+      },
+      "https://rider.eshapp.com",
+    );
+
+    expect(content.subject).toBe("Your driver accepted the trip");
+    expect(content.text).toContain("Test Driver (#334525)");
+    expect(content.text).toContain("Black 2025 Toyota Sienna");
+    expect(content.text).toContain("https://rider.eshapp.com/?tenant=dallas-rides");
+  });
+
+  it("does not disclose driver details in a booking receipt", () => {
+    const content = buildRiderNotificationContent(
+      "rider_booking_created",
+      {
+        rider_name: "Manual Test Rider",
+        pickup_address: "100 Main St",
+        destination_address: "DFW Terminal A",
+      },
+      "https://rider.eshapp.com",
+    );
+
+    expect(content.subject).toBe("Your trip request was received");
+    expect(content.text).not.toContain("Driver:");
+    expect(content.text).toContain("Pickup: 100 Main St");
+  });
+
+  it("rejects unknown rider notification types", () => {
+    expect(() =>
+      buildRiderNotificationContent("rider_unknown", {}, "https://rider.eshapp.com"),
+    ).toThrow("Unsupported rider notification type.");
   });
 });

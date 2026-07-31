@@ -48,6 +48,7 @@ export type DriverServiceAreaAssignmentRow = Tables<"driver_service_area_assignm
 export type DispatchBookingRow = Tables<"dispatch_bookings">;
 export type DispatchOfferRow = Tables<"dispatch_offers">;
 export type RiderProfileRow = Tables<"rider_profiles">;
+export type RiderNotificationPreferenceRow = Tables<"rider_notification_preferences">;
 export type VehicleEvidenceRow = Tables<"vehicle_evidence">;
 export type VehicleEvidenceRequirementRow = Tables<"vehicle_evidence_requirements">;
 export type TenantRow = Tables<"tenants">;

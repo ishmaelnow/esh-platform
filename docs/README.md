@@ -6,6 +6,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Service Area Management](./architecture/service-area-management.md)
 - [Manual Dispatch and Trip Core](./architecture/manual-dispatch-trip-core.md)
 - [Verified Rider Booking](./architecture/verified-rider-booking.md)
+- [Rider Trip Notifications](./architecture/rider-trip-notifications.md)
 - `architecture/` describes system structure, boundaries, and platform principles.
 - `adr/` records architectural decisions and their tradeoffs.
 - `development/` documents local development workflows and engineering standards.

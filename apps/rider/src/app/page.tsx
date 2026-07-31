@@ -47,6 +47,7 @@ type RiderPortal = {
   serviceAreas: ServiceArea[];
   bookings: RiderBooking[];
 };
+type RiderNotificationPreferences = { tripUpdatesEnabled: boolean };
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -77,6 +78,8 @@ export default function RiderHome() {
   const [tenants, setTenants] = useState<BookingTenant[]>([]);
   const [tenantSlug, setTenantSlug] = useState("");
   const [portal, setPortal] = useState<RiderPortal | null>(null);
+  const [notificationPreferences, setNotificationPreferences] =
+    useState<RiderNotificationPreferences | null>(null);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -89,7 +92,18 @@ export default function RiderHome() {
       target_tenant_slug: tenantSlug,
     });
     if (portalError) throw portalError;
-    setPortal(data as RiderPortal);
+    const nextPortal = data as RiderPortal;
+    setPortal(nextPortal);
+    if (nextPortal.profile) {
+      const { data: preferenceData, error: preferenceError } = await supabase.rpc(
+        "my_rider_notification_preferences",
+        { target_tenant_slug: tenantSlug },
+      );
+      if (preferenceError) throw preferenceError;
+      setNotificationPreferences(preferenceData as RiderNotificationPreferences);
+    } else {
+      setNotificationPreferences(null);
+    }
   }, [session, supabase, tenantSlug]);
 
   useEffect(() => {
@@ -228,6 +242,28 @@ export default function RiderHome() {
       if (cancelError) throw cancelError;
       await loadPortal();
       setMessage("Trip cancelled.");
+    } catch (value) {
+      setError(riderErrorMessage(value));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setTripUpdates(enabled: boolean) {
+    if (!supabase) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { error: preferenceError } = await supabase.rpc(
+        "set_my_rider_notification_preferences",
+        {
+          target_tenant_slug: tenantSlug,
+          trip_updates_enabled_value: enabled,
+        },
+      );
+      if (preferenceError) throw preferenceError;
+      setNotificationPreferences({ tripUpdatesEnabled: enabled });
+      setMessage(enabled ? "Trip update emails enabled." : "Trip update emails disabled.");
     } catch (value) {
       setError(riderErrorMessage(value));
     } finally {
@@ -424,6 +460,21 @@ export default function RiderHome() {
               >
                 Refresh
               </button>
+            </div>
+            <div className="card preference-card">
+              <div>
+                <strong>Trip update emails</strong>
+                <p>Receive booking, driver, arrival, trip, completion, and cancellation updates.</p>
+              </div>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences?.tripUpdatesEnabled ?? true}
+                  disabled={busy || !notificationPreferences}
+                  onChange={(event) => void setTripUpdates(event.target.checked)}
+                />
+                <span>{notificationPreferences?.tripUpdatesEnabled === false ? "Off" : "On"}</span>
+              </label>
             </div>
             {portal.bookings.length === 0 ? (
               <div className="card empty">

@@ -1,21 +1,27 @@
 import type { AdminServerConfig } from "@/lib/config";
 
-export type DriverNotification = {
+export type NotificationEmail = {
   notificationId: string;
   notificationType: string;
   recipientEmail: string;
   payload: Record<string, unknown>;
 };
 
-export async function sendDriverNotificationEmail(
+export async function sendNotificationEmail(
   config: AdminServerConfig,
-  notification: DriverNotification,
+  notification: NotificationEmail,
 ) {
-  const content = buildDriverNotificationContent(
-    notification.notificationType,
-    notification.payload,
-    config.redirects.driverAppUrl,
-  );
+  const content = notification.notificationType.startsWith("rider_")
+    ? buildRiderNotificationContent(
+        notification.notificationType,
+        notification.payload,
+        config.redirects.riderAppUrl,
+      )
+    : buildDriverNotificationContent(
+        notification.notificationType,
+        notification.payload,
+        config.redirects.driverAppUrl,
+      );
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -142,6 +148,73 @@ export function buildDriverNotificationContent(
       `<p>${escapeHtml(message.intro)}</p>`,
       message.detail ? `<p>${escapeHtml(message.detail)}</p>` : "",
       `<p><a href="${escapeHtml(portalUrl)}">Open Driver portal</a></p>`,
+    ].join(""),
+  };
+}
+
+export function buildRiderNotificationContent(
+  notificationType: string,
+  payload: Record<string, unknown>,
+  riderAppUrl: string,
+) {
+  const riderName = textValue(payload.rider_name) || "Rider";
+  const pickupAddress = textValue(payload.pickup_address);
+  const destinationAddress = textValue(payload.destination_address);
+  const driverName = textValue(payload.driver_name);
+  const driverNumber = textValue(payload.driver_number);
+  const vehicleDescription = textValue(payload.vehicle_description);
+  const tenantSlug = textValue(payload.tenant_slug);
+  const portalUrl = new URL("/", riderAppUrl);
+  if (tenantSlug) portalUrl.searchParams.set("tenant", tenantSlug);
+  const messages: Record<string, { subject: string; intro: string; details?: string[] }> = {
+    rider_booking_created: {
+      subject: "Your trip request was received",
+      intro: `${riderName}, your trip request was received and dispatch can now find a driver.`,
+    },
+    rider_dispatch_searching: {
+      subject: "We are still finding your driver",
+      intro: `${riderName}, the previous offer expired or was declined. Dispatch is continuing to find an eligible driver.`,
+    },
+    rider_driver_accepted: {
+      subject: "Your driver accepted the trip",
+      intro: `${riderName}, a driver accepted your trip.`,
+      details: [
+        driverName ? `Driver: ${driverName}${driverNumber ? ` (#${driverNumber})` : ""}` : "",
+        vehicleDescription ? `Vehicle: ${vehicleDescription}` : "",
+      ],
+    },
+    rider_driver_arrived: {
+      subject: "Your driver has arrived",
+      intro: `${riderName}, your driver has arrived at the pickup location.`,
+    },
+    rider_trip_started: {
+      subject: "Your trip has started",
+      intro: `${riderName}, your trip is now in progress.`,
+    },
+    rider_trip_completed: {
+      subject: "Your trip is complete",
+      intro: `${riderName}, your trip has been completed.`,
+    },
+    rider_booking_cancelled: {
+      subject: "Your trip was cancelled",
+      intro: `${riderName}, your trip booking has been cancelled.`,
+    },
+  };
+  const message = messages[notificationType];
+  if (!message) throw new Error("Unsupported rider notification type.");
+  const details = [
+    pickupAddress ? `Pickup: ${pickupAddress}` : "",
+    destinationAddress ? `Destination: ${destinationAddress}` : "",
+    ...(message.details ?? []),
+  ].filter(Boolean);
+  const link = portalUrl.toString();
+  return {
+    subject: message.subject,
+    text: [message.intro, ...details, "", "View your trip:", link].join("\n"),
+    html: [
+      `<p>${escapeHtml(message.intro)}</p>`,
+      ...details.map((detail) => `<p>${escapeHtml(detail)}</p>`),
+      `<p><a href="${escapeHtml(link)}">View your trip</a></p>`,
     ].join(""),
   };
 }

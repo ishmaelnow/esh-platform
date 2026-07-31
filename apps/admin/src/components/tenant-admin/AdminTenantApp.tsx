@@ -1451,7 +1451,7 @@ function DriversPanel({
         />
         <section className="notification-summary">
           <div>
-            <strong>Driver notifications</strong>
+            <strong>Transactional notifications</strong>
             <span>
               {
                 summary.notifications
