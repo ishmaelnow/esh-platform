@@ -24,6 +24,7 @@ describe("Tenant Administration core workflows", () => {
     const tenantId = crypto.randomUUID();
     const membershipId = crypto.randomUUID();
     const serviceAreaId = crypto.randomUUID();
+    const bookingId = crypto.randomUUID();
 
     try {
       await expect(
@@ -121,6 +122,18 @@ describe("Tenant Administration core workflows", () => {
         }),
       ).resolves.toMatchObject({ error: null });
 
+      await expect(
+        supabase.from("dispatch_bookings").insert({
+          booking_id: bookingId,
+          tenant_id: tenantId,
+          service_area_id: serviceAreaId,
+          customer_name: "Integration Rider",
+          pickup_address: "100 Main St",
+          destination_address: "DFW Terminal A",
+          created_by_person_id: personId,
+        }),
+      ).resolves.toMatchObject({ error: null });
+
       const summary = await loadTenantSummary(supabase, tenantId);
 
       expect(summary.configuration?.display_name).toBe("Integration Tenant");
@@ -128,6 +141,9 @@ describe("Tenant Administration core workflows", () => {
       expect(summary.invitations).toHaveLength(1);
       expect(summary.serviceAreas).toMatchObject([
         { service_area_id: serviceAreaId, name: "Integration Coverage", status: "active" },
+      ]);
+      expect(summary.dispatchBookings).toMatchObject([
+        { booking_id: bookingId, customer_name: "Integration Rider", status: "requested" },
       ]);
       expect(
         summary.capabilities.find(({ capability_key }) => capability_key === "app.driver")?.enabled,
@@ -152,6 +168,8 @@ describe("Tenant Administration core workflows", () => {
     } finally {
       await supabase.from("tenants").update({ status: "closing" }).eq("tenant_id", tenantId);
       await supabase.from("driver_service_area_assignments").delete().eq("tenant_id", tenantId);
+      await supabase.from("dispatch_offers").delete().eq("tenant_id", tenantId);
+      await supabase.from("dispatch_bookings").delete().eq("tenant_id", tenantId);
       await supabase.from("service_areas").delete().eq("tenant_id", tenantId);
       await supabase.from("tenant_role_assignments").delete().eq("tenant_id", tenantId);
       await supabase.from("tenant_memberships").delete().eq("tenant_id", tenantId);

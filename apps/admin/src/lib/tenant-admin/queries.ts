@@ -27,6 +27,8 @@ export async function loadTenantSummary(
     vehicleEvidenceRequirementsResult,
     serviceAreasResult,
     driverServiceAreaAssignmentsResult,
+    dispatchBookingsResult,
+    dispatchOffersResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -106,6 +108,16 @@ export async function loadTenantSummary(
       .select("*")
       .eq("tenant_id", tenantId)
       .order("assigned_at", { ascending: false }),
+    supabase
+      .from("dispatch_bookings")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("dispatch_offers")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("offered_at", { ascending: false }),
   ]);
 
   if (tenantResult.error) {
@@ -189,6 +201,13 @@ export async function loadTenantSummary(
     !driverServiceAreaAssignmentsResult.error.message.includes("driver_service_area_assignments")
   )
     throw driverServiceAreaAssignmentsResult.error;
+  if (
+    dispatchBookingsResult.error &&
+    !dispatchBookingsResult.error.message.includes("dispatch_bookings")
+  )
+    throw dispatchBookingsResult.error;
+  if (dispatchOffersResult.error && !dispatchOffersResult.error.message.includes("dispatch_offers"))
+    throw dispatchOffersResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -218,6 +237,8 @@ export async function loadTenantSummary(
     vehicleEvidenceRequirements: vehicleEvidenceRequirementsResult.data ?? [],
     serviceAreas: serviceAreasResult.data ?? [],
     driverServiceAreaAssignments: driverServiceAreaAssignmentsResult.data ?? [],
+    dispatchBookings: dispatchBookingsResult.data ?? [],
+    dispatchOffers: dispatchOffersResult.data ?? [],
   };
 }
 

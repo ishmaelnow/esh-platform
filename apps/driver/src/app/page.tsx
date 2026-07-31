@@ -90,6 +90,35 @@ type DriverServiceArea = {
   selected: boolean;
 };
 
+type DriverDispatchOffer = {
+  offerId: string;
+  bookingId: string;
+  customerName: string;
+  customerPhone: string | null;
+  pickupAddress: string;
+  destinationAddress: string;
+  notes: string | null;
+  serviceAreaName: string;
+  status: "pending";
+  offeredAt: string;
+};
+
+type DriverTrip = {
+  bookingId: string;
+  customerName: string;
+  customerPhone: string | null;
+  pickupAddress: string;
+  destinationAddress: string;
+  notes: string | null;
+  serviceAreaName: string;
+  status: "accepted" | "arrived" | "in_progress";
+};
+
+type DriverDispatch = {
+  offers: DriverDispatchOffer[];
+  trips: DriverTrip[];
+};
+
 export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -119,6 +148,9 @@ export default function DriverHome() {
   const [updatingServiceArea, setUpdatingServiceArea] = useState(false);
   const [serviceAreaMessage, setServiceAreaMessage] = useState<string | null>(null);
   const automaticAreaAttempt = useRef<string | null>(null);
+  const [dispatch, setDispatch] = useState<DriverDispatch>({ offers: [], trips: [] });
+  const [dispatchBusy, setDispatchBusy] = useState(false);
+  const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -162,6 +194,10 @@ export default function DriverHome() {
       setServiceAreas(serviceAreaResult.data as unknown as DriverServiceArea[]);
       setServiceAreaMessage(null);
     }
+    const dispatchResult = await supabase.rpc("my_driver_dispatch");
+    if (!dispatchResult.error && dispatchResult.data) {
+      setDispatch(dispatchResult.data as unknown as DriverDispatch);
+    }
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -184,6 +220,7 @@ export default function DriverHome() {
     if (!session) {
       setSummary(null);
       setServiceAreas([]);
+      setDispatch({ offers: [], trips: [] });
       return;
     }
     void activateAndLoad();
@@ -547,6 +584,54 @@ export default function DriverHome() {
     }
   }, [availability?.requestedStatus, selectServiceArea, serviceAreas, updatingServiceArea]);
 
+  async function respondToOffer(offerId: string, response: "accepted" | "declined") {
+    if (!supabase) return;
+    setDispatchBusy(true);
+    setDispatchMessage(response === "accepted" ? "Accepting trip…" : "Declining trip…");
+    const result = await supabase.rpc("respond_my_dispatch_offer", {
+      target_offer_id: offerId,
+      target_response: response,
+    });
+    if (result.error || !result.data) {
+      setDispatchMessage(result.error?.message ?? "Offer response failed.");
+    } else {
+      setDispatch(result.data as unknown as DriverDispatch);
+      setDispatchMessage(response === "accepted" ? "Trip accepted." : "Trip declined.");
+    }
+    setDispatchBusy(false);
+  }
+
+  async function refreshDispatch() {
+    if (!supabase) return;
+    setDispatchBusy(true);
+    setDispatchMessage("Checking for trip updates…");
+    const result = await supabase.rpc("my_driver_dispatch");
+    if (result.error || !result.data) {
+      setDispatchMessage(result.error?.message ?? "Dispatch could not be refreshed.");
+    } else {
+      setDispatch(result.data as unknown as DriverDispatch);
+      setDispatchMessage("Dispatch updated.");
+    }
+    setDispatchBusy(false);
+  }
+
+  async function advanceTrip(bookingId: string, action: "arrive" | "start" | "complete") {
+    if (!supabase) return;
+    setDispatchBusy(true);
+    setDispatchMessage("Updating trip…");
+    const result = await supabase.rpc("advance_my_trip", {
+      target_booking_id: bookingId,
+      target_action: action,
+    });
+    if (result.error || !result.data) {
+      setDispatchMessage(result.error?.message ?? "Trip could not be updated.");
+    } else {
+      setDispatch(result.data as unknown as DriverDispatch);
+      setDispatchMessage(action === "complete" ? "Trip completed." : "Trip updated.");
+    }
+    setDispatchBusy(false);
+  }
+
   return (
     <main className="shell">
       <section className="portal-card">
@@ -682,6 +767,97 @@ export default function DriverHome() {
                     : "Go online"}
               </button>
               {availabilityMessage ? <p className="upload-message">{availabilityMessage}</p> : null}
+            </section>
+            <section className="documents">
+              <div>
+                <p className="eyebrow">Dispatch</p>
+                <h3>
+                  {dispatch.offers.length > 0
+                    ? "New trip offer"
+                    : dispatch.trips.length > 0
+                      ? "Active trip"
+                      : "No active trip"}
+                </h3>
+              </div>
+              <button
+                className="secondary"
+                disabled={dispatchBusy}
+                onClick={() => void refreshDispatch()}
+                type="button"
+              >
+                Refresh dispatch
+              </button>
+              {dispatch.offers.map((offer) => (
+                <article className="document-card" key={offer.offerId}>
+                  <div className="document-heading">
+                    <strong>{offer.serviceAreaName}</strong>
+                    <span className="status status-pending">offer</span>
+                  </div>
+                  <span>Customer: {offer.customerName}</span>
+                  {offer.customerPhone ? <span>Contact: {offer.customerPhone}</span> : null}
+                  <span>Pickup: {offer.pickupAddress}</span>
+                  <span>Destination: {offer.destinationAddress}</span>
+                  {offer.notes ? <span>Notes: {offer.notes}</span> : null}
+                  <div className="row-actions">
+                    <button
+                      disabled={dispatchBusy}
+                      onClick={() => void respondToOffer(offer.offerId, "accepted")}
+                      type="button"
+                    >
+                      Accept trip
+                    </button>
+                    <button
+                      className="secondary"
+                      disabled={dispatchBusy}
+                      onClick={() => void respondToOffer(offer.offerId, "declined")}
+                      type="button"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </article>
+              ))}
+              {dispatch.trips.map((trip) => (
+                <article className="document-card" key={trip.bookingId}>
+                  <div className="document-heading">
+                    <strong>{trip.serviceAreaName}</strong>
+                    <span className="status status-approved">
+                      {trip.status.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                  <span>Customer: {trip.customerName}</span>
+                  {trip.customerPhone ? <span>Contact: {trip.customerPhone}</span> : null}
+                  <span>Pickup: {trip.pickupAddress}</span>
+                  <span>Destination: {trip.destinationAddress}</span>
+                  {trip.notes ? <span>Notes: {trip.notes}</span> : null}
+                  <button
+                    disabled={dispatchBusy}
+                    onClick={() =>
+                      void advanceTrip(
+                        trip.bookingId,
+                        trip.status === "accepted"
+                          ? "arrive"
+                          : trip.status === "arrived"
+                            ? "start"
+                            : "complete",
+                      )
+                    }
+                    type="button"
+                  >
+                    {trip.status === "accepted"
+                      ? "Mark arrived"
+                      : trip.status === "arrived"
+                        ? "Start trip"
+                        : "Complete trip"}
+                  </button>
+                </article>
+              ))}
+              {dispatch.offers.length === 0 && dispatch.trips.length === 0 ? (
+                <p className="document-help">
+                  Trip offers from your tenant dispatcher will appear here.
+                </p>
+              ) : null}
+              {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
             </section>
             <section className="documents">
               <div>

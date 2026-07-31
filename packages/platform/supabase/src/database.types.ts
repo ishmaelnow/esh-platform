@@ -228,6 +228,102 @@ export type Database = {
           },
         ]
       }
+      dispatch_bookings: {
+        Row: {
+          booking_id: string
+          booking_notes: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          created_by_person_id: string
+          current_driver_profile_id: string | null
+          current_vehicle_id: string | null
+          customer_name: string
+          customer_phone: string | null
+          destination_address: string
+          pickup_address: string
+          service_area_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string
+          booking_notes?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by_person_id: string
+          current_driver_profile_id?: string | null
+          current_vehicle_id?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          destination_address: string
+          pickup_address: string
+          service_area_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          booking_notes?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by_person_id?: string
+          current_driver_profile_id?: string | null
+          current_vehicle_id?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          destination_address?: string
+          pickup_address?: string
+          service_area_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dispatch_offers: {
+        Row: {
+          booking_id: string
+          driver_profile_id: string
+          offer_id: string
+          offered_at: string
+          offered_by_person_id: string
+          responded_at: string | null
+          response_notes: string | null
+          status: string
+          tenant_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          booking_id: string
+          driver_profile_id: string
+          offer_id?: string
+          offered_at?: string
+          offered_by_person_id: string
+          responded_at?: string | null
+          response_notes?: string | null
+          status?: string
+          tenant_id: string
+          vehicle_id: string
+        }
+        Update: {
+          booking_id?: string
+          driver_profile_id?: string
+          offer_id?: string
+          offered_at?: string
+          offered_by_person_id?: string
+          responded_at?: string | null
+          response_notes?: string | null
+          status?: string
+          tenant_id?: string
+          vehicle_id?: string
+        }
+        Relationships: []
+      }
       driver_evidence: {
         Row: {
           created_at: string
@@ -1529,6 +1625,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      advance_my_trip: {
+        Args: { target_action: string; target_booking_id: string }
+        Returns: Json
+      }
+      cancel_dispatch_booking: {
+        Args: { target_booking_id: string }
+        Returns: boolean
+      }
+      can_manage_dispatch: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
       can_manage_driver_management: {
         Args: { target_tenant_id: string }
         Returns: boolean
@@ -1579,6 +1687,18 @@ export type Database = {
       current_person_id: { Args: never; Returns: string }
       current_person_is_active: { Args: never; Returns: boolean }
       current_person_normalized_email: { Args: never; Returns: string }
+      create_dispatch_booking: {
+        Args: {
+          booking_notes_value?: string
+          customer_name_value: string
+          customer_phone_value: string
+          destination_address_value: string
+          pickup_address_value: string
+          target_service_area_id: string
+          target_tenant_id: string
+        }
+        Returns: string
+      }
       driver_compliance_satisfied: {
         Args: { target_driver_profile_id: string }
         Returns: boolean
@@ -1617,12 +1737,21 @@ export type Database = {
         }[]
       }
       my_driver_portal_summary: { Args: never; Returns: Json }
+      my_driver_dispatch: { Args: never; Returns: Json }
       my_driver_availability: { Args: never; Returns: Json }
       my_driver_service_areas: { Args: never; Returns: Json }
       my_assigned_vehicle_compliance: { Args: never; Returns: Json }
       queue_driver_expiration_notifications: {
         Args: { target_date?: string }
         Returns: number
+      }
+      offer_dispatch_booking: {
+        Args: { target_booking_id: string; target_driver_profile_id: string }
+        Returns: string
+      }
+      respond_my_dispatch_offer: {
+        Args: { target_offer_id: string; target_response: string }
+        Returns: Json
       }
       set_my_driver_notification_preferences: {
         Args: { expiration_reminders_enabled_value: boolean }

@@ -40,6 +40,7 @@ type ViewKey =
   | "drivers"
   | "vehicles"
   | "serviceAreas"
+  | "dispatch"
   | "applications";
 
 const views: { key: ViewKey; label: string }[] = [
@@ -53,6 +54,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "drivers", label: "Drivers" },
   { key: "vehicles", label: "Vehicles" },
   { key: "serviceAreas", label: "Service Areas" },
+  { key: "dispatch", label: "Dispatch" },
   { key: "applications", label: "Applications" },
 ];
 
@@ -429,6 +431,14 @@ function ResolvedWorkspace({
       ) : null}
       {activeView === "serviceAreas" ? (
         <ServiceAreasPanel
+          canManageTenant={canManageTenant}
+          onRefresh={onRefresh}
+          session={session}
+          summary={summary}
+        />
+      ) : null}
+      {activeView === "dispatch" ? (
+        <DispatchPanel
           canManageTenant={canManageTenant}
           onRefresh={onRefresh}
           session={session}
@@ -1978,6 +1988,271 @@ function DriversPanel({
       {preview ? (
         <EvidencePreview onClose={() => setPreview(null)} title={preview.title} url={preview.url} />
       ) : null}
+    </section>
+  );
+}
+
+function DispatchPanel({
+  canManageTenant,
+  onRefresh,
+  session,
+  summary,
+}: {
+  canManageTenant: boolean;
+  onRefresh: () => void;
+  session: SupabaseAuthSession;
+  summary: TenantSummary;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+
+  async function request(
+    method: "POST" | "PATCH",
+    body: Record<string, string>,
+    busyKey: string,
+    successMessage: string,
+  ) {
+    setBusyId(busyKey);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/tenant-admin/settings", {
+        method,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tenantId: summary.tenant.tenant_id, ...body }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Dispatch action failed.");
+      setMessage(successMessage);
+      if (method === "POST") setShowForm(false);
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Dispatch action failed.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function createBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const value = (name: string) => {
+      const field = form.get(name);
+      return typeof field === "string" ? field : "";
+    };
+    void request(
+      "POST",
+      {
+        kind: "dispatch_create",
+        serviceAreaId: value("serviceAreaId"),
+        customerName: value("customerName"),
+        customerPhone: value("customerPhone"),
+        pickupAddress: value("pickupAddress"),
+        destinationAddress: value("destinationAddress"),
+        notes: value("notes"),
+      },
+      "create",
+      "Booking created.",
+    );
+  }
+
+  const activeAreas = summary.serviceAreas.filter(({ status }) => status === "active");
+  return (
+    <section className="content-stack">
+      <section className="panel">
+        <PanelHeader
+          title="Manual dispatch"
+          description="Create bookings and offer them to eligible online drivers in the same operating area."
+        />
+        <div className="row-actions">
+          <button
+            className="primary-button"
+            disabled={!canManageTenant || activeAreas.length === 0}
+            onClick={() => setShowForm((current) => !current)}
+            type="button"
+          >
+            {showForm ? "Close booking form" : "Create booking"}
+          </button>
+          <button className="secondary-button" onClick={onRefresh} type="button">
+            Refresh dispatch
+          </button>
+        </div>
+        {activeAreas.length === 0 ? (
+          <p className="notice">Create and activate a service area before creating bookings.</p>
+        ) : null}
+        {message ? <p className="notice">{message}</p> : null}
+        {showForm ? (
+          <form className="settings-grid" onSubmit={createBooking}>
+            <label>
+              Service area
+              <select name="serviceAreaId" required>
+                <option value="">Select service area</option>
+                {activeAreas.map((area) => (
+                  <option key={area.service_area_id} value={area.service_area_id}>
+                    {area.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Customer name
+              <input name="customerName" placeholder="Example: Alex Johnson" required />
+            </label>
+            <label>
+              Customer phone
+              <input name="customerPhone" placeholder="Example: 469-555-0123" type="tel" />
+            </label>
+            <label>
+              Pickup address
+              <input name="pickupAddress" placeholder="Example: 100 Main St, Dallas, TX" required />
+            </label>
+            <label>
+              Destination address
+              <input
+                name="destinationAddress"
+                placeholder="Example: DFW Airport Terminal A"
+                required
+              />
+            </label>
+            <label>
+              Notes
+              <input name="notes" placeholder="Example: Customer is waiting at the east entrance" />
+            </label>
+            <button className="primary-button" disabled={busyId !== null} type="submit">
+              Create booking
+            </button>
+          </form>
+        ) : null}
+      </section>
+
+      {summary.dispatchBookings.length === 0 ? (
+        <section className="panel">
+          <EmptyState message="No dispatch bookings have been created." />
+        </section>
+      ) : (
+        summary.dispatchBookings.map((booking) => {
+          const area = summary.serviceAreas.find(
+            ({ service_area_id }) => service_area_id === booking.service_area_id,
+          );
+          const currentDriver = summary.drivers.find(
+            ({ driver_profile_id }) => driver_profile_id === booking.current_driver_profile_id,
+          );
+          const pendingOffer = summary.dispatchOffers.find(
+            (offer) => offer.booking_id === booking.booking_id && offer.status === "pending",
+          );
+          const offeredDriver = summary.drivers.find(
+            ({ driver_profile_id }) => driver_profile_id === pendingOffer?.driver_profile_id,
+          );
+          const eligibleDrivers = summary.drivers.filter((driver) => {
+            const availability = summary.driverAvailability.find(
+              (item) => item.driver_profile_id === driver.driver_profile_id,
+            );
+            return (
+              driver.status === "active" &&
+              availability?.requested_status === "online" &&
+              availability.selected_service_area_id === booking.service_area_id &&
+              driverAvailabilityStatus(summary, driver.driver_profile_id).status === "Online"
+            );
+          });
+          const canOffer = booking.status === "requested" || booking.status === "offered";
+          return (
+            <section className="panel" key={booking.booking_id}>
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">{area?.name ?? "Service area"}</p>
+                  <h3>{booking.customer_name}</h3>
+                  <p className="muted">
+                    {booking.pickup_address} → {booking.destination_address}
+                  </p>
+                </div>
+                <span className={`status-pill ${booking.status}`}>{booking.status}</span>
+              </div>
+              <dl className="details-grid">
+                <div>
+                  <dt>Contact</dt>
+                  <dd>{booking.customer_phone ?? "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Driver</dt>
+                  <dd>
+                    {currentDriver?.display_name ?? offeredDriver?.display_name ?? "Unassigned"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Notes</dt>
+                  <dd>{booking.booking_notes ?? "None"}</dd>
+                </div>
+              </dl>
+              {canOffer ? (
+                <div className="row-actions">
+                  <select
+                    aria-label={`Eligible driver for ${booking.customer_name}`}
+                    onChange={(event) =>
+                      setSelectedDrivers((current) => ({
+                        ...current,
+                        [booking.booking_id]: event.target.value,
+                      }))
+                    }
+                    value={selectedDrivers[booking.booking_id] ?? ""}
+                  >
+                    <option value="">Select online driver</option>
+                    {eligibleDrivers.map((driver) => (
+                      <option key={driver.driver_profile_id} value={driver.driver_profile_id}>
+                        {driver.display_name} · #{driver.driver_number}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="primary-button"
+                    disabled={
+                      !canManageTenant || busyId !== null || !selectedDrivers[booking.booking_id]
+                    }
+                    onClick={() =>
+                      void request(
+                        "PATCH",
+                        {
+                          kind: "dispatch_offer",
+                          bookingId: booking.booking_id,
+                          driverProfileId: selectedDrivers[booking.booking_id] ?? "",
+                        },
+                        booking.booking_id,
+                        "Trip offered to driver.",
+                      )
+                    }
+                    type="button"
+                  >
+                    {pendingOffer ? "Reassign offer" : "Offer trip"}
+                  </button>
+                  {eligibleDrivers.length === 0 ? (
+                    <span className="muted">No eligible online drivers in this area.</span>
+                  ) : null}
+                </div>
+              ) : null}
+              {!["completed", "cancelled"].includes(booking.status) ? (
+                <button
+                  className="danger-button"
+                  disabled={!canManageTenant || busyId !== null}
+                  onClick={() =>
+                    void request(
+                      "PATCH",
+                      { kind: "dispatch_cancel", bookingId: booking.booking_id },
+                      booking.booking_id,
+                      "Booking cancelled.",
+                    )
+                  }
+                  type="button"
+                >
+                  Cancel booking
+                </button>
+              ) : null}
+            </section>
+          );
+        })
+      )}
     </section>
   );
 }

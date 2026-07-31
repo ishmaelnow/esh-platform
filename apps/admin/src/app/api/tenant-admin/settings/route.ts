@@ -6,6 +6,7 @@ import {
   validateTenantId,
 } from "@/lib/tenant-admin/server";
 import { parseServiceAreaInput } from "@/lib/tenant-admin/service-areas";
+import { parseDispatchBookingInput } from "@/lib/tenant-admin/dispatch";
 
 async function authorizeServiceAreas(request: Request, tenantId: string) {
   const accessToken = getBearerToken(request);
@@ -26,6 +27,24 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const tenantId = validateTenantId(body.tenantId);
+    if (body.kind === "dispatch_create") {
+      const accessToken = getBearerToken(request);
+      if (!accessToken) throw new Error("Authentication is required.");
+      const serviceAreaId = validateTenantId(body.serviceAreaId);
+      const input = parseDispatchBookingInput(body);
+      const supabase = createRequestSupabaseClient({ accessToken });
+      const { data, error } = await supabase.rpc("create_dispatch_booking", {
+        target_tenant_id: tenantId,
+        target_service_area_id: serviceAreaId,
+        customer_name_value: input.customerName,
+        customer_phone_value: input.customerPhone,
+        pickup_address_value: input.pickupAddress,
+        destination_address_value: input.destinationAddress,
+        booking_notes_value: input.notes,
+      });
+      if (error || !data) throw error ?? new Error("Unable to create booking.");
+      return NextResponse.json({ ok: true, bookingId: data });
+    }
     const input = parseServiceAreaInput(body);
     const { supabase, personId } = await authorizeServiceAreas(request, tenantId);
     const { data, error } = await supabase
@@ -69,6 +88,26 @@ export async function PATCH(request: Request) {
 
     const tenantId = validateTenantId((body as { tenantId?: unknown }).tenantId);
     const record = body as Record<string, unknown>;
+    if (typeof record.kind === "string" && record.kind.startsWith("dispatch_")) {
+      const supabase = createRequestSupabaseClient({ accessToken });
+      const bookingId = validateTenantId(record.bookingId);
+      if (record.kind === "dispatch_offer") {
+        const driverProfileId = validateTenantId(record.driverProfileId);
+        const { error } = await supabase.rpc("offer_dispatch_booking", {
+          target_booking_id: bookingId,
+          target_driver_profile_id: driverProfileId,
+        });
+        if (error) throw error;
+      } else if (record.kind === "dispatch_cancel") {
+        const { error } = await supabase.rpc("cancel_dispatch_booking", {
+          target_booking_id: bookingId,
+        });
+        if (error) throw error;
+      } else {
+        throw new Error("Unsupported dispatch action.");
+      }
+      return NextResponse.json({ ok: true });
+    }
     if (typeof record.kind === "string" && record.kind.startsWith("service_area_")) {
       const serviceAreaId = validateTenantId(record.serviceAreaId);
       const { supabase, personId } = await authorizeServiceAreas(request, tenantId);

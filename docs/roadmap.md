@@ -88,6 +88,11 @@ deferred from this milestone and were delivered under the later milestones below
      realtime presence.
 5. **Dispatch and Trip Core**
    - Booking/trip lifecycle, offers, assignments, reassignment, and operational audit.
+   - Current delivery: tenant-admin manual booking creation, area-aware eligible-driver offers,
+     driver acceptance or decline, reassignment, cancellation, and accepted → arrived →
+     in-progress → completed trip execution.
+   - Remaining: rider self-service, scheduled bookings, automatic matching, offer expiration,
+     realtime location, routing, and customer notifications.
 6. **Reputation**
    - Product-specific criteria on generic reputation primitives.
 7. **Money and Ledger**
