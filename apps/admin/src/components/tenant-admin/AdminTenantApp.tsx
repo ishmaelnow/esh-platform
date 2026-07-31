@@ -2007,6 +2007,16 @@ function DispatchPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+  const [dispatchNow, setDispatchNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const refreshInterval = window.setInterval(onRefresh, 5_000);
+    const clockInterval = window.setInterval(() => setDispatchNow(Date.now()), 1_000);
+    return () => {
+      window.clearInterval(refreshInterval);
+      window.clearInterval(clockInterval);
+    };
+  }, [onRefresh]);
 
   async function request(
     method: "POST" | "PATCH",
@@ -2180,6 +2190,18 @@ function DispatchPanel({
                   <dt>Driver</dt>
                   <dd>
                     {currentDriver?.display_name ?? offeredDriver?.display_name ?? "Unassigned"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Offer deadline</dt>
+                  <dd>
+                    {pendingOffer
+                      ? Date.parse(pendingOffer.expires_at) <= dispatchNow
+                        ? "Expiring now"
+                        : `${Math.ceil(
+                            (Date.parse(pendingOffer.expires_at) - dispatchNow) / 1000,
+                          )} seconds`
+                      : "No pending offer"}
                   </dd>
                 </div>
                 <div>

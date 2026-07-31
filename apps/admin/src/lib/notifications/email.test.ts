@@ -53,4 +53,23 @@ describe("driver notification email content", () => {
     expect(content.subject).toContain("vehicle insurance");
     expect(content.text).toContain("policy number");
   });
+
+  it("builds a time-bounded dispatch offer notice", () => {
+    const content = buildDriverNotificationContent(
+      "dispatch_offer_created",
+      {
+        driver_name: "Test Driver",
+        service_area_name: "Dallas Core",
+        pickup_address: "100 Main St",
+        destination_address: "DFW Terminal A",
+        expires_at: "2026-08-01T12:01:30Z",
+      },
+      "https://driver.eshapp.com",
+    );
+
+    expect(content.subject).toBe("New trip offer");
+    expect(content.text).toContain("Dallas Core");
+    expect(content.text).toContain("Pickup: 100 Main St");
+    expect(content.text).toContain("DFW Terminal A");
+  });
 });

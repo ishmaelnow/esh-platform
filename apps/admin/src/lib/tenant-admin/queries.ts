@@ -6,6 +6,16 @@ export async function loadTenantSummary(
   supabase: AdminSupabaseClient,
   tenantId: string,
 ): Promise<TenantSummary> {
+  const expirationResult = await supabase.rpc("expire_dispatch_offers", {
+    target_tenant_id: tenantId,
+  });
+  if (
+    expirationResult.error &&
+    !expirationResult.error.message.includes("expire_dispatch_offers")
+  ) {
+    throw expirationResult.error;
+  }
+
   const [
     tenantResult,
     configurationResult,

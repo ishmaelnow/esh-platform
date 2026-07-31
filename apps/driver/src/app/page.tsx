@@ -11,6 +11,7 @@ import {
   evidenceLabel,
   vehicleEvidenceLabel,
 } from "../lib/availability";
+import { offerCountdownLabel, offerSecondsRemaining } from "../lib/dispatch";
 
 type DriverSummary = {
   driverProfileId: string;
@@ -101,6 +102,7 @@ type DriverDispatchOffer = {
   serviceAreaName: string;
   status: "pending";
   offeredAt: string;
+  expiresAt: string;
 };
 
 type DriverTrip = {
@@ -154,6 +156,7 @@ export default function DriverHome() {
   const [dispatchBusy, setDispatchBusy] = useState(false);
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
+  const [dispatchNow, setDispatchNow] = useState(() => Date.now());
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -587,6 +590,25 @@ export default function DriverHome() {
     }
   }, [availability?.requestedStatus, selectServiceArea, serviceAreas, updatingServiceArea]);
 
+  useEffect(() => {
+    if (!supabase || !session) return;
+    const interval = window.setInterval(() => {
+      void supabase.rpc("my_driver_dispatch").then((result) => {
+        if (!result.error && result.data) {
+          setDispatch(result.data as unknown as DriverDispatch);
+        }
+      });
+    }, 5_000);
+    return () => window.clearInterval(interval);
+  }, [session, supabase]);
+
+  useEffect(() => {
+    if (dispatch.offers.length === 0) return;
+    setDispatchNow(Date.now());
+    const interval = window.setInterval(() => setDispatchNow(Date.now()), 1_000);
+    return () => window.clearInterval(interval);
+  }, [dispatch.offers.length]);
+
   async function respondToOffer(offerId: string, response: "accepted" | "declined") {
     if (!supabase) return;
     setDispatchBusy(true);
@@ -698,6 +720,15 @@ export default function DriverHome() {
                 </button>
               ))}
             </nav>
+            {dispatch.offers.length > 0 && activeTab !== "dispatch" ? (
+              <div className="dispatch-alert" role="status">
+                <strong>New trip offer</strong>
+                <span>A time-sensitive offer is waiting. Open Dispatch before it expires.</span>
+                <button onClick={() => setActiveTab("dispatch")} type="button">
+                  View offer
+                </button>
+              </div>
+            ) : null}
             {activeTab === "overview" ? (
               <section className="availability-card">
                 <div className="availability-heading">
@@ -831,9 +862,14 @@ export default function DriverHome() {
                     <span>Pickup: {offer.pickupAddress}</span>
                     <span>Destination: {offer.destinationAddress}</span>
                     {offer.notes ? <span>Notes: {offer.notes}</span> : null}
+                    <strong className="offer-countdown">
+                      {offerCountdownLabel(offer.expiresAt, dispatchNow)}
+                    </strong>
                     <div className="row-actions">
                       <button
-                        disabled={dispatchBusy}
+                        disabled={
+                          dispatchBusy || offerSecondsRemaining(offer.expiresAt, dispatchNow) === 0
+                        }
                         onClick={() => void respondToOffer(offer.offerId, "accepted")}
                         type="button"
                       >

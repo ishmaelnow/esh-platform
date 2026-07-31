@@ -289,6 +289,7 @@ export type Database = {
         Row: {
           booking_id: string
           driver_profile_id: string
+          expires_at: string
           offer_id: string
           offered_at: string
           offered_by_person_id: string
@@ -301,6 +302,7 @@ export type Database = {
         Insert: {
           booking_id: string
           driver_profile_id: string
+          expires_at?: string
           offer_id?: string
           offered_at?: string
           offered_by_person_id: string
@@ -313,6 +315,7 @@ export type Database = {
         Update: {
           booking_id?: string
           driver_profile_id?: string
+          expires_at?: string
           offer_id?: string
           offered_at?: string
           offered_by_person_id?: string
@@ -1706,6 +1709,10 @@ export type Database = {
       driver_service_blockers: {
         Args: { target_driver_profile_id: string }
         Returns: string[]
+      }
+      expire_dispatch_offers: {
+        Args: { target_tenant_id: string }
+        Returns: number
       }
       has_active_platform_role: {
         Args: { required_roles: string[] }

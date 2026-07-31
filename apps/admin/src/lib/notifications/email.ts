@@ -53,6 +53,10 @@ export function buildDriverNotificationContent(
   const evidenceType = (textValue(payload.evidence_type) || "document").replaceAll("_", " ");
   const reviewNotes = textValue(payload.review_notes);
   const expiresOn = textValue(payload.expires_on);
+  const serviceAreaName = textValue(payload.service_area_name);
+  const pickupAddress = textValue(payload.pickup_address);
+  const destinationAddress = textValue(payload.destination_address);
+  const offerExpiresAt = textValue(payload.expires_at);
   const portalUrl = new URL("/", driverAppUrl).toString();
   const messages: Record<string, { subject: string; intro: string; detail?: string }> = {
     driver_account_ready: {
@@ -110,6 +114,19 @@ export function buildDriverNotificationContent(
       subject: `Your vehicle ${evidenceType} has expired`,
       intro: `${driverName}, your assigned vehicle's ${evidenceType} has expired and requires replacement.`,
       ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
+    },
+    dispatch_offer_created: {
+      subject: "New trip offer",
+      intro: `${driverName}, you have a new trip offer${
+        serviceAreaName ? ` in ${serviceAreaName}` : ""
+      }.`,
+      detail: [
+        pickupAddress ? `Pickup: ${pickupAddress}` : "",
+        destinationAddress ? `Destination: ${destinationAddress}` : "",
+        offerExpiresAt ? `Respond before: ${offerExpiresAt}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
     },
   };
   const message = messages[notificationType];

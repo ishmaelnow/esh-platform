@@ -143,6 +143,24 @@ h3 {
   box-shadow: 0 0 0 3px rgb(17 24 39 / 12%);
 }
 
+.dispatch-alert {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.dispatch-alert span {
+  color: #78350f;
+  line-height: 1.5;
+}
+
+.offer-countdown {
+  color: #b45309;
+}
+
 .documents,
 .assigned-vehicle,
 .availability-card,

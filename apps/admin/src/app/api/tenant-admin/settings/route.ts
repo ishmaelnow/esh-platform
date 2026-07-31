@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { createServiceSupabaseClient } from "@esh-platform/supabase";
+import { getAdminServerConfig } from "@/lib/config";
+import { deliverQueuedNotifications } from "@/lib/notifications/delivery";
 import {
   createRequestSupabaseClient,
   getBearerToken,
@@ -93,11 +96,26 @@ export async function PATCH(request: Request) {
       const bookingId = validateTenantId(record.bookingId);
       if (record.kind === "dispatch_offer") {
         const driverProfileId = validateTenantId(record.driverProfileId);
-        const { error } = await supabase.rpc("offer_dispatch_booking", {
+        const { data: offerId, error } = await supabase.rpc("offer_dispatch_booking", {
           target_booking_id: bookingId,
           target_driver_profile_id: driverProfileId,
         });
         if (error) throw error;
+        if (offerId) {
+          const service = createServiceSupabaseClient();
+          const { data: notification } = await service
+            .from("notification_outbox")
+            .select("notification_id")
+            .eq("dedupe_key", `dispatch_offer:${offerId}`)
+            .maybeSingle();
+          if (notification) {
+            await deliverQueuedNotifications(service, getAdminServerConfig(), {
+              tenantId,
+              notificationId: notification.notification_id,
+              limit: 1,
+            });
+          }
+        }
       } else if (record.kind === "dispatch_cancel") {
         const { error } = await supabase.rpc("cancel_dispatch_booking", {
           target_booking_id: bookingId,

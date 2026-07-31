@@ -91,8 +91,11 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: tenant-admin manual booking creation, area-aware eligible-driver offers,
      driver acceptance or decline, reassignment, cancellation, and accepted → arrived →
      in-progress → completed trip execution.
-   - Remaining: rider self-service, scheduled bookings, automatic matching, offer expiration,
-     realtime location, routing, and customer notifications.
+   - Current delivery: 90-second offer deadlines, server-enforced expiration, automatic Driver and
+     Admin refresh, live countdowns, new-offer alerts, reassignment recovery, and driver email
+     delivery through the notification outbox.
+   - Remaining: rider self-service, scheduled bookings, automatic matching, realtime location,
+     routing, and customer notifications.
 6. **Reputation**
    - Product-specific criteria on generic reputation primitives.
 7. **Money and Ledger**
