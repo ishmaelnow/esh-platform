@@ -2,6 +2,8 @@
 
 This directory contains project documentation that should evolve with the codebase.
 
+- [Current Session Handoff](./session-handoff.md)
+- [Project Context Recovery](./operations/context-recovery.md)
 - [Product and Platform Roadmap](./roadmap.md)
 - [Service Area Management](./architecture/service-area-management.md)
 - [Manual Dispatch and Trip Core](./architecture/manual-dispatch-trip-core.md)
