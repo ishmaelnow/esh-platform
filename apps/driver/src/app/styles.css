@@ -76,9 +76,11 @@ dl div {
   gap: 8px;
 }
 
-input {
+input,
+select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
+  background: white;
   font: inherit;
   padding: 12px;
 }
@@ -121,6 +123,24 @@ dd {
 
 h3 {
   margin: 0;
+}
+
+.driver-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  scrollbar-width: thin;
+}
+
+.driver-tabs button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.driver-tabs button.active {
+  background: #111827;
+  box-shadow: 0 0 0 3px rgb(17 24 39 / 12%);
 }
 
 .documents,
@@ -303,5 +323,9 @@ h3 {
 
   .portal-card {
     padding: 22px;
+  }
+
+  .driver-tabs {
+    margin-inline: -4px;
   }
 }

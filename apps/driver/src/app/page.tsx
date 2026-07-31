@@ -119,6 +119,8 @@ type DriverDispatch = {
   trips: DriverTrip[];
 };
 
+type DriverPortalTab = "overview" | "dispatch" | "service_areas" | "documents" | "vehicle";
+
 export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -151,6 +153,7 @@ export default function DriverHome() {
   const [dispatch, setDispatch] = useState<DriverDispatch>({ offers: [], trips: [] });
   const [dispatchBusy, setDispatchBusy] = useState(false);
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -670,359 +673,397 @@ export default function DriverHome() {
                 <dd>{summary.documentCompliance ? "satisfied" : "pending"}</dd>
               </div>
             </dl>
-            <section className="availability-card">
-              <div className="availability-heading">
+            <nav className="driver-tabs" aria-label="Driver portal sections">
+              {[
+                { key: "overview" as const, label: "Overview" },
+                {
+                  key: "dispatch" as const,
+                  label:
+                    dispatch.offers.length > 0
+                      ? `Dispatch (${dispatch.offers.length})`
+                      : "Dispatch",
+                },
+                { key: "service_areas" as const, label: "Service Areas" },
+                { key: "documents" as const, label: "Documents" },
+                { key: "vehicle" as const, label: "Vehicle Compliance" },
+              ].map((tab) => (
+                <button
+                  aria-current={activeTab === tab.key ? "page" : undefined}
+                  className={activeTab === tab.key ? "active" : "secondary"}
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  type="button"
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+            {activeTab === "overview" ? (
+              <section className="availability-card">
+                <div className="availability-heading">
+                  <div>
+                    <p className="eyebrow">Availability</p>
+                    <h3>
+                      {availability?.effectiveStatus === "online"
+                        ? "You are online"
+                        : "You are offline"}
+                    </h3>
+                  </div>
+                  <span
+                    className={`availability-indicator ${
+                      availability?.effectiveStatus === "online" ? "online" : "offline"
+                    }`}
+                  >
+                    {availability?.effectiveStatus ?? "offline"}
+                  </span>
+                </div>
+                {serviceAreas.length > 0 ? (
+                  <label>
+                    Active operating area
+                    <select
+                      disabled={updatingServiceArea || availability?.requestedStatus === "online"}
+                      onChange={(event) => void selectServiceArea(event.target.value)}
+                      value={
+                        serviceAreas.find((area) => area.selected)?.serviceAreaId ??
+                        availability?.selectedServiceAreaId ??
+                        ""
+                      }
+                    >
+                      <option value="" disabled>
+                        Select where you will operate
+                      </option>
+                      {serviceAreas.map((area) => (
+                        <option key={area.serviceAreaId} value={area.serviceAreaId}>
+                          {area.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <p className="eligibility-blockers">
+                    No active service area is currently available to your driver account. Contact
+                    your tenant administrator.
+                  </p>
+                )}
+                {availability?.requestedStatus === "online" ? (
+                  <p className="document-help">Go offline before changing your operating area.</p>
+                ) : null}
+                {serviceAreaMessage ? <p className="upload-message">{serviceAreaMessage}</p> : null}
+                {availability && !availability.eligible ? (
+                  <div className="eligibility-blockers">
+                    <strong>Complete these before going online:</strong>
+                    <ul>
+                      {availability.blockers
+                        .flatMap((blocker) =>
+                          blocker === "service_area_not_selected" && serviceAreas.length === 0
+                            ? ["Tenant administrator must make an active service area available"]
+                            : availabilityBlockerDetails(
+                                blocker,
+                                summary.documents,
+                                vehicleCompliance?.documents ?? [],
+                              ),
+                        )
+                        .map((blocker, index) => (
+                          <li key={`${blocker}-${index}`}>{blocker}</li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="document-help">
+                    {availability?.selectedServiceAreaName
+                      ? `Going online tells your tenant administrator you are ready in ${availability.selectedServiceAreaName}. `
+                      : "Going online tells your tenant administrator you are ready for service. "}
+                    Location sharing is not enabled.
+                  </p>
+                )}
+                <button
+                  className={availability?.effectiveStatus === "online" ? "secondary" : undefined}
+                  disabled={
+                    updatingAvailability ||
+                    (!availability?.eligible && availability?.requestedStatus !== "online")
+                  }
+                  onClick={() =>
+                    void updateAvailability(
+                      availability?.requestedStatus === "online" ? "offline" : "online",
+                    )
+                  }
+                  type="button"
+                >
+                  {updatingAvailability
+                    ? "Updating…"
+                    : availability?.requestedStatus === "online"
+                      ? "Go offline"
+                      : "Go online"}
+                </button>
+                {availabilityMessage ? (
+                  <p className="upload-message">{availabilityMessage}</p>
+                ) : null}
+              </section>
+            ) : null}
+            {activeTab === "dispatch" ? (
+              <section className="documents">
                 <div>
-                  <p className="eyebrow">Availability</p>
+                  <p className="eyebrow">Dispatch</p>
                   <h3>
-                    {availability?.effectiveStatus === "online"
-                      ? "You are online"
-                      : "You are offline"}
+                    {dispatch.offers.length > 0
+                      ? "New trip offer"
+                      : dispatch.trips.length > 0
+                        ? "Active trip"
+                        : "No active trip"}
                   </h3>
                 </div>
-                <span
-                  className={`availability-indicator ${
-                    availability?.effectiveStatus === "online" ? "online" : "offline"
-                  }`}
+                <button
+                  className="secondary"
+                  disabled={dispatchBusy}
+                  onClick={() => void refreshDispatch()}
+                  type="button"
                 >
-                  {availability?.effectiveStatus ?? "offline"}
-                </span>
-              </div>
-              {serviceAreas.length > 0 ? (
-                <label>
-                  Active operating area
-                  <select
-                    disabled={updatingServiceArea || availability?.requestedStatus === "online"}
-                    onChange={(event) => void selectServiceArea(event.target.value)}
-                    value={
-                      serviceAreas.find((area) => area.selected)?.serviceAreaId ??
-                      availability?.selectedServiceAreaId ??
-                      ""
-                    }
-                  >
-                    <option value="" disabled>
-                      Select where you will operate
-                    </option>
-                    {serviceAreas.map((area) => (
-                      <option key={area.serviceAreaId} value={area.serviceAreaId}>
-                        {area.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                <p className="eligibility-blockers">
-                  No active service area is currently available to your driver account. Contact your
-                  tenant administrator.
-                </p>
-              )}
-              {availability?.requestedStatus === "online" ? (
-                <p className="document-help">Go offline before changing your operating area.</p>
-              ) : null}
-              {serviceAreaMessage ? <p className="upload-message">{serviceAreaMessage}</p> : null}
-              {availability && !availability.eligible ? (
-                <div className="eligibility-blockers">
-                  <strong>Complete these before going online:</strong>
-                  <ul>
-                    {availability.blockers
-                      .flatMap((blocker) =>
-                        blocker === "service_area_not_selected" && serviceAreas.length === 0
-                          ? ["Tenant administrator must make an active service area available"]
-                          : availabilityBlockerDetails(
-                              blocker,
-                              summary.documents,
-                              vehicleCompliance?.documents ?? [],
-                            ),
-                      )
-                      .map((blocker, index) => (
-                        <li key={`${blocker}-${index}`}>{blocker}</li>
-                      ))}
-                  </ul>
-                </div>
-              ) : (
-                <p className="document-help">
-                  {availability?.selectedServiceAreaName
-                    ? `Going online tells your tenant administrator you are ready in ${availability.selectedServiceAreaName}. `
-                    : "Going online tells your tenant administrator you are ready for service. "}
-                  Location sharing is not enabled.
-                </p>
-              )}
-              <button
-                className={availability?.effectiveStatus === "online" ? "secondary" : undefined}
-                disabled={
-                  updatingAvailability ||
-                  (!availability?.eligible && availability?.requestedStatus !== "online")
-                }
-                onClick={() =>
-                  void updateAvailability(
-                    availability?.requestedStatus === "online" ? "offline" : "online",
-                  )
-                }
-                type="button"
-              >
-                {updatingAvailability
-                  ? "Updating…"
-                  : availability?.requestedStatus === "online"
-                    ? "Go offline"
-                    : "Go online"}
-              </button>
-              {availabilityMessage ? <p className="upload-message">{availabilityMessage}</p> : null}
-            </section>
-            <section className="documents">
-              <div>
-                <p className="eyebrow">Dispatch</p>
-                <h3>
-                  {dispatch.offers.length > 0
-                    ? "New trip offer"
-                    : dispatch.trips.length > 0
-                      ? "Active trip"
-                      : "No active trip"}
-                </h3>
-              </div>
-              <button
-                className="secondary"
-                disabled={dispatchBusy}
-                onClick={() => void refreshDispatch()}
-                type="button"
-              >
-                Refresh dispatch
-              </button>
-              {dispatch.offers.map((offer) => (
-                <article className="document-card" key={offer.offerId}>
-                  <div className="document-heading">
-                    <strong>{offer.serviceAreaName}</strong>
-                    <span className="status status-pending">offer</span>
-                  </div>
-                  <span>Customer: {offer.customerName}</span>
-                  {offer.customerPhone ? <span>Contact: {offer.customerPhone}</span> : null}
-                  <span>Pickup: {offer.pickupAddress}</span>
-                  <span>Destination: {offer.destinationAddress}</span>
-                  {offer.notes ? <span>Notes: {offer.notes}</span> : null}
-                  <div className="row-actions">
-                    <button
-                      disabled={dispatchBusy}
-                      onClick={() => void respondToOffer(offer.offerId, "accepted")}
-                      type="button"
-                    >
-                      Accept trip
-                    </button>
-                    <button
-                      className="secondary"
-                      disabled={dispatchBusy}
-                      onClick={() => void respondToOffer(offer.offerId, "declined")}
-                      type="button"
-                    >
-                      Decline
-                    </button>
-                  </div>
-                </article>
-              ))}
-              {dispatch.trips.map((trip) => (
-                <article className="document-card" key={trip.bookingId}>
-                  <div className="document-heading">
-                    <strong>{trip.serviceAreaName}</strong>
-                    <span className="status status-approved">
-                      {trip.status.replaceAll("_", " ")}
-                    </span>
-                  </div>
-                  <span>Customer: {trip.customerName}</span>
-                  {trip.customerPhone ? <span>Contact: {trip.customerPhone}</span> : null}
-                  <span>Pickup: {trip.pickupAddress}</span>
-                  <span>Destination: {trip.destinationAddress}</span>
-                  {trip.notes ? <span>Notes: {trip.notes}</span> : null}
-                  <button
-                    disabled={dispatchBusy}
-                    onClick={() =>
-                      void advanceTrip(
-                        trip.bookingId,
-                        trip.status === "accepted"
-                          ? "arrive"
-                          : trip.status === "arrived"
-                            ? "start"
-                            : "complete",
-                      )
-                    }
-                    type="button"
-                  >
-                    {trip.status === "accepted"
-                      ? "Mark arrived"
-                      : trip.status === "arrived"
-                        ? "Start trip"
-                        : "Complete trip"}
-                  </button>
-                </article>
-              ))}
-              {dispatch.offers.length === 0 && dispatch.trips.length === 0 ? (
-                <p className="document-help">
-                  Trip offers from your tenant dispatcher will appear here.
-                </p>
-              ) : null}
-              {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
-            </section>
-            <section className="documents">
-              <div>
-                <p className="eyebrow">Service areas</p>
-                <h3>
-                  {serviceAreas.length > 0 ? "Available operating areas" : "No area available"}
-                </h3>
-              </div>
-              {serviceAreas.length > 0 ? (
-                serviceAreas.map((area) => (
-                  <article className="document-card" key={area.serviceAreaId}>
+                  Refresh dispatch
+                </button>
+                {dispatch.offers.map((offer) => (
+                  <article className="document-card" key={offer.offerId}>
                     <div className="document-heading">
-                      <strong>{area.name}</strong>
+                      <strong>{offer.serviceAreaName}</strong>
+                      <span className="status status-pending">offer</span>
+                    </div>
+                    <span>Customer: {offer.customerName}</span>
+                    {offer.customerPhone ? <span>Contact: {offer.customerPhone}</span> : null}
+                    <span>Pickup: {offer.pickupAddress}</span>
+                    <span>Destination: {offer.destinationAddress}</span>
+                    {offer.notes ? <span>Notes: {offer.notes}</span> : null}
+                    <div className="row-actions">
+                      <button
+                        disabled={dispatchBusy}
+                        onClick={() => void respondToOffer(offer.offerId, "accepted")}
+                        type="button"
+                      >
+                        Accept trip
+                      </button>
+                      <button
+                        className="secondary"
+                        disabled={dispatchBusy}
+                        onClick={() => void respondToOffer(offer.offerId, "declined")}
+                        type="button"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </article>
+                ))}
+                {dispatch.trips.map((trip) => (
+                  <article className="document-card" key={trip.bookingId}>
+                    <div className="document-heading">
+                      <strong>{trip.serviceAreaName}</strong>
                       <span className="status status-approved">
-                        {area.selected ? "selected" : "available"}
+                        {trip.status.replaceAll("_", " ")}
                       </span>
                     </div>
-                    {area.description ? <span>{area.description}</span> : null}
-                    <span>
-                      Center {area.centerLatitude}, {area.centerLongitude} · {area.radiusKm} km
-                      radius
-                    </span>
-                    <span>
-                      {area.coverageMode === "all_drivers"
-                        ? "Available to all active tenant drivers"
-                        : "Access granted by your tenant administrator"}
-                    </span>
+                    <span>Customer: {trip.customerName}</span>
+                    {trip.customerPhone ? <span>Contact: {trip.customerPhone}</span> : null}
+                    <span>Pickup: {trip.pickupAddress}</span>
+                    <span>Destination: {trip.destinationAddress}</span>
+                    {trip.notes ? <span>Notes: {trip.notes}</span> : null}
+                    <button
+                      disabled={dispatchBusy}
+                      onClick={() =>
+                        void advanceTrip(
+                          trip.bookingId,
+                          trip.status === "accepted"
+                            ? "arrive"
+                            : trip.status === "arrived"
+                              ? "start"
+                              : "complete",
+                        )
+                      }
+                      type="button"
+                    >
+                      {trip.status === "accepted"
+                        ? "Mark arrived"
+                        : trip.status === "arrived"
+                          ? "Start trip"
+                          : "Complete trip"}
+                    </button>
                   </article>
-                ))
-              ) : (
-                <p className="document-help">
-                  Your tenant does not currently have an active service area available to you.
-                  Location sharing is not enabled.
-                </p>
-              )}
-            </section>
-            <section className="assigned-vehicle">
-              <div>
-                <p className="eyebrow">Assigned fleet vehicle</p>
-                <h3>
-                  {summary.vehicle
-                    ? `${summary.vehicle.modelYear} ${summary.vehicle.make} ${summary.vehicle.model}`
-                    : "No vehicle assigned"}
-                </h3>
-              </div>
-              {summary.vehicle ? (
-                <>
-                  {vehiclePhotoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- signed and blob URLs bypass optimization
-                    <img
-                      alt={`${summary.vehicle.make} ${summary.vehicle.model}`}
-                      onError={() => setVehiclePhotoError(true)}
-                      onLoad={() => setVehiclePhotoError(false)}
-                      src={vehiclePhotoUrl}
-                    />
-                  ) : null}
-                  {vehiclePhotoError ? (
-                    <p className="rejection-note">
-                      The assigned vehicle photo could not be displayed
-                      {vehiclePhotoMessage ? `: ${vehiclePhotoMessage}` : "."}
-                    </p>
-                  ) : null}
-                  {!vehiclePhotoUrl && !summary.vehicle.hasPhoto ? (
-                    <p className="document-help">
-                      No photo is saved for this assigned vehicle yet.
-                    </p>
-                  ) : null}
-                  {!vehiclePhotoUrl && summary.vehicle.hasPhoto ? (
-                    <p className="document-help">Loading the assigned vehicle photo…</p>
-                  ) : null}
-                  <dl>
-                    <div>
-                      <dt>Fleet number</dt>
-                      <dd>{summary.vehicle.vehicleNumber}</dd>
-                    </div>
-                    <div>
-                      <dt>Color</dt>
-                      <dd>{summary.vehicle.color}</dd>
-                    </div>
-                    <div>
-                      <dt>License plate</dt>
-                      <dd>{summary.vehicle.licensePlate}</dd>
-                    </div>
-                    <div>
-                      <dt>Status</dt>
-                      <dd>{summary.vehicle.status}</dd>
-                    </div>
-                  </dl>
-                  <label className="upload-control">
-                    <span>
-                      {uploadingType === "assigned_vehicle_photo"
-                        ? "Uploading vehicle photo…"
-                        : summary.vehicle.hasPhoto
-                          ? "Replace assigned car photo"
-                          : "Upload assigned car photo"}
-                    </span>
-                    <input
-                      accept="image/jpeg,image/png"
-                      disabled={uploadingType !== null}
-                      onChange={(event) => {
-                        const photo = event.target.files?.[0];
-                        if (photo) void uploadVehiclePhoto(photo);
-                        event.target.value = "";
-                      }}
-                      type="file"
-                    />
-                  </label>
-                </>
-              ) : (
-                <p className="document-help">
-                  Your tenant administrator has not assigned a vehicle yet.
-                </p>
-              )}
-            </section>
-            <section className="documents">
-              <div>
-                <p className="eyebrow">Documents</p>
-                <h3>Evidence status</h3>
-              </div>
-              <p className="document-help">
-                Upload a replacement when evidence is missing, rejected, or expired. JPEG, PNG, and
-                PDF files up to 5MB are accepted.
-              </p>
-              {uploadMessage ? <p className="upload-message">{uploadMessage}</p> : null}
-              {(summary.documents ?? []).map((document) => (
-                <article className="document-card" key={document.evidenceType}>
-                  <div className="document-heading">
-                    <strong>{evidenceLabel(document.evidenceType)}</strong>
-                    <span className={`status status-${document.reviewStatus}`}>
-                      {document.reviewStatus.replaceAll("_", " ")}
-                    </span>
-                  </div>
-                  {document.originalFileName ? <span>{document.originalFileName}</span> : null}
-                  {document.expiresOn ? <span>Expires {document.expiresOn}</span> : null}
-                  {document.expirationRequired && !document.expiresOn ? (
-                    <span>Expiration date required after approval</span>
-                  ) : null}
-                  {document.reviewNotes ? (
-                    <p className="rejection-note">Review note: {document.reviewNotes}</p>
-                  ) : null}
-                  {["missing", "rejected", "expired", "expiration_missing"].includes(
-                    document.reviewStatus,
-                  ) ? (
+                ))}
+                {dispatch.offers.length === 0 && dispatch.trips.length === 0 ? (
+                  <p className="document-help">
+                    Trip offers from your tenant dispatcher will appear here.
+                  </p>
+                ) : null}
+                {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
+              </section>
+            ) : null}
+            {activeTab === "service_areas" ? (
+              <section className="documents">
+                <div>
+                  <p className="eyebrow">Service areas</p>
+                  <h3>
+                    {serviceAreas.length > 0 ? "Available operating areas" : "No area available"}
+                  </h3>
+                </div>
+                {serviceAreas.length > 0 ? (
+                  serviceAreas.map((area) => (
+                    <article className="document-card" key={area.serviceAreaId}>
+                      <div className="document-heading">
+                        <strong>{area.name}</strong>
+                        <span className="status status-approved">
+                          {area.selected ? "selected" : "available"}
+                        </span>
+                      </div>
+                      {area.description ? <span>{area.description}</span> : null}
+                      <span>
+                        Center {area.centerLatitude}, {area.centerLongitude} · {area.radiusKm} km
+                        radius
+                      </span>
+                      <span>
+                        {area.coverageMode === "all_drivers"
+                          ? "Available to all active tenant drivers"
+                          : "Access granted by your tenant administrator"}
+                      </span>
+                    </article>
+                  ))
+                ) : (
+                  <p className="document-help">
+                    Your tenant does not currently have an active service area available to you.
+                    Location sharing is not enabled.
+                  </p>
+                )}
+              </section>
+            ) : null}
+            {activeTab === "vehicle" ? (
+              <section className="assigned-vehicle">
+                <div>
+                  <p className="eyebrow">Assigned fleet vehicle</p>
+                  <h3>
+                    {summary.vehicle
+                      ? `${summary.vehicle.modelYear} ${summary.vehicle.make} ${summary.vehicle.model}`
+                      : "No vehicle assigned"}
+                  </h3>
+                </div>
+                {uploadMessage ? <p className="upload-message">{uploadMessage}</p> : null}
+                {summary.vehicle ? (
+                  <>
+                    {vehiclePhotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- signed and blob URLs bypass optimization
+                      <img
+                        alt={`${summary.vehicle.make} ${summary.vehicle.model}`}
+                        onError={() => setVehiclePhotoError(true)}
+                        onLoad={() => setVehiclePhotoError(false)}
+                        src={vehiclePhotoUrl}
+                      />
+                    ) : null}
+                    {vehiclePhotoError ? (
+                      <p className="rejection-note">
+                        The assigned vehicle photo could not be displayed
+                        {vehiclePhotoMessage ? `: ${vehiclePhotoMessage}` : "."}
+                      </p>
+                    ) : null}
+                    {!vehiclePhotoUrl && !summary.vehicle.hasPhoto ? (
+                      <p className="document-help">
+                        No photo is saved for this assigned vehicle yet.
+                      </p>
+                    ) : null}
+                    {!vehiclePhotoUrl && summary.vehicle.hasPhoto ? (
+                      <p className="document-help">Loading the assigned vehicle photo…</p>
+                    ) : null}
+                    <dl>
+                      <div>
+                        <dt>Fleet number</dt>
+                        <dd>{summary.vehicle.vehicleNumber}</dd>
+                      </div>
+                      <div>
+                        <dt>Color</dt>
+                        <dd>{summary.vehicle.color}</dd>
+                      </div>
+                      <div>
+                        <dt>License plate</dt>
+                        <dd>{summary.vehicle.licensePlate}</dd>
+                      </div>
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{summary.vehicle.status}</dd>
+                      </div>
+                    </dl>
                     <label className="upload-control">
                       <span>
-                        {uploadingType === document.evidenceType
-                          ? "Uploading…"
-                          : "Choose replacement"}
+                        {uploadingType === "assigned_vehicle_photo"
+                          ? "Uploading vehicle photo…"
+                          : summary.vehicle.hasPhoto
+                            ? "Replace assigned car photo"
+                            : "Upload assigned car photo"}
                       </span>
                       <input
-                        accept="image/jpeg,image/png,application/pdf"
+                        accept="image/jpeg,image/png"
                         disabled={uploadingType !== null}
                         onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) void uploadEvidence(document, file);
+                          const photo = event.target.files?.[0];
+                          if (photo) void uploadVehiclePhoto(photo);
                           event.target.value = "";
                         }}
                         type="file"
                       />
                     </label>
-                  ) : null}
-                </article>
-              ))}
-            </section>
-            {summary.vehicle && vehicleCompliance ? (
+                  </>
+                ) : (
+                  <p className="document-help">
+                    Your tenant administrator has not assigned a vehicle yet.
+                  </p>
+                )}
+              </section>
+            ) : null}
+            {activeTab === "documents" ? (
+              <section className="documents">
+                <div>
+                  <p className="eyebrow">Documents</p>
+                  <h3>Evidence status</h3>
+                </div>
+                <p className="document-help">
+                  Upload a replacement when evidence is missing, rejected, or expired. JPEG, PNG,
+                  and PDF files up to 5MB are accepted.
+                </p>
+                {uploadMessage ? <p className="upload-message">{uploadMessage}</p> : null}
+                {(summary.documents ?? []).map((document) => (
+                  <article className="document-card" key={document.evidenceType}>
+                    <div className="document-heading">
+                      <strong>{evidenceLabel(document.evidenceType)}</strong>
+                      <span className={`status status-${document.reviewStatus}`}>
+                        {document.reviewStatus.replaceAll("_", " ")}
+                      </span>
+                    </div>
+                    {document.originalFileName ? <span>{document.originalFileName}</span> : null}
+                    {document.expiresOn ? <span>Expires {document.expiresOn}</span> : null}
+                    {document.expirationRequired && !document.expiresOn ? (
+                      <span>Expiration date required after approval</span>
+                    ) : null}
+                    {document.reviewNotes ? (
+                      <p className="rejection-note">Review note: {document.reviewNotes}</p>
+                    ) : null}
+                    {["missing", "rejected", "expired", "expiration_missing"].includes(
+                      document.reviewStatus,
+                    ) ? (
+                      <label className="upload-control">
+                        <span>
+                          {uploadingType === document.evidenceType
+                            ? "Uploading…"
+                            : "Choose replacement"}
+                        </span>
+                        <input
+                          accept="image/jpeg,image/png,application/pdf"
+                          disabled={uploadingType !== null}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) void uploadEvidence(document, file);
+                            event.target.value = "";
+                          }}
+                          type="file"
+                        />
+                      </label>
+                    ) : null}
+                  </article>
+                ))}
+              </section>
+            ) : null}
+            {activeTab === "vehicle" && summary.vehicle && vehicleCompliance ? (
               <section className="documents">
                 <div>
                   <p className="eyebrow">Vehicle compliance</p>
@@ -1076,23 +1117,25 @@ export default function DriverHome() {
                 ))}
               </section>
             ) : null}
-            <section className="notification-preferences">
-              <div>
-                <p className="eyebrow">Notifications</p>
-                <h3>Email preferences</h3>
-              </div>
-              <label>
-                <input
-                  checked={summary.notificationPreferences?.expirationRemindersEnabled ?? true}
-                  disabled={updatingPreferences}
-                  onChange={(event) => void updateExpirationReminders(event.target.checked)}
-                  type="checkbox"
-                />
-                Email me before required evidence expires
-              </label>
-              <p>Essential account, rejection, and activation notices remain enabled.</p>
-              {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
-            </section>
+            {activeTab === "documents" ? (
+              <section className="notification-preferences">
+                <div>
+                  <p className="eyebrow">Notifications</p>
+                  <h3>Email preferences</h3>
+                </div>
+                <label>
+                  <input
+                    checked={summary.notificationPreferences?.expirationRemindersEnabled ?? true}
+                    disabled={updatingPreferences}
+                    onChange={(event) => void updateExpirationReminders(event.target.checked)}
+                    type="checkbox"
+                  />
+                  Email me before required evidence expires
+                </label>
+                <p>Essential account, rejection, and activation notices remain enabled.</p>
+                {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
+              </section>
+            ) : null}
             <button
               className="secondary"
               onClick={() => void supabase?.auth.signOut()}
