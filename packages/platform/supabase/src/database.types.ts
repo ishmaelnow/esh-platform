@@ -242,6 +242,7 @@ export type Database = {
           customer_phone: string | null
           destination_address: string
           pickup_address: string
+          rider_profile_id: string | null
           service_area_id: string
           status: string
           tenant_id: string
@@ -260,6 +261,7 @@ export type Database = {
           customer_phone?: string | null
           destination_address: string
           pickup_address: string
+          rider_profile_id?: string | null
           service_area_id: string
           status?: string
           tenant_id: string
@@ -278,7 +280,47 @@ export type Database = {
           customer_phone?: string | null
           destination_address?: string
           pickup_address?: string
+          rider_profile_id?: string | null
           service_area_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rider_profiles: {
+        Row: {
+          accessibility_notes: string | null
+          created_at: string
+          display_name: string
+          email: string
+          person_id: string
+          phone: string | null
+          rider_profile_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accessibility_notes?: string | null
+          created_at?: string
+          display_name: string
+          email: string
+          person_id: string
+          phone?: string | null
+          rider_profile_id?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accessibility_notes?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string
+          person_id?: string
+          phone?: string | null
+          rider_profile_id?: string
           status?: string
           tenant_id?: string
           updated_at?: string
@@ -1636,6 +1678,10 @@ export type Database = {
         Args: { target_booking_id: string }
         Returns: boolean
       }
+      cancel_my_rider_booking: {
+        Args: { target_booking_id: string }
+        Returns: boolean
+      }
       can_manage_dispatch: {
         Args: { target_tenant_id: string }
         Returns: boolean
@@ -1702,6 +1748,20 @@ export type Database = {
         }
         Returns: string
       }
+      create_my_rider_booking: {
+        Args: {
+          booking_notes_value?: string
+          destination_address_value: string
+          pickup_address_value: string
+          target_service_area_id: string
+          target_tenant_slug: string
+        }
+        Returns: string
+      }
+      current_rider_profile_id: {
+        Args: { target_tenant_id: string }
+        Returns: string
+      }
       driver_compliance_satisfied: {
         Args: { target_driver_profile_id: string }
         Returns: boolean
@@ -1743,10 +1803,21 @@ export type Database = {
           tenant_slug: string
         }[]
       }
+      list_rider_booking_tenants: {
+        Args: never
+        Returns: {
+          display_name: string
+          tenant_slug: string
+        }[]
+      }
       my_driver_portal_summary: { Args: never; Returns: Json }
       my_driver_dispatch: { Args: never; Returns: Json }
       my_driver_availability: { Args: never; Returns: Json }
       my_driver_service_areas: { Args: never; Returns: Json }
+      my_rider_portal: {
+        Args: { target_tenant_slug: string }
+        Returns: Json
+      }
       my_assigned_vehicle_compliance: { Args: never; Returns: Json }
       queue_driver_expiration_notifications: {
         Args: { target_date?: string }
@@ -1771,6 +1842,15 @@ export type Database = {
       set_my_driver_availability: {
         Args: { target_status: string }
         Returns: Json
+      }
+      upsert_my_rider_profile: {
+        Args: {
+          accessibility_notes_value?: string
+          display_name_value: string
+          phone_value?: string
+          target_tenant_slug: string
+        }
+        Returns: string
       }
       submit_my_driver_evidence: {
         Args: {
