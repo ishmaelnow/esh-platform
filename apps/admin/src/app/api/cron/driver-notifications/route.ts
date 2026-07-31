@@ -11,12 +11,16 @@ export async function GET(request: Request) {
   try {
     const service = createServiceSupabaseClient();
     const targetDate = new Date().toISOString().slice(0, 10);
-    const [driverQueue, vehicleQueue] = await Promise.all([
+    const [driverQueue, vehicleQueue, riderReminderQueue] = await Promise.all([
       service.rpc("queue_driver_expiration_notifications", { target_date: targetDate }),
       service.rpc("queue_vehicle_expiration_notifications", { target_date: targetDate }),
+      service.rpc("queue_scheduled_rider_reminders", {
+        target_date: new Date().toISOString(),
+      }),
     ]);
     if (driverQueue.error) throw driverQueue.error;
     if (vehicleQueue.error) throw vehicleQueue.error;
+    if (riderReminderQueue.error) throw riderReminderQueue.error;
     const delivery = await deliverQueuedNotifications(service, getAdminServerConfig(), {
       limit: 50,
     });
@@ -25,6 +29,7 @@ export async function GET(request: Request) {
       expirationNotificationsQueued: (driverQueue.data ?? 0) + (vehicleQueue.data ?? 0),
       driverExpirationNotificationsQueued: driverQueue.data ?? 0,
       vehicleExpirationNotificationsQueued: vehicleQueue.data ?? 0,
+      riderScheduledRemindersQueued: riderReminderQueue.data ?? 0,
       ...delivery,
     });
   } catch (error) {

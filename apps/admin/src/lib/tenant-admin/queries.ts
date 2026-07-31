@@ -15,6 +15,15 @@ export async function loadTenantSummary(
   ) {
     throw expirationResult.error;
   }
+  const activationResult = await supabase.rpc("activate_due_scheduled_bookings", {
+    target_tenant_id: tenantId,
+  });
+  if (
+    activationResult.error &&
+    !activationResult.error.message.includes("activate_due_scheduled_bookings")
+  ) {
+    throw activationResult.error;
+  }
 
   const [
     tenantResult,
@@ -39,6 +48,7 @@ export async function loadTenantSummary(
     driverServiceAreaAssignmentsResult,
     dispatchBookingsResult,
     dispatchOffersResult,
+    schedulingSettingsResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -128,6 +138,7 @@ export async function loadTenantSummary(
       .select("*")
       .eq("tenant_id", tenantId)
       .order("offered_at", { ascending: false }),
+    supabase.from("tenant_scheduling_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
   ]);
 
   if (tenantResult.error) {
@@ -218,6 +229,11 @@ export async function loadTenantSummary(
     throw dispatchBookingsResult.error;
   if (dispatchOffersResult.error && !dispatchOffersResult.error.message.includes("dispatch_offers"))
     throw dispatchOffersResult.error;
+  if (
+    schedulingSettingsResult.error &&
+    !schedulingSettingsResult.error.message.includes("tenant_scheduling_settings")
+  )
+    throw schedulingSettingsResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -249,6 +265,7 @@ export async function loadTenantSummary(
     driverServiceAreaAssignments: driverServiceAreaAssignmentsResult.data ?? [],
     dispatchBookings: dispatchBookingsResult.data ?? [],
     dispatchOffers: dispatchOffersResult.data ?? [],
+    schedulingSettings: schedulingSettingsResult.data ?? null,
   };
 }
 

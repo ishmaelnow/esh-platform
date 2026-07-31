@@ -23,6 +23,7 @@ import type {
   DriverServiceAreaAssignmentRow,
   DispatchBookingRow,
   DispatchOfferRow,
+  TenantSchedulingSettingsRow,
 } from "@esh-platform/supabase";
 
 export const foundationTenantRoles = ["tenant_owner", "tenant_admin", "tenant_member"] as const;
@@ -71,6 +72,7 @@ export type TenantSummary = {
   driverServiceAreaAssignments: DriverServiceAreaAssignmentRow[];
   dispatchBookings: DispatchBookingRow[];
   dispatchOffers: DispatchOfferRow[];
+  schedulingSettings: TenantSchedulingSettingsRow | null;
 };
 
 export type ActiveTenantOption = {

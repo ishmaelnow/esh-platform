@@ -230,6 +230,17 @@ textarea:focus {
   margin: 5px 0 0;
 }
 
+.field-hint,
+.scheduled-time {
+  color: #617168;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.scheduled-time {
+  margin: 10px 0 0;
+}
+
 .switch {
   align-items: center;
   display: flex;

@@ -163,6 +163,15 @@ export function buildRiderNotificationContent(
   const driverName = textValue(payload.driver_name);
   const driverNumber = textValue(payload.driver_number);
   const vehicleDescription = textValue(payload.vehicle_description);
+  const scheduledPickupAt = textValue(payload.scheduled_pickup_at);
+  const tenantTimeZone = textValue(payload.tenant_time_zone) || "UTC";
+  const scheduledPickup = scheduledPickupAt
+    ? new Intl.DateTimeFormat("en-US", {
+        dateStyle: "full",
+        timeStyle: "short",
+        timeZone: tenantTimeZone,
+      }).format(new Date(scheduledPickupAt))
+    : "";
   const tenantSlug = textValue(payload.tenant_slug);
   const portalUrl = new URL("/", riderAppUrl);
   if (tenantSlug) portalUrl.searchParams.set("tenant", tenantSlug);
@@ -170,6 +179,21 @@ export function buildRiderNotificationContent(
     rider_booking_created: {
       subject: "Your trip request was received",
       intro: `${riderName}, your trip request was received and dispatch can now find a driver.`,
+    },
+    rider_booking_scheduled: {
+      subject: "Your scheduled trip is confirmed",
+      intro: `${riderName}, your future trip has been scheduled.`,
+      details: scheduledPickup ? [`Pickup time: ${scheduledPickup} (${tenantTimeZone})`] : [],
+    },
+    rider_scheduled_reminder: {
+      subject: "Reminder: your scheduled trip is coming up",
+      intro: `${riderName}, this is a reminder about your upcoming trip.`,
+      details: scheduledPickup ? [`Pickup time: ${scheduledPickup} (${tenantTimeZone})`] : [],
+    },
+    rider_scheduled_dispatch_started: {
+      subject: "We are finding a driver for your scheduled trip",
+      intro: `${riderName}, dispatch has started finding an eligible driver for your scheduled trip.`,
+      details: scheduledPickup ? [`Scheduled pickup: ${scheduledPickup} (${tenantTimeZone})`] : [],
     },
     rider_dispatch_searching: {
       subject: "We are still finding your driver",

@@ -4,6 +4,8 @@ import {
   canCancelBooking,
   normalizeTenantSlug,
   riderErrorMessage,
+  formatDateTimeInputInZone,
+  zonedDateTimeToIso,
 } from "./booking";
 
 describe("rider booking helpers", () => {
@@ -12,6 +14,15 @@ describe("rider booking helpers", () => {
     expect(canCancelBooking("arrived")).toBe(true);
     expect(canCancelBooking("in_progress")).toBe(false);
     expect(canCancelBooking("completed")).toBe(false);
+  });
+
+  it("converts a tenant wall-clock pickup to UTC", () => {
+    expect(zonedDateTimeToIso("2026-08-02T10:30", "America/Chicago")).toBe(
+      "2026-08-02T15:30:00.000Z",
+    );
+    expect(formatDateTimeInputInZone(new Date("2026-08-02T15:30:00.000Z"), "America/Chicago")).toBe(
+      "2026-08-02T10:30",
+    );
   });
 
   it("presents lifecycle statuses in rider language", () => {

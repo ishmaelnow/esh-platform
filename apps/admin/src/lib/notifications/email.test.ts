@@ -117,4 +117,19 @@ describe("rider notification email content", () => {
       buildRiderNotificationContent("rider_unknown", {}, "https://rider.eshapp.com"),
     ).toThrow("Unsupported rider notification type.");
   });
+
+  it("builds a tenant-time-zone scheduled trip confirmation", () => {
+    const content = buildRiderNotificationContent(
+      "rider_booking_scheduled",
+      {
+        rider_name: "Scheduled Rider",
+        scheduled_pickup_at: "2026-08-02T15:30:00.000Z",
+        tenant_time_zone: "America/Chicago",
+      },
+      "https://rider.eshapp.com",
+    );
+    expect(content.subject).toBe("Your scheduled trip is confirmed");
+    expect(content.text).toContain("10:30 AM");
+    expect(content.text).toContain("America/Chicago");
+  });
 });

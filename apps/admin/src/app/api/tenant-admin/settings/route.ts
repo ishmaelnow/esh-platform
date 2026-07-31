@@ -91,6 +91,23 @@ export async function PATCH(request: Request) {
 
     const tenantId = validateTenantId((body as { tenantId?: unknown }).tenantId);
     const record = body as Record<string, unknown>;
+    if (record.kind === "scheduling_settings") {
+      const number = (key: string) => {
+        const value = Number(record[key]);
+        if (!Number.isInteger(value)) throw new Error(`${key} must be a whole number.`);
+        return value;
+      };
+      const supabase = createRequestSupabaseClient({ accessToken });
+      const { error } = await supabase.rpc("set_tenant_scheduling_settings", {
+        target_tenant_id: tenantId,
+        minimum_notice_minutes_value: number("minimumNoticeMinutes"),
+        maximum_advance_days_value: number("maximumAdvanceDays"),
+        dispatch_lead_minutes_value: number("dispatchLeadMinutes"),
+        reminder_lead_hours_value: number("reminderLeadHours"),
+      });
+      if (error) throw error;
+      return NextResponse.json({ ok: true });
+    }
     if (typeof record.kind === "string" && record.kind.startsWith("dispatch_")) {
       const supabase = createRequestSupabaseClient({ accessToken });
       const bookingId = validateTenantId(record.bookingId);

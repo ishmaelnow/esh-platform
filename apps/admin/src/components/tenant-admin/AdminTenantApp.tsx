@@ -2070,6 +2070,27 @@ function DispatchPanel({
     );
   }
 
+  function saveSchedulingSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const value = (name: string) => {
+      const field = form.get(name);
+      return typeof field === "string" ? field : "";
+    };
+    void request(
+      "PATCH",
+      {
+        kind: "scheduling_settings",
+        minimumNoticeMinutes: value("minimumNoticeMinutes"),
+        maximumAdvanceDays: value("maximumAdvanceDays"),
+        dispatchLeadMinutes: value("dispatchLeadMinutes"),
+        reminderLeadHours: value("reminderLeadHours"),
+      },
+      "scheduling-settings",
+      "Scheduling settings saved.",
+    );
+  }
+
   const activeAreas = summary.serviceAreas.filter(({ status }) => status === "active");
   return (
     <section className="content-stack">
@@ -2139,6 +2160,66 @@ function DispatchPanel({
         ) : null}
       </section>
 
+      <section className="panel">
+        <PanelHeader
+          title="Scheduled booking rules"
+          description={`Times are interpreted in ${summary.configuration?.default_time_zone ?? "the tenant time zone"}. Drivers are assigned only when dispatch begins.`}
+        />
+        <form className="settings-grid" onSubmit={saveSchedulingSettings}>
+          <label>
+            Minimum notice (minutes)
+            <input
+              defaultValue={summary.schedulingSettings?.minimum_notice_minutes ?? 60}
+              min="15"
+              max="10080"
+              name="minimumNoticeMinutes"
+              type="number"
+              required
+            />
+          </label>
+          <label>
+            Maximum advance window (days)
+            <input
+              defaultValue={summary.schedulingSettings?.maximum_advance_days ?? 90}
+              min="1"
+              max="365"
+              name="maximumAdvanceDays"
+              type="number"
+              required
+            />
+          </label>
+          <label>
+            Begin dispatch before pickup (minutes)
+            <input
+              defaultValue={summary.schedulingSettings?.dispatch_lead_minutes ?? 30}
+              min="5"
+              max="1440"
+              name="dispatchLeadMinutes"
+              type="number"
+              required
+            />
+          </label>
+          <label>
+            Reminder before pickup (hours)
+            <input
+              defaultValue={summary.schedulingSettings?.reminder_lead_hours ?? 24}
+              min="1"
+              max="168"
+              name="reminderLeadHours"
+              type="number"
+              required
+            />
+          </label>
+          <button
+            className="primary-button"
+            disabled={!canManageTenant || busyId !== null}
+            type="submit"
+          >
+            Save scheduling rules
+          </button>
+        </form>
+      </section>
+
       {summary.dispatchBookings.length === 0 ? (
         <section className="panel">
           <EmptyState message="No dispatch bookings have been created." />
@@ -2182,6 +2263,14 @@ function DispatchPanel({
                 <span className={`status-pill ${booking.status}`}>{booking.status}</span>
               </div>
               <dl className="details-grid">
+                <div>
+                  <dt>Pickup time</dt>
+                  <dd>
+                    {booking.scheduled_pickup_at
+                      ? formatDate(booking.scheduled_pickup_at)
+                      : "Ride now"}
+                  </dd>
+                </div>
                 <div>
                   <dt>Contact</dt>
                   <dd>{booking.customer_phone ?? "Not provided"}</dd>

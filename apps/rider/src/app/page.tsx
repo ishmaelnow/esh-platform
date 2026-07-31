@@ -8,8 +8,10 @@ import {
 import {
   bookingStatusLabel,
   canCancelBooking,
+  formatDateTimeInputInZone,
   normalizeTenantSlug,
   riderErrorMessage,
+  zonedDateTimeToIso,
 } from "./booking";
 
 type BookingTenant = { tenant_slug: string; display_name: string };
@@ -31,6 +33,8 @@ type RiderBooking = {
   bookingNotes: string | null;
   status: string;
   createdAt: string;
+  scheduledPickupAt: string | null;
+  dispatchReadyAt: string | null;
   driver: { displayName: string; driverNumber: string } | null;
   vehicle: {
     vehicleNumber: string;
@@ -48,11 +52,26 @@ type RiderPortal = {
   bookings: RiderBooking[];
 };
 type RiderNotificationPreferences = { tripUpdatesEnabled: boolean };
+type RiderScheduling = {
+  timeZone: string;
+  settings: {
+    minimumNoticeMinutes: number;
+    maximumAdvanceDays: number;
+    dispatchLeadMinutes: number;
+    reminderLeadHours: number;
+  };
+  bookings: Array<{
+    bookingId: string;
+    scheduledPickupAt: string | null;
+    dispatchReadyAt: string | null;
+  }>;
+};
 
-function formatDate(value: string) {
+function formatDate(value: string, timeZone?: string) {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
+    ...(timeZone ? { timeZone } : {}),
   }).format(new Date(value));
 }
 
@@ -80,6 +99,8 @@ export default function RiderHome() {
   const [portal, setPortal] = useState<RiderPortal | null>(null);
   const [notificationPreferences, setNotificationPreferences] =
     useState<RiderNotificationPreferences | null>(null);
+  const [scheduling, setScheduling] = useState<RiderScheduling | null>(null);
+  const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled">("now");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -95,12 +116,25 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const { data: preferenceData, error: preferenceError } = await supabase.rpc(
-        "my_rider_notification_preferences",
-        { target_tenant_slug: tenantSlug },
-      );
+      const [preferenceResult, schedulingResult] = await Promise.all([
+        supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
+        supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
+      ]);
+      const { data: preferenceData, error: preferenceError } = preferenceResult;
       if (preferenceError) throw preferenceError;
+      if (schedulingResult.error) throw schedulingResult.error;
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
+      const nextScheduling = schedulingResult.data as RiderScheduling;
+      setScheduling(nextScheduling);
+      const schedules = new Map(nextScheduling.bookings.map((item) => [item.bookingId, item]));
+      setPortal({
+        ...nextPortal,
+        bookings: nextPortal.bookings.map((booking) => ({
+          ...booking,
+          scheduledPickupAt: schedules.get(booking.bookingId)?.scheduledPickupAt ?? null,
+          dispatchReadyAt: schedules.get(booking.bookingId)?.dispatchReadyAt ?? null,
+        })),
+      });
     } else {
       setNotificationPreferences(null);
     }
@@ -213,17 +247,32 @@ export default function RiderHome() {
     setError("");
     setMessage("");
     try {
-      const { error: bookingError } = await supabase.rpc("create_my_rider_booking", {
+      const common = {
         target_tenant_slug: tenantSlug,
         target_service_area_id: formValue(form, "serviceAreaId"),
         pickup_address_value: formValue(form, "pickupAddress"),
         destination_address_value: formValue(form, "destinationAddress"),
         booking_notes_value: formValue(form, "bookingNotes"),
-      });
+      };
+      const result =
+        bookingTiming === "scheduled"
+          ? await supabase.rpc("create_my_rider_scheduled_booking", {
+              ...common,
+              scheduled_pickup_at_value: zonedDateTimeToIso(
+                formValue(form, "scheduledPickupAt"),
+                scheduling?.timeZone ?? "UTC",
+              ),
+            })
+          : await supabase.rpc("create_my_rider_booking", common);
+      const bookingError = result.error;
       if (bookingError) throw bookingError;
       formElement.reset();
       await loadPortal();
-      setMessage("Trip requested. Dispatch can now find an eligible driver.");
+      setMessage(
+        bookingTiming === "scheduled"
+          ? "Trip scheduled. We will begin finding a driver closer to pickup."
+          : "Trip requested. Dispatch can now find an eligible driver.",
+      );
     } catch (value) {
       setError(riderErrorMessage(value));
     } finally {
@@ -399,6 +448,37 @@ export default function RiderHome() {
             <h2>Request a trip</h2>
             <form className="form-grid" onSubmit={(event) => void createBooking(event)}>
               <label className="wide">
+                When do you need the ride?
+                <select
+                  value={bookingTiming}
+                  onChange={(event) => setBookingTiming(event.target.value as "now" | "scheduled")}
+                >
+                  <option value="now">Ride now</option>
+                  <option value="scheduled">Schedule for later</option>
+                </select>
+              </label>
+              {bookingTiming === "scheduled" ? (
+                <label className="wide">
+                  Pickup date and time
+                  <input
+                    name="scheduledPickupAt"
+                    type="datetime-local"
+                    required
+                    min={formatDateTimeInputInZone(
+                      new Date(
+                        Date.now() +
+                          ((scheduling?.settings.minimumNoticeMinutes ?? 60) + 1) * 60_000,
+                      ),
+                      scheduling?.timeZone ?? "UTC",
+                    )}
+                  />
+                  <span className="field-hint">
+                    Provider time zone: {scheduling?.timeZone ?? "Loading…"}. Minimum notice:{" "}
+                    {scheduling?.settings.minimumNoticeMinutes ?? 60} minutes.
+                  </span>
+                </label>
+              ) : null}
+              <label className="wide">
                 Service area
                 <select name="serviceAreaId" required defaultValue="">
                   <option value="" disabled>
@@ -488,6 +568,12 @@ export default function RiderHome() {
                       <span className={`status status-${booking.status}`}>
                         {bookingStatusLabel(booking.status)}
                       </span>
+                      {booking.scheduledPickupAt ? (
+                        <p className="scheduled-time">
+                          Scheduled: {formatDate(booking.scheduledPickupAt, scheduling?.timeZone)}{" "}
+                          {scheduling?.timeZone ? `(${scheduling.timeZone})` : ""}
+                        </p>
+                      ) : null}
                       <h3>{booking.pickupAddress}</h3>
                       <p className="destination">to {booking.destinationAddress}</p>
                     </div>

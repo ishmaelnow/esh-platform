@@ -241,8 +241,10 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           destination_address: string
+          dispatch_ready_at: string | null
           pickup_address: string
           rider_profile_id: string | null
+          scheduled_pickup_at: string | null
           service_area_id: string
           status: string
           tenant_id: string
@@ -260,8 +262,10 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           destination_address: string
+          dispatch_ready_at?: string | null
           pickup_address: string
           rider_profile_id?: string | null
+          scheduled_pickup_at?: string | null
           service_area_id: string
           status?: string
           tenant_id: string
@@ -279,8 +283,10 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           destination_address?: string
+          dispatch_ready_at?: string | null
           pickup_address?: string
           rider_profile_id?: string | null
+          scheduled_pickup_at?: string | null
           service_area_id?: string
           status?: string
           tenant_id?: string
@@ -1102,6 +1108,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_scheduling_settings: {
+        Row: {
+          created_at: string
+          dispatch_lead_minutes: number
+          maximum_advance_days: number
+          minimum_notice_minutes: number
+          reminder_lead_hours: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dispatch_lead_minutes?: number
+          maximum_advance_days?: number
+          minimum_notice_minutes?: number
+          reminder_lead_hours?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dispatch_lead_minutes?: number
+          maximum_advance_days?: number
+          minimum_notice_minutes?: number
+          reminder_lead_hours?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       person_profiles: {
         Row: {
           activated_at: string | null
@@ -1792,6 +1828,21 @@ export type Database = {
         }
         Returns: string
       }
+      create_my_rider_scheduled_booking: {
+        Args: {
+          booking_notes_value?: string
+          destination_address_value: string
+          pickup_address_value: string
+          scheduled_pickup_at_value: string
+          target_service_area_id: string
+          target_tenant_slug: string
+        }
+        Returns: string
+      }
+      activate_due_scheduled_bookings: {
+        Args: { target_tenant_id: string }
+        Returns: number
+      }
       current_rider_profile_id: {
         Args: { target_tenant_id: string }
         Returns: string
@@ -1856,8 +1907,16 @@ export type Database = {
         Args: { target_tenant_slug: string }
         Returns: Json
       }
+      my_rider_scheduling: {
+        Args: { target_tenant_slug: string }
+        Returns: Json
+      }
       my_assigned_vehicle_compliance: { Args: never; Returns: Json }
       queue_driver_expiration_notifications: {
+        Args: { target_date?: string }
+        Returns: number
+      }
+      queue_scheduled_rider_reminders: {
         Args: { target_date?: string }
         Returns: number
       }
@@ -1885,6 +1944,16 @@ export type Database = {
         Args: {
           target_tenant_slug: string
           trip_updates_enabled_value: boolean
+        }
+        Returns: boolean
+      }
+      set_tenant_scheduling_settings: {
+        Args: {
+          dispatch_lead_minutes_value: number
+          maximum_advance_days_value: number
+          minimum_notice_minutes_value: number
+          reminder_lead_hours_value: number
+          target_tenant_id: string
         }
         Returns: boolean
       }
