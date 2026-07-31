@@ -29,6 +29,10 @@ The Admin notification worker delivers queued work during its scheduled run, and
 administrators may use the existing **Deliver notifications** control for immediate operational
 delivery or retry.
 
+Admin exposes tenant-wide outbox operations in a dedicated **Notifications** tab. Bulk delivery is
+bounded to 10 messages, displays the exact message and recipient count, and requires confirmation.
+Operators may also deliver or retry one message at a time and filter recent history by status.
+
 `NEXT_PUBLIC_RIDER_APP_URL` is read by the Admin server when it builds the canonical link in Rider
 emails. It must point to the production Rider origin and never contains a secret.
 

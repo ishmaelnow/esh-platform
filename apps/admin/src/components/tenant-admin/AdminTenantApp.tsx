@@ -41,6 +41,7 @@ type ViewKey =
   | "vehicles"
   | "serviceAreas"
   | "dispatch"
+  | "notifications"
   | "applications";
 
 const views: { key: ViewKey; label: string }[] = [
@@ -55,6 +56,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "vehicles", label: "Vehicles" },
   { key: "serviceAreas", label: "Service Areas" },
   { key: "dispatch", label: "Dispatch" },
+  { key: "notifications", label: "Notifications" },
   { key: "applications", label: "Applications" },
 ];
 
@@ -439,6 +441,14 @@ function ResolvedWorkspace({
       ) : null}
       {activeView === "dispatch" ? (
         <DispatchPanel
+          canManageTenant={canManageTenant}
+          onRefresh={onRefresh}
+          session={session}
+          summary={summary}
+        />
+      ) : null}
+      {activeView === "notifications" ? (
+        <NotificationsPanel
           canManageTenant={canManageTenant}
           onRefresh={onRefresh}
           session={session}
@@ -1205,38 +1215,8 @@ function DriversPanel({
   >({});
   const [evidenceUploadDriverId, setEvidenceUploadDriverId] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ title: string; url: string } | null>(null);
-  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
-  const [deliveringNotifications, setDeliveringNotifications] = useState(false);
 
   useEffect(() => setChecklists(summary.driverOnboarding), [summary.driverOnboarding]);
-
-  async function deliverNotifications(notificationId?: string) {
-    setDeliveringNotifications(true);
-    setNotificationMessage("Delivering queued driver notifications…");
-    try {
-      const response = await fetch("/api/tenant-admin/notifications/deliver", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tenantId: summary.tenant.tenant_id,
-          notificationId,
-        }),
-      });
-      const result = (await response.json().catch(() => null)) as { message?: string } | null;
-      if (!response.ok) throw new Error(result?.message ?? "Unable to deliver notifications.");
-      setNotificationMessage(result?.message ?? "Notification delivery completed.");
-      onRefresh();
-    } catch (error) {
-      setNotificationMessage(
-        error instanceof Error ? error.message : "Unable to deliver notifications.",
-      );
-    } finally {
-      setDeliveringNotifications(false);
-    }
-  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1449,61 +1429,6 @@ function DriversPanel({
           title="Drivers"
           description="Move approved applicants from draft through onboarding to active service."
         />
-        <section className="notification-summary">
-          <div>
-            <strong>Transactional notifications</strong>
-            <span>
-              {
-                summary.notifications
-                  .filter(({ delivery_status }) => ["queued", "failed"].includes(delivery_status))
-                  .filter(({ attempt_count }) => attempt_count < 5).length
-              }{" "}
-              awaiting delivery or retry
-            </span>
-          </div>
-          <button
-            className="secondary-button"
-            disabled={
-              !canManageTenant ||
-              deliveringNotifications ||
-              !summary.notifications.some(
-                ({ attempt_count, delivery_status }) =>
-                  attempt_count < 5 && ["queued", "failed"].includes(delivery_status),
-              )
-            }
-            onClick={() => void deliverNotifications()}
-            type="button"
-          >
-            {deliveringNotifications ? "Delivering…" : "Deliver notifications"}
-          </button>
-          {notificationMessage ? <p className="notice">{notificationMessage}</p> : null}
-          {summary.notifications.length > 0 ? (
-            <div className="notification-list">
-              {summary.notifications.slice(0, 8).map((notification) => (
-                <div key={notification.notification_id}>
-                  <span>
-                    {notification.notification_type.replaceAll("_", " ")} ·{" "}
-                    {notification.delivery_status}
-                  </span>
-                  <span>{notification.recipient_email}</span>
-                  {notification.delivery_error ? (
-                    <span className="form-error">{notification.delivery_error}</span>
-                  ) : null}
-                  {notification.delivery_status === "failed" && notification.attempt_count < 5 ? (
-                    <button
-                      className="secondary-button"
-                      disabled={deliveringNotifications}
-                      onClick={() => void deliverNotifications(notification.notification_id)}
-                      type="button"
-                    >
-                      Retry
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </section>
         <button
           aria-expanded={showManualForm}
           className="secondary-button"
@@ -1988,6 +1913,177 @@ function DriversPanel({
       {preview ? (
         <EvidencePreview onClose={() => setPreview(null)} title={preview.title} url={preview.url} />
       ) : null}
+    </section>
+  );
+}
+
+function NotificationsPanel({
+  canManageTenant,
+  onRefresh,
+  session,
+  summary,
+}: {
+  canManageTenant: boolean;
+  onRefresh: () => void;
+  session: SupabaseAuthSession;
+  summary: TenantSummary;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const deliverable = summary.notifications.filter(
+    ({ attempt_count, delivery_status }) =>
+      attempt_count < 5 && ["queued", "failed"].includes(delivery_status),
+  );
+  const batch = deliverable.slice(0, 10);
+  const recipientCount = new Set(batch.map(({ recipient_email }) => recipient_email)).size;
+  const visible =
+    statusFilter === "all"
+      ? summary.notifications
+      : summary.notifications.filter(({ delivery_status }) => delivery_status === statusFilter);
+
+  async function deliver(notificationId?: string) {
+    const batchMessage = notificationId
+      ? "Deliver this one notification?"
+      : `Deliver ${batch.length} notification${batch.length === 1 ? "" : "s"} to ${recipientCount} recipient${recipientCount === 1 ? "" : "s"}?`;
+    if (!window.confirm(batchMessage)) return;
+    const busyKey = notificationId ?? "batch";
+    setBusyId(busyKey);
+    setMessage(
+      notificationId
+        ? "Delivering one notification…"
+        : `Delivering up to ${batch.length} notifications…`,
+    );
+    try {
+      const response = await fetch("/api/tenant-admin/notifications/deliver", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tenantId: summary.tenant.tenant_id, notificationId }),
+      });
+      const result = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(result?.message ?? "Unable to deliver notifications.");
+      setMessage(result?.message ?? "Notification delivery completed.");
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to deliver notifications.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <section className="content-stack">
+      <section className="panel">
+        <PanelHeader
+          title="Transactional notifications"
+          description="Review and safely deliver tenant-wide Rider, Driver, vehicle, and dispatch email. Bulk delivery is limited to 10 messages."
+        />
+        <div className="notification-metrics">
+          <div>
+            <strong>{deliverable.length}</strong>
+            <span>Awaiting delivery or retry</span>
+          </div>
+          <div>
+            <strong>
+              {
+                summary.notifications.filter(
+                  ({ delivery_status }) => delivery_status === "delivered",
+                ).length
+              }
+            </strong>
+            <span>Recently delivered</span>
+          </div>
+          <div>
+            <strong>
+              {
+                summary.notifications.filter(({ delivery_status }) => delivery_status === "failed")
+                  .length
+              }
+            </strong>
+            <span>Failed</span>
+          </div>
+        </div>
+        <div className="row-actions">
+          <button
+            className="primary-button"
+            disabled={!canManageTenant || busyId !== null || batch.length === 0}
+            onClick={() => void deliver()}
+            type="button"
+          >
+            {busyId === "batch" ? "Delivering…" : `Deliver next ${batch.length || 0}`}
+          </button>
+          <span className="muted">
+            Next batch: {batch.length} messages to {recipientCount} recipients. You will confirm
+            before sending.
+          </span>
+          <button className="secondary-button" onClick={onRefresh} type="button">
+            Refresh
+          </button>
+        </div>
+        {message ? <p className="notice">{message}</p> : null}
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Delivery history</p>
+            <h3>Recent notifications</h3>
+          </div>
+          <label>
+            Status
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="all">All statuses</option>
+              {["queued", "sending", "sent", "delivered", "failed", "canceled"].map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {visible.length === 0 ? (
+          <EmptyState message="No notifications match this filter." />
+        ) : (
+          <div className="notification-table">
+            {visible.map((notification) => {
+              const canDeliver =
+                notification.attempt_count < 5 &&
+                ["queued", "failed"].includes(notification.delivery_status);
+              return (
+                <article key={notification.notification_id}>
+                  <div>
+                    <strong>{notification.notification_type.replaceAll("_", " ")}</strong>
+                    <span>{notification.recipient_email}</span>
+                    <span className="muted">
+                      Created {formatDate(notification.created_at)} · Attempts{" "}
+                      {notification.attempt_count}/5
+                    </span>
+                  </div>
+                  <span className={`status-pill ${notification.delivery_status}`}>
+                    {notification.delivery_status}
+                  </span>
+                  {notification.delivery_error ? (
+                    <span className="form-error">{notification.delivery_error}</span>
+                  ) : null}
+                  {canDeliver ? (
+                    <button
+                      className="secondary-button"
+                      disabled={!canManageTenant || busyId !== null}
+                      onClick={() => void deliver(notification.notification_id)}
+                      type="button"
+                    >
+                      {notification.delivery_status === "failed" ? "Retry one" : "Deliver one"}
+                    </button>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </section>
   );
 }

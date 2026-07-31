@@ -32,16 +32,21 @@ automatic activation, and transactional email.
 ## Current test checkpoint
 
 Scheduled Rider Bookings production testing is complete. All tested scheduled-booking behavior
-passed except Admin notification discoverability.
+passed. The Admin notification section was subsequently found under **Drivers**, confirming that
+the original failure was discoverability rather than missing data.
 
 Reported failure:
 
-- No dedicated **Transactional notifications** tab or clearly discoverable navigation action was
-  visible in Admin.
-- Notification records and delivery controls currently live inside the Drivers view, which does
-  not match the operational scope or the manual test expectation.
-- Treat this as an Admin information-architecture/usability defect, not evidence that scheduled
-  notification enqueueing or delivery failed.
+- No dedicated **Transactional notifications** tab exists in Admin.
+- Notification records and delivery controls live inside the Drivers view, which does not match
+  their tenant-wide operational scope.
+- Production evidence showed 10 Rider lifecycle notifications queued and a Driver dispatch-offer
+  notification delivered, confirming outbox enqueueing and delivery-state visibility.
+- The project owner used **Deliver notifications**, and the accumulated Rider emails were delivered
+  in a single batch, producing a noticeable notification flood across their devices. This confirms
+  end-to-end delivery but exposes the need for batch-size disclosure and safer delivery controls.
+- Treat the remaining issue as Admin information architecture plus an operational delivery backlog,
+  not missing notification generation.
 
 Use the professional test plan already provided in the active conversation. If that conversation
 is unavailable, reconstruct it from `docs/architecture/scheduled-rider-bookings.md` and verify at
@@ -89,11 +94,9 @@ one-time links.
 
 ## Open issues
 
-- Add a dedicated Admin **Notifications** tab for tenant-wide Driver, vehicle, dispatch, and Rider
-  transactional notifications.
-- Move the existing notification summary, delivery action, status/history, errors, and retry
-  controls out of the Drivers view into that tab.
-- Preserve the current tenant authorization and shared outbox behavior.
+- Dedicated Admin **Notifications** tab, bounded batches, exact message/recipient warning,
+  confirmation, status filtering, and individual delivery/retry have been implemented locally and
+  require production deployment and focused retesting.
 
 ## Cleanup still required after testing
 
@@ -105,8 +108,8 @@ one-time links.
 
 ## Exact next action
 
-Implement and validate the dedicated Admin Notifications tab, then repeat only the notification
-visibility, manual delivery, failure/retry, and Rider scheduled-email test cases.
+Deploy the dedicated Admin Notifications tab, then repeat only notification visibility, bounded
+batch confirmation, individual delivery/retry, status filtering, and Rider scheduled-email tests.
 
 ## Required reading for recovery
 
