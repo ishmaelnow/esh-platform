@@ -49,6 +49,7 @@ export async function loadTenantSummary(
     dispatchBookingsResult,
     dispatchOffersResult,
     schedulingSettingsResult,
+    matchingSettingsResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -139,6 +140,7 @@ export async function loadTenantSummary(
       .eq("tenant_id", tenantId)
       .order("offered_at", { ascending: false }),
     supabase.from("tenant_scheduling_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
+    supabase.from("tenant_matching_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
   ]);
 
   if (tenantResult.error) {
@@ -234,6 +236,11 @@ export async function loadTenantSummary(
     !schedulingSettingsResult.error.message.includes("tenant_scheduling_settings")
   )
     throw schedulingSettingsResult.error;
+  if (
+    matchingSettingsResult.error &&
+    !matchingSettingsResult.error.message.includes("tenant_matching_settings")
+  )
+    throw matchingSettingsResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -266,6 +273,7 @@ export async function loadTenantSummary(
     dispatchBookings: dispatchBookingsResult.data ?? [],
     dispatchOffers: dispatchOffersResult.data ?? [],
     schedulingSettings: schedulingSettingsResult.data ?? null,
+    matchingSettings: matchingSettingsResult.data ?? null,
   };
 }
 

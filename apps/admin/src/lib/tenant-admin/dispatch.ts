@@ -6,6 +6,28 @@ export type DispatchBookingInput = {
   notes: string;
 };
 
+export type MatchingSettingsInput = {
+  automaticMatchingEnabled: boolean;
+  offerDurationSeconds: number;
+  maximumAttempts: number;
+};
+
+export function parseMatchingSettingsInput(input: Record<string, unknown>): MatchingSettingsInput {
+  if (typeof input.automaticMatchingEnabled !== "boolean")
+    throw new Error("Automatic matching must be enabled or disabled.");
+  const offerDurationSeconds = wholeNumber(input.offerDurationSeconds, "Offer duration");
+  const maximumAttempts = wholeNumber(input.maximumAttempts, "Maximum attempts");
+  if (offerDurationSeconds < 30 || offerDurationSeconds > 300)
+    throw new Error("Offer duration must be between 30 and 300 seconds.");
+  if (maximumAttempts < 1 || maximumAttempts > 10)
+    throw new Error("Maximum attempts must be between 1 and 10.");
+  return {
+    automaticMatchingEnabled: input.automaticMatchingEnabled,
+    offerDurationSeconds,
+    maximumAttempts,
+  };
+}
+
 export function parseDispatchBookingInput(input: Record<string, unknown>): DispatchBookingInput {
   const customerName = text(input.customerName);
   const customerPhone = text(input.customerPhone);
@@ -27,4 +49,10 @@ export function parseDispatchBookingInput(input: Record<string, unknown>): Dispa
 
 function text(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function wholeNumber(value: unknown, label: string) {
+  const result = typeof value === "number" ? value : Number(value);
+  if (!Number.isInteger(result)) throw new Error(`${label} must be a whole number.`);
+  return result;
 }

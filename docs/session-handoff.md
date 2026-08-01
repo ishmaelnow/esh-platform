@@ -4,16 +4,14 @@ Last updated: 2026-07-31
 
 ## Current objective
 
-Complete production verification of Scheduled Rider Bookings across Rider, Admin Dispatch, Driver,
-automatic activation, and transactional email.
+Deploy and manually verify Automatic Driver Matching across Admin Dispatch, Driver offers,
+expiration/decline progression, acceptance, Rider privacy, and manual fallback.
 
 ## Repository and deployment state
 
 - Branch: `main`
-- Repository was clean and synchronized with `origin/main` at this checkpoint.
-- Latest confirmed commit: `f74265d feat: add scheduled rider bookings`
-- Scheduled booking migration: `20260801001100_scheduled_rider_bookings.sql`
-- The project owner reported beginning the production manual test after deployment.
+- Automatic matching is implemented locally and is not yet committed or deployed at this checkpoint.
+- New migration: `20260801001200_automatic_driver_matching.sql`.
 - Confirm migration state with a dry run rather than assuming it from this handoff.
 
 ## Delivered capabilities relevant to the test
@@ -31,38 +29,14 @@ automatic activation, and transactional email.
 
 ## Current test checkpoint
 
-Scheduled Rider Bookings production testing is complete. All tested scheduled-booking behavior
-passed. The Admin notification section was subsequently found under **Drivers**, confirming that
-the original failure was discoverability rather than missing data.
+Scheduled Rider Bookings production testing passed. The dedicated Admin **Notifications** tab is
+visible and functional. Automatic Driver Matching passed focused and full tests, Admin typecheck and
+lint, diff checks, and the production Admin build. Production manual testing has not started.
 
-Reported failure:
-
-- No dedicated **Transactional notifications** tab exists in Admin.
-- Notification records and delivery controls live inside the Drivers view, which does not match
-  their tenant-wide operational scope.
-- Production evidence showed 10 Rider lifecycle notifications queued and a Driver dispatch-offer
-  notification delivered, confirming outbox enqueueing and delivery-state visibility.
-- The project owner used **Deliver notifications**, and the accumulated Rider emails were delivered
-  in a single batch, producing a noticeable notification flood across their devices. This confirms
-  end-to-end delivery but exposes the need for batch-size disclosure and safer delivery controls.
-- Treat the remaining issue as Admin information architecture plus an operational delivery backlog,
-  not missing notification generation.
-
-Use the professional test plan already provided in the active conversation. If that conversation
-is unavailable, reconstruct it from `docs/architecture/scheduled-rider-bookings.md` and verify at
-minimum:
-
-1. default and updated tenant scheduling rules;
-2. unchanged Ride now behavior;
-3. future booking creation and Admin visibility;
-4. confirmation email and privacy boundary;
-5. minimum-notice and maximum-advance enforcement;
-6. Rider and Admin cancellation;
-7. one scheduled reminder;
-8. automatic activation within approximately one minute of `dispatch_ready_at`;
-9. one dispatch-started notification;
-10. normal offer, acceptance, trip execution, and completion after activation;
-11. notification preference behavior, tenant isolation, and cross-browser persistence.
+Verify disabled manual behavior, enable-and-match, deterministic first offer, decline progression,
+expiration without an open browser, maximum-attempt fallback, no-candidate fallback, manual override,
+Driver acceptance, Rider privacy, notifications, audit events, and restoration of production
+settings.
 
 ## Temporary production settings
 
@@ -94,9 +68,7 @@ one-time links.
 
 ## Open issues
 
-- Dedicated Admin **Notifications** tab, bounded batches, exact message/recipient warning,
-  confirmation, status filtering, and individual delivery/retry have been implemented locally and
-  require production deployment and focused retesting.
+No known unresolved production defect. Automatic matching awaits deployment and manual verification.
 
 ## Cleanup still required after testing
 
@@ -108,8 +80,8 @@ one-time links.
 
 ## Exact next action
 
-Deploy the dedicated Admin Notifications tab, then repeat only notification visibility, bounded
-batch confirmation, individual delivery/retry, status filtering, and Rider scheduled-email tests.
+Commit and push the feature, dry-run and deploy migration `20260801001200`, then execute the Automatic
+Driver Matching production manual test plan.
 
 ## Required reading for recovery
 
@@ -119,3 +91,4 @@ batch confirmation, individual delivery/retry, status filtering, and Rider sched
 - `docs/architecture/rider-trip-notifications.md`
 - `docs/architecture/verified-rider-booking.md`
 - `docs/architecture/manual-dispatch-trip-core.md`
+- `docs/architecture/automatic-driver-matching.md`

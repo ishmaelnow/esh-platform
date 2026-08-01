@@ -2116,7 +2116,7 @@ function DispatchPanel({
 
   async function request(
     method: "POST" | "PATCH",
-    body: Record<string, string>,
+    body: Record<string, unknown>,
     busyKey: string,
     successMessage: string,
   ) {
@@ -2133,7 +2133,7 @@ function DispatchPanel({
       });
       const result = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) throw new Error(result?.message ?? "Dispatch action failed.");
-      setMessage(successMessage);
+      setMessage(result?.message ?? successMessage);
       if (method === "POST") setShowForm(false);
       onRefresh();
     } catch (error) {
@@ -2184,6 +2184,26 @@ function DispatchPanel({
       },
       "scheduling-settings",
       "Scheduling settings saved.",
+    );
+  }
+
+  function saveMatchingSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const value = (name: string) => {
+      const field = form.get(name);
+      return typeof field === "string" ? field : "";
+    };
+    void request(
+      "PATCH",
+      {
+        kind: "matching_settings",
+        automaticMatchingEnabled: form.get("automaticMatchingEnabled") === "on",
+        offerDurationSeconds: value("offerDurationSeconds"),
+        maximumAttempts: value("maximumAttempts"),
+      },
+      "matching-settings",
+      "Automatic matching settings saved.",
     );
   }
 
@@ -2254,6 +2274,60 @@ function DispatchPanel({
             </button>
           </form>
         ) : null}
+      </section>
+
+      <section className="panel">
+        <PanelHeader
+          title="Automatic driver matching"
+          description="Offer each requested trip to one eligible online Driver at a time. Unanswered and declined offers move to the next untried Driver; manual dispatch stays available at every stage."
+        />
+        <form className="settings-grid" onSubmit={saveMatchingSettings}>
+          <label>
+            <span>Automatic matching</span>
+            <input
+              defaultChecked={summary.matchingSettings?.automatic_matching_enabled ?? false}
+              name="automaticMatchingEnabled"
+              type="checkbox"
+            />
+            <span className="muted">Enable for new and currently waiting bookings</span>
+          </label>
+          <label>
+            Driver response time (seconds)
+            <input
+              defaultValue={summary.matchingSettings?.offer_duration_seconds ?? 90}
+              min="30"
+              max="300"
+              name="offerDurationSeconds"
+              placeholder="Example: 90"
+              type="number"
+              required
+            />
+          </label>
+          <label>
+            Maximum automatic attempts
+            <input
+              defaultValue={summary.matchingSettings?.maximum_attempts ?? 3}
+              min="1"
+              max="10"
+              name="maximumAttempts"
+              placeholder="Example: 3"
+              type="number"
+              required
+            />
+          </label>
+          <p className="muted">
+            Eligible Drivers must be active, online in the trip area, compliant, assigned an active
+            vehicle, and free of another active trip. Drivers with the oldest prior work are tried
+            first; Driver number breaks ties.
+          </p>
+          <button
+            className="primary-button"
+            disabled={!canManageTenant || busyId !== null}
+            type="submit"
+          >
+            Save matching settings
+          </button>
+        </form>
       </section>
 
       <section className="panel">
@@ -2331,6 +2405,12 @@ function DispatchPanel({
           const pendingOffer = summary.dispatchOffers.find(
             (offer) => offer.booking_id === booking.booking_id && offer.status === "pending",
           );
+          const bookingOffers = summary.dispatchOffers.filter(
+            (offer) => offer.booking_id === booking.booking_id,
+          );
+          const automaticAttempts = bookingOffers.filter(
+            (offer) => offer.offer_source === "automatic",
+          );
           const offeredDriver = summary.drivers.find(
             ({ driver_profile_id }) => driver_profile_id === pendingOffer?.driver_profile_id,
           );
@@ -2390,10 +2470,38 @@ function DispatchPanel({
                   </dd>
                 </div>
                 <div>
+                  <dt>Matching</dt>
+                  <dd>
+                    {pendingOffer
+                      ? `${pendingOffer.offer_source === "automatic" ? "Automatic" : "Manual"} offer`
+                      : summary.matchingSettings?.automatic_matching_enabled
+                        ? `${automaticAttempts.length} automatic attempt${automaticAttempts.length === 1 ? "" : "s"}`
+                        : "Manual"}
+                  </dd>
+                </div>
+                <div>
                   <dt>Notes</dt>
                   <dd>{booking.booking_notes ?? "None"}</dd>
                 </div>
               </dl>
+              {bookingOffers.length > 0 ? (
+                <details>
+                  <summary>Offer history ({bookingOffers.length})</summary>
+                  <div className="content-stack compact-stack">
+                    {bookingOffers.map((offer, index) => {
+                      const driver = summary.drivers.find(
+                        (item) => item.driver_profile_id === offer.driver_profile_id,
+                      );
+                      return (
+                        <p className="muted" key={offer.offer_id}>
+                          {bookingOffers.length - index}. {driver?.display_name ?? "Driver"} ·{" "}
+                          {offer.offer_source} · {offer.status} · {formatDate(offer.offered_at)}
+                        </p>
+                      );
+                    })}
+                  </div>
+                </details>
+              ) : null}
               {canOffer ? (
                 <div className="row-actions">
                   <select

@@ -10,6 +10,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Verified Rider Booking](./architecture/verified-rider-booking.md)
 - [Rider Trip Notifications](./architecture/rider-trip-notifications.md)
 - [Scheduled Rider Bookings](./architecture/scheduled-rider-bookings.md)
+- [Automatic Driver Matching](./architecture/automatic-driver-matching.md)
 - `architecture/` describes system structure, boundaries, and platform principles.
 - `adr/` records architectural decisions and their tradeoffs.
 - `development/` documents local development workflows and engineering standards.

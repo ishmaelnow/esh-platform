@@ -50,6 +50,7 @@ export type DispatchOfferRow = Tables<"dispatch_offers">;
 export type RiderProfileRow = Tables<"rider_profiles">;
 export type RiderNotificationPreferenceRow = Tables<"rider_notification_preferences">;
 export type TenantSchedulingSettingsRow = Tables<"tenant_scheduling_settings">;
+export type TenantMatchingSettingsRow = Tables<"tenant_matching_settings">;
 export type VehicleEvidenceRow = Tables<"vehicle_evidence">;
 export type VehicleEvidenceRequirementRow = Tables<"vehicle_evidence_requirements">;
 export type TenantRow = Tables<"tenants">;

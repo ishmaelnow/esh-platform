@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDispatchBookingInput } from "./dispatch";
+import { parseDispatchBookingInput, parseMatchingSettingsInput } from "./dispatch";
 
 describe("manual dispatch booking input", () => {
   it("normalizes a valid booking", () => {
@@ -28,5 +28,29 @@ describe("manual dispatch booking input", () => {
         destinationAddress: "",
       }),
     ).toThrow(/required/i);
+  });
+});
+
+describe("automatic matching settings", () => {
+  it("normalizes valid controls", () => {
+    expect(
+      parseMatchingSettingsInput({
+        automaticMatchingEnabled: true,
+        offerDurationSeconds: "90",
+        maximumAttempts: "3",
+      }),
+    ).toEqual({
+      automaticMatchingEnabled: true,
+      offerDurationSeconds: 90,
+      maximumAttempts: 3,
+    });
+  });
+
+  it.each([
+    [{ automaticMatchingEnabled: "true", offerDurationSeconds: 90, maximumAttempts: 3 }],
+    [{ automaticMatchingEnabled: true, offerDurationSeconds: 29, maximumAttempts: 3 }],
+    [{ automaticMatchingEnabled: true, offerDurationSeconds: 90, maximumAttempts: 11 }],
+  ])("rejects unsafe settings %#", (input) => {
+    expect(() => parseMatchingSettingsInput(input)).toThrow();
   });
 });

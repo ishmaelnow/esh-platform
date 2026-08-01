@@ -24,6 +24,7 @@ import type {
   DispatchBookingRow,
   DispatchOfferRow,
   TenantSchedulingSettingsRow,
+  TenantMatchingSettingsRow,
 } from "@esh-platform/supabase";
 
 export const foundationTenantRoles = ["tenant_owner", "tenant_admin", "tenant_member"] as const;
@@ -73,6 +74,7 @@ export type TenantSummary = {
   dispatchBookings: DispatchBookingRow[];
   dispatchOffers: DispatchOfferRow[];
   schedulingSettings: TenantSchedulingSettingsRow | null;
+  matchingSettings: TenantMatchingSettingsRow | null;
 };
 
 export type ActiveTenantOption = {

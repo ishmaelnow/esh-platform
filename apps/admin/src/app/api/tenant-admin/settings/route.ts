@@ -9,7 +9,7 @@ import {
   validateTenantId,
 } from "@/lib/tenant-admin/server";
 import { parseServiceAreaInput } from "@/lib/tenant-admin/service-areas";
-import { parseDispatchBookingInput } from "@/lib/tenant-admin/dispatch";
+import { parseDispatchBookingInput, parseMatchingSettingsInput } from "@/lib/tenant-admin/dispatch";
 
 async function authorizeServiceAreas(request: Request, tenantId: string) {
   const accessToken = getBearerToken(request);
@@ -91,6 +91,31 @@ export async function PATCH(request: Request) {
 
     const tenantId = validateTenantId((body as { tenantId?: unknown }).tenantId);
     const record = body as Record<string, unknown>;
+    if (record.kind === "matching_settings") {
+      const input = parseMatchingSettingsInput(record);
+      const supabase = createRequestSupabaseClient({ accessToken });
+      const { error } = await supabase.rpc("set_tenant_matching_settings", {
+        target_tenant_id: tenantId,
+        automatic_matching_enabled_value: input.automaticMatchingEnabled,
+        offer_duration_seconds_value: input.offerDurationSeconds,
+        maximum_attempts_value: input.maximumAttempts,
+      });
+      if (error) throw error;
+      let matchedCount = 0;
+      if (input.automaticMatchingEnabled) {
+        const matchingResult = await supabase.rpc("start_tenant_automatic_matching", {
+          target_tenant_id: tenantId,
+        });
+        if (matchingResult.error) throw matchingResult.error;
+        matchedCount = matchingResult.data ?? 0;
+      }
+      return NextResponse.json({
+        ok: true,
+        message: input.automaticMatchingEnabled
+          ? `Automatic matching enabled. ${matchedCount} waiting booking${matchedCount === 1 ? "" : "s"} matched.`
+          : "Automatic matching disabled. Manual dispatch remains available.",
+      });
+    }
     if (record.kind === "scheduling_settings") {
       const number = (key: string) => {
         const value = Number(record[key]);

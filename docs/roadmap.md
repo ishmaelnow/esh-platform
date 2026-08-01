@@ -103,8 +103,11 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: tenant-time-zone scheduled Rider trips, configurable notice/advance,
      dispatch-lead and reminder windows, delayed dispatch activation, upcoming-trip cancellation,
      confirmation/reminder emails, and Admin visibility without advance driver reservation.
-   - Remaining: recurring bookings, automatic matching, realtime location, routing, pricing,
-     payments, SMS/push delivery, and scheduled-trip reminders.
+   - Current delivery: tenant-controlled automatic matching, deterministic eligible-Driver ranking,
+     sequential time-bounded offers, decline/expiration progression, attempt visibility, database-
+     native expiration processing, audit, and safe manual fallback.
+   - Remaining: recurring bookings, realtime location, routing, pricing, payments, and SMS/push
+     delivery.
 6. **Reputation**
    - Product-specific criteria on generic reputation primitives.
 7. **Money and Ledger**

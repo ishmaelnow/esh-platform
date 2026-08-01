@@ -340,7 +340,8 @@ export type Database = {
           expires_at: string
           offer_id: string
           offered_at: string
-          offered_by_person_id: string
+          offer_source: string
+          offered_by_person_id: string | null
           responded_at: string | null
           response_notes: string | null
           status: string
@@ -353,7 +354,8 @@ export type Database = {
           expires_at?: string
           offer_id?: string
           offered_at?: string
-          offered_by_person_id: string
+          offer_source?: string
+          offered_by_person_id?: string | null
           responded_at?: string | null
           response_notes?: string | null
           status?: string
@@ -366,7 +368,8 @@ export type Database = {
           expires_at?: string
           offer_id?: string
           offered_at?: string
-          offered_by_person_id?: string
+          offer_source?: string
+          offered_by_person_id?: string | null
           responded_at?: string | null
           response_notes?: string | null
           status?: string
@@ -1133,6 +1136,33 @@ export type Database = {
           maximum_advance_days?: number
           minimum_notice_minutes?: number
           reminder_lead_hours?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tenant_matching_settings: {
+        Row: {
+          automatic_matching_enabled: boolean
+          created_at: string
+          maximum_attempts: number
+          offer_duration_seconds: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          automatic_matching_enabled?: boolean
+          created_at?: string
+          maximum_attempts?: number
+          offer_duration_seconds?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          automatic_matching_enabled?: boolean
+          created_at?: string
+          maximum_attempts?: number
+          offer_duration_seconds?: number
           tenant_id?: string
           updated_at?: string
         }
@@ -1956,6 +1986,19 @@ export type Database = {
           target_tenant_id: string
         }
         Returns: boolean
+      }
+      set_tenant_matching_settings: {
+        Args: {
+          automatic_matching_enabled_value: boolean
+          maximum_attempts_value: number
+          offer_duration_seconds_value: number
+          target_tenant_id: string
+        }
+        Returns: boolean
+      }
+      start_tenant_automatic_matching: {
+        Args: { target_tenant_id: string }
+        Returns: number
       }
       upsert_my_rider_profile: {
         Args: {
