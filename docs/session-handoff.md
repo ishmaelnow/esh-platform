@@ -1,17 +1,18 @@
 # Session Handoff
 
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 ## Current objective
 
-Deploy and manually verify Automatic Driver Matching across Admin Dispatch, Driver offers,
-expiration/decline progression, acceptance, Rider privacy, and manual fallback.
+Deploy and manually verify Realtime Driver Location across Driver permission/control, service-area
+enforcement, Admin visibility, Rider active-trip privacy, freshness, and automatic stop behavior.
 
 ## Repository and deployment state
 
 - Branch: `main`
-- Automatic matching is implemented locally and is not yet committed or deployed at this checkpoint.
-- New migration: `20260801001200_automatic_driver_matching.sql`.
+- Automatic Driver Matching commit `72c3f93` is deployed; production manual testing passed.
+- Realtime Driver Location is implemented locally and is not yet committed or deployed.
+- New migration: `20260801001300_realtime_driver_location.sql`.
 - Confirm migration state with a dry run rather than assuming it from this handoff.
 
 ## Delivered capabilities relevant to the test
@@ -30,13 +31,14 @@ expiration/decline progression, acceptance, Rider privacy, and manual fallback.
 ## Current test checkpoint
 
 Scheduled Rider Bookings production testing passed. The dedicated Admin **Notifications** tab is
-visible and functional. Automatic Driver Matching passed focused and full tests, Admin typecheck and
-lint, diff checks, and the production Admin build. Production manual testing has not started.
+visible and functional. Automatic Driver Matching passed production manual testing. Realtime Driver
+Location passed Driver, Rider, and Admin typechecks, full repository lint/tests, all three production
+builds, and diff checks. Production manual testing has not started.
 
-Verify disabled manual behavior, enable-and-match, deterministic first offer, decline progression,
-expiration without an open browser, maximum-attempt fallback, no-candidate fallback, manual override,
-Driver acceptance, Rider privacy, notifications, audit events, and restoration of production
-settings.
+Verify opt-in and browser permission handling, ten-second coordinate refresh, in-boundary enforcement,
+out-of-boundary rejection, five-second Admin visibility, Rider invisibility before acceptance,
+ten-second active-trip visibility, stale labeling, cross-tenant isolation, explicit stop, offline stop,
+trip-completion stop, audit events, and absence of route history.
 
 ## Temporary production settings
 
@@ -68,7 +70,7 @@ one-time links.
 
 ## Open issues
 
-No known unresolved production defect. Automatic matching awaits deployment and manual verification.
+No known unresolved production defect. Realtime Driver Location awaits validation and deployment.
 
 ## Cleanup still required after testing
 
@@ -80,8 +82,8 @@ No known unresolved production defect. Automatic matching awaits deployment and 
 
 ## Exact next action
 
-Commit and push the feature, dry-run and deploy migration `20260801001200`, then execute the Automatic
-Driver Matching production manual test plan.
+Commit the feature, dry-run and deploy migration `20260801001300`, push production, then execute the
+Realtime Driver Location production manual test plan.
 
 ## Required reading for recovery
 
@@ -92,3 +94,4 @@ Driver Matching production manual test plan.
 - `docs/architecture/verified-rider-booking.md`
 - `docs/architecture/manual-dispatch-trip-core.md`
 - `docs/architecture/automatic-driver-matching.md`
+- `docs/architecture/realtime-driver-location.md`

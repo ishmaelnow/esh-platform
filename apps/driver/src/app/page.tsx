@@ -12,6 +12,7 @@ import {
   vehicleEvidenceLabel,
 } from "../lib/availability";
 import { offerCountdownLabel, offerSecondsRemaining } from "../lib/dispatch";
+import { locationErrorMessage } from "../lib/location";
 
 type DriverSummary = {
   driverProfileId: string;
@@ -121,6 +122,15 @@ type DriverDispatch = {
   trips: DriverTrip[];
 };
 
+type DriverLocationSharing = {
+  sharingEnabled: boolean;
+  consentedAt: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  accuracyMeters: number | null;
+  recordedAt: string | null;
+};
+
 type DriverPortalTab = "overview" | "dispatch" | "service_areas" | "documents" | "vehicle";
 
 const tripSoundPreferenceKey = "esh-driver-trip-sounds-enabled";
@@ -150,6 +160,9 @@ export default function DriverHome() {
   const [availability, setAvailability] = useState<DriverAvailability | null>(null);
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState<string | null>(null);
+  const [locationSharing, setLocationSharing] = useState<DriverLocationSharing | null>(null);
+  const [locationMessage, setLocationMessage] = useState<string | null>(null);
+  const [updatingLocation, setUpdatingLocation] = useState(false);
   const [serviceAreas, setServiceAreas] = useState<DriverServiceArea[]>([]);
   const [updatingServiceArea, setUpdatingServiceArea] = useState(false);
   const [serviceAreaMessage, setServiceAreaMessage] = useState<string | null>(null);
@@ -192,6 +205,12 @@ export default function DriverHome() {
       availabilityResult.error || !availabilityResult.data
         ? null
         : (availabilityResult.data as unknown as DriverAvailability),
+    );
+    const locationResult = await supabase.rpc("my_driver_location_sharing");
+    setLocationSharing(
+      locationResult.error || !locationResult.data
+        ? null
+        : (locationResult.data as unknown as DriverLocationSharing),
     );
     const serviceAreaResult = await supabase.rpc("my_driver_service_areas");
     if (serviceAreaResult.error || !serviceAreaResult.data) {
@@ -238,6 +257,7 @@ export default function DriverHome() {
       setSummary(null);
       setServiceAreas([]);
       setDispatch({ offers: [], trips: [] });
+      setLocationSharing(null);
       return;
     }
     void activateAndLoad();
@@ -550,6 +570,21 @@ export default function DriverHome() {
           ? availabilityErrorMessage(result.error.message)
           : "Availability could not be updated.",
       );
+      if (targetStatus === "offline") {
+        setLocationSharing((current) =>
+          current
+            ? {
+                ...current,
+                sharingEnabled: false,
+                latitude: null,
+                longitude: null,
+                accuracyMeters: null,
+                recordedAt: null,
+              }
+            : current,
+        );
+        setLocationMessage("Location sharing stopped because you went offline.");
+      }
     } else {
       const next = result.data as unknown as DriverAvailability;
       setAvailability(next);
@@ -561,6 +596,78 @@ export default function DriverHome() {
     }
     setUpdatingAvailability(false);
   }
+
+  const submitLocation = useCallback(
+    async (position: GeolocationPosition) => {
+      if (!supabase) return;
+      const result = await supabase.rpc("update_my_driver_location", {
+        latitude_value: position.coords.latitude,
+        longitude_value: position.coords.longitude,
+        accuracy_meters_value: position.coords.accuracy,
+        recorded_at_value: new Date(position.timestamp).toISOString(),
+      });
+      if (result.error || !result.data) {
+        setLocationMessage(result.error?.message ?? "Location could not be updated.");
+      } else {
+        setLocationSharing(result.data as unknown as DriverLocationSharing);
+        setLocationMessage("Live location shared securely.");
+      }
+    },
+    [supabase],
+  );
+
+  async function enableLocationSharing() {
+    if (!supabase) return;
+    if (!("geolocation" in navigator)) {
+      setLocationMessage("This browser does not support location services.");
+      return;
+    }
+    setUpdatingLocation(true);
+    setLocationMessage("Requesting precise location permission…");
+    try {
+      const position = await currentPosition();
+      const result = await supabase.rpc("set_my_driver_location_sharing", {
+        enabled_value: true,
+      });
+      if (result.error) throw result.error;
+      setLocationSharing(result.data as unknown as DriverLocationSharing);
+      await submitLocation(position);
+    } catch (error) {
+      setLocationMessage(locationErrorMessage(error));
+    } finally {
+      setUpdatingLocation(false);
+    }
+  }
+
+  async function disableLocationSharing() {
+    if (!supabase) return;
+    setUpdatingLocation(true);
+    const result = await supabase.rpc("set_my_driver_location_sharing", {
+      enabled_value: false,
+    });
+    if (result.error || !result.data) {
+      setLocationMessage(result.error?.message ?? "Location sharing could not be stopped.");
+    } else {
+      setLocationSharing(result.data as unknown as DriverLocationSharing);
+      setLocationMessage("Location sharing stopped and the current coordinate was cleared.");
+    }
+    setUpdatingLocation(false);
+  }
+
+  useEffect(() => {
+    if (!locationSharing?.sharingEnabled || availability?.requestedStatus !== "online") return;
+    let lastSentAt = 0;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (Date.now() - lastSentAt < 10_000) return;
+        lastSentAt = Date.now();
+        void submitLocation(position);
+      },
+      (error) => setLocationMessage(locationErrorMessage(error)),
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 20_000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [availability?.requestedStatus, locationSharing?.sharingEnabled, submitLocation]);
 
   const selectServiceArea = useCallback(
     async (serviceAreaId: string, automatic = false) => {
@@ -716,6 +823,21 @@ export default function DriverHome() {
     } else {
       setDispatch(result.data as unknown as DriverDispatch);
       setDispatchMessage(action === "complete" ? "Trip completed." : "Trip updated.");
+      if (action === "complete") {
+        setLocationSharing((current) =>
+          current
+            ? {
+                ...current,
+                sharingEnabled: false,
+                latitude: null,
+                longitude: null,
+                accuracyMeters: null,
+                recordedAt: null,
+              }
+            : current,
+        );
+        setLocationMessage("Location sharing stopped when the trip completed.");
+      }
     }
     setDispatchBusy(false);
   }
@@ -867,7 +989,7 @@ export default function DriverHome() {
                     {availability?.selectedServiceAreaName
                       ? `Going online tells your tenant administrator you are ready in ${availability.selectedServiceAreaName}. `
                       : "Going online tells your tenant administrator you are ready for service. "}
-                    Location sharing is not enabled.
+                    Live location remains off until you explicitly enable it below.
                   </p>
                 )}
                 <button
@@ -891,6 +1013,45 @@ export default function DriverHome() {
                 </button>
                 {availabilityMessage ? (
                   <p className="upload-message">{availabilityMessage}</p>
+                ) : null}
+                {availability?.requestedStatus === "online" ? (
+                  <div className="document-card">
+                    <div className="document-heading">
+                      <strong>Live location sharing</strong>
+                      <span
+                        className={`status ${locationSharing?.sharingEnabled ? "status-approved" : "status-pending"}`}
+                      >
+                        {locationSharing?.sharingEnabled ? "sharing" : "off"}
+                      </span>
+                    </div>
+                    <span>
+                      Share only your current coordinate with tenant dispatch. Your Rider can see it
+                      only after accepting their trip. No route history is stored.
+                    </span>
+                    {locationSharing?.recordedAt ? (
+                      <span>
+                        Last update: {new Date(locationSharing.recordedAt).toLocaleTimeString()} · ±
+                        {Math.round(locationSharing.accuracyMeters ?? 0)} m
+                      </span>
+                    ) : null}
+                    <button
+                      className={locationSharing?.sharingEnabled ? "secondary" : undefined}
+                      disabled={updatingLocation}
+                      onClick={() =>
+                        locationSharing?.sharingEnabled
+                          ? void disableLocationSharing()
+                          : void enableLocationSharing()
+                      }
+                      type="button"
+                    >
+                      {updatingLocation
+                        ? "Updating…"
+                        : locationSharing?.sharingEnabled
+                          ? "Stop sharing location"
+                          : "Enable live location"}
+                    </button>
+                    {locationMessage ? <p className="upload-message">{locationMessage}</p> : null}
+                  </div>
                 ) : null}
               </section>
             ) : null}
@@ -1052,7 +1213,8 @@ export default function DriverHome() {
                 ) : (
                   <p className="document-help">
                     Your tenant does not currently have an active service area available to you.
-                    Location sharing is not enabled.
+                    Selecting an area does not share location. Live sharing is a separate Driver
+                    control.
                   </p>
                 )}
               </section>
@@ -1276,6 +1438,16 @@ export default function DriverHome() {
       </section>
     </main>
   );
+}
+
+function currentPosition() {
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 20_000,
+    });
+  });
 }
 
 async function withTimeout<T>(request: PromiseLike<T>, timeoutMs: number): Promise<T | null> {

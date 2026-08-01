@@ -10,6 +10,7 @@ import type {
   TenantRow,
   DriverProfileRow,
   DriverAvailabilityRow,
+  DriverLocationRow,
   DriverOnboardingChecklistRow,
   DriverApplicationRow,
   DriverEvidenceRequirementRow,
@@ -60,6 +61,7 @@ export type TenantSummary = {
   auditEvents: TenantAuditEventRow[];
   drivers: DriverProfileRow[];
   driverAvailability: DriverAvailabilityRow[];
+  driverLocations: DriverLocationRow[];
   driverOnboarding: DriverOnboardingChecklistRow[];
   driverApplications: DriverApplicationRow[];
   driverEvidence: DriverEvidenceRow[];

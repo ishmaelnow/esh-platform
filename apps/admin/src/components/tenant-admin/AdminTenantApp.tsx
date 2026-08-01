@@ -1558,10 +1558,18 @@ function DriversPanel({
                         summary,
                         driver.driver_profile_id,
                       );
+                      const location = summary.driverLocations.find(
+                        (item) => item.driver_profile_id === driver.driver_profile_id,
+                      );
                       return (
                         <>
                           <strong>{availability.status}</strong>
                           {availability.note ? <span>{availability.note}</span> : null}
+                          {location?.sharing_enabled && location.recorded_at ? (
+                            <span>Location {locationFreshness(location.recorded_at)}</span>
+                          ) : (
+                            <span>Location not shared</span>
+                          )}
                         </>
                       );
                     })()}
@@ -2414,6 +2422,11 @@ function DispatchPanel({
           const offeredDriver = summary.drivers.find(
             ({ driver_profile_id }) => driver_profile_id === pendingOffer?.driver_profile_id,
           );
+          const visibleDriverId =
+            booking.current_driver_profile_id ?? pendingOffer?.driver_profile_id ?? null;
+          const driverLocation = summary.driverLocations.find(
+            (location) => location.driver_profile_id === visibleDriverId,
+          );
           const eligibleDrivers = summary.drivers.filter((driver) => {
             const availability = summary.driverAvailability.find(
               (item) => item.driver_profile_id === driver.driver_profile_id,
@@ -2482,6 +2495,26 @@ function DispatchPanel({
                 <div>
                   <dt>Notes</dt>
                   <dd>{booking.booking_notes ?? "None"}</dd>
+                </div>
+                <div>
+                  <dt>Live location</dt>
+                  <dd>
+                    {driverLocation?.sharing_enabled &&
+                    driverLocation.latitude !== null &&
+                    driverLocation.longitude !== null &&
+                    driverLocation.recorded_at ? (
+                      <a
+                        href={`https://www.openstreetmap.org/?mlat=${driverLocation.latitude}&mlon=${driverLocation.longitude}#map=16/${driverLocation.latitude}/${driverLocation.longitude}`}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        View map · {locationFreshness(driverLocation.recorded_at)} · ±
+                        {Math.round(driverLocation.accuracy_meters ?? 0)} m
+                      </a>
+                    ) : (
+                      "Not shared"
+                    )}
+                  </dd>
                 </div>
               </dl>
               {bookingOffers.length > 0 ? (
@@ -2670,7 +2703,7 @@ function ServiceAreasPanel({
       <section className="panel">
         <PanelHeader
           title="Service areas"
-          description="Define tenant operating boundaries for all active drivers or restrict coverage to selected drivers. Location sharing is not enabled."
+          description="Define tenant operating boundaries for all active drivers or restrict coverage to selected drivers. Driver live coordinates are accepted only inside the selected boundary."
         />
         <button
           className="primary-button"
@@ -3779,6 +3812,13 @@ function driverAvailabilityStatus(summary: TenantSummary, driverProfileId: strin
   return eligible
     ? { status: "Online", note: selectedArea?.name ?? "Ready for service" }
     : { status: "Offline", note: "Eligibility changed" };
+}
+
+function locationFreshness(recordedAt: string) {
+  const seconds = Math.max(0, Math.round((Date.now() - Date.parse(recordedAt)) / 1000));
+  if (seconds < 60) return `updated ${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  return minutes < 5 ? `updated ${minutes}m ago` : `stale · updated ${minutes}m ago`;
 }
 
 function vehicleEvidenceLabel(evidenceType: string) {

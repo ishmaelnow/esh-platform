@@ -62,12 +62,12 @@ coordinates and therefore is not location tracking or location consent.
 - The Driver RPC resolves the driver through `auth.uid()` and never accepts a caller-supplied driver
   or tenant identifier.
 
+Realtime current-location sharing and circular-boundary enforcement are now delivered under
+`realtime-driver-location.md`. The following remain deferred:
+
 ## Deferred
 
-- GPS collection and continuous tracking
-- Driver location consent
-- Rider or public map exposure
 - Polygon and multipolygon boundaries
 - Geocoding and address search
-- Geofence enforcement
-- Dispatch matching and routing
+- Route-aware geofence enforcement
+- Routing

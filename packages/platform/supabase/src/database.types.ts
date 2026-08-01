@@ -704,6 +704,45 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_locations: {
+        Row: {
+          accuracy_meters: number | null
+          consented_at: string | null
+          driver_profile_id: string
+          latitude: number | null
+          longitude: number | null
+          recorded_at: string | null
+          service_area_id: string | null
+          sharing_enabled: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy_meters?: number | null
+          consented_at?: string | null
+          driver_profile_id: string
+          latitude?: number | null
+          longitude?: number | null
+          recorded_at?: string | null
+          service_area_id?: string | null
+          sharing_enabled?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy_meters?: number | null
+          consented_at?: string | null
+          driver_profile_id?: string
+          latitude?: number | null
+          longitude?: number | null
+          recorded_at?: string | null
+          service_area_id?: string | null
+          sharing_enabled?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       driver_service_area_assignments: {
         Row: {
           assigned_at: string
@@ -1929,6 +1968,7 @@ export type Database = {
       my_driver_dispatch: { Args: never; Returns: Json }
       my_driver_availability: { Args: never; Returns: Json }
       my_driver_service_areas: { Args: never; Returns: Json }
+      my_driver_location_sharing: { Args: never; Returns: Json }
       my_rider_portal: {
         Args: { target_tenant_slug: string }
         Returns: Json
@@ -1938,6 +1978,10 @@ export type Database = {
         Returns: Json
       }
       my_rider_scheduling: {
+        Args: { target_tenant_slug: string }
+        Returns: Json
+      }
+      my_rider_trip_locations: {
         Args: { target_tenant_slug: string }
         Returns: Json
       }
@@ -1968,6 +2012,19 @@ export type Database = {
       }
       set_my_driver_availability: {
         Args: { target_status: string }
+        Returns: Json
+      }
+      set_my_driver_location_sharing: {
+        Args: { enabled_value: boolean }
+        Returns: Json
+      }
+      update_my_driver_location: {
+        Args: {
+          accuracy_meters_value: number
+          latitude_value: number
+          longitude_value: number
+          recorded_at_value: string
+        }
         Returns: Json
       }
       set_my_rider_notification_preferences: {

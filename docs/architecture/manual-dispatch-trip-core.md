@@ -46,11 +46,12 @@ when sound is disabled or blocked.
 - Offer creation queues and immediately attempts a driver email notification through the existing
   notification outbox. Delivery failure does not undo the durable in-app offer.
 
+Automatic matching, scheduled and Rider bookings, and privacy-bounded current Driver location were
+delivered in later slices. The following remain deferred:
+
 ## Deferred
 
-- Rider/customer identity and self-service booking
-- GPS, maps, routing, and arrival verification
-- Automatic matching
+- Routing, ETA, and location-based arrival verification
 - Pricing, payments, invoicing, and driver earnings
 - Push/SMS trip notifications
-- Scheduled bookings and recurring trips
+- Recurring trips

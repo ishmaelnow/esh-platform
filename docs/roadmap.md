@@ -84,8 +84,10 @@ deferred from this milestone and were delivered under the later milestones below
      visibility in the Driver portal.
    - Current delivery: driver choice of one authorized operating area, automatic choice when only
      one area is available, offline-only switching, and area-aware availability visibility.
-   - Remaining: explicit location consent, bounded location exposure, polygon boundaries, and
-     realtime presence.
+   - Current delivery: explicit Driver-controlled current-location sharing, circular-boundary
+     validation, tenant-dispatch visibility, active-trip Rider exposure, freshness/accuracy status,
+     automatic clearing, and no route-history retention.
+   - Remaining: polygon boundaries and route-aware presence.
 5. **Dispatch and Trip Core**
    - Booking/trip lifecycle, offers, assignments, reassignment, and operational audit.
    - Current delivery: tenant-admin manual booking creation, area-aware eligible-driver offers,
@@ -106,8 +108,7 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: tenant-controlled automatic matching, deterministic eligible-Driver ranking,
      sequential time-bounded offers, decline/expiration progression, attempt visibility, database-
      native expiration processing, audit, and safe manual fallback.
-   - Remaining: recurring bookings, realtime location, routing, pricing, payments, and SMS/push
-     delivery.
+   - Remaining: recurring bookings, routing and ETA, pricing, payments, and SMS/push delivery.
 6. **Reputation**
    - Product-specific criteria on generic reputation primitives.
 7. **Money and Ledger**

@@ -66,6 +66,14 @@ type RiderScheduling = {
     dispatchReadyAt: string | null;
   }>;
 };
+type RiderTripLocation = {
+  bookingId: string;
+  latitude: number;
+  longitude: number;
+  accuracyMeters: number;
+  recordedAt: string;
+  fresh: boolean;
+};
 
 function formatDate(value: string, timeZone?: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -73,6 +81,12 @@ function formatDate(value: string, timeZone?: string) {
     timeStyle: "short",
     ...(timeZone ? { timeZone } : {}),
   }).format(new Date(value));
+}
+
+function formatLocationAge(value: string) {
+  const seconds = Math.max(0, Math.round((Date.now() - Date.parse(value)) / 1000));
+  if (seconds < 60) return `${seconds} seconds ago`;
+  return `${Math.floor(seconds / 60)} minutes ago`;
 }
 
 function formValue(form: FormData, name: string) {
@@ -100,6 +114,7 @@ export default function RiderHome() {
   const [notificationPreferences, setNotificationPreferences] =
     useState<RiderNotificationPreferences | null>(null);
   const [scheduling, setScheduling] = useState<RiderScheduling | null>(null);
+  const [tripLocations, setTripLocations] = useState<RiderTripLocation[]>([]);
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled">("now");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -116,13 +131,16 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const [preferenceResult, schedulingResult] = await Promise.all([
+      const [preferenceResult, schedulingResult, locationResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
+        supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
       ]);
       const { data: preferenceData, error: preferenceError } = preferenceResult;
       if (preferenceError) throw preferenceError;
       if (schedulingResult.error) throw schedulingResult.error;
+      if (locationResult.error) throw locationResult.error;
+      setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
       const nextScheduling = schedulingResult.data as RiderScheduling;
       setScheduling(nextScheduling);
@@ -137,6 +155,7 @@ export default function RiderHome() {
       });
     } else {
       setNotificationPreferences(null);
+      setTripLocations([]);
     }
   }, [session, supabase, tenantSlug]);
 
@@ -337,7 +356,9 @@ export default function RiderHome() {
         <div>
           <p className="eyebrow">ESH Rider</p>
           <h1>Where are you going?</h1>
-          <p className="summary">Request and follow a trip without sharing your live location.</p>
+          <p className="summary">
+            Request a trip and follow your assigned Driver when they share live location.
+          </p>
         </div>
         {session ? (
           <button className="button secondary" onClick={() => void supabase?.auth.signOut()}>
@@ -590,6 +611,26 @@ export default function RiderHome() {
                       </span>
                     </div>
                   ) : null}
+                  {tripLocations
+                    .filter((location) => location.bookingId === booking.bookingId)
+                    .map((location) => (
+                      <div className="assignment" key={location.bookingId}>
+                        <strong>Driver live location</strong>
+                        <span>
+                          {location.fresh ? "Live" : "Last known"} · updated{" "}
+                          {formatLocationAge(location.recordedAt)}
+                          {" · "}accuracy ±{Math.round(location.accuracyMeters)} m
+                        </span>
+                        <a
+                          className="text-button"
+                          href={`https://www.openstreetmap.org/?mlat=${location.latitude}&mlon=${location.longitude}#map=16/${location.latitude}/${location.longitude}`}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          View Driver on map
+                        </a>
+                      </div>
+                    ))}
                   {canCancelBooking(booking.status) ? (
                     <button
                       className="text-button danger"
