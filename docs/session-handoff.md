@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-01
+Last updated: 2026-08-02
 
 ## Current objective
 
@@ -11,8 +11,9 @@ enforcement, Admin visibility, Rider active-trip privacy, freshness, and automat
 
 - Branch: `main`
 - Automatic Driver Matching commit `72c3f93` is deployed; production manual testing passed.
-- Realtime Driver Location is implemented locally and is not yet committed or deployed.
-- New migration: `20260801001300_realtime_driver_location.sql`.
+- Realtime Driver Location commit `7121a36` and migration
+  `20260801001300_realtime_driver_location.sql` are deployed to production.
+- Trigger hotfix migration `20260802000100_fix_location_stop_triggers.sql` is local and uncommitted.
 - Confirm migration state with a dry run rather than assuming it from this handoff.
 
 ## Delivered capabilities relevant to the test
@@ -70,7 +71,10 @@ one-time links.
 
 ## Open issues
 
-No known unresolved production defect. Realtime Driver Location awaits validation and deployment.
+Production Rider booking creation exposed PostgreSQL `42703` after Realtime Driver Location deploy.
+Root cause: one polymorphic automatic-stop trigger referenced availability-only columns while running
+for a booking row. Migration `20260802000100_fix_location_stop_triggers.sql` replaces it with two
+table-specific functions. The hotfix is implemented locally and awaits deployment and retest.
 
 ## Cleanup still required after testing
 
@@ -82,8 +86,8 @@ No known unresolved production defect. Realtime Driver Location awaits validatio
 
 ## Exact next action
 
-Commit the feature, dry-run and deploy migration `20260801001300`, push production, then execute the
-Realtime Driver Location production manual test plan.
+Commit and deploy migration `20260802000100`, push the hotfix, sign back into Rider with a fresh
+session, and confirm Rider booking creation before resuming location tests.
 
 ## Required reading for recovery
 
