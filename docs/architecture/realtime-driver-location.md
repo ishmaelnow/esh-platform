@@ -13,6 +13,11 @@ Location sharing is off by default. A Driver must first be eligible and online, 
 **Enable live location** and grant the browser precise-location permission. The portal submits at
 most one reading every ten seconds. The Driver can stop sharing at any time.
 
+The Driver portal keeps a dedicated **Location** tab visible in both online and offline states. It
+shows availability, selected operating area, browser permission, last update, accuracy, automatic-
+stop behavior, and the current sharing control. Offline and blocked-permission states explain the
+exact prerequisite instead of hiding the feature.
+
 Sharing and the coordinate are automatically cleared when the Driver goes offline or an assigned
 trip completes or is cancelled. Completing a trip requires the Driver to explicitly enable sharing
 again if they want it for later work. Permission denial, unavailable GPS, timeout, stale readings,

@@ -4,8 +4,9 @@ Last updated: 2026-08-02
 
 ## Current objective
 
-Deploy and manually verify Realtime Driver Location across Driver permission/control, service-area
-enforcement, Admin visibility, Rider active-trip privacy, freshness, and automatic stop behavior.
+Deploy and manually verify the permanent Driver Location tab, then resume Realtime Driver Location
+testing across permission/control, service-area enforcement, Admin visibility, Rider active-trip
+privacy, freshness, and automatic stop behavior.
 
 ## Repository and deployment state
 
@@ -13,7 +14,8 @@ enforcement, Admin visibility, Rider active-trip privacy, freshness, and automat
 - Automatic Driver Matching commit `72c3f93` is deployed; production manual testing passed.
 - Realtime Driver Location commit `7121a36` and migration
   `20260801001300_realtime_driver_location.sql` are deployed to production.
-- Trigger hotfix migration `20260802000100_fix_location_stop_triggers.sql` is local and uncommitted.
+- Trigger hotfix commit `6da5ba0` and migration
+  `20260802000100_fix_location_stop_triggers.sql` are deployed; Rider booking creation retest passed.
 - Confirm migration state with a dry run rather than assuming it from this handoff.
 
 ## Delivered capabilities relevant to the test
@@ -74,7 +76,11 @@ one-time links.
 Production Rider booking creation exposed PostgreSQL `42703` after Realtime Driver Location deploy.
 Root cause: one polymorphic automatic-stop trigger referenced availability-only columns while running
 for a booking row. Migration `20260802000100_fix_location_stop_triggers.sql` replaces it with two
-table-specific functions. The hotfix is implemented locally and awaits deployment and retest.
+table-specific functions. The hotfix is deployed and Rider booking creation passed its retest.
+
+The Driver location control was discoverable only inside Overview and only while online. A permanent
+Location tab with prerequisite, permission, freshness, accuracy, map, and sharing status is now
+implemented locally and awaits deployment.
 
 ## Cleanup still required after testing
 
@@ -86,8 +92,8 @@ table-specific functions. The hotfix is implemented locally and awaits deploymen
 
 ## Exact next action
 
-Commit and deploy migration `20260802000100`, push the hotfix, sign back into Rider with a fresh
-session, and confirm Rider booking creation before resuming location tests.
+Commit and push the Driver Location tab, wait for the Driver deployment, then verify that Location is
+visible while offline and complete the remaining production location tests.
 
 ## Required reading for recovery
 

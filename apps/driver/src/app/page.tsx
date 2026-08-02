@@ -131,7 +131,13 @@ type DriverLocationSharing = {
   recordedAt: string | null;
 };
 
-type DriverPortalTab = "overview" | "dispatch" | "service_areas" | "documents" | "vehicle";
+type DriverPortalTab =
+  | "overview"
+  | "dispatch"
+  | "location"
+  | "service_areas"
+  | "documents"
+  | "vehicle";
 
 const tripSoundPreferenceKey = "esh-driver-trip-sounds-enabled";
 
@@ -163,6 +169,9 @@ export default function DriverHome() {
   const [locationSharing, setLocationSharing] = useState<DriverLocationSharing | null>(null);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
   const [updatingLocation, setUpdatingLocation] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<
+    PermissionState | "unsupported" | "unknown"
+  >("unknown");
   const [serviceAreas, setServiceAreas] = useState<DriverServiceArea[]>([]);
   const [updatingServiceArea, setUpdatingServiceArea] = useState(false);
   const [serviceAreaMessage, setServiceAreaMessage] = useState<string | null>(null);
@@ -250,6 +259,32 @@ export default function DriverHome() {
 
   useEffect(() => {
     setTripSoundsEnabled(window.localStorage.getItem(tripSoundPreferenceKey) === "true");
+  }, []);
+
+  useEffect(() => {
+    if (!("geolocation" in navigator)) {
+      setLocationPermission("unsupported");
+      return;
+    }
+    if (!("permissions" in navigator)) {
+      setLocationPermission("unknown");
+      return;
+    }
+    let active = true;
+    let permission: PermissionStatus | null = null;
+    const updatePermission = () => {
+      if (active && permission) setLocationPermission(permission.state);
+    };
+    void navigator.permissions.query({ name: "geolocation" }).then((result) => {
+      if (!active) return;
+      permission = result;
+      updatePermission();
+      permission.addEventListener("change", updatePermission);
+    });
+    return () => {
+      active = false;
+      permission?.removeEventListener("change", updatePermission);
+    };
   }, []);
 
   useEffect(() => {
@@ -626,6 +661,7 @@ export default function DriverHome() {
     setLocationMessage("Requesting precise location permission…");
     try {
       const position = await currentPosition();
+      setLocationPermission("granted");
       const result = await supabase.rpc("set_my_driver_location_sharing", {
         enabled_value: true,
       });
@@ -633,6 +669,13 @@ export default function DriverHome() {
       setLocationSharing(result.data as unknown as DriverLocationSharing);
       await submitLocation(position);
     } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        Number(error.code) === 1
+      )
+        setLocationPermission("denied");
       setLocationMessage(locationErrorMessage(error));
     } finally {
       setUpdatingLocation(false);
@@ -890,6 +933,7 @@ export default function DriverHome() {
                       ? `Dispatch (${dispatch.offers.length})`
                       : "Dispatch",
                 },
+                { key: "location" as const, label: "Location" },
                 { key: "service_areas" as const, label: "Service Areas" },
                 { key: "documents" as const, label: "Documents" },
                 { key: "vehicle" as const, label: "Vehicle Compliance" },
@@ -989,7 +1033,7 @@ export default function DriverHome() {
                     {availability?.selectedServiceAreaName
                       ? `Going online tells your tenant administrator you are ready in ${availability.selectedServiceAreaName}. `
                       : "Going online tells your tenant administrator you are ready for service. "}
-                    Live location remains off until you explicitly enable it below.
+                    Live location remains off until you explicitly enable it in the Location tab.
                   </p>
                 )}
                 <button
@@ -1014,45 +1058,107 @@ export default function DriverHome() {
                 {availabilityMessage ? (
                   <p className="upload-message">{availabilityMessage}</p>
                 ) : null}
-                {availability?.requestedStatus === "online" ? (
-                  <div className="document-card">
-                    <div className="document-heading">
-                      <strong>Live location sharing</strong>
-                      <span
-                        className={`status ${locationSharing?.sharingEnabled ? "status-approved" : "status-pending"}`}
-                      >
-                        {locationSharing?.sharingEnabled ? "sharing" : "off"}
-                      </span>
-                    </div>
-                    <span>
-                      Share only your current coordinate with tenant dispatch. Your Rider can see it
-                      only after accepting their trip. No route history is stored.
-                    </span>
-                    {locationSharing?.recordedAt ? (
-                      <span>
-                        Last update: {new Date(locationSharing.recordedAt).toLocaleTimeString()} · ±
-                        {Math.round(locationSharing.accuracyMeters ?? 0)} m
-                      </span>
-                    ) : null}
-                    <button
-                      className={locationSharing?.sharingEnabled ? "secondary" : undefined}
-                      disabled={updatingLocation}
-                      onClick={() =>
-                        locationSharing?.sharingEnabled
-                          ? void disableLocationSharing()
-                          : void enableLocationSharing()
-                      }
-                      type="button"
-                    >
-                      {updatingLocation
-                        ? "Updating…"
-                        : locationSharing?.sharingEnabled
-                          ? "Stop sharing location"
-                          : "Enable live location"}
-                    </button>
-                    {locationMessage ? <p className="upload-message">{locationMessage}</p> : null}
+              </section>
+            ) : null}
+            {activeTab === "location" ? (
+              <section className="availability-card">
+                <div className="availability-heading">
+                  <div>
+                    <p className="eyebrow">Location</p>
+                    <h3>Live location sharing</h3>
                   </div>
+                  <span
+                    className={`availability-indicator ${locationSharing?.sharingEnabled ? "online" : "offline"}`}
+                  >
+                    {locationSharing?.sharingEnabled ? "sharing" : "off"}
+                  </span>
+                </div>
+                <p className="document-help">
+                  Share only your current coordinate with tenant dispatch. Your Rider can see it
+                  only after you accept their active trip. ESH does not store your route history.
+                </p>
+                <dl className="location-details">
+                  <div>
+                    <dt>Availability</dt>
+                    <dd>{availability?.requestedStatus === "online" ? "Online" : "Offline"}</dd>
+                  </div>
+                  <div>
+                    <dt>Operating area</dt>
+                    <dd>{availability?.selectedServiceAreaName ?? "Not selected"}</dd>
+                  </div>
+                  <div>
+                    <dt>Browser permission</dt>
+                    <dd>{locationPermissionLabel(locationPermission)}</dd>
+                  </div>
+                  <div>
+                    <dt>Last update</dt>
+                    <dd>
+                      {locationSharing?.recordedAt
+                        ? new Date(locationSharing.recordedAt).toLocaleString()
+                        : "No coordinate shared"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Accuracy</dt>
+                    <dd>
+                      {locationSharing?.accuracyMeters === null ||
+                      locationSharing?.accuracyMeters === undefined
+                        ? "Unavailable"
+                        : `±${Math.round(locationSharing.accuracyMeters)} m`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Automatic stop</dt>
+                    <dd>Going offline or ending a trip clears the current coordinate</dd>
+                  </div>
+                </dl>
+                {availability?.requestedStatus !== "online" ? (
+                  <p className="eligibility-blockers">
+                    Go online from Overview before enabling live location.
+                  </p>
                 ) : null}
+                {locationPermission === "denied" ? (
+                  <p className="eligibility-blockers">
+                    Location permission is blocked. Allow precise location for driver.eshapp.com in
+                    your browser settings, then return here.
+                  </p>
+                ) : null}
+                <div className="row-actions">
+                  <button
+                    className={locationSharing?.sharingEnabled ? "secondary" : undefined}
+                    disabled={
+                      updatingLocation ||
+                      (!locationSharing?.sharingEnabled &&
+                        (availability?.requestedStatus !== "online" ||
+                          locationPermission === "unsupported"))
+                    }
+                    onClick={() =>
+                      locationSharing?.sharingEnabled
+                        ? void disableLocationSharing()
+                        : void enableLocationSharing()
+                    }
+                    type="button"
+                  >
+                    {updatingLocation
+                      ? "Updating…"
+                      : locationSharing?.sharingEnabled
+                        ? "Stop sharing location"
+                        : "Enable live location"}
+                  </button>
+                  {locationSharing?.latitude !== null &&
+                  locationSharing?.latitude !== undefined &&
+                  locationSharing.longitude !== null ? (
+                    <a
+                      className="button secondary"
+                      href={`https://www.openstreetmap.org/?mlat=${locationSharing.latitude}&mlon=${locationSharing.longitude}#map=16/${locationSharing.latitude}/${locationSharing.longitude}`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      View current location
+                    </a>
+                  ) : null}
+                </div>
+                {locationMessage ? <p className="upload-message">{locationMessage}</p> : null}
               </section>
             ) : null}
             {activeTab === "dispatch" ? (
@@ -1448,6 +1554,16 @@ function currentPosition() {
       timeout: 20_000,
     });
   });
+}
+
+function locationPermissionLabel(permission: PermissionState | "unsupported" | "unknown") {
+  return {
+    granted: "Allowed",
+    denied: "Blocked",
+    prompt: "Will ask when enabled",
+    unsupported: "Not supported by this browser",
+    unknown: "Controlled by browser",
+  }[permission];
 }
 
 async function withTimeout<T>(request: PromiseLike<T>, timeoutMs: number): Promise<T | null> {

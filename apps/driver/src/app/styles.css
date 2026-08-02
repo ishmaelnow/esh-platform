@@ -218,6 +218,32 @@ h3 {
   text-transform: uppercase;
 }
 
+.location-details {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+.location-details div {
+  background: #f8fafc;
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.location-details dt {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.location-details dd {
+  margin: 0;
+}
+
 .availability-indicator.online {
   background: #dcfce7;
   color: #166534;
