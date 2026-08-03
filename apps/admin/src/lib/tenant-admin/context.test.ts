@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chooseInitialTenant, hasFoundationTenantRole } from "./context";
+import { adminAuthRefreshMode, chooseInitialTenant, hasFoundationTenantRole } from "./context";
 import type { ActiveTenantOption } from "./types";
 
 const tenantA = createOption("tenant-a", "membership-a");
@@ -40,6 +40,19 @@ describe("hasFoundationTenantRole", () => {
 
   it("does not treat future business identities as foundation roles", () => {
     expect(hasFoundationTenantRole(["driver"], ["tenant_owner", "tenant_admin"])).toBe(false);
+  });
+});
+
+describe("Admin authentication refresh stability", () => {
+  it("does not reload the workspace when browser refocus repeats SIGNED_IN", () => {
+    expect(adminAuthRefreshMode("SIGNED_IN", "user-a", "user-a")).toBe("none");
+    expect(adminAuthRefreshMode("TOKEN_REFRESHED", "user-a", "user-a")).toBe("none");
+  });
+
+  it("reloads for a genuinely different identity without blocking routine profile updates", () => {
+    expect(adminAuthRefreshMode("SIGNED_IN", "user-a", "user-b")).toBe("blocking");
+    expect(adminAuthRefreshMode("SIGNED_OUT", "user-a", null)).toBe("blocking");
+    expect(adminAuthRefreshMode("USER_UPDATED", "user-a", "user-a")).toBe("background");
   });
 });
 

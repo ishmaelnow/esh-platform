@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
 import { adminPublicConfig } from "@/lib/config";
 import {
+  adminAuthRefreshMode,
   loadPrincipalTenantContext,
   persistActiveTenantPreference,
 } from "@/lib/tenant-admin/context";
@@ -75,6 +76,7 @@ export function AdminTenantApp() {
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const activeAuthUserId = useRef<string | null>(null);
 
   const refresh = useCallback(
     async (activeSession: SupabaseAuthSession | null, showLoading = true) => {
@@ -127,6 +129,7 @@ export function AdminTenantApp() {
         }
 
         setSession(data.session);
+        activeAuthUserId.current = data.session?.user.id ?? null;
         void refresh(data.session);
       })
       .catch((cause: unknown) => {
@@ -135,15 +138,11 @@ export function AdminTenantApp() {
       });
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      const refreshMode = adminAuthRefreshMode(event, activeAuthUserId.current, nextUserId);
+      activeAuthUserId.current = nextUserId;
       setSession(nextSession);
-
-      // A refreshed access token does not change tenant data. Reloading the
-      // workspace here unmounts active forms and discards in-progress input.
-      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
-        return;
-      }
-
-      void refresh(nextSession);
+      if (refreshMode !== "none") void refresh(nextSession, refreshMode === "blocking");
     });
 
     return () => {

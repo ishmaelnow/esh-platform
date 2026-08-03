@@ -30,6 +30,12 @@ tabs, backgrounding the browser, an authentication-driven workspace remount, or 
 refresh must not discard entered fields or close the form. A successful creation or an explicit
 **Close form** clears the draft. Drafts do not cross tenants or persist beyond the browser session.
 
+Admin authentication treats repeated same-user `SIGNED_IN`, `TOKEN_REFRESHED`, and
+`INITIAL_SESSION` events as session maintenance, not navigation. Browser refocus therefore updates
+the access token without reloading or unmounting the tenant workspace. A genuinely different user or
+sign-out still performs a blocking context transition; a same-user profile update refreshes in the
+background.
+
 ## Assignment model
 
 Each area has a driver coverage mode:

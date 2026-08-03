@@ -12,6 +12,18 @@ import type {
   TenantContextResolution,
 } from "./types";
 
+export function adminAuthRefreshMode(
+  event: string,
+  previousUserId: string | null,
+  nextUserId: string | null,
+): "none" | "background" | "blocking" {
+  if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION" || event === "PASSWORD_RECOVERY")
+    return "none";
+  if (event === "SIGNED_IN") return previousUserId === nextUserId ? "none" : "blocking";
+  if (event === "USER_UPDATED") return "background";
+  return "blocking";
+}
+
 export type AdminSupabaseClient = PlatformSupabaseClient;
 
 export type AuthUserReference = {

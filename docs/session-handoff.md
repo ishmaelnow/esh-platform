@@ -4,8 +4,8 @@ Last updated: 2026-08-02
 
 ## Current objective
 
-Deploy and manually verify stable Service Area form drafts, then create DFW Metroplex and resume
-Realtime Driver Location testing.
+Deploy and manually verify the Admin session-lifecycle stabilization, then create DFW Metroplex and
+resume Realtime Driver Location testing.
 
 ## Repository and deployment state
 
@@ -83,7 +83,11 @@ deployed in commit `a1381f6`.
 
 Production testing found that the Add Service Area form lost its in-progress values when the Admin
 workspace remounted after the browser was backgrounded. A tenant-scoped session draft, controlled
-inputs, explicit-clear behavior, and restoration tests are implemented locally and await deployment.
+inputs, explicit-clear behavior, and restoration tests were deployed in commit `5236a24`, but the
+whole tenant workspace still visibly reloaded on browser refocus. Root cause is repeated same-user
+Supabase `SIGNED_IN` events being treated as a new login. Event classification now ignores refocus and
+token-maintenance events, performs profile updates in the background, and reserves blocking reloads
+for genuine identity changes or sign-out. This stabilization is implemented locally.
 
 ## Cleanup still required after testing
 
@@ -95,8 +99,8 @@ inputs, explicit-clear behavior, and restoration tests are implemented locally a
 
 ## Exact next action
 
-Commit and push the stable Service Area draft, confirm the form survives a browser-tab switch, create
-DFW Metroplex, select it as the Driver operating area, and resume the location test.
+Commit and push the Admin session stabilization, confirm the entire active Admin view remains mounted
+across repeated browser-tab switches, create DFW Metroplex, and resume the location test.
 
 ## Required reading for recovery
 
