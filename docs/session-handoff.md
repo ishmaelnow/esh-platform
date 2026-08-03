@@ -4,9 +4,8 @@ Last updated: 2026-08-02
 
 ## Current objective
 
-Deploy and manually verify the permanent Driver Location tab, then resume Realtime Driver Location
-testing across permission/control, service-area enforcement, Admin visibility, Rider active-trip
-privacy, freshness, and automatic stop behavior.
+Deploy and manually verify stable Service Area form drafts, then create DFW Metroplex and resume
+Realtime Driver Location testing.
 
 ## Repository and deployment state
 
@@ -80,7 +79,11 @@ table-specific functions. The hotfix is deployed and Rider booking creation pass
 
 The Driver location control was discoverable only inside Overview and only while online. A permanent
 Location tab with prerequisite, permission, freshness, accuracy, map, and sharing status is now
-implemented locally and awaits deployment.
+deployed in commit `a1381f6`.
+
+Production testing found that the Add Service Area form lost its in-progress values when the Admin
+workspace remounted after the browser was backgrounded. A tenant-scoped session draft, controlled
+inputs, explicit-clear behavior, and restoration tests are implemented locally and await deployment.
 
 ## Cleanup still required after testing
 
@@ -92,8 +95,8 @@ implemented locally and awaits deployment.
 
 ## Exact next action
 
-Commit and push the Driver Location tab, wait for the Driver deployment, then verify that Location is
-visible while offline and complete the remaining production location tests.
+Commit and push the stable Service Area draft, confirm the form survives a browser-tab switch, create
+DFW Metroplex, select it as the Driver operating area, and resume the location test.
 
 ## Required reading for recovery
 

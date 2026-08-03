@@ -7,6 +7,54 @@ export type ServiceAreaInput = {
   coverageMode: "all_drivers" | "selected_drivers";
 };
 
+export type ServiceAreaDraft = {
+  name: string;
+  description: string;
+  centerLatitude: string;
+  centerLongitude: string;
+  radiusKm: string;
+  coverageMode: string;
+};
+
+export const emptyServiceAreaDraft: ServiceAreaDraft = {
+  name: "",
+  description: "",
+  centerLatitude: "",
+  centerLongitude: "",
+  radiusKm: "",
+  coverageMode: "all_drivers",
+};
+
+export function restoreServiceAreaDraft(raw: string | null) {
+  if (!raw) return { showForm: false, draft: emptyServiceAreaDraft };
+  try {
+    const stored = JSON.parse(raw) as unknown;
+    if (typeof stored !== "object" || stored === null || !("draft" in stored)) throw new Error();
+    const draft = stored.draft;
+    if (typeof draft !== "object" || draft === null) throw new Error();
+    const value = (key: keyof ServiceAreaDraft) => {
+      const candidate = (draft as Record<string, unknown>)[key];
+      return typeof candidate === "string" ? candidate : emptyServiceAreaDraft[key];
+    };
+    const coverageMode = value("coverageMode");
+    return {
+      showForm: "showForm" in stored && stored.showForm === true,
+      draft: {
+        name: value("name"),
+        description: value("description"),
+        centerLatitude: value("centerLatitude"),
+        centerLongitude: value("centerLongitude"),
+        radiusKm: value("radiusKm"),
+        coverageMode: ["all_drivers", "selected_drivers"].includes(coverageMode)
+          ? coverageMode
+          : "all_drivers",
+      },
+    };
+  } catch {
+    return { showForm: false, draft: emptyServiceAreaDraft };
+  }
+}
+
 export function parseServiceAreaInput(input: Record<string, unknown>): ServiceAreaInput {
   const name = text(input.name);
   const description = text(input.description) || null;

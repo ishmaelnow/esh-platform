@@ -25,6 +25,11 @@ indexing until a real dispatch requirement exists.
 Areas have `active` and `inactive` states. Deactivation does not delete the area or assignment
 history. Inactive areas are excluded from the Driver portal.
 
+The Admin create form keeps a controlled draft in tenant-scoped browser session storage. Switching
+tabs, backgrounding the browser, an authentication-driven workspace remount, or a non-loading data
+refresh must not discard entered fields or close the form. A successful creation or an explicit
+**Close form** clears the draft. Drafts do not cross tenants or persist beyond the browser session.
+
 ## Assignment model
 
 Each area has a driver coverage mode:

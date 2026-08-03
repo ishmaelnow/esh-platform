@@ -21,6 +21,7 @@ import {
   countPendingInvitations,
   loadTenantSummary,
 } from "@/lib/tenant-admin/queries";
+import { emptyServiceAreaDraft, restoreServiceAreaDraft } from "@/lib/tenant-admin/service-areas";
 import type {
   ActiveTenantOption,
   EditableTenantConfiguration,
@@ -2616,14 +2617,34 @@ function ServiceAreasPanel({
   session: SupabaseAuthSession;
   summary: TenantSummary;
 }) {
+  const draftStorageKey = `esh-service-area-draft:${summary.tenant.tenant_id}`;
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [formDraft, setFormDraft] = useState(emptyServiceAreaDraft);
+  const [restoredDraftKey, setRestoredDraftKey] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
-  const editingArea = summary.serviceAreas.find(
-    ({ service_area_id }) => service_area_id === editingAreaId,
-  );
+  useEffect(() => {
+    const restored = restoreServiceAreaDraft(window.sessionStorage.getItem(draftStorageKey));
+    setFormDraft(restored.draft);
+    setShowForm(restored.showForm);
+    setRestoredDraftKey(draftStorageKey);
+  }, [draftStorageKey]);
+
+  useEffect(() => {
+    if (restoredDraftKey !== draftStorageKey || editingAreaId) return;
+    window.sessionStorage.setItem(draftStorageKey, JSON.stringify({ showForm, draft: formDraft }));
+  }, [draftStorageKey, editingAreaId, formDraft, restoredDraftKey, showForm]);
+
+  function clearCreateDraft() {
+    setFormDraft(emptyServiceAreaDraft);
+    window.sessionStorage.removeItem(draftStorageKey);
+  }
+
+  function updateDraft(field: keyof typeof emptyServiceAreaDraft, value: string) {
+    setFormDraft((current) => ({ ...current, [field]: value }));
+  }
 
   async function saveArea(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2656,6 +2677,7 @@ function ServiceAreasPanel({
       const result = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) throw new Error(result?.message ?? "Unable to save service area.");
       setMessage(editingAreaId ? "Service area updated." : "Service area created.");
+      if (!editingAreaId) clearCreateDraft();
       setEditingAreaId(null);
       setShowForm(false);
       onRefresh();
@@ -2697,7 +2719,6 @@ function ServiceAreasPanel({
     }
   }
 
-  const formKey = editingArea?.service_area_id ?? "new";
   return (
     <section className="content-stack">
       <section className="panel">
@@ -2709,8 +2730,14 @@ function ServiceAreasPanel({
           className="primary-button"
           disabled={!canManageTenant}
           onClick={() => {
-            setEditingAreaId(null);
-            setShowForm((current) => !current);
+            if (showForm && !editingAreaId) {
+              setShowForm(false);
+              clearCreateDraft();
+            } else {
+              setEditingAreaId(null);
+              setFormDraft(emptyServiceAreaDraft);
+              setShowForm(true);
+            }
           }}
           type="button"
         >
@@ -2718,70 +2745,76 @@ function ServiceAreasPanel({
         </button>
         {message ? <p className="notice">{message}</p> : null}
         {showForm ? (
-          <form className="settings-grid" key={formKey} onSubmit={(event) => void saveArea(event)}>
+          <form className="settings-grid" onSubmit={(event) => void saveArea(event)}>
             <label>
               Name
               <input
-                defaultValue={editingArea?.name ?? ""}
                 maxLength={120}
                 name="name"
+                onChange={(event) => updateDraft("name", event.target.value)}
                 placeholder="Example: Dallas Core"
                 required
+                value={formDraft.name}
               />
             </label>
             <label>
               Description
               <input
-                defaultValue={editingArea?.description ?? ""}
                 maxLength={500}
                 name="description"
+                onChange={(event) => updateDraft("description", event.target.value)}
                 placeholder="Example: Primary service zone covering central Dallas"
+                value={formDraft.description}
               />
             </label>
             <label>
               Center latitude
               <input
-                defaultValue={editingArea?.center_latitude ?? ""}
                 max="90"
                 min="-90"
                 name="centerLatitude"
+                onChange={(event) => updateDraft("centerLatitude", event.target.value)}
                 placeholder="Example: 32.776700"
                 required
                 step="0.000001"
                 type="number"
+                value={formDraft.centerLatitude}
               />
             </label>
             <label>
               Center longitude
               <input
-                defaultValue={editingArea?.center_longitude ?? ""}
                 max="180"
                 min="-180"
                 name="centerLongitude"
+                onChange={(event) => updateDraft("centerLongitude", event.target.value)}
                 placeholder="Example: -96.797000"
                 required
                 step="0.000001"
                 type="number"
+                value={formDraft.centerLongitude}
               />
             </label>
             <label>
               Radius (km)
               <input
-                defaultValue={editingArea?.radius_km ?? ""}
                 max="1000"
                 min="0.01"
                 name="radiusKm"
+                onChange={(event) => updateDraft("radiusKm", event.target.value)}
                 placeholder="Example: 25"
                 required
                 step="0.01"
                 type="number"
+                value={formDraft.radiusKm}
               />
             </label>
             <label>
               Driver coverage
               <select
-                defaultValue={editingArea?.coverage_mode ?? "all_drivers"}
                 name="coverageMode"
+                onChange={(event) => updateDraft("coverageMode", event.target.value)}
+                value={formDraft.coverageMode}
               >
                 <option value="all_drivers">All active tenant drivers</option>
                 <option value="selected_drivers">Selected drivers only</option>
@@ -2795,6 +2828,7 @@ function ServiceAreasPanel({
                 className="secondary-button"
                 onClick={() => {
                   setEditingAreaId(null);
+                  setFormDraft(emptyServiceAreaDraft);
                   setShowForm(false);
                 }}
                 type="button"
@@ -2859,6 +2893,14 @@ function ServiceAreasPanel({
                   disabled={!canManageTenant || busyId === area.service_area_id}
                   onClick={() => {
                     setEditingAreaId(area.service_area_id);
+                    setFormDraft({
+                      name: area.name,
+                      description: area.description ?? "",
+                      centerLatitude: String(area.center_latitude),
+                      centerLongitude: String(area.center_longitude),
+                      radiusKm: String(area.radius_km),
+                      coverageMode: area.coverage_mode,
+                    });
                     setShowForm(true);
                   }}
                   type="button"
