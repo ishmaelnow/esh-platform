@@ -24,6 +24,14 @@ export function adminAuthRefreshMode(
   return "blocking";
 }
 
+export function shouldRenderResolvedTenantWorkspace(
+  loading: boolean,
+  hasResolvedTenantContext: boolean,
+  hasError: boolean,
+) {
+  return hasResolvedTenantContext || (!loading && !hasError);
+}
+
 export type AdminSupabaseClient = PlatformSupabaseClient;
 
 export type AuthUserReference = {

@@ -8,6 +8,7 @@ import {
   adminAuthRefreshMode,
   loadPrincipalTenantContext,
   persistActiveTenantPreference,
+  shouldRenderResolvedTenantWorkspace,
 } from "@/lib/tenant-admin/context";
 import {
   cancelTenantInvitation,
@@ -74,15 +75,28 @@ export function AdminTenantApp() {
   const [resolution, setResolution] = useState<TenantContextResolution | null>(null);
   const [summary, setSummary] = useState<TenantSummary | null>(null);
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
+  const [activeViewRestored, setActiveViewRestored] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const activeAuthUserId = useRef<string | null>(null);
+  const refreshRequestId = useRef(0);
+
+  useEffect(() => {
+    const stored = window.sessionStorage.getItem("esh-admin-active-view");
+    if (views.some(({ key }) => key === stored)) setActiveView(stored as ViewKey);
+    setActiveViewRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (activeViewRestored) window.sessionStorage.setItem("esh-admin-active-view", activeView);
+  }, [activeView, activeViewRestored]);
 
   const refresh = useCallback(
     async (activeSession: SupabaseAuthSession | null, showLoading = true) => {
       if (!supabase) {
         return;
       }
+      const requestId = ++refreshRequestId.current;
 
       if (!activeSession?.user) {
         setResolution(null);
@@ -96,19 +110,18 @@ export function AdminTenantApp() {
 
       try {
         const nextResolution = await loadPrincipalTenantContext(supabase, activeSession.user);
+        const nextSummary =
+          nextResolution.status === "ready"
+            ? await loadTenantSummary(supabase, nextResolution.selectedTenant.tenant.tenant_id)
+            : null;
+        if (requestId !== refreshRequestId.current) return;
         setResolution(nextResolution);
-
-        if (nextResolution.status === "ready") {
-          setSummary(
-            await loadTenantSummary(supabase, nextResolution.selectedTenant.tenant.tenant_id),
-          );
-        } else {
-          setSummary(null);
-        }
+        setSummary(nextSummary);
       } catch (cause) {
+        if (requestId !== refreshRequestId.current) return;
         setError(cause instanceof Error ? cause.message : "Unable to load tenant administration.");
       } finally {
-        if (showLoading) setLoading(false);
+        if (showLoading && requestId === refreshRequestId.current) setLoading(false);
       }
     },
     [supabase],
@@ -140,8 +153,13 @@ export function AdminTenantApp() {
     const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
       const nextUserId = nextSession?.user.id ?? null;
       const refreshMode = adminAuthRefreshMode(event, activeAuthUserId.current, nextUserId);
+      const identityChanged = activeAuthUserId.current !== nextUserId;
       activeAuthUserId.current = nextUserId;
       setSession(nextSession);
+      if (refreshMode === "blocking" && identityChanged) {
+        setResolution(null);
+        setSummary(null);
+      }
       if (refreshMode !== "none") void refresh(nextSession, refreshMode === "blocking");
     });
 
@@ -157,6 +175,7 @@ export function AdminTenantApp() {
     selectedTenant?.roles.includes("tenant_owner") ||
     selectedTenant?.roles.includes("tenant_admin") ||
     false;
+  const hasResolvedTenantContext = resolution !== null;
 
   async function handleTenantSelect(tenantId: string) {
     if (!supabase || !resolution || !("context" in resolution)) {
@@ -229,14 +248,14 @@ export function AdminTenantApp() {
       </aside>
 
       <section className="workspace">
-        {loading ? (
+        {loading && !hasResolvedTenantContext ? (
           <StateBlock
             title="Loading tenant context"
             message="Resolving your profile, memberships, and tenant access."
           />
         ) : null}
         {error ? <StateBlock tone="danger" title="Unable to load" message={error} /> : null}
-        {!loading && !error ? (
+        {shouldRenderResolvedTenantWorkspace(loading, hasResolvedTenantContext, error !== null) ? (
           <ResolvedWorkspace
             activeView={activeView}
             canManageTenant={canManageTenant}

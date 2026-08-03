@@ -87,7 +87,9 @@ inputs, explicit-clear behavior, and restoration tests were deployed in commit `
 whole tenant workspace still visibly reloaded on browser refocus. Root cause is repeated same-user
 Supabase `SIGNED_IN` events being treated as a new login. Event classification now ignores refocus and
 token-maintenance events, performs profile updates in the background, and reserves blocking reloads
-for genuine identity changes or sign-out. This stabilization is implemented locally.
+for genuine identity changes or sign-out. A second hardening pass keeps resolved content mounted
+during refreshes/errors, commits refresh results atomically, rejects stale overlapping responses, and
+session-restores the active Admin section. This stabilization is implemented locally.
 
 ## Cleanup still required after testing
 

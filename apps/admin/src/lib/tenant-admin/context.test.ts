@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { adminAuthRefreshMode, chooseInitialTenant, hasFoundationTenantRole } from "./context";
+import {
+  adminAuthRefreshMode,
+  chooseInitialTenant,
+  hasFoundationTenantRole,
+  shouldRenderResolvedTenantWorkspace,
+} from "./context";
 import type { ActiveTenantOption } from "./types";
 
 const tenantA = createOption("tenant-a", "membership-a");
@@ -53,6 +58,12 @@ describe("Admin authentication refresh stability", () => {
     expect(adminAuthRefreshMode("SIGNED_IN", "user-a", "user-b")).toBe("blocking");
     expect(adminAuthRefreshMode("SIGNED_OUT", "user-a", null)).toBe("blocking");
     expect(adminAuthRefreshMode("USER_UPDATED", "user-a", "user-a")).toBe("background");
+  });
+
+  it("keeps resolved Admin content mounted during loading and background errors", () => {
+    expect(shouldRenderResolvedTenantWorkspace(true, true, false)).toBe(true);
+    expect(shouldRenderResolvedTenantWorkspace(false, true, true)).toBe(true);
+    expect(shouldRenderResolvedTenantWorkspace(true, false, false)).toBe(false);
   });
 });
 

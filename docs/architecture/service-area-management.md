@@ -36,6 +36,11 @@ the access token without reloading or unmounting the tenant workspace. A genuine
 sign-out still performs a blocking context transition; a same-user profile update refreshes in the
 background.
 
+The resolved Tenant Admin workspace remains mounted while background data refreshes run or report a
+recoverable error. Refresh results are sequenced so an older request cannot replace newer tenant
+state. The active Admin navigation section is session-restored as an additional recovery boundary;
+only an actual identity change clears resolved tenant data.
+
 ## Assignment model
 
 Each area has a driver coverage mode:
