@@ -108,7 +108,10 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: tenant-controlled automatic matching, deterministic eligible-Driver ranking,
      sequential time-bounded offers, decline/expiration progression, attempt visibility, database-
      native expiration processing, audit, and safe manual fallback.
-   - Remaining: recurring bookings, routing and ETA, pricing, payments, and SMS/push delivery.
+   - Current delivery: permanent pickup/destination geocoding, embedded Admin/Driver/Rider maps,
+     traffic-aware road routes, live Driver markers, distance/ETA, privacy enforcement, and graceful
+     mapping-provider fallback.
+   - Remaining: recurring bookings, pricing, payments, and SMS/push delivery.
 6. **Reputation**
    - Product-specific criteria on generic reputation primitives.
 7. **Money and Ledger**

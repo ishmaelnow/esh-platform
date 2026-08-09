@@ -5,6 +5,7 @@ import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
+import { LiveTripMap } from "@esh-platform/maps/client";
 import {
   availabilityBlockerDetails,
   availabilityErrorMessage,
@@ -115,6 +116,10 @@ type DriverTrip = {
   notes: string | null;
   serviceAreaName: string;
   status: "accepted" | "arrived" | "in_progress";
+  pickupLatitude: number | null;
+  pickupLongitude: number | null;
+  destinationLatitude: number | null;
+  destinationLongitude: number | null;
 };
 
 type DriverDispatch = {
@@ -144,6 +149,7 @@ const tripSoundPreferenceKey = "esh-driver-trip-sounds-enabled";
 export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   const supabase = useMemo(() => {
     if (!supabaseUrl || !supabaseAnonKey) return null;
     return createIsolatedBrowserSupabaseClient("esh-driver-portal-auth", {
@@ -1257,6 +1263,14 @@ export default function DriverHome() {
                     <span>Pickup: {trip.pickupAddress}</span>
                     <span>Destination: {trip.destinationAddress}</span>
                     {trip.notes ? <span>Notes: {trip.notes}</span> : null}
+                    {mapboxToken && trip.pickupLatitude != null && trip.pickupLongitude != null && trip.destinationLatitude != null && trip.destinationLongitude != null ? (
+                      <LiveTripMap
+                        accessToken={mapboxToken}
+                        pickup={{ latitude: trip.pickupLatitude, longitude: trip.pickupLongitude, label: `Pickup: ${trip.pickupAddress}` }}
+                        destination={{ latitude: trip.destinationLatitude, longitude: trip.destinationLongitude, label: `Destination: ${trip.destinationAddress}` }}
+                        driver={locationSharing?.latitude != null && locationSharing.longitude != null ? { latitude: locationSharing.latitude, longitude: locationSharing.longitude, label: "Your live location" } : null}
+                      />
+                    ) : null}
                     <button
                       disabled={dispatchBusy}
                       onClick={() =>

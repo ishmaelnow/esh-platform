@@ -12,6 +12,10 @@
     sans-serif;
 }
 
+.esh-trip-map-shell { margin-top: 1rem; }
+.esh-trip-map { width: 100%; height: 320px; border: 1px solid #d9dedb; border-radius: 14px; overflow: hidden; }
+.esh-trip-map-summary { margin: .55rem 0 0; color: #52605a; font-size: .9rem; }
+
 * {
   box-sizing: border-box;
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@esh-platform/supabase";
+import { geocodePermanentAddress } from "@esh-platform/maps";
 import { getAdminServerConfig } from "@/lib/config";
 import { deliverQueuedNotifications } from "@/lib/notifications/delivery";
 import {
@@ -46,7 +47,30 @@ export async function POST(request: Request) {
         booking_notes_value: input.notes,
       });
       if (error || !data) throw error ?? new Error("Unable to create booking.");
-      return NextResponse.json({ ok: true, bookingId: data });
+      let message = "Booking created.";
+      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+      if (mapboxToken) {
+        try {
+          const [pickup, destination] = await Promise.all([
+            geocodePermanentAddress(input.pickupAddress, mapboxToken, process.env.INVITATION_BASE_URL),
+            geocodePermanentAddress(input.destinationAddress, mapboxToken, process.env.INVITATION_BASE_URL),
+          ]);
+          const coordinateResult = await supabase.rpc("set_dispatch_booking_coordinates", {
+            target_booking_id: data,
+            pickup_latitude_value: pickup.latitude,
+            pickup_longitude_value: pickup.longitude,
+            destination_latitude_value: destination.latitude,
+            destination_longitude_value: destination.longitude,
+            geocoding_provider_value: "mapbox-v6",
+          });
+          if (coordinateResult.error) throw coordinateResult.error;
+        } catch {
+          message = "Booking created, but its map is temporarily unavailable.";
+        }
+      } else {
+        message = "Booking created. Add the Mapbox token to enable its live map.";
+      }
+      return NextResponse.json({ ok: true, bookingId: data, message });
     }
     const input = parseServiceAreaInput(body);
     const { supabase, personId } = await authorizeServiceAreas(request, tenantId);

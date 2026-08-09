@@ -5,6 +5,8 @@ import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
+import { geocodePermanentAddress } from "@esh-platform/maps";
+import { LiveTripMap } from "@esh-platform/maps/client";
 import {
   bookingStatusLabel,
   canCancelBooking,
@@ -35,6 +37,10 @@ type RiderBooking = {
   createdAt: string;
   scheduledPickupAt: string | null;
   dispatchReadyAt: string | null;
+  pickupLatitude?: number | null;
+  pickupLongitude?: number | null;
+  destinationLatitude?: number | null;
+  destinationLongitude?: number | null;
   driver: { displayName: string; driverNumber: string } | null;
   vehicle: {
     vehicleNumber: string;
@@ -97,6 +103,7 @@ function formValue(form: FormData, name: string) {
 export default function RiderHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   const supabase = useMemo(
     () =>
       supabaseUrl && supabaseAnonKey
@@ -131,26 +138,33 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const [preferenceResult, schedulingResult, locationResult] = await Promise.all([
+      const [preferenceResult, schedulingResult, locationResult, coordinateResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
+        supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude").eq("tenant_id", nextPortal.tenant.tenantId),
       ]);
       const { data: preferenceData, error: preferenceError } = preferenceResult;
       if (preferenceError) throw preferenceError;
       if (schedulingResult.error) throw schedulingResult.error;
       if (locationResult.error) throw locationResult.error;
+      if (coordinateResult.error) throw coordinateResult.error;
       setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
       const nextScheduling = schedulingResult.data as RiderScheduling;
       setScheduling(nextScheduling);
       const schedules = new Map(nextScheduling.bookings.map((item) => [item.bookingId, item]));
+      const coordinates = new Map((coordinateResult.data ?? []).map((item) => [item.booking_id, item]));
       setPortal({
         ...nextPortal,
         bookings: nextPortal.bookings.map((booking) => ({
           ...booking,
           scheduledPickupAt: schedules.get(booking.bookingId)?.scheduledPickupAt ?? null,
           dispatchReadyAt: schedules.get(booking.bookingId)?.dispatchReadyAt ?? null,
+          pickupLatitude: coordinates.get(booking.bookingId)?.pickup_latitude ?? null,
+          pickupLongitude: coordinates.get(booking.bookingId)?.pickup_longitude ?? null,
+          destinationLatitude: coordinates.get(booking.bookingId)?.destination_latitude ?? null,
+          destinationLongitude: coordinates.get(booking.bookingId)?.destination_longitude ?? null,
         })),
       });
     } else {
@@ -285,12 +299,30 @@ export default function RiderHome() {
           : await supabase.rpc("create_my_rider_booking", common);
       const bookingError = result.error;
       if (bookingError) throw bookingError;
+      let mapWarning = "";
+      if (mapboxToken && result.data) {
+        try {
+          const [pickup, destination] = await Promise.all([
+            geocodePermanentAddress(formValue(form, "pickupAddress"), mapboxToken),
+            geocodePermanentAddress(formValue(form, "destinationAddress"), mapboxToken),
+          ]);
+          const coordinateResult = await supabase.rpc("set_dispatch_booking_coordinates", {
+            target_booking_id: result.data,
+            pickup_latitude_value: pickup.latitude,
+            pickup_longitude_value: pickup.longitude,
+            destination_latitude_value: destination.latitude,
+            destination_longitude_value: destination.longitude,
+            geocoding_provider_value: "mapbox-v6",
+          });
+          if (coordinateResult.error) throw coordinateResult.error;
+        } catch { mapWarning = " The trip is saved, but its map is temporarily unavailable."; }
+      }
       formElement.reset();
       await loadPortal();
       setMessage(
         bookingTiming === "scheduled"
-          ? "Trip scheduled. We will begin finding a driver closer to pickup."
-          : "Trip requested. Dispatch can now find an eligible driver.",
+          ? "Trip scheduled. We will begin finding a driver closer to pickup." + mapWarning
+          : "Trip requested. Dispatch can now find an eligible driver." + mapWarning,
       );
     } catch (value) {
       setError(riderErrorMessage(value));
@@ -631,6 +663,14 @@ export default function RiderHome() {
                         </a>
                       </div>
                     ))}
+                  {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? (
+                    <LiveTripMap
+                      accessToken={mapboxToken}
+                      pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }}
+                      destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }}
+                      driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null}
+                    />
+                  ) : null}
                   {canCancelBooking(booking.status) ? (
                     <button
                       className="text-button danger"

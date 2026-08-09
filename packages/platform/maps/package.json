@@ -1,0 +1,1 @@
+{"name":"@esh-platform/maps","version":"0.1.0","private":true,"type":"module","exports":{".":"./src/index.ts","./client":"./src/LiveTripMap.tsx"},"scripts":{"build":"tsc --noEmit","lint":"eslint .","test":"vitest run --passWithNoTests"},"dependencies":{"mapbox-gl":"3.14.0","react":"19.1.0"},"devDependencies":{"@types/react":"19.1.8","@types/geojson":"7946.0.16"}}

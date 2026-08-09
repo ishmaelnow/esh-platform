@@ -1,15 +1,20 @@
 # Session Handoff
 
-Last updated: 2026-08-02
+Last updated: 2026-08-09
 
 ## Current objective
 
-Deploy and manually verify the Admin session-lifecycle stabilization, then create DFW Metroplex and
-resume Realtime Driver Location testing.
+Deploy and manually verify Live Trip Maps, Routing, and ETA across Admin, Driver, and Rider.
 
 ## Repository and deployment state
 
 - Branch: `main`
+- Admin session stabilization is deployed and passed production testing. DFW Metroplex and
+  Philadelphia service areas were created successfully; Realtime Driver Location passed its live
+  production test.
+- Live Trip Maps is implemented locally and requires migration
+  `20260809000100_trip_map_coordinates.sql` plus `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` in all three
+  Vercel projects.
 - Automatic Driver Matching commit `72c3f93` is deployed; production manual testing passed.
 - Realtime Driver Location commit `7121a36` and migration
   `20260801001300_realtime_driver_location.sql` are deployed to production.
@@ -41,6 +46,11 @@ Verify opt-in and browser permission handling, ten-second coordinate refresh, in
 out-of-boundary rejection, five-second Admin visibility, Rider invisibility before acceptance,
 ten-second active-trip visibility, stale labeling, cross-tenant isolation, explicit stop, offline stop,
 trip-completion stop, audit events, and absence of route history.
+
+For Live Trip Maps, create a new production booking after the migration, confirm pickup and
+destination markers plus the road route in Rider and Admin, accept it as an online Driver, and verify
+the Driver marker and refreshed ETA in all authorized portals. Then stop location sharing and confirm
+the Driver marker disappears while the saved trip route remains.
 
 ## Temporary production settings
 

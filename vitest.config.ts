@@ -17,6 +17,9 @@ export default defineConfig({
       "@esh-platform/logger": fileURLToPath(
         new URL("./packages/platform/logger/src/index.ts", import.meta.url),
       ),
+      "@esh-platform/maps": fileURLToPath(
+        new URL("./packages/platform/maps/src/index.ts", import.meta.url),
+      ),
       "@esh-platform/supabase": fileURLToPath(
         new URL("./packages/platform/supabase/src/index.ts", import.meta.url),
       ),

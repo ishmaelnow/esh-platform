@@ -10,6 +10,7 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | ------------------------------- | ------------------- | ----------------------- | -------------------- | ---------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`      | All apps            | each app's `.env.local` | Admin, Rider, Driver | Supabase project URL exposed to the browser.                                 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All apps            | each app's `.env.local` | Admin, Rider, Driver | Publishable/anonymous Supabase key; authorization remains enforced by RLS.   |
+| `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Live trip maps     | each app's `.env.local` | Admin, Rider, Driver | Public, URL-restricted Mapbox token for permanent geocoding, road routes, maps, and ETA. |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Admin server routes | `apps/admin/.env.local` | Admin only           | Privileged server-side Supabase access. Never expose to client code.         |
 | `RESEND_API_KEY`                | Admin server routes | `apps/admin/.env.local` | Admin only           | Sends invitation and password-reset email.                                   |
 | `RESEND_WEBHOOK_SECRET`         | Admin webhook route | `apps/admin/.env.local` | Admin only           | Verifies Resend webhook signatures.                                          |

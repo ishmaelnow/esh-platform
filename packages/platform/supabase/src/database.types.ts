@@ -241,8 +241,14 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           destination_address: string
+          destination_latitude: number | null
+          destination_longitude: number | null
           dispatch_ready_at: string | null
+          geocoded_at: string | null
+          geocoding_provider: string | null
           pickup_address: string
+          pickup_latitude: number | null
+          pickup_longitude: number | null
           rider_profile_id: string | null
           scheduled_pickup_at: string | null
           service_area_id: string
@@ -262,8 +268,14 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           destination_address: string
+          destination_latitude?: number | null
+          destination_longitude?: number | null
           dispatch_ready_at?: string | null
+          geocoded_at?: string | null
+          geocoding_provider?: string | null
           pickup_address: string
+          pickup_latitude?: number | null
+          pickup_longitude?: number | null
           rider_profile_id?: string | null
           scheduled_pickup_at?: string | null
           service_area_id: string
@@ -283,8 +295,14 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           destination_address?: string
+          destination_latitude?: number | null
+          destination_longitude?: number | null
           dispatch_ready_at?: string | null
+          geocoded_at?: string | null
+          geocoding_provider?: string | null
           pickup_address?: string
+          pickup_latitude?: number | null
+          pickup_longitude?: number | null
           rider_profile_id?: string | null
           scheduled_pickup_at?: string | null
           service_area_id?: string
@@ -2013,6 +2031,17 @@ export type Database = {
       set_my_driver_availability: {
         Args: { target_status: string }
         Returns: Json
+      }
+      set_dispatch_booking_coordinates: {
+        Args: {
+          destination_latitude_value: number
+          destination_longitude_value: number
+          geocoding_provider_value: string
+          pickup_latitude_value: number
+          pickup_longitude_value: number
+          target_booking_id: string
+        }
+        Returns: boolean
       }
       set_my_driver_location_sharing: {
         Args: { enabled_value: boolean }

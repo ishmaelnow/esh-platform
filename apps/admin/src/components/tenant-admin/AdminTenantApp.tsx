@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
+import { LiveTripMap } from "@esh-platform/maps/client";
 import { adminPublicConfig } from "@/lib/config";
 import {
   adminAuthRefreshMode,
@@ -2126,6 +2127,7 @@ function DispatchPanel({
   session: SupabaseAuthSession;
   summary: TenantSummary;
 }) {
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   const [showForm, setShowForm] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -2536,6 +2538,14 @@ function DispatchPanel({
                   </dd>
                 </div>
               </dl>
+              {mapboxToken && booking.pickup_latitude != null && booking.pickup_longitude != null && booking.destination_latitude != null && booking.destination_longitude != null ? (
+                <LiveTripMap
+                  accessToken={mapboxToken}
+                  pickup={{ latitude: booking.pickup_latitude, longitude: booking.pickup_longitude, label: `Pickup: ${booking.pickup_address}` }}
+                  destination={{ latitude: booking.destination_latitude, longitude: booking.destination_longitude, label: `Destination: ${booking.destination_address}` }}
+                  driver={driverLocation?.sharing_enabled && driverLocation.latitude != null && driverLocation.longitude != null ? { latitude: driverLocation.latitude, longitude: driverLocation.longitude, label: `${currentDriver?.display_name ?? offeredDriver?.display_name ?? "Driver"} live location` } : null}
+                />
+              ) : null}
               {bookingOffers.length > 0 ? (
                 <details>
                   <summary>Offer history ({bookingOffers.length})</summary>
