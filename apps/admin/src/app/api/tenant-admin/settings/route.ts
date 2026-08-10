@@ -37,6 +37,15 @@ export async function POST(request: Request) {
       const serviceAreaId = validateTenantId(body.serviceAreaId);
       const input = parseDispatchBookingInput(body);
       const supabase = createRequestSupabaseClient({ accessToken });
+      const { data: serviceArea, error: serviceAreaError } = await supabase
+        .from("service_areas")
+        .select("center_latitude,center_longitude")
+        .eq("tenant_id", tenantId)
+        .eq("service_area_id", serviceAreaId)
+        .eq("status", "active")
+        .single();
+      if (serviceAreaError || !serviceArea)
+        throw serviceAreaError ?? new Error("Active service area is required.");
       const { data, error } = await supabase.rpc("create_dispatch_booking", {
         target_tenant_id: tenantId,
         target_service_area_id: serviceAreaId,
@@ -52,8 +61,16 @@ export async function POST(request: Request) {
       if (mapboxToken) {
         try {
           const [pickup, destination] = await Promise.all([
-            geocodePermanentAddress(input.pickupAddress, mapboxToken, process.env.INVITATION_BASE_URL),
-            geocodePermanentAddress(input.destinationAddress, mapboxToken, process.env.INVITATION_BASE_URL),
+            geocodePermanentAddress(input.pickupAddress, mapboxToken, {
+              latitude: serviceArea.center_latitude,
+              longitude: serviceArea.center_longitude,
+              requestOrigin: process.env.INVITATION_BASE_URL,
+            }),
+            geocodePermanentAddress(input.destinationAddress, mapboxToken, {
+              latitude: serviceArea.center_latitude,
+              longitude: serviceArea.center_longitude,
+              requestOrigin: process.env.INVITATION_BASE_URL,
+            }),
           ]);
           const coordinateResult = await supabase.rpc("set_dispatch_booking_coordinates", {
             target_booking_id: data,

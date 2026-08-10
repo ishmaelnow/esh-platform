@@ -22,7 +22,7 @@ export function LiveTripMap({ accessToken, pickup, destination, driver }: {
       new mapboxgl.Marker({ color }).setLngLat([point.longitude, point.latitude]).setPopup(new mapboxgl.Popup({ offset: 20 }).setText(point.label)).addTo(map);
     });
     map.fitBounds(bounds, { padding: 55, maxZoom: 14 });
-    map.on("load", async () => {
+    map.on("load", () => { void (async () => {
       try {
         const coordinates = points.map((point) => `${point.longitude},${point.latitude}`).join(";");
         const url = new URL(`https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${coordinates}`);
@@ -34,7 +34,7 @@ export function LiveTripMap({ accessToken, pickup, destination, driver }: {
         map.addLayer({ id: "trip-route", type: "line", source: "trip-route", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#2367d1", "line-width": 5, "line-opacity": 0.8 } });
         setSummary({ distance: route.distance, duration: route.duration, pickupDuration: driver ? route.legs?.[0]?.duration ?? null : null });
       } catch { setRouteUnavailable(true); }
-    });
+    })(); });
     return () => map.remove();
   }, [accessToken, destination.latitude, destination.longitude, driver?.latitude, driver?.longitude, pickup.latitude, pickup.longitude]);
   return <div className="esh-trip-map-shell"><div aria-label="Live trip map" className="esh-trip-map" ref={container} /><p className="esh-trip-map-summary">{summary ? `${summary.pickupDuration != null ? `Pickup ETA ${formatRouteDuration(summary.pickupDuration)} · ` : ""}Route ${formatRouteDuration(summary.duration)} · ${formatRouteDistance(summary.distance)}` : routeUnavailable ? "Map markers are available; road route and ETA are temporarily unavailable." : "Calculating road route and ETA…"}</p></div>;

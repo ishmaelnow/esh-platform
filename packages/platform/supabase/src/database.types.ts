@@ -1991,6 +1991,10 @@ export type Database = {
         Args: { target_tenant_slug: string }
         Returns: Json
       }
+      my_rider_service_area_context: {
+        Args: { target_tenant_slug: string; target_service_area_id: string }
+        Returns: Json
+      }
       my_rider_notification_preferences: {
         Args: { target_tenant_slug: string }
         Returns: Json

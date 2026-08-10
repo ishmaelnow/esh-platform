@@ -1,21 +1,56 @@
 export type MapPoint = { latitude: number; longitude: number; label: string };
 
-export async function geocodePermanentAddress(address: string, accessToken: string, requestOrigin?: string) {
+export type GeocodingContext = {
+  latitude: number;
+  longitude: number;
+  maxDistanceKm?: number;
+  requestOrigin?: string | undefined;
+};
+
+export function coordinateDistanceKm(
+  first: Pick<MapPoint, "latitude" | "longitude">,
+  second: Pick<MapPoint, "latitude" | "longitude">,
+) {
+  const radians = (value: number) => (value * Math.PI) / 180;
+  const latitudeDelta = radians(second.latitude - first.latitude);
+  const longitudeDelta = radians(second.longitude - first.longitude);
+  const value =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(radians(first.latitude)) *
+      Math.cos(radians(second.latitude)) *
+      Math.sin(longitudeDelta / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(value)));
+}
+
+export async function geocodePermanentAddress(
+  address: string,
+  accessToken: string,
+  context: GeocodingContext,
+) {
   const url = new URL("https://api.mapbox.com/search/geocode/v6/forward");
   url.searchParams.set("q", address);
   url.searchParams.set("access_token", accessToken);
   url.searchParams.set("country", "us");
-  url.searchParams.set("limit", "1");
+  url.searchParams.set("limit", "5");
   url.searchParams.set("autocomplete", "false");
   url.searchParams.set("permanent", "true");
-  const response = await fetch(url, requestOrigin ? { headers: { Referer: requestOrigin } } : undefined);
+  url.searchParams.set("proximity", `${context.longitude},${context.latitude}`);
+  const response = await fetch(
+    url,
+    context.requestOrigin ? { headers: { Referer: context.requestOrigin } } : undefined,
+  );
   if (!response.ok) throw new Error("Address could not be located on the map.");
   const payload = (await response.json()) as { features?: Array<{ geometry?: { coordinates?: number[] } }> };
-  const coordinates = payload.features?.[0]?.geometry?.coordinates;
-  const longitude = coordinates?.[0];
-  const latitude = coordinates?.[1];
-  if (typeof longitude !== "number" || typeof latitude !== "number") throw new Error("Address could not be located on the map.");
-  return { longitude, latitude };
+  const maximumDistance = context.maxDistanceKm ?? 800;
+  for (const feature of payload.features ?? []) {
+    const longitude = feature.geometry?.coordinates?.[0];
+    const latitude = feature.geometry?.coordinates?.[1];
+    if (typeof longitude !== "number" || typeof latitude !== "number") continue;
+    if (
+      coordinateDistanceKm(context, { latitude, longitude }) <= maximumDistance
+    ) return { longitude, latitude };
+  }
+  throw new Error("Address resolved too far from the selected service area.");
 }
 
 export function formatRouteDistance(meters: number) {

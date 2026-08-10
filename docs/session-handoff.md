@@ -47,10 +47,14 @@ out-of-boundary rejection, five-second Admin visibility, Rider invisibility befo
 ten-second active-trip visibility, stale labeling, cross-tenant isolation, explicit stop, offline stop,
 trip-completion stop, audit events, and absence of route history.
 
-For Live Trip Maps, create a new production booking after the migration, confirm pickup and
-destination markers plus the road route in Rider and Admin, accept it as an online Driver, and verify
-the Driver marker and refreshed ETA in all authorized portals. Then stop location sharing and confirm
-the Driver marker disappears while the saved trip route remains.
+Live Trip Maps production testing started with a Philadelphia booking from
+`6434 GARMIN ST PHILADELPHIA` to `PHL AIRPORT`. After Driver acceptance, the rendered route reported
+42 hr 48 min and 2,866 mi, so the test failed before location-sharing and cleanup checks. Repository
+inspection found that geocoding sends only the free-form address plus `country=us`, accepts the first
+result, and supplies no service-area proximity/bounds or result-confidence validation. Pickup is
+database-checked against the selected service area, but destination locality/distance is not checked;
+the destination is therefore the likely incorrect match. Do not continue the live-marker test using
+this booking as though its route were valid.
 
 ## Temporary production settings
 
@@ -82,6 +86,15 @@ one-time links.
 
 ## Open issues
 
+Live Trip Maps production testing exposed an implausible cross-country route for a Philadelphia trip:
+42 hr 48 min and 2,866 mi from `6434 GARMIN ST PHILADELPHIA` to `PHL AIRPORT`. The geocoder currently
+accepts Mapbox's first country-wide result without service-area context or verifying the resolved
+place. A local correction now biases Mapbox toward the selected service-area center, evaluates up to
+five candidates, and rejects destinations more than 800 km from that center in both application code
+and a database trigger. The Rider receives the narrowly scoped active-area context through a new
+authenticated RPC. Mapping tests, repository lint, all three production builds, and diff checks pass.
+The required database dry run lists only `20260809000200_rider_geocoding_context.sql`.
+
 Production Rider booking creation exposed PostgreSQL `42703` after Realtime Driver Location deploy.
 Root cause: one polymorphic automatic-stop trigger referenced availability-only columns while running
 for a booking row. Migration `20260802000100_fix_location_stop_triggers.sql` replaces it with two
@@ -111,8 +124,9 @@ session-restores the active Admin section. This stabilization is implemented loc
 
 ## Exact next action
 
-Commit and push the Admin session stabilization, confirm the entire active Admin view remains mounted
-across repeated browser-tab switches, create DFW Metroplex, and resume the location test.
+Commit and push the geocoding correction, apply `20260809000200_rider_geocoding_context.sql`, deploy
+Admin and Rider, create a new Philadelphia booking, and restart the Live Trip Maps production test
+before continuing live-marker checks.
 
 ## Required reading for recovery
 

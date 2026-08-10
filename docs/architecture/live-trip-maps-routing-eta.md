@@ -5,6 +5,12 @@ stores the coordinates once. The database validates all coordinates, requires an
 payload, confirms pickup is within the selected service area, and permits writes only from tenant
 dispatch managers or the Rider who owns the booking.
 
+Free-form geocoding is biased toward the selected service area's center and evaluates up to five
+results rather than accepting an unbounded country-wide first match. Both the client workflow and
+database reject a destination more than 800 km from that center. This regional boundary prevents an
+ambiguous local landmark or airport abbreviation from silently producing a cross-country route;
+long-distance transportation remains outside this product slice.
+
 Admin, Driver, and Rider render the same embedded street map and traffic-aware road route. Before
 assignment the route connects pickup to destination. During an active assignment it connects the
 Driver's latest consented location through pickup to destination, with distance and ETA. If routing

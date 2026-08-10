@@ -80,6 +80,7 @@ type RiderTripLocation = {
   recordedAt: string;
   fresh: boolean;
 };
+type ServiceAreaContext = { latitude: number; longitude: number; radiusKm: number };
 
 function formatDate(value: string, timeZone?: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -287,6 +288,29 @@ export default function RiderHome() {
         destination_address_value: formValue(form, "destinationAddress"),
         booking_notes_value: formValue(form, "bookingNotes"),
       };
+      let geocodedCoordinates:
+        | { pickup: { latitude: number; longitude: number }; destination: { latitude: number; longitude: number } }
+        | null = null;
+      if (mapboxToken) {
+        const { data: areaContextData, error: areaContextError } = await supabase.rpc(
+          "my_rider_service_area_context",
+          {
+            target_tenant_slug: tenantSlug,
+            target_service_area_id: formValue(form, "serviceAreaId"),
+          },
+        );
+        if (areaContextError) throw areaContextError;
+        const areaContext = areaContextData as ServiceAreaContext;
+        const geocodingContext = {
+          latitude: areaContext.latitude,
+          longitude: areaContext.longitude,
+        };
+        const [pickup, destination] = await Promise.all([
+          geocodePermanentAddress(formValue(form, "pickupAddress"), mapboxToken, geocodingContext),
+          geocodePermanentAddress(formValue(form, "destinationAddress"), mapboxToken, geocodingContext),
+        ]);
+        geocodedCoordinates = { pickup, destination };
+      }
       const result =
         bookingTiming === "scheduled"
           ? await supabase.rpc("create_my_rider_scheduled_booking", {
@@ -300,18 +324,14 @@ export default function RiderHome() {
       const bookingError = result.error;
       if (bookingError) throw bookingError;
       let mapWarning = "";
-      if (mapboxToken && result.data) {
+      if (geocodedCoordinates && result.data) {
         try {
-          const [pickup, destination] = await Promise.all([
-            geocodePermanentAddress(formValue(form, "pickupAddress"), mapboxToken),
-            geocodePermanentAddress(formValue(form, "destinationAddress"), mapboxToken),
-          ]);
           const coordinateResult = await supabase.rpc("set_dispatch_booking_coordinates", {
             target_booking_id: result.data,
-            pickup_latitude_value: pickup.latitude,
-            pickup_longitude_value: pickup.longitude,
-            destination_latitude_value: destination.latitude,
-            destination_longitude_value: destination.longitude,
+            pickup_latitude_value: geocodedCoordinates.pickup.latitude,
+            pickup_longitude_value: geocodedCoordinates.pickup.longitude,
+            destination_latitude_value: geocodedCoordinates.destination.latitude,
+            destination_longitude_value: geocodedCoordinates.destination.longitude,
             geocoding_provider_value: "mapbox-v6",
           });
           if (coordinateResult.error) throw coordinateResult.error;
