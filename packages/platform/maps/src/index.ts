@@ -4,6 +4,7 @@ export type GeocodingContext = {
   latitude: number;
   longitude: number;
   maxDistanceKm?: number;
+  requireVerifiedAddress?: boolean;
   requestOrigin?: string | undefined;
 };
 
@@ -35,22 +36,40 @@ export async function geocodePermanentAddress(
   url.searchParams.set("autocomplete", "false");
   url.searchParams.set("permanent", "true");
   url.searchParams.set("proximity", `${context.longitude},${context.latitude}`);
+  if (context.requireVerifiedAddress) url.searchParams.set("types", "address");
   const response = await fetch(
     url,
     context.requestOrigin ? { headers: { Referer: context.requestOrigin } } : undefined,
   );
   if (!response.ok) throw new Error("Address could not be located on the map.");
-  const payload = (await response.json()) as { features?: Array<{ geometry?: { coordinates?: number[] } }> };
+  const payload = (await response.json()) as {
+    features?: Array<{
+      geometry?: { coordinates?: number[] };
+      properties?: { feature_type?: string; match_code?: { confidence?: string } };
+    }>;
+  };
   const maximumDistance = context.maxDistanceKm ?? 800;
   for (const feature of payload.features ?? []) {
     const longitude = feature.geometry?.coordinates?.[0];
     const latitude = feature.geometry?.coordinates?.[1];
     if (typeof longitude !== "number" || typeof latitude !== "number") continue;
+    if (context.requireVerifiedAddress) {
+      const confidence = feature.properties?.match_code?.confidence;
+      if (
+        feature.properties?.feature_type !== "address" ||
+        !confidence ||
+        !["exact", "high"].includes(confidence)
+      ) continue;
+    }
     if (
       coordinateDistanceKm(context, { latitude, longitude }) <= maximumDistance
     ) return { longitude, latitude };
   }
-  throw new Error("Address resolved too far from the selected service area.");
+  throw new Error(
+    context.requireVerifiedAddress
+      ? "Enter a complete, verified street address in the selected service area."
+      : "Address could not be verified near the selected service area.",
+  );
 }
 
 export function formatRouteDistance(meters: number) {

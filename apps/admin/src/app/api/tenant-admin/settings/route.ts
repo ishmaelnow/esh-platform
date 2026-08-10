@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       const supabase = createRequestSupabaseClient({ accessToken });
       const { data: serviceArea, error: serviceAreaError } = await supabase
         .from("service_areas")
-        .select("center_latitude,center_longitude")
+        .select("center_latitude,center_longitude,radius_km")
         .eq("tenant_id", tenantId)
         .eq("service_area_id", serviceAreaId)
         .eq("status", "active")
@@ -64,6 +64,8 @@ export async function POST(request: Request) {
             geocodePermanentAddress(input.pickupAddress, mapboxToken, {
               latitude: serviceArea.center_latitude,
               longitude: serviceArea.center_longitude,
+              maxDistanceKm: serviceArea.radius_km,
+              requireVerifiedAddress: true,
               requestOrigin: process.env.INVITATION_BASE_URL,
             }),
             geocodePermanentAddress(input.destinationAddress, mapboxToken, {

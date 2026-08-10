@@ -11,6 +11,12 @@ database reject a destination more than 800 km from that center. This regional b
 ambiguous local landmark or airport abbreviation from silently producing a cross-country route;
 long-distance transportation remains outside this product slice.
 
+Rider pickup input must resolve as a high-confidence street address inside the selected service
+area before a booking is created. Destination input must resolve within the supported regional
+boundary. Missing mapping configuration or failed coordinate persistence stops the request with an
+actionable error; a persistence failure automatically cancels the just-created booking so a mapless
+trip cannot proceed through dispatch.
+
 Admin, Driver, and Rider render the same embedded street map and traffic-aware road route. Before
 assignment the route connects pickup to destination. During an active assignment it connects the
 Driver's latest consented location through pickup to destination, with distance and ETA. If routing

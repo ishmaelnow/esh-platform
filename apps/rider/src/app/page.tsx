@@ -288,10 +288,11 @@ export default function RiderHome() {
         destination_address_value: formValue(form, "destinationAddress"),
         booking_notes_value: formValue(form, "bookingNotes"),
       };
+      if (!mapboxToken) throw new Error("Trip mapping is temporarily unavailable. Please try again later.");
       let geocodedCoordinates:
         | { pickup: { latitude: number; longitude: number }; destination: { latitude: number; longitude: number } }
         | null = null;
-      if (mapboxToken) {
+      {
         const { data: areaContextData, error: areaContextError } = await supabase.rpc(
           "my_rider_service_area_context",
           {
@@ -305,10 +306,26 @@ export default function RiderHome() {
           latitude: areaContext.latitude,
           longitude: areaContext.longitude,
         };
-        const [pickup, destination] = await Promise.all([
-          geocodePermanentAddress(formValue(form, "pickupAddress"), mapboxToken, geocodingContext),
-          geocodePermanentAddress(formValue(form, "destinationAddress"), mapboxToken, geocodingContext),
-        ]);
+        let pickup: { latitude: number; longitude: number };
+        let destination: { latitude: number; longitude: number };
+        try {
+          pickup = await geocodePermanentAddress(formValue(form, "pickupAddress"), mapboxToken, {
+            ...geocodingContext,
+            maxDistanceKm: areaContext.radiusKm,
+            requireVerifiedAddress: true,
+          });
+        } catch {
+          throw new Error("Pickup address was not verified inside the selected service area. Check the street name, city, state, and ZIP code.");
+        }
+        try {
+          destination = await geocodePermanentAddress(
+            formValue(form, "destinationAddress"),
+            mapboxToken,
+            geocodingContext,
+          );
+        } catch {
+          throw new Error("Destination address was not verified near the selected service area. Enter a complete address or recognized place name.");
+        }
         geocodedCoordinates = { pickup, destination };
       }
       const result =
@@ -323,7 +340,6 @@ export default function RiderHome() {
           : await supabase.rpc("create_my_rider_booking", common);
       const bookingError = result.error;
       if (bookingError) throw bookingError;
-      let mapWarning = "";
       if (geocodedCoordinates && result.data) {
         try {
           const coordinateResult = await supabase.rpc("set_dispatch_booking_coordinates", {
@@ -335,14 +351,17 @@ export default function RiderHome() {
             geocoding_provider_value: "mapbox-v6",
           });
           if (coordinateResult.error) throw coordinateResult.error;
-        } catch { mapWarning = " The trip is saved, but its map is temporarily unavailable."; }
+        } catch {
+          await supabase.rpc("cancel_my_rider_booking", { target_booking_id: result.data });
+          throw new Error("The trip was not accepted because its map coordinates could not be verified. Check both addresses and try again.");
+        }
       }
       formElement.reset();
       await loadPortal();
       setMessage(
         bookingTiming === "scheduled"
-          ? "Trip scheduled. We will begin finding a driver closer to pickup." + mapWarning
-          : "Trip requested. Dispatch can now find an eligible driver." + mapWarning,
+          ? "Trip scheduled. We will begin finding a driver closer to pickup."
+          : "Trip requested. Dispatch can now find an eligible driver.",
       );
     } catch (value) {
       setError(riderErrorMessage(value));

@@ -51,6 +51,22 @@ describe("trip route formatting", () => {
       }),
     ).resolves.toEqual({ latitude: 39.8744, longitude: -75.2424 });
   });
+  it("rejects an unverified pickup even when it is geographically nearby", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
+      features: [{
+        geometry: { coordinates: [-75.2424, 39.8744] },
+        properties: { feature_type: "address", match_code: { confidence: "low" } },
+      }],
+    })))));
+    await expect(
+      geocodePermanentAddress("6434 GARMIN ST PHILADELPHIA", "public-token", {
+        latitude: 39.9526,
+        longitude: -75.1652,
+        maxDistanceKm: 50,
+        requireVerifiedAddress: true,
+      }),
+    ).rejects.toThrow("complete, verified street address");
+  });
   it("rejects results outside the regional trip boundary", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
       features: [{ geometry: { coordinates: [-118.2437, 34.0522] } }],
@@ -60,6 +76,6 @@ describe("trip route formatting", () => {
         latitude: 39.9526,
         longitude: -75.1652,
       }),
-    ).rejects.toThrow("too far from the selected service area");
+    ).rejects.toThrow("could not be verified near the selected service area");
   });
 });

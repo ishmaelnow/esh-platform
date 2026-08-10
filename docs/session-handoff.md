@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 
 ## Current objective
 
@@ -56,6 +56,13 @@ database-checked against the selected service area, but destination locality/dis
 the destination is therefore the likely incorrect match. Do not continue the live-marker test using
 this booking as though its route were valid.
 
+After deploying the regional geocoding correction, a new Aug 10 booking from the same misspelled
+`6434 GARMIN ST PHILADELPHIA` pickup to `6800 ELMWOOD AVE` was created and accepted without a map.
+This exposed a second failure: the Rider workflow saved the booking after coordinate persistence was
+rejected. Local validation now requires a high-confidence street-address pickup inside the selected
+service area before creation, requires a regionally valid destination, reports actionable errors,
+and automatically cancels a booking if the final coordinate write unexpectedly fails.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
@@ -95,6 +102,10 @@ and a database trigger. The Rider receives the narrowly scoped active-area conte
 authenticated RPC. Mapping tests, repository lint, all three production builds, and diff checks pass.
 The required database dry run lists only `20260809000200_rider_geocoding_context.sql`.
 
+The subsequent mapless-booking correction is implemented locally without another migration. Mapping
+tests include the low-confidence `GARMIN` case and pass 6/6; maps lint/typecheck and Rider/Admin
+production builds pass.
+
 Production Rider booking creation exposed PostgreSQL `42703` after Realtime Driver Location deploy.
 Root cause: one polymorphic automatic-stop trigger referenced availability-only columns while running
 for a booking row. Migration `20260802000100_fix_location_stop_triggers.sql` replaces it with two
@@ -124,9 +135,9 @@ session-restores the active Admin section. This stabilization is implemented loc
 
 ## Exact next action
 
-Commit and push the geocoding correction, apply `20260809000200_rider_geocoding_context.sql`, deploy
-Admin and Rider, create a new Philadelphia booking, and restart the Live Trip Maps production test
-before continuing live-marker checks.
+Commit and push the pre-booking address validation, deploy Admin and Rider, cancel the mapless Aug 10
+test booking, and confirm the misspelled `GARMIN` pickup is rejected with a visible message. Then use
+the complete verified address to create a new booking and restart the shared Rider/Driver map test.
 
 ## Required reading for recovery
 
