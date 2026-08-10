@@ -12,9 +12,11 @@ Deploy and manually verify Live Trip Maps, Routing, and ETA across Admin, Driver
 - Admin session stabilization is deployed and passed production testing. DFW Metroplex and
   Philadelphia service areas were created successfully; Realtime Driver Location passed its live
   production test.
-- Live Trip Maps is implemented locally and requires migration
-  `20260809000100_trip_map_coordinates.sql` plus `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` in all three
-  Vercel projects.
+- Live Trip Maps commit `bba70b8`, regional geocoding commit `7b3dcd9`, pre-booking validation commit
+  `a3f9ccb`, and migrations through `20260809000200_rider_geocoding_context.sql` are pushed and
+  deployed. `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is required in all three Vercel projects.
+- Atomic Rider booking/geocoding is implemented locally and requires migration
+  `20260810000100_atomic_rider_geocoded_booking.sql` plus a Rider deployment.
 - Automatic Driver Matching commit `72c3f93` is deployed; production manual testing passed.
 - Realtime Driver Location commit `7121a36` and migration
   `20260801001300_realtime_driver_location.sql` are deployed to production.
@@ -63,6 +65,14 @@ rejected. Local validation now requires a high-confidence street-address pickup 
 service area before creation, requires a regionally valid destination, reports actionable errors,
 and automatically cancels a booking if the final coordinate write unexpectedly fails.
 
+Production then accepted a 1:10 AM Philadelphia booking from `PHL AIRPORT` to
+`DFW Airport Terminal A` without a map. This proved that compensating cancellation is not a safe
+substitute for atomic persistence: booking insertion triggers can begin automatic matching and
+notification work before the separate coordinate write fails. Local atomic ride-now and scheduled
+RPCs now create the booking and persist coordinates in one transaction, so any coordinate failure
+rolls back the booking, offers, audit, and notification outbox work. Browser execution of the older
+mapless Rider creation RPCs is revoked.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
@@ -102,9 +112,14 @@ and a database trigger. The Rider receives the narrowly scoped active-area conte
 authenticated RPC. Mapping tests, repository lint, all three production builds, and diff checks pass.
 The required database dry run lists only `20260809000200_rider_geocoding_context.sql`.
 
-The subsequent mapless-booking correction is implemented locally without another migration. Mapping
+The subsequent pre-booking validation correction is deployed without another migration. Mapping
 tests include the low-confidence `GARMIN` case and pass 6/6; maps lint/typecheck and Rider/Admin
-production builds pass.
+production builds pass, but production proved its compensating-cancellation design was insufficient.
+
+The atomic persistence correction adds `20260810000100_atomic_rider_geocoded_booking.sql`. Mapping
+tests pass 6/6, the Rider production build and Supabase typecheck pass, full repository lint passes,
+and diff checks pass. The required migration dry run lists only
+`20260810000100_atomic_rider_geocoded_booking.sql`.
 
 Production Rider booking creation exposed PostgreSQL `42703` after Realtime Driver Location deploy.
 Root cause: one polymorphic automatic-stop trigger referenced availability-only columns while running
@@ -135,9 +150,10 @@ session-restores the active Admin section. This stabilization is implemented loc
 
 ## Exact next action
 
-Commit and push the pre-booking address validation, deploy Admin and Rider, cancel the mapless Aug 10
-test booking, and confirm the misspelled `GARMIN` pickup is rejected with a visible message. Then use
-the complete verified address to create a new booking and restart the shared Rider/Driver map test.
+Commit/push the atomic correction, apply `20260810000100_atomic_rider_geocoded_booking.sql`, deploy
+Rider, cancel the active 1:10 AM mapless test booking, and verify invalid coordinates create no
+booking, offer, audit, or notification. Create a valid booking afterward and restart the shared
+Rider/Driver map test.
 
 ## Required reading for recovery
 

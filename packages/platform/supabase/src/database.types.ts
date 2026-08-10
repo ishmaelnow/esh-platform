@@ -1915,6 +1915,37 @@ export type Database = {
         }
         Returns: string
       }
+      create_my_rider_geocoded_booking: {
+        Args: {
+          booking_notes_value?: string
+          destination_address_value: string
+          destination_latitude_value: number
+          destination_longitude_value: number
+          geocoding_provider_value: string
+          pickup_address_value: string
+          pickup_latitude_value: number
+          pickup_longitude_value: number
+          target_service_area_id: string
+          target_tenant_slug: string
+        }
+        Returns: string
+      }
+      create_my_rider_geocoded_scheduled_booking: {
+        Args: {
+          booking_notes_value?: string
+          destination_address_value: string
+          destination_latitude_value: number
+          destination_longitude_value: number
+          geocoding_provider_value: string
+          pickup_address_value: string
+          pickup_latitude_value: number
+          pickup_longitude_value: number
+          scheduled_pickup_at_value: string
+          target_service_area_id: string
+          target_tenant_slug: string
+        }
+        Returns: string
+      }
       create_my_rider_scheduled_booking: {
         Args: {
           booking_notes_value?: string

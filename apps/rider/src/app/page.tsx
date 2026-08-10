@@ -328,34 +328,26 @@ export default function RiderHome() {
         }
         geocodedCoordinates = { pickup, destination };
       }
-      const result =
-        bookingTiming === "scheduled"
-          ? await supabase.rpc("create_my_rider_scheduled_booking", {
-              ...common,
-              scheduled_pickup_at_value: zonedDateTimeToIso(
-                formValue(form, "scheduledPickupAt"),
-                scheduling?.timeZone ?? "UTC",
-              ),
-            })
-          : await supabase.rpc("create_my_rider_booking", common);
+      if (!geocodedCoordinates) throw new Error("Verified trip coordinates are required.");
+      const coordinateArguments = {
+        ...common,
+        pickup_latitude_value: geocodedCoordinates.pickup.latitude,
+        pickup_longitude_value: geocodedCoordinates.pickup.longitude,
+        destination_latitude_value: geocodedCoordinates.destination.latitude,
+        destination_longitude_value: geocodedCoordinates.destination.longitude,
+        geocoding_provider_value: "mapbox-v6",
+      };
+      const result = bookingTiming === "scheduled"
+        ? await supabase.rpc("create_my_rider_geocoded_scheduled_booking", {
+            ...coordinateArguments,
+            scheduled_pickup_at_value: zonedDateTimeToIso(
+              formValue(form, "scheduledPickupAt"),
+              scheduling?.timeZone ?? "UTC",
+            ),
+          })
+        : await supabase.rpc("create_my_rider_geocoded_booking", coordinateArguments);
       const bookingError = result.error;
       if (bookingError) throw bookingError;
-      if (geocodedCoordinates && result.data) {
-        try {
-          const coordinateResult = await supabase.rpc("set_dispatch_booking_coordinates", {
-            target_booking_id: result.data,
-            pickup_latitude_value: geocodedCoordinates.pickup.latitude,
-            pickup_longitude_value: geocodedCoordinates.pickup.longitude,
-            destination_latitude_value: geocodedCoordinates.destination.latitude,
-            destination_longitude_value: geocodedCoordinates.destination.longitude,
-            geocoding_provider_value: "mapbox-v6",
-          });
-          if (coordinateResult.error) throw coordinateResult.error;
-        } catch {
-          await supabase.rpc("cancel_my_rider_booking", { target_booking_id: result.data });
-          throw new Error("The trip was not accepted because its map coordinates could not be verified. Check both addresses and try again.");
-        }
-      }
       formElement.reset();
       await loadPortal();
       setMessage(

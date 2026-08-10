@@ -13,9 +13,10 @@ long-distance transportation remains outside this product slice.
 
 Rider pickup input must resolve as a high-confidence street address inside the selected service
 area before a booking is created. Destination input must resolve within the supported regional
-boundary. Missing mapping configuration or failed coordinate persistence stops the request with an
-actionable error; a persistence failure automatically cancels the just-created booking so a mapless
-trip cannot proceed through dispatch.
+boundary. One security-definer RPC creates the booking and persists both coordinates in a single
+database transaction. Any validation or persistence failure rolls back the booking, automatic
+offers, audit events, and notification outbox work together, so a mapless trip cannot enter dispatch.
+The older Rider creation RPCs are no longer executable by browser users.
 
 Admin, Driver, and Rider render the same embedded street map and traffic-aware road route. Before
 assignment the route connects pickup to destination. During an active assignment it connects the

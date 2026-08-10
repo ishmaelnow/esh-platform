@@ -18,6 +18,10 @@ it to `requested`. Rider, Driver, and Admin refresh paths invoke activation; the
 also queues due reminders. A database-native `pg_cron` job runs activation every minute so the
 transition does not depend on an open browser.
 
+Rider creation stores the scheduled booking and its verified permanent map coordinates atomically.
+If coordinate validation fails, neither the scheduled booking nor its audit/notification work is
+committed.
+
 ## Notifications and lifecycle
 
 Creation queues a scheduled confirmation. The daily worker queues one reminder inside the tenant
