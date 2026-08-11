@@ -88,7 +88,10 @@ one-time links.
 
 ## Open issues
 
-Ledger production behavior remains to be verified. The required Supabase dry run lists only
+Ledger production testing found the Admin summary blocked by an incorrect currency join in the
+deployed function (`USING (currency_code)` against settings column `operating_currency`). Forward-
+only hotfix migration `20260811000200_fix_ledger_currency_summary.sql` corrects the join without
+changing ledger data and is not yet committed or applied. The original required dry run listed only
 `20260811000100_ledger_foundation_v1.sql`. Admin typecheck, lint, 50/50 tests, production build,
 Supabase package typecheck/test, and `git diff --check` pass. The existing Supabase Realtime dynamic
 dependency warning remains non-blocking in the Admin build.
@@ -103,8 +106,8 @@ dependency warning remains non-blocking in the Admin build.
 
 ## Exact next action
 
-Owner stages and commits the Ledger Foundation V1 files, pushes `main`, applies the migration, and
-then follows `docs/operations/ledger-foundation-manual-test.md`.
+Owner commits and applies the currency-summary hotfix, refreshes Admin Ledger, and resumes
+`docs/operations/ledger-foundation-manual-test.md`.
 
 ## Required reading for recovery
 
