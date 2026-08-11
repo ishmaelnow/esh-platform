@@ -921,7 +921,7 @@ export default function RiderHome() {
               ))
             )}
           </section>
-          <section className="history">
+          <section className="history reputation-history">
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
             {reputationTrips.length === 0 ? <div className="card empty"><p>Completed trips eligible for rating will appear here.</p></div> : reputationTrips.map((trip) => (

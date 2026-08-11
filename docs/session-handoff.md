@@ -85,8 +85,10 @@ one-time links.
 
 ## Open issues
 
-Reputation V1 has not yet been applied or manually tested. Confirm migration syntax and pending
-migration scope with the required Supabase dry run.
+Reputation V1 is deployed and manual testing has started. The Rider rating section loaded, but a
+desktop grid defect placed it beneath the sticky Request Trip card. A local two-file layout fix pins
+Reputation to the right column and restores normal single-column flow on mobile; it is not yet
+committed or deployed.
 
 ## Cleanup still required after testing
 
@@ -98,8 +100,8 @@ migration scope with the required Supabase dry run.
 
 ## Exact next action
 
-Run the Supabase migration dry run and repository validation. After owner deployment, complete one
-trip, submit a Rider and Driver rating, verify delayed disclosure, and exercise Admin hide/restore.
+Commit and deploy the Rider reputation layout fix, hard-refresh the Rider portal, and resume the
+manual test by submitting the Rider rating for the completed Philadelphia trip.
 
 ## Required reading for recovery
 

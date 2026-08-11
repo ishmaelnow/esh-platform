@@ -249,6 +249,9 @@ textarea:focus {
   display: grid;
   gap: 14px;
 }
+.reputation-history {
+  grid-column: 2;
+}
 .section-heading h2 {
   margin-bottom: 0;
 }
@@ -369,6 +372,9 @@ textarea:focus {
   .auth-card,
   .portal-grid {
     grid-template-columns: 1fr;
+  }
+  .reputation-history {
+    grid-column: auto;
   }
   .tenant-card {
     grid-template-columns: 1fr;
