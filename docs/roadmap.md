@@ -120,7 +120,11 @@ deferred from this milestone and were delivered under the later milestones below
    - Remaining: notifications, appeals, aggregate public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**
-   - Currency types, immutable ledger, payments, wallet, and reconciliation.
+   - Current delivery in progress: fixed tenant operating currency, integer minor-unit semantics,
+     immutable balanced double-entry postings, generic operating accounts, idempotency, tenant RLS,
+     audit, and Admin balances/journal visibility.
+   - Remaining: production verification, payments, Rider/Driver wallets, reversals, payouts, and
+     reconciliation.
 8. **Pricing and Billing**
    - Pricing, subscriptions, usage metering, and tenant billing.
 9. **Optimization**
@@ -128,12 +132,10 @@ deferred from this milestone and were delivered under the later milestones below
 
 ## Release Gates for the Current Milestone
 
-- Apply the evidence migration locally, then staging, then production.
-- Regenerate Supabase types from the applied schema and confirm no manual drift.
-- Run tenant RLS and Admin integration tests against the migrated database.
-- Confirm new applications create evidence metadata and private storage objects.
-- Confirm tenant administrators can review only their own tenant's evidence.
-- Confirm rejected, missing, or expired required evidence prevents activation.
-- Confirm approved onboarding and required evidence permit activation.
-- Confirm evidence review creates an audit event.
-- Confirm production signed URLs expire and direct bucket access is denied.
+- Dry-run and apply only the intended ledger migration.
+- Confirm all postings contain at least two entries and balanced minor-unit totals.
+- Confirm transactions and entries cannot be updated or deleted.
+- Confirm external-key replay is idempotent and mismatched replay is rejected.
+- Confirm tenant administrators cannot read or post another tenant's ledger.
+- Confirm ledger initialization and posting create tenant audit events.
+- Confirm no card, bank, processor secret, or mutable stored balance enters the ledger schema.

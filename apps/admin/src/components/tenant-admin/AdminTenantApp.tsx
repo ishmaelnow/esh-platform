@@ -25,6 +25,7 @@ import {
   loadTenantSummary,
 } from "@/lib/tenant-admin/queries";
 import { emptyServiceAreaDraft, restoreServiceAreaDraft } from "@/lib/tenant-admin/service-areas";
+import { formatMinorUnits, parseMoneyToMinorUnits } from "@/lib/tenant-admin/ledger";
 import type {
   ActiveTenantOption,
   EditableTenantConfiguration,
@@ -46,6 +47,7 @@ type ViewKey =
   | "serviceAreas"
   | "dispatch"
   | "reputation"
+  | "ledger"
   | "notifications"
   | "applications";
 
@@ -62,6 +64,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "serviceAreas", label: "Service Areas" },
   { key: "dispatch", label: "Dispatch" },
   { key: "reputation", label: "Reputation" },
+  { key: "ledger", label: "Ledger" },
   { key: "notifications", label: "Notifications" },
   { key: "applications", label: "Applications" },
 ];
@@ -479,6 +482,9 @@ function ResolvedWorkspace({
       ) : null}
       {activeView === "reputation" ? (
         <ReputationPanel canManageTenant={canManageTenant} onRefresh={onRefresh} summary={summary} />
+      ) : null}
+      {activeView === "ledger" ? (
+        <LedgerPanel canManageTenant={canManageTenant} summary={summary} />
       ) : null}
       {activeView === "applications" ? (
         <DriverApplicationsPanel
@@ -4114,6 +4120,70 @@ function InfoPanel({
       ) : null}
     </section>
   );
+}
+
+type LedgerSummary = {
+  settings: { operatingCurrency: string; fractionDigits: number } | null;
+  accounts: Array<{ accountId: string; accountCode: string; accountName: string; accountType: string; normalBalance: "debit" | "credit"; status: string; balanceMinor: number }>;
+  transactions: Array<{ transactionId: string; externalKey: string; description: string; effectiveAt: string; bookingId: string | null; createdAt: string; entries: Array<{ accountCode: string; side: "debit" | "credit"; amountMinor: number; memo: string | null }> }>;
+};
+
+function LedgerPanel({ canManageTenant, summary }: { canManageTenant: boolean; summary: TenantSummary }) {
+  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const [ledger, setLedger] = useState<LedgerSummary | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const formValue = (form: FormData, name: string) => {
+    const value = form.get(name);
+    return typeof value === "string" ? value : "";
+  };
+  const loadLedger = useCallback(async () => {
+    const result = await supabase.rpc("tenant_ledger_summary", { target_tenant_id: summary.tenant.tenant_id });
+    if (result.error) { setMessage(result.error.message); return; }
+    setLedger(result.data as unknown as LedgerSummary); setMessage(null);
+  }, [summary.tenant.tenant_id, supabase]);
+  useEffect(() => { void loadLedger(); }, [loadLedger]);
+
+  async function initialize(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy(true); setMessage(null);
+    const form = new FormData(event.currentTarget);
+    const result = await supabase.rpc("initialize_tenant_ledger", {
+      target_tenant_id: summary.tenant.tenant_id,
+      target_currency_code: formValue(form, "currency") || "USD",
+    });
+    setMessage(result.error ? result.error.message : "Ledger initialized. Operating currency is now permanent.");
+    if (!result.error) await loadLedger(); setBusy(false);
+  }
+
+  async function postJournal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!ledger?.settings) return;
+    const form = new FormData(event.currentTarget); setBusy(true); setMessage(null);
+    try {
+      const amountMinor = parseMoneyToMinorUnits(formValue(form, "amount"), ledger.settings.fractionDigits);
+      const debit = formValue(form, "debitAccount"); const credit = formValue(form, "creditAccount");
+      if (!debit || !credit || debit === credit) throw new Error("Choose two different ledger accounts.");
+      const result = await supabase.rpc("post_tenant_ledger_transaction", {
+        target_tenant_id: summary.tenant.tenant_id,
+        external_key_value: `manual:${crypto.randomUUID()}`,
+        description_value: formValue(form, "description"), effective_at_value: new Date().toISOString(),
+        entries_value: [{ accountCode: debit, side: "debit", amountMinor }, { accountCode: credit, side: "credit", amountMinor }],
+      });
+      if (result.error) throw result.error;
+      setMessage("Balanced journal transaction posted."); event.currentTarget.reset(); await loadLedger();
+    } catch (value) { setMessage(value instanceof Error ? value.message : "Transaction could not be posted."); }
+    setBusy(false);
+  }
+
+  if (!ledger) return <section className="panel-stack"><PanelHeader title="Ledger" description="Loading tenant financial foundation…" />{message ? <p className="feedback-message">{message}</p> : null}</section>;
+  if (!ledger.settings) return <section className="panel-stack"><PanelHeader title="Initialize ledger" description="Choose the tenant operating currency. It cannot change after the first posting." />
+    <form className="form-grid" onSubmit={(event) => void initialize(event)}><label>Operating currency<select name="currency" defaultValue="USD"><option value="USD">USD</option><option value="CAD">CAD</option><option value="MXN">MXN</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="AUD">AUD</option></select></label><button disabled={!canManageTenant || busy} type="submit">Initialize ledger</button></form>{message ? <p className="feedback-message">{message}</p> : null}</section>;
+  const { operatingCurrency, fractionDigits } = ledger.settings;
+  return <section className="panel-stack"><PanelHeader title="Ledger" description={`${operatingCurrency} · immutable balanced postings`} />
+    {message ? <p className="feedback-message">{message}</p> : null}
+    <div className="card-grid">{ledger.accounts.map((account) => <article className="data-card" key={account.accountId}><strong>{account.accountName}</strong><p>{account.accountCode} · {account.accountType}</p><strong>{formatMinorUnits(account.balanceMinor * (account.normalBalance === "credit" ? -1 : 1), operatingCurrency, fractionDigits)}</strong></article>)}</div>
+    <form className="form-grid" onSubmit={(event) => void postJournal(event)}><h4>Post manual journal</h4><label>Description<input name="description" required maxLength={240} placeholder="Test opening adjustment" /></label><label>Amount ({operatingCurrency})<input name="amount" required inputMode="decimal" placeholder="10.00" /></label><label>Debit account<select name="debitAccount" required defaultValue="cash_clearing">{ledger.accounts.map((account) => <option key={account.accountId} value={account.accountCode}>{account.accountName}</option>)}</select></label><label>Credit account<select name="creditAccount" required defaultValue="platform_fees">{ledger.accounts.map((account) => <option key={account.accountId} value={account.accountCode}>{account.accountName}</option>)}</select></label><button disabled={!canManageTenant || busy} type="submit">Post balanced transaction</button></form>
+    <div><h4>Recent journal</h4>{ledger.transactions.length === 0 ? <EmptyState message="No ledger transactions have been posted." /> : ledger.transactions.map((transaction) => <article className="data-card" key={transaction.transactionId}><div><strong>{transaction.description}</strong><p>{formatDate(transaction.effectiveAt)} · {transaction.externalKey}</p>{transaction.entries.map((entry) => <small key={`${transaction.transactionId}-${entry.accountCode}-${entry.side}`}>{entry.side.toUpperCase()} {entry.accountCode}: {formatMinorUnits(entry.amountMinor, operatingCurrency, fractionDigits)}<br /></small>)}</div></article>)}</div>
+  </section>;
 }
 
 function ReputationPanel({ canManageTenant, onRefresh, summary }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary }) {

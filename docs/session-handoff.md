@@ -4,7 +4,7 @@ Last updated: 2026-08-10
 
 ## Current objective
 
-Close Reputation V1 after successful production verification and select the next roadmap feature.
+Complete Ledger Foundation V1 implementation and validation after Reputation production verification.
 
 ## Repository and deployment state
 
@@ -25,6 +25,8 @@ Close Reputation V1 after successful production verification and select the next
 - Confirm migration state with a dry run rather than assuming it from this handoff.
 - Reputation V1 commit `e87655e`, Rider layout fix `75505f7`, and migration
   `20260810000200_trip_reputation.sql` are pushed and deployed.
+- Ledger Foundation V1 is implemented locally in migration
+  `20260811000100_ledger_foundation_v1.sql`; it is not committed, applied, or production tested.
 
 ## Delivered capabilities relevant to the test
 
@@ -86,7 +88,10 @@ one-time links.
 
 ## Open issues
 
-No open functional issue remains from Reputation V1 production testing.
+Ledger production behavior remains to be verified. The required Supabase dry run lists only
+`20260811000100_ledger_foundation_v1.sql`. Admin typecheck, lint, 50/50 tests, production build,
+Supabase package typecheck/test, and `git diff --check` pass. The existing Supabase Realtime dynamic
+dependency warning remains non-blocking in the Admin build.
 
 ## Cleanup still required after testing
 
@@ -98,7 +103,8 @@ No open functional issue remains from Reputation V1 production testing.
 
 ## Exact next action
 
-Confirm production-test cleanup, then select the next roadmap objective.
+Owner stages and commits the Ledger Foundation V1 files, pushes `main`, applies the migration, and
+then follows `docs/operations/ledger-foundation-manual-test.md`.
 
 ## Required reading for recovery
 
@@ -111,3 +117,5 @@ Confirm production-test cleanup, then select the next roadmap objective.
 - `docs/architecture/automatic-driver-matching.md`
 - `docs/architecture/realtime-driver-location.md`
 - `docs/architecture/trip-reputation.md`
+- `docs/architecture/ledger-foundation.md`
+- `docs/operations/ledger-foundation-manual-test.md`

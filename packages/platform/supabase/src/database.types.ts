@@ -542,6 +542,36 @@ export type Database = {
         }
         Relationships: []
       }
+      currency_codes: {
+        Row: { currency_code: string; display_name: string; fraction_digits: number }
+        Insert: { currency_code: string; display_name: string; fraction_digits: number }
+        Update: { currency_code?: string; display_name?: string; fraction_digits?: number }
+        Relationships: []
+      }
+      tenant_financial_settings: {
+        Row: { created_at: string; created_by_person_id: string | null; operating_currency: string; tenant_id: string }
+        Insert: { created_at?: string; created_by_person_id?: string | null; operating_currency: string; tenant_id: string }
+        Update: { created_at?: string; created_by_person_id?: string | null; operating_currency?: string; tenant_id?: string }
+        Relationships: []
+      }
+      ledger_accounts: {
+        Row: { account_code: string; account_id: string; account_name: string; account_type: string; created_at: string; created_by_person_id: string | null; currency_code: string; normal_balance: string; status: string; tenant_id: string }
+        Insert: { account_code: string; account_id?: string; account_name: string; account_type: string; created_at?: string; created_by_person_id?: string | null; currency_code: string; normal_balance: string; status?: string; tenant_id: string }
+        Update: { account_code?: string; account_id?: string; account_name?: string; account_type?: string; created_at?: string; created_by_person_id?: string | null; currency_code?: string; normal_balance?: string; status?: string; tenant_id?: string }
+        Relationships: []
+      }
+      ledger_transactions: {
+        Row: { booking_id: string | null; created_at: string; created_by_person_id: string; description: string; effective_at: string; external_key: string; request_fingerprint: string; tenant_id: string; transaction_id: string }
+        Insert: { booking_id?: string | null; created_at?: string; created_by_person_id: string; description: string; effective_at: string; external_key: string; request_fingerprint: string; tenant_id: string; transaction_id?: string }
+        Update: { booking_id?: string | null; created_at?: string; created_by_person_id?: string; description?: string; effective_at?: string; external_key?: string; request_fingerprint?: string; tenant_id?: string; transaction_id?: string }
+        Relationships: []
+      }
+      ledger_entries: {
+        Row: { account_id: string; created_at: string; credit_amount_minor: number; debit_amount_minor: number; entry_id: string; entry_sequence: number; memo: string | null; tenant_id: string; transaction_id: string }
+        Insert: { account_id: string; created_at?: string; credit_amount_minor?: number; debit_amount_minor?: number; entry_id?: string; entry_sequence: number; memo?: string | null; tenant_id: string; transaction_id: string }
+        Update: { account_id?: string; created_at?: string; credit_amount_minor?: number; debit_amount_minor?: number; entry_id?: string; entry_sequence?: number; memo?: string | null; tenant_id?: string; transaction_id?: string }
+        Relationships: []
+      }
       driver_evidence_requirements: {
         Row: {
           created_at: string
@@ -1897,6 +1927,7 @@ export type Database = {
         Args: { target_tenant_id: string }
         Returns: boolean
       }
+      can_manage_ledger: { Args: { target_tenant_id: string }; Returns: boolean }
       can_manage_driver_management: {
         Args: { target_tenant_id: string }
         Returns: boolean
@@ -2085,6 +2116,22 @@ export type Database = {
         Args: { reason_value: string; target_rating_id: string; target_status: string }
         Returns: boolean
       }
+      initialize_tenant_ledger: {
+        Args: { target_currency_code?: string; target_tenant_id: string }
+        Returns: boolean
+      }
+      post_tenant_ledger_transaction: {
+        Args: {
+          description_value: string
+          effective_at_value: string
+          entries_value: Json
+          external_key_value: string
+          target_booking_id?: string
+          target_tenant_id: string
+        }
+        Returns: string
+      }
+      tenant_ledger_summary: { Args: { target_tenant_id: string }; Returns: Json }
       submit_my_driver_trip_rating: {
         Args: {
           comment_value?: string

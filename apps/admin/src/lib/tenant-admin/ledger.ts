@@ -1,0 +1,15 @@
+export function parseMoneyToMinorUnits(value: string, fractionDigits: number) {
+  const normalized = value.trim();
+  if (!/^\d+(\.\d+)?$/.test(normalized)) throw new Error("Enter a positive money amount.");
+  const [whole = "", fraction = ""] = normalized.split(".");
+  if (fraction.length > fractionDigits) throw new Error(`Use no more than ${fractionDigits} decimal places.`);
+  const minor = BigInt(whole) * 10n ** BigInt(fractionDigits) + BigInt(fraction.padEnd(fractionDigits, "0") || "0");
+  if (minor <= 0n || minor > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("Enter a supported positive money amount.");
+  return Number(minor);
+}
+
+export function formatMinorUnits(value: number, currency: string, fractionDigits: number) {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency", currency, minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits,
+  }).format(value / 10 ** fractionDigits);
+}

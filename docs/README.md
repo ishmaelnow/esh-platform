@@ -14,6 +14,8 @@ This directory contains project documentation that should evolve with the codeba
 - [Realtime Driver Location](./architecture/realtime-driver-location.md)
 - [Live Trip Maps, Routing, and ETA](./architecture/live-trip-maps-routing-eta.md)
 - [Trip Reputation](./architecture/trip-reputation.md)
+- [Ledger Foundation V1](./architecture/ledger-foundation.md)
+- [Ledger Foundation Manual Test](./operations/ledger-foundation-manual-test.md)
 - `architecture/` describes system structure, boundaries, and platform principles.
 - `adr/` records architectural decisions and their tradeoffs.
 - `development/` documents local development workflows and engineering standards.
