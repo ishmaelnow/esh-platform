@@ -1,11 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
-import { geocodePermanentAddress } from "@esh-platform/maps";
+import {
+  geocodePermanentAddress,
+  retrieveAddressSuggestion,
+  suggestRegionalAddresses,
+  type AddressSuggestion,
+} from "@esh-platform/maps";
 import { LiveTripMap } from "@esh-platform/maps/client";
 import {
   bookingStatusLabel,
@@ -124,11 +129,68 @@ export default function RiderHome() {
   const [scheduling, setScheduling] = useState<RiderScheduling | null>(null);
   const [tripLocations, setTripLocations] = useState<RiderTripLocation[]>([]);
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled">("now");
+  const [serviceAreaId, setServiceAreaId] = useState("");
+  const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
+  const [pickupQuery, setPickupQuery] = useState("");
+  const [destinationQuery, setDestinationQuery] = useState("");
+  const [pickupSuggestions, setPickupSuggestions] = useState<AddressSuggestion[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<AddressSuggestion[]>([]);
+  const [pickupSelection, setPickupSelection] = useState<AddressSuggestion | null>(null);
+  const [destinationSelection, setDestinationSelection] = useState<AddressSuggestion | null>(null);
+  const [pickupSearchSession, setPickupSearchSession] = useState("");
+  const [destinationSearchSession, setDestinationSearchSession] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const serviceAreaContextRequest = useRef(0);
+
+  useEffect(() => {
+    if (!mapboxToken || !serviceAreaContext || !pickupSearchSession || pickupSelection) {
+      setPickupSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      void suggestRegionalAddresses({
+        accessToken: mapboxToken,
+        context: serviceAreaContext,
+        query: pickupQuery,
+        radiusKm: serviceAreaContext.radiusKm,
+        sessionToken: pickupSearchSession,
+        types: "address",
+        signal: controller.signal,
+      }).then(setPickupSuggestions).catch((value: unknown) => {
+        if (!controller.signal.aborted)
+          setError(value instanceof Error ? value.message : "Pickup suggestions are unavailable.");
+      });
+    }, 350);
+    return () => { window.clearTimeout(timeout); controller.abort(); };
+  }, [mapboxToken, pickupQuery, pickupSearchSession, pickupSelection, serviceAreaContext]);
+
+  useEffect(() => {
+    if (!mapboxToken || !serviceAreaContext || !destinationSearchSession || destinationSelection) {
+      setDestinationSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      void suggestRegionalAddresses({
+        accessToken: mapboxToken,
+        context: serviceAreaContext,
+        query: destinationQuery,
+        radiusKm: 800,
+        sessionToken: destinationSearchSession,
+        types: "address,poi",
+        signal: controller.signal,
+      }).then(setDestinationSuggestions).catch((value: unknown) => {
+        if (!controller.signal.aborted)
+          setError(value instanceof Error ? value.message : "Destination suggestions are unavailable.");
+      });
+    }, 350);
+    return () => { window.clearTimeout(timeout); controller.abort(); };
+  }, [destinationQuery, destinationSearchSession, destinationSelection, mapboxToken, serviceAreaContext]);
 
   const loadPortal = useCallback(async () => {
     if (!supabase || !session || !tenantSlug) return;
@@ -272,6 +334,58 @@ export default function RiderHome() {
     }
   }
 
+  async function chooseServiceArea(nextServiceAreaId: string) {
+    const requestId = serviceAreaContextRequest.current + 1;
+    serviceAreaContextRequest.current = requestId;
+    setServiceAreaId(nextServiceAreaId);
+    setServiceAreaContext(null);
+    setPickupSelection(null);
+    setDestinationSelection(null);
+    setPickupQuery("");
+    setDestinationQuery("");
+    setPickupSuggestions([]);
+    setDestinationSuggestions([]);
+    setPickupSearchSession(crypto.randomUUID());
+    setDestinationSearchSession(crypto.randomUUID());
+    if (!supabase || !nextServiceAreaId) return;
+    const { data, error: contextError } = await supabase.rpc("my_rider_service_area_context", {
+      target_tenant_slug: tenantSlug,
+      target_service_area_id: nextServiceAreaId,
+    });
+    if (requestId !== serviceAreaContextRequest.current) return;
+    if (contextError) {
+      setError(contextError.message);
+      return;
+    }
+    setServiceAreaContext(data as ServiceAreaContext);
+  }
+
+  async function chooseAddressSuggestion(
+    kind: "pickup" | "destination",
+    suggestion: AddressSuggestion,
+  ) {
+    if (!mapboxToken) return;
+    const sessionToken = kind === "pickup" ? pickupSearchSession : destinationSearchSession;
+    try {
+      const selected = await retrieveAddressSuggestion({
+        accessToken: mapboxToken,
+        mapboxId: suggestion.mapboxId,
+        sessionToken,
+      });
+      if (kind === "pickup") {
+        setPickupQuery(selected.label);
+        setPickupSelection(selected);
+        setPickupSuggestions([]);
+      } else {
+        setDestinationQuery(selected.label);
+        setDestinationSelection(selected);
+        setDestinationSuggestions([]);
+      }
+    } catch (value) {
+      setError(value instanceof Error ? value.message : "The selected address is unavailable.");
+    }
+  }
+
   async function createBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase) return;
@@ -281,35 +395,36 @@ export default function RiderHome() {
     setError("");
     setMessage("");
     try {
+      if (!serviceAreaId || !serviceAreaContext)
+        throw new Error("Select a service area before choosing addresses.");
+      if (!pickupSelection || pickupSelection.label !== pickupQuery)
+        throw new Error("Choose the pickup address from the suggestions.");
+      if (!destinationSelection || destinationSelection.label !== destinationQuery)
+        throw new Error("Choose the destination from the suggestions.");
       const common = {
         target_tenant_slug: tenantSlug,
-        target_service_area_id: formValue(form, "serviceAreaId"),
-        pickup_address_value: formValue(form, "pickupAddress"),
-        destination_address_value: formValue(form, "destinationAddress"),
+        target_service_area_id: serviceAreaId,
+        pickup_address_value: pickupSelection.label,
+        destination_address_value: destinationSelection.label,
         booking_notes_value: formValue(form, "bookingNotes"),
       };
       if (!mapboxToken) throw new Error("Trip mapping is temporarily unavailable. Please try again later.");
       let geocodedCoordinates:
-        | { pickup: { latitude: number; longitude: number }; destination: { latitude: number; longitude: number } }
+        | {
+            pickup: { latitude: number; longitude: number; formattedAddress: string };
+            destination: { latitude: number; longitude: number; formattedAddress: string };
+          }
         | null = null;
       {
-        const { data: areaContextData, error: areaContextError } = await supabase.rpc(
-          "my_rider_service_area_context",
-          {
-            target_tenant_slug: tenantSlug,
-            target_service_area_id: formValue(form, "serviceAreaId"),
-          },
-        );
-        if (areaContextError) throw areaContextError;
-        const areaContext = areaContextData as ServiceAreaContext;
+        const areaContext = serviceAreaContext;
         const geocodingContext = {
           latitude: areaContext.latitude,
           longitude: areaContext.longitude,
         };
-        let pickup: { latitude: number; longitude: number };
-        let destination: { latitude: number; longitude: number };
+        let pickup: { latitude: number; longitude: number; formattedAddress: string };
+        let destination: { latitude: number; longitude: number; formattedAddress: string };
         try {
-          pickup = await geocodePermanentAddress(formValue(form, "pickupAddress"), mapboxToken, {
+          pickup = await geocodePermanentAddress(pickupSelection.label, mapboxToken, {
             ...geocodingContext,
             maxDistanceKm: areaContext.radiusKm,
             requireVerifiedAddress: true,
@@ -319,7 +434,7 @@ export default function RiderHome() {
         }
         try {
           destination = await geocodePermanentAddress(
-            formValue(form, "destinationAddress"),
+            destinationSelection.label,
             mapboxToken,
             geocodingContext,
           );
@@ -331,6 +446,8 @@ export default function RiderHome() {
       if (!geocodedCoordinates) throw new Error("Verified trip coordinates are required.");
       const coordinateArguments = {
         ...common,
+        pickup_address_value: geocodedCoordinates.pickup.formattedAddress,
+        destination_address_value: geocodedCoordinates.destination.formattedAddress,
         pickup_latitude_value: geocodedCoordinates.pickup.latitude,
         pickup_longitude_value: geocodedCoordinates.pickup.longitude,
         destination_latitude_value: geocodedCoordinates.destination.latitude,
@@ -349,6 +466,14 @@ export default function RiderHome() {
       const bookingError = result.error;
       if (bookingError) throw bookingError;
       formElement.reset();
+      setServiceAreaId("");
+      setServiceAreaContext(null);
+      setPickupQuery("");
+      setDestinationQuery("");
+      setPickupSelection(null);
+      setDestinationSelection(null);
+      setPickupSuggestions([]);
+      setDestinationSuggestions([]);
       await loadPortal();
       setMessage(
         bookingTiming === "scheduled"
@@ -564,7 +689,12 @@ export default function RiderHome() {
               ) : null}
               <label className="wide">
                 Service area
-                <select name="serviceAreaId" required defaultValue="">
+                <select
+                  name="serviceAreaId"
+                  required
+                  value={serviceAreaId}
+                  onChange={(event) => void chooseServiceArea(event.target.value)}
+                >
                   <option value="" disabled>
                     Select the area that covers your trip
                   </option>
@@ -576,23 +706,72 @@ export default function RiderHome() {
                   ))}
                 </select>
               </label>
-              <label className="wide">
-                Pickup address
+              <div className="wide address-field">
+                <label htmlFor="rider-pickup-address">Pickup address</label>
                 <input
+                  id="rider-pickup-address"
                   name="pickupAddress"
                   required
-                  autoComplete="street-address"
+                  autoComplete="off"
+                  disabled={!serviceAreaContext}
+                  value={pickupQuery}
+                  onChange={(event) => {
+                    setPickupQuery(event.target.value);
+                    if (pickupSelection) setPickupSearchSession(crypto.randomUUID());
+                    setPickupSelection(null);
+                    setPickupSearchSession((current) => current || crypto.randomUUID());
+                  }}
                   placeholder="Example: 1200 Main St, Dallas, TX 75202"
                 />
-              </label>
-              <label className="wide">
-                Destination address
+                {pickupSelection ? <span className="address-selected">Verified address selected</span> : null}
+                {pickupSuggestions.length > 0 ? (
+                  <div className="address-suggestions" role="listbox" aria-label="Pickup address suggestions">
+                    {pickupSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.mapboxId}
+                        type="button"
+                        role="option"
+                        onClick={() => void chooseAddressSuggestion("pickup", suggestion)}
+                      >
+                        {suggestion.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <div className="wide address-field">
+                <label htmlFor="rider-destination-address">Destination address</label>
                 <input
+                  id="rider-destination-address"
                   name="destinationAddress"
                   required
+                  autoComplete="off"
+                  disabled={!serviceAreaContext}
+                  value={destinationQuery}
+                  onChange={(event) => {
+                    setDestinationQuery(event.target.value);
+                    if (destinationSelection) setDestinationSearchSession(crypto.randomUUID());
+                    setDestinationSelection(null);
+                    setDestinationSearchSession((current) => current || crypto.randomUUID());
+                  }}
                   placeholder="Example: DFW Airport, Terminal A"
                 />
-              </label>
+                {destinationSelection ? <span className="address-selected">Verified address selected</span> : null}
+                {destinationSuggestions.length > 0 ? (
+                  <div className="address-suggestions" role="listbox" aria-label="Destination address suggestions">
+                    {destinationSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.mapboxId}
+                        type="button"
+                        role="option"
+                        onClick={() => void chooseAddressSuggestion("destination", suggestion)}
+                      >
+                        {suggestion.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <label className="wide">
                 Trip notes
                 <textarea

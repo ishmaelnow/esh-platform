@@ -15,8 +15,9 @@ Deploy and manually verify Live Trip Maps, Routing, and ETA across Admin, Driver
 - Live Trip Maps commit `bba70b8`, regional geocoding commit `7b3dcd9`, pre-booking validation commit
   `a3f9ccb`, and migrations through `20260809000200_rider_geocoding_context.sql` are pushed and
   deployed. `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is required in all three Vercel projects.
-- Atomic Rider booking/geocoding is implemented locally and requires migration
-  `20260810000100_atomic_rider_geocoded_booking.sql` plus a Rider deployment.
+- Atomic Rider booking/geocoding commit `7ed2442` is pushed and requires migration
+  `20260810000100_atomic_rider_geocoded_booking.sql` plus a Rider deployment. A current dry run
+  lists only that migration.
 - Automatic Driver Matching commit `72c3f93` is deployed; production manual testing passed.
 - Realtime Driver Location commit `7121a36` and migration
   `20260801001300_realtime_driver_location.sql` are deployed to production.
@@ -61,9 +62,10 @@ this booking as though its route were valid.
 After deploying the regional geocoding correction, a new Aug 10 booking from the same misspelled
 `6434 GARMIN ST PHILADELPHIA` pickup to `6800 ELMWOOD AVE` was created and accepted without a map.
 This exposed a second failure: the Rider workflow saved the booking after coordinate persistence was
-rejected. Local validation now requires a high-confidence street-address pickup inside the selected
-service area before creation, requires a regionally valid destination, reports actionable errors,
-and automatically cancels a booking if the final coordinate write unexpectedly fails.
+rejected. Pre-booking validation initially required an overly strict street-address confidence and
+then rejected the ordinary `chesnut` spelling error. The local correction now accepts medium or
+better regional address matches and stores Mapbox's normalized address, while still rejecting low-
+confidence and out-of-area results.
 
 Production then accepted a 1:10 AM Philadelphia booking from `PHL AIRPORT` to
 `DFW Airport Terminal A` without a map. This proved that compensating cancellation is not a safe
@@ -117,8 +119,9 @@ tests include the low-confidence `GARMIN` case and pass 6/6; maps lint/typecheck
 production builds pass, but production proved its compensating-cancellation design was insufficient.
 
 The atomic persistence correction adds `20260810000100_atomic_rider_geocoded_booking.sql`. Mapping
-tests pass 6/6, the Rider production build and Supabase typecheck pass, full repository lint passes,
-and diff checks pass. The required migration dry run lists only
+tests pass 9/9, including regional Search Box suggest/retrieve sessions and normalization of
+`3141 chesnut street philadelphia`; maps and Rider lint/typechecks plus the Rider production build
+pass. The required migration dry run lists only
 `20260810000100_atomic_rider_geocoded_booking.sql`.
 
 Production Rider booking creation exposed PostgreSQL `42703` after Realtime Driver Location deploy.
@@ -150,10 +153,11 @@ session-restores the active Admin section. This stabilization is implemented loc
 
 ## Exact next action
 
-Commit/push the atomic correction, apply `20260810000100_atomic_rider_geocoded_booking.sql`, deploy
-Rider, cancel the active 1:10 AM mapless test booking, and verify invalid coordinates create no
-booking, offer, audit, or notification. Create a valid booking afterward and restart the shared
-Rider/Driver map test.
+Commit/push the regional autocomplete and spelling-normalization correction, apply
+`20260810000100_atomic_rider_geocoded_booking.sql`, and deploy Rider. Cancel the active 1:10 AM
+mapless test booking; confirm regionally relevant suggestions appear, selection is required, and
+`chesnut` is normalized to `Chestnut`, while invalid coordinates create no booking, offer, audit, or
+notification. Create a valid booking afterward and restart the shared Rider/Driver map test.
 
 ## Required reading for recovery
 

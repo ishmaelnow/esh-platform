@@ -4,6 +4,8 @@ import {
   formatRouteDistance,
   formatRouteDuration,
   geocodePermanentAddress,
+  retrieveAddressSuggestion,
+  suggestRegionalAddresses,
 } from "./index";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -49,7 +51,11 @@ describe("trip route formatting", () => {
         latitude: 39.9526,
         longitude: -75.1652,
       }),
-    ).resolves.toEqual({ latitude: 39.8744, longitude: -75.2424 });
+    ).resolves.toEqual({
+      latitude: 39.8744,
+      longitude: -75.2424,
+      formattedAddress: "PHL AIRPORT",
+    });
   });
   it("rejects an unverified pickup even when it is geographically nearby", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
@@ -67,6 +73,30 @@ describe("trip route formatting", () => {
       }),
     ).rejects.toThrow("complete, verified street address");
   });
+  it("accepts and normalizes a regional medium-confidence spelling correction", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
+      features: [{
+        geometry: { coordinates: [-75.189, 39.953] },
+        properties: {
+          feature_type: "address",
+          full_address: "3141 Chestnut Street, Philadelphia, Pennsylvania 19104, United States",
+          match_code: { confidence: "medium" },
+        },
+      }],
+    })))));
+    await expect(
+      geocodePermanentAddress("3141 chesnut street philadelphia", "public-token", {
+        latitude: 39.9526,
+        longitude: -75.1652,
+        maxDistanceKm: 50,
+        requireVerifiedAddress: true,
+      }),
+    ).resolves.toEqual({
+      latitude: 39.953,
+      longitude: -75.189,
+      formattedAddress: "3141 Chestnut Street, Philadelphia, Pennsylvania 19104, United States",
+    });
+  });
   it("rejects results outside the regional trip boundary", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
       features: [{ geometry: { coordinates: [-118.2437, 34.0522] } }],
@@ -77,5 +107,55 @@ describe("trip route formatting", () => {
         longitude: -75.1652,
       }),
     ).rejects.toThrow("could not be verified near the selected service area");
+  });
+  it("requests regional autocomplete suggestions with one search session", async () => {
+    const fetchMock = vi.fn((input: URL | RequestInfo) => {
+      const url = input instanceof URL
+        ? input
+        : new URL(typeof input === "string" ? input : input.url);
+      expect(url.pathname).toBe("/search/searchbox/v1/suggest");
+      expect(url.searchParams.get("session_token")).toBe("session-1");
+      expect(url.searchParams.get("proximity")).toBe("-75.1652,39.9526");
+      expect(url.searchParams.get("types")).toBe("address");
+      expect(url.searchParams.get("bbox")).toBeTruthy();
+      return Promise.resolve(new Response(JSON.stringify({ suggestions: [{
+        mapbox_id: "address.3141",
+        name: "3141 Chestnut Street",
+        place_formatted: "Philadelphia, Pennsylvania 19104, United States",
+      }] })));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(suggestRegionalAddresses({
+      accessToken: "public-token",
+      context: { latitude: 39.9526, longitude: -75.1652 },
+      query: "3141 chesnut",
+      radiusKm: 50,
+      sessionToken: "session-1",
+      types: "address",
+    })).resolves.toEqual([{
+      mapboxId: "address.3141",
+      label: "3141 Chestnut Street, Philadelphia, Pennsylvania 19104, United States",
+    }]);
+  });
+  it("retrieves the selected autocomplete result with the same session", async () => {
+    const fetchMock = vi.fn((input: URL | RequestInfo) => {
+      const url = input instanceof URL
+        ? input
+        : new URL(typeof input === "string" ? input : input.url);
+      expect(url.pathname).toBe("/search/searchbox/v1/retrieve/address.3141");
+      expect(url.searchParams.get("session_token")).toBe("session-1");
+      return Promise.resolve(new Response(JSON.stringify({ features: [{ properties: {
+        full_address: "3141 Chestnut Street, Philadelphia, Pennsylvania 19104, United States",
+      } }] })));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(retrieveAddressSuggestion({
+      accessToken: "public-token",
+      mapboxId: "address.3141",
+      sessionToken: "session-1",
+    })).resolves.toEqual({
+      mapboxId: "address.3141",
+      label: "3141 Chestnut Street, Philadelphia, Pennsylvania 19104, United States",
+    });
   });
 });

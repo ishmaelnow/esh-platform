@@ -11,12 +11,21 @@ database reject a destination more than 800 km from that center. This regional b
 ambiguous local landmark or airport abbreviation from silently producing a cross-country route;
 long-distance transportation remains outside this product slice.
 
-Rider pickup input must resolve as a high-confidence street address inside the selected service
-area before a booking is created. Destination input must resolve within the supported regional
-boundary. One security-definer RPC creates the booking and persists both coordinates in a single
-database transaction. Any validation or persistence failure rolls back the booking, automatic
-offers, audit events, and notification outbox work together, so a mapless trip cannot enter dispatch.
-The older Rider creation RPCs are no longer executable by browser users.
+Rider pickup input must resolve as a credible street address inside the selected service area before
+a booking is created. Exact, high-, and medium-confidence regional matches are accepted so Mapbox
+can correct ordinary spelling mistakes; the normalized Mapbox address is stored and displayed
+instead of preserving the misspelled input. Destination input must resolve within the supported
+regional boundary. One security-definer RPC creates the booking and persists both coordinates in a
+single database transaction. Any validation or persistence failure rolls back the booking,
+automatic offers, audit events, and notification outbox work together, so a mapless trip cannot
+enter dispatch. The older Rider creation RPCs are no longer executable by browser users.
+
+The Rider form uses Mapbox Search Box suggestions after three characters with a 350 ms debounce and
+one session token per field selection. Pickup suggestions are bounded to the selected service area;
+destination suggestions include addresses and POIs within the supported 800 km region. Editing a
+selected value invalidates it, and submission requires explicit suggestion selection. Search Box
+data is used only for the interactive selection; the normalized label is re-resolved through
+permanent Geocoding v6 before its coordinates are stored.
 
 Admin, Driver, and Rider render the same embedded street map and traffic-aware road route. Before
 assignment the route connects pickup to destination. During an active assignment it connects the

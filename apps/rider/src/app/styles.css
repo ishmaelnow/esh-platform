@@ -131,6 +131,42 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(22, 113, 74, 0.13);
   outline: none;
 }
+.address-field {
+  display: grid;
+  gap: 8px;
+  position: relative;
+}
+.address-selected {
+  color: #16714a;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.address-suggestions {
+  background: #fff;
+  border: 1px solid #bdccc3;
+  border-radius: 11px;
+  box-shadow: 0 12px 28px rgba(23, 55, 40, 0.14);
+  display: grid;
+  overflow: hidden;
+  position: absolute;
+  top: 76px;
+  width: 100%;
+  z-index: 5;
+}
+.address-suggestions button {
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #e5ebe7;
+  color: #13251d;
+  padding: 12px 14px;
+  text-align: left;
+}
+.address-suggestions button:last-child { border-bottom: 0; }
+.address-suggestions button:hover,
+.address-suggestions button:focus {
+  background: #eff7f2;
+  outline: none;
+}
 
 .auth-card {
   display: grid;
