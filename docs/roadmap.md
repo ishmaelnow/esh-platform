@@ -113,11 +113,12 @@ deferred from this milestone and were delivered under the later milestones below
      Driver markers, distance/ETA, privacy enforcement, and graceful mapping-provider fallback.
    - Remaining: recurring bookings, pricing, payments, and SMS/push delivery.
 6. **Reputation**
-   - Current delivery in progress: tenant-isolated post-trip Rider and Driver ratings, product-
+   - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,
      audited Admin moderation, and portal experiences for both sides.
-   - Remaining: production verification, notifications, appeals, aggregate public profiles, and
-     any deliberate rating-based matching policy.
+   - Production manual verification passed across Rider and Driver submission and disclosure.
+   - Remaining: notifications, appeals, aggregate public profiles, and any deliberate rating-based
+     matching policy.
 7. **Money and Ledger**
    - Currency types, immutable ledger, payments, wallet, and reconciliation.
 8. **Pricing and Billing**

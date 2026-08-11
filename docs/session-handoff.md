@@ -4,7 +4,7 @@ Last updated: 2026-08-10
 
 ## Current objective
 
-Complete and verify Reputation V1 after successful Live Trip Maps production verification.
+Close Reputation V1 after successful production verification and select the next roadmap feature.
 
 ## Repository and deployment state
 
@@ -23,8 +23,8 @@ Complete and verify Reputation V1 after successful Live Trip Maps production ver
 - Trigger hotfix commit `6da5ba0` and migration
   `20260802000100_fix_location_stop_triggers.sql` are deployed; Rider booking creation retest passed.
 - Confirm migration state with a dry run rather than assuming it from this handoff.
-- Reputation V1 is implemented locally in migration `20260810000200_trip_reputation.sql`; it is not
-  yet committed, pushed, migrated, or production tested.
+- Reputation V1 commit `e87655e`, Rider layout fix `75505f7`, and migration
+  `20260810000200_trip_reputation.sql` are pushed and deployed.
 
 ## Delivered capabilities relevant to the test
 
@@ -51,9 +51,10 @@ Regional autocomplete, required suggestion selection, permanent re-geocoding, at
 coordinate persistence, and rejection of invalid/mapless booking creation are deployed. Mapping
 tests pass 9/9; maps and Rider lint/typechecks plus the Rider production build passed before release.
 
-Reputation V1 now has role-derived Rider and Driver submission RPCs, a 30-day submission window,
+Reputation V1 has role-derived Rider and Driver submission RPCs, a 30-day submission window,
 seven-day/both-submitted disclosure, tenant RLS, audited Admin moderation, and Rider, Driver, and
-Admin UI. Rider, Driver, and Admin typechecks pass. Migration dry-run and broader validation remain.
+Admin UI. Production manual testing passed, including the corrected Rider layout and Driver rating
+submission experience.
 
 ## Temporary production settings
 
@@ -85,10 +86,7 @@ one-time links.
 
 ## Open issues
 
-Reputation V1 is deployed and manual testing has started. The Rider rating section loaded, but a
-desktop grid defect placed it beneath the sticky Request Trip card. A local two-file layout fix pins
-Reputation to the right column and restores normal single-column flow on mobile; it is not yet
-committed or deployed.
+No open functional issue remains from Reputation V1 production testing.
 
 ## Cleanup still required after testing
 
@@ -100,8 +98,7 @@ committed or deployed.
 
 ## Exact next action
 
-Commit and deploy the Rider reputation layout fix, hard-refresh the Rider portal, and resume the
-manual test by submitting the Rider rating for the completed Philadelphia trip.
+Confirm production-test cleanup, then select the next roadmap objective.
 
 ## Required reading for recovery
 
