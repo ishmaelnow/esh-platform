@@ -88,11 +88,11 @@ one-time links.
 
 ## Open issues
 
-Ledger production testing found the Admin summary blocked by an incorrect currency join in the
-deployed function (`USING (currency_code)` against settings column `operating_currency`). Forward-
-only hotfix migration `20260811000200_fix_ledger_currency_summary.sql` corrects the join without
-changing ledger data and is not yet committed or applied. The original required dry run listed only
-`20260811000100_ledger_foundation_v1.sql`. Admin typecheck, lint, 50/50 tests, production build,
+Ledger currency-summary hotfix `2eea753` is deployed and the initialized ledger now loads. Production
+testing then exposed a harmless `-$0.00` signed-zero display and insufficient on-screen journal
+guidance. A local Admin UI fix normalizes zero, explains the test posting, and warns if initialization
+returns fewer than five accounts; it is not yet committed or deployed. Admin typecheck, lint, 51/51
+tests, production build,
 Supabase package typecheck/test, and `git diff --check` pass. The existing Supabase Realtime dynamic
 dependency warning remains non-blocking in the Admin build.
 
@@ -106,8 +106,8 @@ dependency warning remains non-blocking in the Admin build.
 
 ## Exact next action
 
-Owner commits and applies the currency-summary hotfix, refreshes Admin Ledger, and resumes
-`docs/operations/ledger-foundation-manual-test.md`.
+Owner commits and deploys the Admin ledger display/guidance fix, confirms all five accounts appear,
+and resumes `docs/operations/ledger-foundation-manual-test.md` with the `10.00` balanced posting.
 
 ## Required reading for recovery
 

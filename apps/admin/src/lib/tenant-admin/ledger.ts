@@ -9,7 +9,8 @@ export function parseMoneyToMinorUnits(value: string, fractionDigits: number) {
 }
 
 export function formatMinorUnits(value: number, currency: string, fractionDigits: number) {
+  const normalizedValue = Object.is(value, -0) ? 0 : value;
   return new Intl.NumberFormat(undefined, {
     style: "currency", currency, minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits,
-  }).format(value / 10 ** fractionDigits);
+  }).format(normalizedValue / 10 ** fractionDigits);
 }
