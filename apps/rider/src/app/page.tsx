@@ -86,6 +86,11 @@ type RiderTripLocation = {
   fresh: boolean;
 };
 type ServiceAreaContext = { latitude: number; longitude: number; radiusKm: number };
+type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
+type ReputationTrip = {
+  bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
+  subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null;
+};
 
 function formatDate(value: string, timeZone?: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -128,6 +133,7 @@ export default function RiderHome() {
     useState<RiderNotificationPreferences | null>(null);
   const [scheduling, setScheduling] = useState<RiderScheduling | null>(null);
   const [tripLocations, setTripLocations] = useState<RiderTripLocation[]>([]);
+  const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled">("now");
   const [serviceAreaId, setServiceAreaId] = useState("");
   const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
@@ -201,17 +207,20 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const [preferenceResult, schedulingResult, locationResult, coordinateResult] = await Promise.all([
+      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
         supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude").eq("tenant_id", nextPortal.tenant.tenantId),
+        supabase.rpc("my_rider_reputation", { target_tenant_slug: tenantSlug }),
       ]);
       const { data: preferenceData, error: preferenceError } = preferenceResult;
       if (preferenceError) throw preferenceError;
       if (schedulingResult.error) throw schedulingResult.error;
       if (locationResult.error) throw locationResult.error;
       if (coordinateResult.error) throw coordinateResult.error;
+      if (reputationResult.error) throw reputationResult.error;
+      setReputationTrips((reputationResult.data ?? []) as unknown as ReputationTrip[]);
       setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
       const nextScheduling = schedulingResult.data as RiderScheduling;
@@ -233,6 +242,7 @@ export default function RiderHome() {
     } else {
       setNotificationPreferences(null);
       setTripLocations([]);
+      setReputationTrips([]);
     }
   }, [session, supabase, tenantSlug]);
 
@@ -332,6 +342,23 @@ export default function RiderHome() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function submitRating(event: FormEvent<HTMLFormElement>, bookingId: string) {
+    event.preventDefault();
+    if (!supabase) return;
+    const form = new FormData(event.currentTarget);
+    setBusy(true); setError(""); setMessage("");
+    const score = (name: string) => Number(formValue(form, name));
+    const result = await supabase.rpc("submit_my_rider_trip_rating", {
+      target_booking_id: bookingId,
+      overall_rating_value: score("overall"), safety_rating_value: score("safety"),
+      communication_rating_value: score("communication"),
+      vehicle_cleanliness_rating_value: score("cleanliness"), comment_value: formValue(form, "comment"),
+    });
+    if (result.error) setError(riderErrorMessage(result.error));
+    else { setMessage("Your private trip rating was submitted."); await loadPortal(); }
+    setBusy(false);
   }
 
   async function chooseServiceArea(nextServiceAreaId: string) {
@@ -893,6 +920,27 @@ export default function RiderHome() {
                 </article>
               ))
             )}
+          </section>
+          <section className="history">
+            <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
+            <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
+            {reputationTrips.length === 0 ? <div className="card empty"><p>Completed trips eligible for rating will appear here.</p></div> : reputationTrips.map((trip) => (
+              <article className="card trip-card" key={`rating-${trip.bookingId}`}>
+                <h3>{trip.pickupAddress}</h3><p className="destination">to {trip.destinationAddress}</p>
+                <p className="area">Driver: {trip.subjectName} · completed {formatDate(trip.completedAt)}</p>
+                {trip.submittedRating ? <p><strong>Your rating:</strong> {trip.submittedRating.overall}/5</p> : null}
+                {trip.receivedRating ? <p><strong>Driver’s rating:</strong> {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</p> : null}
+                {trip.canSubmit ? (
+                  <form className="form-grid" onSubmit={(event) => void submitRating(event, trip.bookingId)}>
+                    {[["overall", "Overall"], ["safety", "Safety"], ["communication", "Communication"], ["cleanliness", "Vehicle cleanliness"]].map(([name, label]) => (
+                      <label key={name}>{label}<select name={name} defaultValue="5" required>{[5,4,3,2,1].map((value) => <option key={value} value={value}>{value} / 5</option>)}</select></label>
+                    ))}
+                    <label className="wide">Optional comment<textarea name="comment" maxLength={1000} rows={3} /></label>
+                    <button className="button primary" disabled={busy}>Submit private rating</button>
+                  </form>
+                ) : !trip.submittedRating ? <p className="area">The 30-day rating window has closed.</p> : null}
+              </article>
+            ))}
           </section>
         </div>
       )}

@@ -4,7 +4,7 @@ Last updated: 2026-08-10
 
 ## Current objective
 
-Complete production-test cleanup after successful Live Trip Maps, Routing, and ETA verification.
+Complete and verify Reputation V1 after successful Live Trip Maps production verification.
 
 ## Repository and deployment state
 
@@ -23,6 +23,8 @@ Complete production-test cleanup after successful Live Trip Maps, Routing, and E
 - Trigger hotfix commit `6da5ba0` and migration
   `20260802000100_fix_location_stop_triggers.sql` are deployed; Rider booking creation retest passed.
 - Confirm migration state with a dry run rather than assuming it from this handoff.
+- Reputation V1 is implemented locally in migration `20260810000200_trip_reputation.sql`; it is not
+  yet committed, pushed, migrated, or production tested.
 
 ## Delivered capabilities relevant to the test
 
@@ -48,6 +50,10 @@ saved-route persistence all passed.
 Regional autocomplete, required suggestion selection, permanent re-geocoding, atomic booking and
 coordinate persistence, and rejection of invalid/mapless booking creation are deployed. Mapping
 tests pass 9/9; maps and Rider lint/typechecks plus the Rider production build passed before release.
+
+Reputation V1 now has role-derived Rider and Driver submission RPCs, a 30-day submission window,
+seven-day/both-submitted disclosure, tenant RLS, audited Admin moderation, and Rider, Driver, and
+Admin UI. Rider, Driver, and Admin typechecks pass. Migration dry-run and broader validation remain.
 
 ## Temporary production settings
 
@@ -79,8 +85,8 @@ one-time links.
 
 ## Open issues
 
-No open functional issue remains from Live Trip Maps production testing. Production cleanup has not
-yet been explicitly confirmed.
+Reputation V1 has not yet been applied or manually tested. Confirm migration syntax and pending
+migration scope with the required Supabase dry run.
 
 ## Cleanup still required after testing
 
@@ -92,9 +98,8 @@ yet been explicitly confirmed.
 
 ## Exact next action
 
-Cancel or complete every unfinished production test booking, return the test Driver to Offline,
-confirm location sharing is stopped, and verify no test booking remains `requested`, `offered`,
-`accepted`, `arrived`, or `in_progress`. Then select the next roadmap objective.
+Run the Supabase migration dry run and repository validation. After owner deployment, complete one
+trip, submit a Rider and Driver rating, verify delayed disclosure, and exercise Admin hide/restore.
 
 ## Required reading for recovery
 
@@ -106,3 +111,4 @@ confirm location sharing is stopped, and verify no test booking remains `request
 - `docs/architecture/manual-dispatch-trip-core.md`
 - `docs/architecture/automatic-driver-matching.md`
 - `docs/architecture/realtime-driver-location.md`
+- `docs/architecture/trip-reputation.md`

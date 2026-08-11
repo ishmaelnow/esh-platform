@@ -488,6 +488,60 @@ export type Database = {
           },
         ]
       }
+      trip_ratings: {
+        Row: {
+          booking_id: string
+          comment: string | null
+          criteria: Json
+          moderated_at: string | null
+          moderated_by_person_id: string | null
+          moderation_reason: string | null
+          moderation_status: string
+          overall_rating: number
+          rating_id: string
+          reviewer_person_id: string
+          reviewer_type: string
+          subject_driver_profile_id: string | null
+          subject_rider_profile_id: string | null
+          submitted_at: string
+          tenant_id: string
+        }
+        Insert: {
+          booking_id: string
+          comment?: string | null
+          criteria: Json
+          moderated_at?: string | null
+          moderated_by_person_id?: string | null
+          moderation_reason?: string | null
+          moderation_status?: string
+          overall_rating: number
+          rating_id?: string
+          reviewer_person_id: string
+          reviewer_type: string
+          subject_driver_profile_id?: string | null
+          subject_rider_profile_id?: string | null
+          submitted_at?: string
+          tenant_id: string
+        }
+        Update: {
+          booking_id?: string
+          comment?: string | null
+          criteria?: Json
+          moderated_at?: string | null
+          moderated_by_person_id?: string | null
+          moderation_reason?: string | null
+          moderation_status?: string
+          overall_rating?: number
+          rating_id?: string
+          reviewer_person_id?: string
+          reviewer_type?: string
+          subject_driver_profile_id?: string | null
+          subject_rider_profile_id?: string | null
+          submitted_at?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       driver_evidence_requirements: {
         Row: {
           created_at: string
@@ -2018,9 +2072,40 @@ export type Database = {
       my_driver_availability: { Args: never; Returns: Json }
       my_driver_service_areas: { Args: never; Returns: Json }
       my_driver_location_sharing: { Args: never; Returns: Json }
+      my_driver_reputation: { Args: never; Returns: Json }
       my_rider_portal: {
         Args: { target_tenant_slug: string }
         Returns: Json
+      }
+      my_rider_reputation: {
+        Args: { target_tenant_slug: string }
+        Returns: Json
+      }
+      moderate_trip_rating: {
+        Args: { reason_value: string; target_rating_id: string; target_status: string }
+        Returns: boolean
+      }
+      submit_my_driver_trip_rating: {
+        Args: {
+          comment_value?: string
+          communication_rating_value: number
+          overall_rating_value: number
+          readiness_rating_value: number
+          respect_rating_value: number
+          target_booking_id: string
+        }
+        Returns: string
+      }
+      submit_my_rider_trip_rating: {
+        Args: {
+          comment_value?: string
+          communication_rating_value: number
+          overall_rating_value: number
+          safety_rating_value: number
+          target_booking_id: string
+          vehicle_cleanliness_rating_value: number
+        }
+        Returns: string
       }
       my_rider_service_area_context: {
         Args: { target_tenant_slug: string; target_service_area_id: string }

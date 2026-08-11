@@ -45,6 +45,7 @@ type ViewKey =
   | "vehicles"
   | "serviceAreas"
   | "dispatch"
+  | "reputation"
   | "notifications"
   | "applications";
 
@@ -60,6 +61,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "vehicles", label: "Vehicles" },
   { key: "serviceAreas", label: "Service Areas" },
   { key: "dispatch", label: "Dispatch" },
+  { key: "reputation", label: "Reputation" },
   { key: "notifications", label: "Notifications" },
   { key: "applications", label: "Applications" },
 ];
@@ -474,6 +476,9 @@ function ResolvedWorkspace({
           session={session}
           summary={summary}
         />
+      ) : null}
+      {activeView === "reputation" ? (
+        <ReputationPanel canManageTenant={canManageTenant} onRefresh={onRefresh} summary={summary} />
       ) : null}
       {activeView === "applications" ? (
         <DriverApplicationsPanel
@@ -4109,6 +4114,32 @@ function InfoPanel({
       ) : null}
     </section>
   );
+}
+
+function ReputationPanel({ canManageTenant, onRefresh, summary }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const average = summary.tripRatings.length
+    ? (summary.tripRatings.reduce((sum, rating) => sum + rating.overall_rating, 0) / summary.tripRatings.length).toFixed(1)
+    : "—";
+  async function moderate(ratingId: string, status: "visible" | "hidden") {
+    const reason = status === "hidden" ? window.prompt("Why should this rating be hidden?") : "";
+    if (status === "hidden" && !reason?.trim()) return;
+    const result = await supabase.rpc("moderate_trip_rating", { target_rating_id: ratingId, target_status: status, reason_value: reason ?? "" });
+    setMessage(result.error ? result.error.message : `Rating ${status === "hidden" ? "hidden" : "restored"}.`);
+    if (!result.error) onRefresh();
+  }
+  return <section className="panel-stack">
+    <PanelHeader title="Reputation" description={`${summary.tripRatings.length} ratings · ${average} average`} />
+    {message ? <p className="feedback-message">{message}</p> : null}
+    {summary.tripRatings.length === 0 ? <EmptyState message="Submitted Rider and Driver ratings will appear here." /> : summary.tripRatings.map((rating) => {
+      const booking = summary.dispatchBookings.find((item) => item.booking_id === rating.booking_id);
+      return <article className="data-card" key={rating.rating_id}>
+        <div><strong>{rating.reviewer_type === "rider" ? "Rider rated Driver" : "Driver rated Rider"} · {rating.overall_rating}/5</strong><p>{booking ? `${booking.pickup_address} to ${booking.destination_address}` : `Booking ${rating.booking_id}`}</p>{rating.comment ? <p>{rating.comment}</p> : null}<small>{formatDate(rating.submitted_at)} · {rating.moderation_status}</small></div>
+        {canManageTenant ? <button className="secondary-button" type="button" onClick={() => void moderate(rating.rating_id, rating.moderation_status === "visible" ? "hidden" : "visible")}>{rating.moderation_status === "visible" ? "Hide" : "Restore"}</button> : null}
+      </article>;
+    })}
+  </section>;
 }
 
 function PanelHeader({ description, title }: { description?: string | undefined; title: string }) {

@@ -135,11 +135,14 @@ type DriverLocationSharing = {
   accuracyMeters: number | null;
   recordedAt: string | null;
 };
+type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
+type ReputationTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null };
 
 type DriverPortalTab =
   | "overview"
   | "dispatch"
   | "location"
+  | "reputation"
   | "service_areas"
   | "documents"
   | "vehicle";
@@ -185,6 +188,7 @@ export default function DriverHome() {
   const [dispatch, setDispatch] = useState<DriverDispatch>({ offers: [], trips: [] });
   const [dispatchBusy, setDispatchBusy] = useState(false);
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
+  const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
@@ -245,6 +249,8 @@ export default function DriverHome() {
       setDispatch(nextDispatch);
       knownDispatchOfferIds.current = new Set(nextDispatch.offers.map(({ offerId }) => offerId));
     }
+    const reputationResult = await supabase.rpc("my_driver_reputation");
+    setReputationTrips(reputationResult.error ? [] : (reputationResult.data as unknown as ReputationTrip[]));
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -298,6 +304,7 @@ export default function DriverHome() {
       setSummary(null);
       setServiceAreas([]);
       setDispatch({ offers: [], trips: [] });
+      setReputationTrips([]);
       setLocationSharing(null);
       return;
     }
@@ -859,6 +866,23 @@ export default function DriverHome() {
     setDispatchBusy(false);
   }
 
+  async function submitTripRating(event: FormEvent<HTMLFormElement>, bookingId: string) {
+    event.preventDefault();
+    if (!supabase) return;
+    const form = new FormData(event.currentTarget);
+    const score = (name: string) => Number(form.get(name));
+    const commentEntry = form.get("comment");
+    setDispatchBusy(true); setDispatchMessage("Submitting private rating…");
+    const result = await supabase.rpc("submit_my_driver_trip_rating", {
+      target_booking_id: bookingId, overall_rating_value: score("overall"),
+      communication_rating_value: score("communication"), readiness_rating_value: score("readiness"),
+      respect_rating_value: score("respect"), comment_value: typeof commentEntry === "string" ? commentEntry : "",
+    });
+    if (result.error) setDispatchMessage(result.error.message);
+    else { setDispatchMessage("Your private trip rating was submitted."); await activateAndLoad(); }
+    setDispatchBusy(false);
+  }
+
   async function advanceTrip(bookingId: string, action: "arrive" | "start" | "complete") {
     if (!supabase) return;
     setDispatchBusy(true);
@@ -940,6 +964,7 @@ export default function DriverHome() {
                       : "Dispatch",
                 },
                 { key: "location" as const, label: "Location" },
+                { key: "reputation" as const, label: "Reputation" },
                 { key: "service_areas" as const, label: "Service Areas" },
                 { key: "documents" as const, label: "Documents" },
                 { key: "vehicle" as const, label: "Vehicle Compliance" },
@@ -1298,6 +1323,26 @@ export default function DriverHome() {
                     Trip offers from your tenant dispatcher will appear here.
                   </p>
                 ) : null}
+                {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
+              </section>
+            ) : null}
+            {activeTab === "reputation" ? (
+              <section className="documents">
+                <div><p className="eyebrow">Reputation</p><h3>Post-trip ratings</h3><p className="document-help">Ratings stay private until both sides submit, or seven days pass.</p></div>
+                {reputationTrips.map((trip) => (
+                  <article className="document-card" key={trip.bookingId}>
+                    <div className="document-heading"><strong>{trip.subjectName}</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
+                    <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
+                    {trip.submittedRating ? <span>Your rating: {trip.submittedRating.overall}/5</span> : null}
+                    {trip.receivedRating ? <span>Rider rating: {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</span> : null}
+                    {trip.canSubmit ? <form className="upload-form" onSubmit={(event) => void submitTripRating(event, trip.bookingId)}>
+                      {[["overall", "Overall"], ["communication", "Communication"], ["readiness", "Readiness"], ["respect", "Respect"]].map(([name, label]) => <label key={name}>{label}<select name={name} defaultValue="5">{[5,4,3,2,1].map((value) => <option value={value} key={value}>{value} / 5</option>)}</select></label>)}
+                      <label>Optional comment<textarea name="comment" maxLength={1000} rows={3} /></label>
+                      <button disabled={dispatchBusy} type="submit">Submit private rating</button>
+                    </form> : !trip.submittedRating ? <span>The 30-day rating window has closed.</span> : null}
+                  </article>
+                ))}
+                {reputationTrips.length === 0 ? <p className="document-help">Completed Rider trips will appear here.</p> : null}
                 {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
               </section>
             ) : null}
