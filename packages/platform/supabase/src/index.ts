@@ -60,6 +60,7 @@ export type TenantSchedulingSettingsRow = Tables<"tenant_scheduling_settings">;
 export type TenantMatchingSettingsRow = Tables<"tenant_matching_settings">;
 export type TenantPricingSettingsRow = Tables<"tenant_pricing_settings">;
 export type TripPriceQuoteRow = Tables<"trip_price_quotes">;
+export type TenantDriverEarningsSettingsRow = Tables<"tenant_driver_earnings_settings">;
 export type VehicleEvidenceRow = Tables<"vehicle_evidence">;
 export type VehicleEvidenceRequirementRow = Tables<"vehicle_evidence_requirements">;
 export type TenantRow = Tables<"tenants">;

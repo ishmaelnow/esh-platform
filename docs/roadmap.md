@@ -120,16 +120,18 @@ deferred from this milestone and were delivered under the later milestones below
    - Remaining: notifications, appeals, aggregate public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**
-   - Current delivery in progress: fixed tenant operating currency, integer minor-unit semantics,
+   - Current delivery: fixed tenant operating currency, integer minor-unit semantics,
      immutable balanced double-entry postings, generic operating accounts, idempotency, tenant RLS,
      audit, and Admin balances/journal visibility.
-   - Remaining: production verification, payments, Rider/Driver wallets, reversals, payouts, and
-     reconciliation.
+   - Current delivery in progress: configurable Driver fare share, per-Driver payable accounts,
+     immutable completed-trip allocation, ledger-derived Driver wallet, and locked trip history.
+   - Remaining: production verification, payments, Rider wallet, collection settlement, reversals,
+     payouts, statements, and reconciliation.
 8. **Pricing and Billing**
-   - Current delivery in progress: tenant route-based trip rates, trusted pre-booking Rider quotes,
+   - Current delivery: tenant route-based trip rates, trusted pre-booking Rider quotes,
      15-minute fare locking, shared Rider/Driver/Admin display, pricing snapshots, audit, and
      completed-trip ledger posting.
-   - Remaining: production verification, actual-distance adjustments, taxes/tolls/discounts,
+   - Remaining: actual-distance adjustments, taxes/tolls/discounts,
      subscriptions, usage metering, and tenant billing.
 9. **Optimization**
    - Demand intelligence, performance, levels, loyalty, and incentives.

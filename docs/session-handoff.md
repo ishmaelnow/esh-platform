@@ -1,10 +1,10 @@
 # Session Handoff
 
-Last updated: 2026-08-10
+Last updated: 2026-08-12
 
 ## Current objective
 
-Complete Trip Pricing V1 implementation and validation on the deployed Ledger Foundation.
+Complete Driver Earnings and Wallet V1 on the deployed Trip Pricing and Ledger Foundation.
 
 ## Repository and deployment state
 
@@ -27,8 +27,10 @@ Complete Trip Pricing V1 implementation and validation on the deployed Ledger Fo
   `20260810000200_trip_reputation.sql` are pushed and deployed.
 - Ledger commits through `e54a1b3` and migrations through
   `20260811000200_fix_ledger_currency_summary.sql` are deployed.
-- Trip Pricing V1 is implemented locally in migration `20260811000300_trip_pricing_v1.sql`; it is
-  not committed, applied, or production tested.
+- Trip Pricing V1 and completed-fare ledger fixes are deployed through commit `eed38f6`; production
+  booking, lifecycle completion, and the $48.94 Rider fare display passed.
+- Driver Earnings and Wallet V1 is implemented locally in
+  `20260812000100_driver_earnings_wallet_v1.sql`; it is not committed or deployed.
 
 ## Delivered capabilities relevant to the test
 
@@ -90,18 +92,15 @@ one-time links.
 
 ## Open issues
 
-Ledger currency-summary and signed-zero fixes are deployed. Trip Pricing commit `6340255` and
-migration `20260811000300_trip_pricing_v1.sql` are deployed. Production quote creation passed, but
-booking confirmation hotfix `46e029a` is deployed and confirmation passed. Completing the priced
-trip then failed because the ledger balance constraint evaluated before both automated fare entries.
-Local forward-only migration `20260811000500_fix_completed_fare_ledger_posting.sql` explicitly
-defers the named constraint, inserts both sides, then validates immediately. The failed completion
-rolled back, so the trip remains in progress and no partial ledger transaction committed.
-Trip Pricing typechecks pass across
-Rider, Driver, Admin, Maps, and Supabase. Maps tests pass 10/10, Admin tests pass 52/52, Rider,
-Driver, and Admin lint pass, all three production builds pass, and `git diff --check` passes. The
-required dry run lists only `20260811000300_trip_pricing_v1.sql`. Existing Next/Supabase dynamic
-dependency and ESLint-plugin warnings remain non-blocking.
+Driver Earnings and Wallet V1 needs owner commit/deployment and production manual testing. The
+migration defaults tenants to an 80% Driver share, locks each
+completed trip split, creates a per-Driver payable account, and backfills existing completed priced
+trips with an immutable reclassification. Payment collection and bank payouts remain deferred, so
+the wallet correctly labels earnings pending and shows available/paid as zero. Supabase, Driver,
+and Admin typechecks pass; Driver and Admin lint pass; Admin tests pass 52/52; both production builds
+pass; `git diff --check` passes. The required Supabase dry-run lists only
+`20260812000100_driver_earnings_wallet_v1.sql`. Existing Next/Supabase dynamic dependency and
+ESLint-plugin warnings remain non-blocking.
 
 ## Cleanup still required after testing
 
@@ -113,8 +112,8 @@ dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner commits and applies the completed-fare ledger hotfix, then retries **Complete trip** on the
-same in-progress booking and verifies the balanced journal in Admin Ledger.
+Owner stages and commits the listed Driver wallet files, pushes `main`, applies the single verified
+migration, and runs `docs/operations/driver-earnings-wallet-manual-test.md` in production.
 
 ## Required reading for recovery
 
@@ -131,3 +130,5 @@ same in-progress booking and verifies the balanced journal in Admin Ledger.
 - `docs/operations/ledger-foundation-manual-test.md`
 - `docs/architecture/trip-pricing.md`
 - `docs/operations/trip-pricing-manual-test.md`
+- `docs/architecture/driver-earnings-wallet.md`
+- `docs/operations/driver-earnings-wallet-manual-test.md`

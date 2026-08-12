@@ -243,13 +243,16 @@ export type Database = {
           destination_address: string
           destination_latitude: number | null
           destination_longitude: number | null
+          driver_earnings_minor: number | null
           estimated_fare_minor: number | null
           fare_currency_code: string | null
           final_fare_minor: number | null
+          earnings_share_basis_points: number | null
           dispatch_ready_at: string | null
           geocoded_at: string | null
           geocoding_provider: string | null
           pickup_address: string
+          platform_fee_minor: number | null
           pickup_latitude: number | null
           pickup_longitude: number | null
           price_quote_id: string | null
@@ -276,13 +279,16 @@ export type Database = {
           destination_address: string
           destination_latitude?: number | null
           destination_longitude?: number | null
+          driver_earnings_minor?: number | null
           estimated_fare_minor?: number | null
           fare_currency_code?: string | null
           final_fare_minor?: number | null
+          earnings_share_basis_points?: number | null
           dispatch_ready_at?: string | null
           geocoded_at?: string | null
           geocoding_provider?: string | null
           pickup_address: string
+          platform_fee_minor?: number | null
           pickup_latitude?: number | null
           pickup_longitude?: number | null
           price_quote_id?: string | null
@@ -309,13 +315,16 @@ export type Database = {
           destination_address?: string
           destination_latitude?: number | null
           destination_longitude?: number | null
+          driver_earnings_minor?: number | null
           estimated_fare_minor?: number | null
           fare_currency_code?: string | null
           final_fare_minor?: number | null
+          earnings_share_basis_points?: number | null
           dispatch_ready_at?: string | null
           geocoded_at?: string | null
           geocoding_provider?: string | null
           pickup_address?: string
+          platform_fee_minor?: number | null
           pickup_latitude?: number | null
           pickup_longitude?: number | null
           price_quote_id?: string | null
@@ -573,9 +582,9 @@ export type Database = {
         Relationships: []
       }
       ledger_accounts: {
-        Row: { account_code: string; account_id: string; account_name: string; account_type: string; created_at: string; created_by_person_id: string | null; currency_code: string; normal_balance: string; status: string; tenant_id: string }
-        Insert: { account_code: string; account_id?: string; account_name: string; account_type: string; created_at?: string; created_by_person_id?: string | null; currency_code: string; normal_balance: string; status?: string; tenant_id: string }
-        Update: { account_code?: string; account_id?: string; account_name?: string; account_type?: string; created_at?: string; created_by_person_id?: string | null; currency_code?: string; normal_balance?: string; status?: string; tenant_id?: string }
+        Row: { account_code: string; account_id: string; account_name: string; account_type: string; created_at: string; created_by_person_id: string | null; currency_code: string; driver_profile_id: string | null; normal_balance: string; status: string; tenant_id: string }
+        Insert: { account_code: string; account_id?: string; account_name: string; account_type: string; created_at?: string; created_by_person_id?: string | null; currency_code: string; driver_profile_id?: string | null; normal_balance: string; status?: string; tenant_id: string }
+        Update: { account_code?: string; account_id?: string; account_name?: string; account_type?: string; created_at?: string; created_by_person_id?: string | null; currency_code?: string; driver_profile_id?: string | null; normal_balance?: string; status?: string; tenant_id?: string }
         Relationships: []
       }
       ledger_transactions: {
@@ -588,6 +597,12 @@ export type Database = {
         Row: { account_id: string; created_at: string; credit_amount_minor: number; debit_amount_minor: number; entry_id: string; entry_sequence: number; memo: string | null; tenant_id: string; transaction_id: string }
         Insert: { account_id: string; created_at?: string; credit_amount_minor?: number; debit_amount_minor?: number; entry_id?: string; entry_sequence: number; memo?: string | null; tenant_id: string; transaction_id: string }
         Update: { account_id?: string; created_at?: string; credit_amount_minor?: number; debit_amount_minor?: number; entry_id?: string; entry_sequence?: number; memo?: string | null; tenant_id?: string; transaction_id?: string }
+        Relationships: []
+      }
+      tenant_driver_earnings_settings: {
+        Row: { created_at: string; driver_share_basis_points: number; tenant_id: string; updated_at: string; updated_by_person_id: string }
+        Insert: { created_at?: string; driver_share_basis_points?: number; tenant_id: string; updated_at?: string; updated_by_person_id: string }
+        Update: { created_at?: string; driver_share_basis_points?: number; tenant_id?: string; updated_at?: string; updated_by_person_id?: string }
         Relationships: []
       }
       driver_evidence_requirements: {
@@ -2143,6 +2158,7 @@ export type Database = {
       my_driver_service_areas: { Args: never; Returns: Json }
       my_driver_location_sharing: { Args: never; Returns: Json }
       my_driver_reputation: { Args: never; Returns: Json }
+      my_driver_wallet: { Args: never; Returns: Json }
       my_rider_portal: {
         Args: { target_tenant_slug: string }
         Returns: Json
@@ -2290,6 +2306,10 @@ export type Database = {
       }
       set_tenant_pricing_settings: {
         Args: { base_fare_minor_value: number; minimum_fare_minor_value: number; per_mile_minor_value: number; per_minute_minor_value: number; pricing_enabled_value: boolean; target_tenant_id: string }
+        Returns: boolean
+      }
+      set_tenant_driver_earnings_settings: {
+        Args: { driver_share_basis_points_value: number; target_tenant_id: string }
         Returns: boolean
       }
       start_tenant_automatic_matching: {

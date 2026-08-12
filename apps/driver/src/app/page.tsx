@@ -141,10 +141,13 @@ type DriverLocationSharing = {
 };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null };
+type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; fareAmountMinor: number; earningsAmountMinor: number; platformFeeMinor: number; shareBasisPoints: number };
+type DriverWallet = { currencyCode: string; balanceMinor: number; pendingMinor: number; availableMinor: number; paidMinor: number; trips: DriverWalletTrip[] };
 
 type DriverPortalTab =
   | "overview"
   | "dispatch"
+  | "earnings"
   | "location"
   | "reputation"
   | "service_areas"
@@ -193,6 +196,7 @@ export default function DriverHome() {
   const [dispatchBusy, setDispatchBusy] = useState(false);
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
+  const [wallet, setWallet] = useState<DriverWallet | null>(null);
   const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
@@ -255,6 +259,8 @@ export default function DriverHome() {
     }
     const reputationResult = await supabase.rpc("my_driver_reputation");
     setReputationTrips(reputationResult.error ? [] : (reputationResult.data as unknown as ReputationTrip[]));
+    const walletResult = await supabase.rpc("my_driver_wallet");
+    setWallet(walletResult.error || !walletResult.data ? null : (walletResult.data as unknown as DriverWallet));
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -309,6 +315,7 @@ export default function DriverHome() {
       setServiceAreas([]);
       setDispatch({ offers: [], trips: [] });
       setReputationTrips([]);
+      setWallet(null);
       setLocationSharing(null);
       return;
     }
@@ -901,6 +908,8 @@ export default function DriverHome() {
       setDispatch(result.data as unknown as DriverDispatch);
       setDispatchMessage(action === "complete" ? "Trip completed." : "Trip updated.");
       if (action === "complete") {
+        const walletResult = await supabase.rpc("my_driver_wallet");
+        setWallet(walletResult.error || !walletResult.data ? null : (walletResult.data as unknown as DriverWallet));
         setLocationSharing((current) =>
           current
             ? {
@@ -968,6 +977,7 @@ export default function DriverHome() {
                       : "Dispatch",
                 },
                 { key: "location" as const, label: "Location" },
+                { key: "earnings" as const, label: "Earnings" },
                 { key: "reputation" as const, label: "Reputation" },
                 { key: "service_areas" as const, label: "Service Areas" },
                 { key: "documents" as const, label: "Documents" },
@@ -1332,6 +1342,36 @@ export default function DriverHome() {
                 {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
               </section>
             ) : null}
+            {activeTab === "earnings" ? (
+              <section className="documents">
+                <div>
+                  <p className="eyebrow">Earnings</p>
+                  <h3>Driver wallet</h3>
+                  <p className="document-help">
+                    Completed-trip earnings are recorded here as money the platform owes you. Rider payment collection and transfers to your bank are not active yet, so earnings remain pending.
+                  </p>
+                </div>
+                {wallet ? (
+                  <>
+                    <dl className="location-details">
+                      <div><dt>Pending earnings</dt><dd>{formatCurrency(wallet.pendingMinor, wallet.currencyCode)}</dd></div>
+                      <div><dt>Available to withdraw</dt><dd>{formatCurrency(wallet.availableMinor, wallet.currencyCode)}</dd></div>
+                      <div><dt>Paid</dt><dd>{formatCurrency(wallet.paidMinor, wallet.currencyCode)}</dd></div>
+                      <div><dt>Ledger amount owed</dt><dd>{formatCurrency(wallet.balanceMinor, wallet.currencyCode)}</dd></div>
+                    </dl>
+                    {wallet.trips.map((trip) => (
+                      <article className="document-card" key={trip.bookingId}>
+                        <div className="document-heading"><strong>{formatCurrency(trip.earningsAmountMinor, wallet.currencyCode)} earned</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
+                        <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
+                        <span>Rider fare: {formatCurrency(trip.fareAmountMinor, wallet.currencyCode)}</span>
+                        <span>Your share: {(trip.shareBasisPoints / 100).toFixed(2).replace(/\.00$/, "")}% · Platform fee: {formatCurrency(trip.platformFeeMinor, wallet.currencyCode)}</span>
+                      </article>
+                    ))}
+                    {wallet.trips.length === 0 ? <p className="document-help">Your completed priced trips will appear here.</p> : null}
+                  </>
+                ) : <p className="document-help">Wallet information is not available yet.</p>}
+              </section>
+            ) : null}
             {activeTab === "reputation" ? (
               <section className="documents">
                 <div><p className="eyebrow">Reputation</p><h3>Post-trip ratings</h3><p className="document-help">Ratings stay private until both sides submit, or seven days pass.</p></div>
@@ -1619,6 +1659,10 @@ function currentPosition() {
       timeout: 20_000,
     });
   });
+}
+
+function formatCurrency(amountMinor: number, currencyCode: string) {
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: currencyCode }).format(amountMinor / 100);
 }
 
 function locationPermissionLabel(permission: PermissionState | "unsupported" | "unknown") {

@@ -4158,6 +4158,18 @@ function PricingPanel({ canManageTenant, onRefresh, summary }: { canManageTenant
     } catch (error) { setMessage(error instanceof Error ? error.message : "Pricing settings could not be saved."); }
     setBusy(false);
   }
+  async function saveEarnings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    const raw = form.get("driverSharePercent"); const percent = typeof raw === "string" ? Number(raw) : Number.NaN;
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) { setMessage("Driver share must be between 0 and 100 percent."); return; }
+    setBusy(true); setMessage(null);
+    const result = await supabase.rpc("set_tenant_driver_earnings_settings", {
+      target_tenant_id: summary.tenant.tenant_id,
+      driver_share_basis_points_value: Math.round(percent * 100),
+    });
+    setMessage(result.error ? result.error.message : "Driver earnings share saved for future completed trips.");
+    if (!result.error) onRefresh(); setBusy(false);
+  }
   const display = (minor: number | undefined, fallback: string) => minor == null ? fallback : (minor / 100).toFixed(2);
   return <section className="panel-stack"><PanelHeader title="Trip pricing" description="Configure the route-based fare Riders review before booking. Card collection is not included yet." />
     {message ? <p className="feedback-message">{message}</p> : null}
@@ -4169,6 +4181,12 @@ function PricingPanel({ canManageTenant, onRefresh, summary }: { canManageTenant
       <label>Minimum fare ({currency})<input defaultValue={display(settings?.minimum_fare_minor, "10.00")} name="minimumFare" inputMode="decimal" required /></label>
       <p className="empty-state">Fare = base + road miles × per-mile rate + route minutes × per-minute rate, subject to the minimum fare. The quoted fare is locked for 15 minutes.</p>
       <button disabled={!canManageTenant || busy} type="submit">Save pricing settings</button>
+    </form>
+    <form className="form-grid" onSubmit={(event) => void saveEarnings(event)}>
+      <h4>Driver earnings</h4>
+      <label>Driver share of Rider fare (%)<input defaultValue={(summary.driverEarningsSettings?.driver_share_basis_points ?? 8000) / 100} min="0" max="100" step="0.01" name="driverSharePercent" type="number" required /></label>
+      <p className="empty-state">The share is locked when a priced trip completes. For example, 80% of a $50 fare creates $40 Driver payable and leaves $10 platform fee. It does not pay money to a bank yet.</p>
+      <button disabled={!canManageTenant || busy} type="submit">Save Driver share</button>
     </form>
   </section>;
 }
