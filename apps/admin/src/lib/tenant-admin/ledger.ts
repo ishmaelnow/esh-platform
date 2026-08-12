@@ -15,3 +15,16 @@ export function formatMinorUnits(value: number, currency: string, fractionDigits
     style: "currency", currency, minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits,
   }).format(normalizedValue / 10 ** fractionDigits);
 }
+
+const foundationAccountCodes = [
+  "cash_clearing",
+  "driver_payables",
+  "operating_adjustments",
+  "platform_fees",
+  "rider_receivables",
+] as const;
+
+export function missingFoundationAccountCodes(accounts: Array<{ accountCode: string }>) {
+  const accountCodes = new Set(accounts.map(({ accountCode }) => accountCode));
+  return foundationAccountCodes.filter((accountCode) => !accountCodes.has(accountCode));
+}

@@ -106,6 +106,14 @@ because literal percent signs in a PL/pgSQL `RAISE` message were not escaped. Th
 now uses `%%`; the corrected dry-run again lists only the Driver wallet migration. The correction is
 not committed or pushed yet, and the migration remains unapplied.
 
+The corrected migration was subsequently committed as `b2c31d6`, deployed successfully, and its
+historical backfill plus new-trip allocation passed production testing. The Driver wallet shows
+$85.57 across three trips ($8.00, $38.42, and $39.15), exactly matching the Driver-specific payable
+account. Admin Ledger is balanced, but its UI incorrectly warns when there are more than exactly five
+accounts. A local fix now validates presence of the five required foundation account codes while
+allowing Driver-specific payable accounts; it is not committed or deployed.
+Admin typecheck and lint pass, the expanded Admin suite passes 54/54, and `git diff --check` passes.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -116,8 +124,8 @@ not committed or pushed yet, and the migration remains unapplied.
 
 ## Exact next action
 
-Owner commits and pushes the one-line migration correction, repeats the dry-run, applies the single
-verified migration, and runs `docs/operations/driver-earnings-wallet-manual-test.md` in production.
+Finish validating the Admin Ledger warning fix, then owner commits and pushes it and confirms the
+false warning disappears while all six valid accounts remain visible.
 
 ## Required reading for recovery
 

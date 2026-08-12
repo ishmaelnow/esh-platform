@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMinorUnits, parseMoneyToMinorUnits } from "./ledger";
+import { formatMinorUnits, missingFoundationAccountCodes, parseMoneyToMinorUnits } from "./ledger";
 
 describe("ledger money input", () => {
   it("converts decimal display amounts to integer minor units", () => {
@@ -18,5 +18,26 @@ describe("ledger money input", () => {
   it("rejects ambiguous, excessive, zero, negative, and unsafe values", () => {
     for (const value of ["1.001", "0", "-2", "1,000", "abc", "9007199254740992"])
       expect(() => parseMoneyToMinorUnits(value, 2)).toThrow();
+  });
+});
+
+describe("ledger foundation validation", () => {
+  const foundationAccounts = [
+    "cash_clearing",
+    "driver_payables",
+    "operating_adjustments",
+    "platform_fees",
+    "rider_receivables",
+  ].map((accountCode) => ({ accountCode }));
+
+  it("allows additional Driver-specific payable accounts", () => {
+    expect(missingFoundationAccountCodes([
+      ...foundationAccounts,
+      { accountCode: "driver_payable_4552babaee8c4c1c824bb4fd607835a2" },
+    ])).toEqual([]);
+  });
+
+  it("reports the required foundation account that is actually missing", () => {
+    expect(missingFoundationAccountCodes(foundationAccounts.slice(1))).toEqual(["cash_clearing"]);
   });
 });
