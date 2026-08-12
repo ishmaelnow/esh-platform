@@ -38,7 +38,9 @@ Complete Driver Stripe Connect Onboarding V1 on deployed Rider collection and Dr
   `20260812000300_driver_connect_onboarding_v1.sql` is applied. Production showed the Driver wallet
   and payout setup control, but Stripe rejected legacy Express account creation on the newly
   registered Connect platform. A local compatibility fix now creates accounts with explicit
-  controller properties; Driver tests, typecheck, production build, and diff checks pass. It needs
+  controller properties. The first production retry correctly reached Stripe but reused the V1
+  idempotency key with changed parameters; the local follow-up versions that key as
+  `driver_connect_v2_<driver-profile-id>`. Driver tests, typecheck, and diff checks pass. It needs
   owner commit/deployment and manual retest.
 
 ## Delivered capabilities relevant to the test
@@ -106,7 +108,8 @@ production. Driver Connect infrastructure, payout settings, connected-account we
 and migration are complete. Production account creation currently fails because commit `9eb69ee`
 uses the legacy `type: express` request against a newly registered Connect platform. The local fix
 uses controller properties for an Express Dashboard, platform-paid fees, platform loss liability,
-and transfers capability. Driver tests, typecheck, production build, and diff checks pass. It needs
+and transfers capability. Its account-creation idempotency key is versioned because Stripe retains
+the original legacy request parameters. Driver tests, typecheck, and diff checks pass. It needs
 owner commit/deployment and manual retesting. This version does not create transfers or payouts.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required

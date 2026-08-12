@@ -31,7 +31,7 @@ export async function POST(request: Request) {
           stripe_dashboard: { type: "express" },
         },
         capabilities: { transfers: { requested: true } }, metadata: { driver_profile_id: driver.driverProfileId } },
-        { idempotencyKey: `driver_connect_${driver.driverProfileId}` });
+        { idempotencyKey: `driver_connect_v2_${driver.driverProfileId}` });
       providerAccountId = account.id;
       const registered = await service.rpc("register_driver_payout_account_internal", {
         target_driver_profile_id: driver.driverProfileId, provider_account_id_value: account.id,
