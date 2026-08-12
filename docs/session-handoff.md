@@ -92,10 +92,12 @@ one-time links.
 
 Ledger currency-summary and signed-zero fixes are deployed. Trip Pricing commit `6340255` and
 migration `20260811000300_trip_pricing_v1.sql` are deployed. Production quote creation passed, but
-booking confirmation failed because the RPC used an ambiguous `tenant_slug` identifier. Local
-forward-only migration `20260811000400_fix_priced_booking_confirmation.sql` fixes it. The Rider UI
-also now uses **Book trip** and **My trips** tabs, switches to My trips after booking, and preserves
-plain-object Supabase error messages. These fixes are not yet committed or deployed. Trip Pricing typechecks pass across
+booking confirmation hotfix `46e029a` is deployed and confirmation passed. Completing the priced
+trip then failed because the ledger balance constraint evaluated before both automated fare entries.
+Local forward-only migration `20260811000500_fix_completed_fare_ledger_posting.sql` explicitly
+defers the named constraint, inserts both sides, then validates immediately. The failed completion
+rolled back, so the trip remains in progress and no partial ledger transaction committed.
+Trip Pricing typechecks pass across
 Rider, Driver, Admin, Maps, and Supabase. Maps tests pass 10/10, Admin tests pass 52/52, Rider,
 Driver, and Admin lint pass, all three production builds pass, and `git diff --check` passes. The
 required dry run lists only `20260811000300_trip_pricing_v1.sql`. Existing Next/Supabase dynamic
@@ -111,8 +113,8 @@ dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner commits and deploys the priced-booking/Rider-tabs fix, applies the hotfix migration, then uses
-the existing locked quote if still valid or requests a new one and resumes confirmation testing.
+Owner commits and applies the completed-fare ledger hotfix, then retries **Complete trip** on the
+same in-progress booking and verifies the balanced journal in Admin Ledger.
 
 ## Required reading for recovery
 
