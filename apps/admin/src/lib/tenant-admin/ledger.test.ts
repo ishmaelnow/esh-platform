@@ -7,6 +7,10 @@ describe("ledger money input", () => {
     expect(parseMoneyToMinorUnits("12", 2)).toBe(1200);
   });
 
+  it("allows an explicit zero rate for pricing components", () => {
+    expect(parseMoneyToMinorUnits("0", 2, true)).toBe(0);
+  });
+
   it("never displays a negative zero balance", () => {
     expect(formatMinorUnits(-0, "USD", 2)).not.toContain("-");
   });

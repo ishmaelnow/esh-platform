@@ -6,7 +6,6 @@ import {
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import {
-  geocodePermanentAddress,
   retrieveAddressSuggestion,
   suggestRegionalAddresses,
   type AddressSuggestion,
@@ -46,6 +45,9 @@ type RiderBooking = {
   pickupLongitude?: number | null;
   destinationLatitude?: number | null;
   destinationLongitude?: number | null;
+  fareCurrencyCode?: string | null;
+  estimatedFareMinor?: number | null;
+  finalFareMinor?: number | null;
   driver: { displayName: string; driverNumber: string } | null;
   vehicle: {
     vehicleNumber: string;
@@ -86,6 +88,7 @@ type RiderTripLocation = {
   fresh: boolean;
 };
 type ServiceAreaContext = { latitude: number; longitude: number; radiusKm: number };
+type RiderPriceQuote = { quoteId: string; fareAmountMinor: number; currencyCode: string; fractionDigits: number; expiresAt: string; pickupAddress: string; destinationAddress: string; routeDistanceMeters: number; routeDurationSeconds: number };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
@@ -143,6 +146,7 @@ export default function RiderHome() {
   const [destinationSuggestions, setDestinationSuggestions] = useState<AddressSuggestion[]>([]);
   const [pickupSelection, setPickupSelection] = useState<AddressSuggestion | null>(null);
   const [destinationSelection, setDestinationSelection] = useState<AddressSuggestion | null>(null);
+  const [priceQuote, setPriceQuote] = useState<RiderPriceQuote | null>(null);
   const [pickupSearchSession, setPickupSearchSession] = useState("");
   const [destinationSearchSession, setDestinationSearchSession] = useState("");
   const [email, setEmail] = useState("");
@@ -211,7 +215,7 @@ export default function RiderHome() {
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
-        supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude").eq("tenant_id", nextPortal.tenant.tenantId),
+        supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude,fare_currency_code,estimated_fare_minor,final_fare_minor").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_reputation", { target_tenant_slug: tenantSlug }),
       ]);
       const { data: preferenceData, error: preferenceError } = preferenceResult;
@@ -237,6 +241,9 @@ export default function RiderHome() {
           pickupLongitude: coordinates.get(booking.bookingId)?.pickup_longitude ?? null,
           destinationLatitude: coordinates.get(booking.bookingId)?.destination_latitude ?? null,
           destinationLongitude: coordinates.get(booking.bookingId)?.destination_longitude ?? null,
+          fareCurrencyCode: coordinates.get(booking.bookingId)?.fare_currency_code ?? null,
+          estimatedFareMinor: coordinates.get(booking.bookingId)?.estimated_fare_minor ?? null,
+          finalFareMinor: coordinates.get(booking.bookingId)?.final_fare_minor ?? null,
         })),
       });
     } else {
@@ -372,6 +379,7 @@ export default function RiderHome() {
     setDestinationQuery("");
     setPickupSuggestions([]);
     setDestinationSuggestions([]);
+    setPriceQuote(null);
     setPickupSearchSession(crypto.randomUUID());
     setDestinationSearchSession(crypto.randomUUID());
     if (!supabase || !nextServiceAreaId) return;
@@ -392,6 +400,7 @@ export default function RiderHome() {
     suggestion: AddressSuggestion,
   ) {
     if (!mapboxToken) return;
+    setPriceQuote(null);
     const sessionToken = kind === "pickup" ? pickupSearchSession : destinationSearchSession;
     try {
       const selected = await retrieveAddressSuggestion({
@@ -428,68 +437,26 @@ export default function RiderHome() {
         throw new Error("Choose the pickup address from the suggestions.");
       if (!destinationSelection || destinationSelection.label !== destinationQuery)
         throw new Error("Choose the destination from the suggestions.");
-      const common = {
-        target_tenant_slug: tenantSlug,
-        target_service_area_id: serviceAreaId,
-        pickup_address_value: pickupSelection.label,
-        destination_address_value: destinationSelection.label,
-        booking_notes_value: formValue(form, "bookingNotes"),
-      };
-      if (!mapboxToken) throw new Error("Trip mapping is temporarily unavailable. Please try again later.");
-      let geocodedCoordinates:
-        | {
-            pickup: { latitude: number; longitude: number; formattedAddress: string };
-            destination: { latitude: number; longitude: number; formattedAddress: string };
-          }
-        | null = null;
-      {
-        const areaContext = serviceAreaContext;
-        const geocodingContext = {
-          latitude: areaContext.latitude,
-          longitude: areaContext.longitude,
-        };
-        let pickup: { latitude: number; longitude: number; formattedAddress: string };
-        let destination: { latitude: number; longitude: number; formattedAddress: string };
-        try {
-          pickup = await geocodePermanentAddress(pickupSelection.label, mapboxToken, {
-            ...geocodingContext,
-            maxDistanceKm: areaContext.radiusKm,
-            requireVerifiedAddress: true,
-          });
-        } catch {
-          throw new Error("Pickup address was not verified inside the selected service area. Check the street name, city, state, and ZIP code.");
-        }
-        try {
-          destination = await geocodePermanentAddress(
-            destinationSelection.label,
-            mapboxToken,
-            geocodingContext,
-          );
-        } catch {
-          throw new Error("Destination address was not verified near the selected service area. Enter a complete address or recognized place name.");
-        }
-        geocodedCoordinates = { pickup, destination };
+      if (!priceQuote || Date.parse(priceQuote.expiresAt) <= Date.now()) {
+        const response = await fetch("/api/pricing/quote", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ tenantSlug, serviceAreaId, pickupAddress: pickupSelection.label, destinationAddress: destinationSelection.label }),
+        });
+        const result = (await response.json().catch(() => null)) as (RiderPriceQuote & { message?: string }) | null;
+        if (!response.ok || !result) throw new Error(result?.message ?? "Fare quote could not be created.");
+        setPriceQuote(result);
+        setPickupQuery(result.pickupAddress); setDestinationQuery(result.destinationAddress);
+        setPickupSelection({ ...pickupSelection, label: result.pickupAddress });
+        setDestinationSelection({ ...destinationSelection, label: result.destinationAddress });
+        setMessage("Review the locked fare, then confirm your trip.");
+        return;
       }
-      if (!geocodedCoordinates) throw new Error("Verified trip coordinates are required.");
-      const coordinateArguments = {
-        ...common,
-        pickup_address_value: geocodedCoordinates.pickup.formattedAddress,
-        destination_address_value: geocodedCoordinates.destination.formattedAddress,
-        pickup_latitude_value: geocodedCoordinates.pickup.latitude,
-        pickup_longitude_value: geocodedCoordinates.pickup.longitude,
-        destination_latitude_value: geocodedCoordinates.destination.latitude,
-        destination_longitude_value: geocodedCoordinates.destination.longitude,
-        geocoding_provider_value: "mapbox-v6",
-      };
-      const result = bookingTiming === "scheduled"
-        ? await supabase.rpc("create_my_rider_geocoded_scheduled_booking", {
-            ...coordinateArguments,
-            scheduled_pickup_at_value: zonedDateTimeToIso(
-              formValue(form, "scheduledPickupAt"),
-              scheduling?.timeZone ?? "UTC",
-            ),
-          })
-        : await supabase.rpc("create_my_rider_geocoded_booking", coordinateArguments);
+      const result = await supabase.rpc("create_my_rider_priced_booking", {
+        target_quote_id: priceQuote.quoteId,
+        booking_notes_value: formValue(form, "bookingNotes"),
+        ...(bookingTiming === "scheduled" ? { scheduled_pickup_at_value: zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") } : {}),
+      });
       const bookingError = result.error;
       if (bookingError) throw bookingError;
       formElement.reset();
@@ -501,6 +468,7 @@ export default function RiderHome() {
       setDestinationSelection(null);
       setPickupSuggestions([]);
       setDestinationSuggestions([]);
+      setPriceQuote(null);
       await loadPortal();
       setMessage(
         bookingTiming === "scheduled"
@@ -744,6 +712,7 @@ export default function RiderHome() {
                   value={pickupQuery}
                   onChange={(event) => {
                     setPickupQuery(event.target.value);
+                    setPriceQuote(null);
                     if (pickupSelection) setPickupSearchSession(crypto.randomUUID());
                     setPickupSelection(null);
                     setPickupSearchSession((current) => current || crypto.randomUUID());
@@ -777,6 +746,7 @@ export default function RiderHome() {
                   value={destinationQuery}
                   onChange={(event) => {
                     setDestinationQuery(event.target.value);
+                    setPriceQuote(null);
                     if (destinationSelection) setDestinationSearchSession(crypto.randomUUID());
                     setDestinationSelection(null);
                     setDestinationSearchSession((current) => current || crypto.randomUUID());
@@ -808,11 +778,19 @@ export default function RiderHome() {
                   placeholder="Example: Please call when you arrive at the north entrance"
                 />
               </label>
+              {priceQuote ? (
+                <div className="wide card">
+                  <p className="kicker">Locked fare estimate</p>
+                  <h2>{new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.fareAmountMinor / 10 ** priceQuote.fractionDigits)}</h2>
+                  <p className="area">Road route {(priceQuote.routeDistanceMeters / 1609.344).toFixed(1)} mi · {Math.max(1, Math.round(priceQuote.routeDurationSeconds / 60))} min · valid until {formatDate(priceQuote.expiresAt)}</p>
+                  <p className="area">Payment is not collected yet. This is the fare that will be recorded for the trip.</p>
+                </div>
+              ) : null}
               <button
                 className="button primary"
                 disabled={busy || portal.serviceAreas.length === 0}
               >
-                {busy ? "Requesting…" : "Request trip"}
+                {busy ? "Working…" : priceQuote ? "Confirm trip at this fare" : "Review fare"}
               </button>
             </form>
           </section>
@@ -870,6 +848,7 @@ export default function RiderHome() {
                     <time>{formatDate(booking.createdAt)}</time>
                   </div>
                   <p className="area">{booking.serviceAreaName}</p>
+                  {booking.fareCurrencyCode && booking.estimatedFareMinor != null ? <p className="area"><strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor) / 100)}</strong></p> : null}
                   {booking.driver && booking.vehicle ? (
                     <div className="assignment">
                       <strong>{booking.driver.displayName}</strong>

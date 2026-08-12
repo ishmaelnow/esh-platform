@@ -4,7 +4,7 @@ Last updated: 2026-08-10
 
 ## Current objective
 
-Complete Ledger Foundation V1 implementation and validation after Reputation production verification.
+Complete Trip Pricing V1 implementation and validation on the deployed Ledger Foundation.
 
 ## Repository and deployment state
 
@@ -25,8 +25,10 @@ Complete Ledger Foundation V1 implementation and validation after Reputation pro
 - Confirm migration state with a dry run rather than assuming it from this handoff.
 - Reputation V1 commit `e87655e`, Rider layout fix `75505f7`, and migration
   `20260810000200_trip_reputation.sql` are pushed and deployed.
-- Ledger Foundation V1 is implemented locally in migration
-  `20260811000100_ledger_foundation_v1.sql`; it is not committed, applied, or production tested.
+- Ledger commits through `e54a1b3` and migrations through
+  `20260811000200_fix_ledger_currency_summary.sql` are deployed.
+- Trip Pricing V1 is implemented locally in migration `20260811000300_trip_pricing_v1.sql`; it is
+  not committed, applied, or production tested.
 
 ## Delivered capabilities relevant to the test
 
@@ -88,13 +90,11 @@ one-time links.
 
 ## Open issues
 
-Ledger currency-summary hotfix `2eea753` is deployed and the initialized ledger now loads. Production
-testing then exposed a harmless `-$0.00` signed-zero display and insufficient on-screen journal
-guidance. A local Admin UI fix normalizes zero, explains the test posting, and warns if initialization
-returns fewer than five accounts; it is not yet committed or deployed. Admin typecheck, lint, 51/51
-tests, production build,
-Supabase package typecheck/test, and `git diff --check` pass. The existing Supabase Realtime dynamic
-dependency warning remains non-blocking in the Admin build.
+Ledger currency-summary and signed-zero fixes are deployed. Trip Pricing typechecks pass across
+Rider, Driver, Admin, Maps, and Supabase. Maps tests pass 10/10, Admin tests pass 52/52, Rider,
+Driver, and Admin lint pass, all three production builds pass, and `git diff --check` passes. The
+required dry run lists only `20260811000300_trip_pricing_v1.sql`. Existing Next/Supabase dynamic
+dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Cleanup still required after testing
 
@@ -106,8 +106,9 @@ dependency warning remains non-blocking in the Admin build.
 
 ## Exact next action
 
-Owner commits and deploys the Admin ledger display/guidance fix, confirms all five accounts appear,
-and resumes `docs/operations/ledger-foundation-manual-test.md` with the `10.00` balanced posting.
+Owner stages, commits, and pushes Trip Pricing V1, confirms `SUPABASE_SERVICE_ROLE_KEY` is configured
+as a server-only Rider deployment secret, applies the migration, and follows
+`docs/operations/trip-pricing-manual-test.md`.
 
 ## Required reading for recovery
 
@@ -122,3 +123,5 @@ and resumes `docs/operations/ledger-foundation-manual-test.md` with the `10.00` 
 - `docs/architecture/trip-reputation.md`
 - `docs/architecture/ledger-foundation.md`
 - `docs/operations/ledger-foundation-manual-test.md`
+- `docs/architecture/trip-pricing.md`
+- `docs/operations/trip-pricing-manual-test.md`

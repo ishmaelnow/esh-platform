@@ -243,13 +243,19 @@ export type Database = {
           destination_address: string
           destination_latitude: number | null
           destination_longitude: number | null
+          estimated_fare_minor: number | null
+          fare_currency_code: string | null
+          final_fare_minor: number | null
           dispatch_ready_at: string | null
           geocoded_at: string | null
           geocoding_provider: string | null
           pickup_address: string
           pickup_latitude: number | null
           pickup_longitude: number | null
+          price_quote_id: string | null
           rider_profile_id: string | null
+          route_distance_meters: number | null
+          route_duration_seconds: number | null
           scheduled_pickup_at: string | null
           service_area_id: string
           status: string
@@ -270,13 +276,19 @@ export type Database = {
           destination_address: string
           destination_latitude?: number | null
           destination_longitude?: number | null
+          estimated_fare_minor?: number | null
+          fare_currency_code?: string | null
+          final_fare_minor?: number | null
           dispatch_ready_at?: string | null
           geocoded_at?: string | null
           geocoding_provider?: string | null
           pickup_address: string
           pickup_latitude?: number | null
           pickup_longitude?: number | null
+          price_quote_id?: string | null
           rider_profile_id?: string | null
+          route_distance_meters?: number | null
+          route_duration_seconds?: number | null
           scheduled_pickup_at?: string | null
           service_area_id: string
           status?: string
@@ -297,13 +309,19 @@ export type Database = {
           destination_address?: string
           destination_latitude?: number | null
           destination_longitude?: number | null
+          estimated_fare_minor?: number | null
+          fare_currency_code?: string | null
+          final_fare_minor?: number | null
           dispatch_ready_at?: string | null
           geocoded_at?: string | null
           geocoding_provider?: string | null
           pickup_address?: string
           pickup_latitude?: number | null
           pickup_longitude?: number | null
+          price_quote_id?: string | null
           rider_profile_id?: string | null
+          route_distance_meters?: number | null
+          route_duration_seconds?: number | null
           scheduled_pickup_at?: string | null
           service_area_id?: string
           status?: string
@@ -1252,6 +1270,18 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_pricing_settings: {
+        Row: { base_fare_minor: number; created_at: string; currency_code: string; minimum_fare_minor: number; per_mile_minor: number; per_minute_minor: number; pricing_enabled: boolean; tenant_id: string; updated_at: string; updated_by_person_id: string }
+        Insert: { base_fare_minor?: number; created_at?: string; currency_code: string; minimum_fare_minor?: number; per_mile_minor?: number; per_minute_minor?: number; pricing_enabled?: boolean; tenant_id: string; updated_at?: string; updated_by_person_id: string }
+        Update: { base_fare_minor?: number; created_at?: string; currency_code?: string; minimum_fare_minor?: number; per_mile_minor?: number; per_minute_minor?: number; pricing_enabled?: boolean; tenant_id?: string; updated_at?: string; updated_by_person_id?: string }
+        Relationships: []
+      }
+      trip_price_quotes: {
+        Row: { booking_id: string | null; created_at: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; status: string; tenant_id: string }
+        Insert: { booking_id?: string | null; created_at?: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id?: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; status?: string; tenant_id: string }
+        Update: { booking_id?: string | null; created_at?: string; currency_code?: string; destination_address?: string; destination_latitude?: number; destination_longitude?: number; expires_at?: string; fare_amount_minor?: number; pickup_address?: string; pickup_latitude?: number; pickup_longitude?: number; pricing_snapshot?: Json; quote_id?: string; rider_profile_id?: string; route_distance_meters?: number; route_duration_seconds?: number; service_area_id?: string; status?: string; tenant_id?: string }
+        Relationships: []
+      }
       tenant_scheduling_settings: {
         Row: {
           created_at: string
@@ -1928,6 +1958,7 @@ export type Database = {
         Returns: boolean
       }
       can_manage_ledger: { Args: { target_tenant_id: string }; Returns: boolean }
+      can_manage_pricing: { Args: { target_tenant_id: string }; Returns: boolean }
       can_manage_driver_management: {
         Args: { target_tenant_id: string }
         Returns: boolean
@@ -2030,6 +2061,14 @@ export type Database = {
           target_tenant_slug: string
         }
         Returns: string
+      }
+      create_my_rider_priced_booking: {
+        Args: { booking_notes_value?: string; scheduled_pickup_at_value?: string; target_quote_id: string }
+        Returns: string
+      }
+      create_rider_price_quote_internal: {
+        Args: { destination_address_value: string; destination_latitude_value: number; destination_longitude_value: number; pickup_address_value: string; pickup_latitude_value: number; pickup_longitude_value: number; route_distance_meters_value: number; route_duration_seconds_value: number; target_rider_profile_id: string; target_service_area_id: string }
+        Returns: Json
       }
       create_my_rider_scheduled_booking: {
         Args: {
@@ -2247,6 +2286,10 @@ export type Database = {
           offer_duration_seconds_value: number
           target_tenant_id: string
         }
+        Returns: boolean
+      }
+      set_tenant_pricing_settings: {
+        Args: { base_fare_minor_value: number; minimum_fare_minor_value: number; per_mile_minor_value: number; per_minute_minor_value: number; pricing_enabled_value: boolean; target_tenant_id: string }
         Returns: boolean
       }
       start_tenant_automatic_matching: {

@@ -105,6 +105,8 @@ type DriverDispatchOffer = {
   status: "pending";
   offeredAt: string;
   expiresAt: string;
+  fareCurrencyCode: string | null;
+  fareAmountMinor: number | null;
 };
 
 type DriverTrip = {
@@ -120,6 +122,8 @@ type DriverTrip = {
   pickupLongitude: number | null;
   destinationLatitude: number | null;
   destinationLongitude: number | null;
+  fareCurrencyCode: string | null;
+  fareAmountMinor: number | null;
 };
 
 type DriverDispatch = {
@@ -1250,6 +1254,7 @@ export default function DriverHome() {
                     {offer.customerPhone ? <span>Contact: {offer.customerPhone}</span> : null}
                     <span>Pickup: {offer.pickupAddress}</span>
                     <span>Destination: {offer.destinationAddress}</span>
+                    {offer.fareCurrencyCode && offer.fareAmountMinor != null ? <strong>Rider trip fare (not Driver earnings): {new Intl.NumberFormat(undefined, { style: "currency", currency: offer.fareCurrencyCode }).format(offer.fareAmountMinor / 100)}</strong> : null}
                     {offer.notes ? <span>Notes: {offer.notes}</span> : null}
                     <strong className="offer-countdown">
                       {offerCountdownLabel(offer.expiresAt, dispatchNow)}
@@ -1287,6 +1292,7 @@ export default function DriverHome() {
                     {trip.customerPhone ? <span>Contact: {trip.customerPhone}</span> : null}
                     <span>Pickup: {trip.pickupAddress}</span>
                     <span>Destination: {trip.destinationAddress}</span>
+                    {trip.fareCurrencyCode && trip.fareAmountMinor != null ? <strong>Rider trip fare (not Driver earnings): {new Intl.NumberFormat(undefined, { style: "currency", currency: trip.fareCurrencyCode }).format(trip.fareAmountMinor / 100)}</strong> : null}
                     {trip.notes ? <span>Notes: {trip.notes}</span> : null}
                     {mapboxToken && trip.pickupLatitude != null && trip.pickupLongitude != null && trip.destinationLatitude != null && trip.destinationLongitude != null ? (
                       <LiveTripMap

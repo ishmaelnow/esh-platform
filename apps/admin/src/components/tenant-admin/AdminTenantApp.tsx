@@ -48,6 +48,7 @@ type ViewKey =
   | "dispatch"
   | "reputation"
   | "ledger"
+  | "pricing"
   | "notifications"
   | "applications";
 
@@ -65,6 +66,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "dispatch", label: "Dispatch" },
   { key: "reputation", label: "Reputation" },
   { key: "ledger", label: "Ledger" },
+  { key: "pricing", label: "Pricing" },
   { key: "notifications", label: "Notifications" },
   { key: "applications", label: "Applications" },
 ];
@@ -485,6 +487,9 @@ function ResolvedWorkspace({
       ) : null}
       {activeView === "ledger" ? (
         <LedgerPanel canManageTenant={canManageTenant} summary={summary} />
+      ) : null}
+      {activeView === "pricing" ? (
+        <PricingPanel canManageTenant={canManageTenant} onRefresh={onRefresh} summary={summary} />
       ) : null}
       {activeView === "applications" ? (
         <DriverApplicationsPanel
@@ -2480,6 +2485,7 @@ function DispatchPanel({
                   <p className="muted">
                     {booking.pickup_address} → {booking.destination_address}
                   </p>
+                  {booking.fare_currency_code && booking.final_fare_minor != null ? <strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fare_currency_code }).format(booking.final_fare_minor / 100)}</strong> : null}
                 </div>
                 <span className={`status-pill ${booking.status}`}>{booking.status}</span>
               </div>
@@ -4127,6 +4133,45 @@ type LedgerSummary = {
   accounts: Array<{ accountId: string; accountCode: string; accountName: string; accountType: string; normalBalance: "debit" | "credit"; status: string; balanceMinor: number }>;
   transactions: Array<{ transactionId: string; externalKey: string; description: string; effectiveAt: string; bookingId: string | null; createdAt: string; entries: Array<{ accountCode: string; side: "debit" | "credit"; amountMinor: number; memo: string | null }> }>;
 };
+
+function PricingPanel({ canManageTenant, onRefresh, summary }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary }) {
+  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const settings = summary.pricingSettings;
+  const currency = settings?.currency_code ?? "USD";
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    const value = (name: string) => { const entry = form.get(name); return typeof entry === "string" ? entry : ""; };
+    setBusy(true); setMessage(null);
+    try {
+      const result = await supabase.rpc("set_tenant_pricing_settings", {
+        target_tenant_id: summary.tenant.tenant_id,
+        pricing_enabled_value: form.get("pricingEnabled") === "on",
+        base_fare_minor_value: parseMoneyToMinorUnits(value("baseFare"), 2, true),
+        per_mile_minor_value: parseMoneyToMinorUnits(value("perMile"), 2, true),
+        per_minute_minor_value: parseMoneyToMinorUnits(value("perMinute"), 2, true),
+        minimum_fare_minor_value: parseMoneyToMinorUnits(value("minimumFare"), 2, true),
+      });
+      if (result.error) throw result.error;
+      setMessage("Trip pricing settings saved."); onRefresh();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Pricing settings could not be saved."); }
+    setBusy(false);
+  }
+  const display = (minor: number | undefined, fallback: string) => minor == null ? fallback : (minor / 100).toFixed(2);
+  return <section className="panel-stack"><PanelHeader title="Trip pricing" description="Configure the route-based fare Riders review before booking. Card collection is not included yet." />
+    {message ? <p className="feedback-message">{message}</p> : null}
+    <form className="form-grid" onSubmit={(event) => void save(event)}>
+      <label><span>Pricing enabled</span><input defaultChecked={settings?.pricing_enabled ?? false} name="pricingEnabled" type="checkbox" /><span className="muted">Require a valid fare quote before Rider booking</span></label>
+      <label>Base fare ({currency})<input defaultValue={display(settings?.base_fare_minor, "5.00")} name="baseFare" inputMode="decimal" required /></label>
+      <label>Per mile ({currency})<input defaultValue={display(settings?.per_mile_minor, "1.50")} name="perMile" inputMode="decimal" required /></label>
+      <label>Per minute ({currency})<input defaultValue={display(settings?.per_minute_minor, "0.25")} name="perMinute" inputMode="decimal" required /></label>
+      <label>Minimum fare ({currency})<input defaultValue={display(settings?.minimum_fare_minor, "10.00")} name="minimumFare" inputMode="decimal" required /></label>
+      <p className="empty-state">Fare = base + road miles × per-mile rate + route minutes × per-minute rate, subject to the minimum fare. The quoted fare is locked for 15 minutes.</p>
+      <button disabled={!canManageTenant || busy} type="submit">Save pricing settings</button>
+    </form>
+  </section>;
+}
 
 function LedgerPanel({ canManageTenant, summary }: { canManageTenant: boolean; summary: TenantSummary }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);

@@ -126,7 +126,11 @@ deferred from this milestone and were delivered under the later milestones below
    - Remaining: production verification, payments, Rider/Driver wallets, reversals, payouts, and
      reconciliation.
 8. **Pricing and Billing**
-   - Pricing, subscriptions, usage metering, and tenant billing.
+   - Current delivery in progress: tenant route-based trip rates, trusted pre-booking Rider quotes,
+     15-minute fare locking, shared Rider/Driver/Admin display, pricing snapshots, audit, and
+     completed-trip ledger posting.
+   - Remaining: production verification, actual-distance adjustments, taxes/tolls/discounts,
+     subscriptions, usage metering, and tenant billing.
 9. **Optimization**
    - Demand intelligence, performance, levels, loyalty, and incentives.
 

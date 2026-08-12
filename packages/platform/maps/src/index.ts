@@ -191,3 +191,35 @@ export function formatRouteDuration(seconds: number) {
   const remainder = minutes % 60;
   return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 }
+
+export async function routeTripMetrics({
+  accessToken,
+  pickup,
+  destination,
+  requestOrigin,
+}: {
+  accessToken: string;
+  pickup: Pick<MapPoint, "latitude" | "longitude">;
+  destination: Pick<MapPoint, "latitude" | "longitude">;
+  requestOrigin?: string | undefined;
+}) {
+  const coordinates = `${pickup.longitude},${pickup.latitude};${destination.longitude},${destination.latitude}`;
+  const url = new URL(`https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${coordinates}`);
+  url.searchParams.set("access_token", accessToken);
+  url.searchParams.set("overview", "false");
+  url.searchParams.set("alternatives", "false");
+  const response = await fetch(
+    url,
+    requestOrigin ? { headers: { Referer: requestOrigin } } : undefined,
+  );
+  if (!response.ok) throw new Error("A road-route fare estimate is temporarily unavailable.");
+  const payload = (await response.json()) as { routes?: Array<{ distance?: number; duration?: number }> };
+  const route = payload.routes?.[0];
+  if (!route || typeof route.distance !== "number" || typeof route.duration !== "number")
+    throw new Error("A road-route fare estimate is temporarily unavailable.");
+  const distanceMeters = Math.round(route.distance);
+  const durationSeconds = Math.round(route.duration);
+  if (distanceMeters <= 0 || durationSeconds <= 0)
+    throw new Error("A valid road route is required for pricing.");
+  return { distanceMeters, durationSeconds };
+}

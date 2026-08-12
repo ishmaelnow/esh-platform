@@ -5,6 +5,7 @@ import {
   formatRouteDuration,
   geocodePermanentAddress,
   retrieveAddressSuggestion,
+  routeTripMetrics,
   suggestRegionalAddresses,
 } from "./index";
 
@@ -18,6 +19,19 @@ describe("trip route formatting", () => {
   it("formats short and long ETAs", () => {
     expect(formatRouteDuration(600)).toBe("10 min");
     expect(formatRouteDuration(4500)).toBe("1 hr 15 min");
+  });
+  it("uses traffic-aware road metrics for a trusted fare quote", async () => {
+    const fetchMock = vi.fn((input: URL | RequestInfo) => {
+      const url = input instanceof URL ? input : new URL(typeof input === "string" ? input : input.url);
+      expect(url.pathname).toContain("/directions/v5/mapbox/driving-traffic/");
+      return Promise.resolve(new Response(JSON.stringify({ routes: [{ distance: 24140.16, duration: 1680 }] })));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(routeTripMetrics({
+      accessToken: "public-token",
+      pickup: { latitude: 40.05, longitude: -75.15 },
+      destination: { latitude: 39.87, longitude: -75.24 },
+    })).resolves.toEqual({ distanceMeters: 24140, durationSeconds: 1680 });
   });
   it("measures coordinates so implausible geocoding can be rejected", () => {
     const philadelphiaToAirport = coordinateDistanceKm(
