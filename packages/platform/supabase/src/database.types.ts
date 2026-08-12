@@ -378,6 +378,12 @@ export type Database = {
         }
         Relationships: []
       }
+      rider_payment_attempts: {
+        Row: { amount_minor: number; booking_id: string | null; created_at: string; currency_code: string; failure_message: string | null; paid_at: string | null; payment_attempt_id: string; provider: string; provider_checkout_session_id: string; provider_payment_intent_id: string | null; quote_id: string; rider_profile_id: string; status: string; tenant_id: string; updated_at: string }
+        Insert: { amount_minor: number; booking_id?: string | null; created_at?: string; currency_code: string; failure_message?: string | null; paid_at?: string | null; payment_attempt_id?: string; provider?: string; provider_checkout_session_id: string; provider_payment_intent_id?: string | null; quote_id: string; rider_profile_id: string; status?: string; tenant_id: string; updated_at?: string }
+        Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; currency_code?: string; failure_message?: string | null; paid_at?: string | null; payment_attempt_id?: string; provider?: string; provider_checkout_session_id?: string; provider_payment_intent_id?: string | null; quote_id?: string; rider_profile_id?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       dispatch_offers: {
         Row: {
           booking_id: string
@@ -2185,6 +2191,14 @@ export type Database = {
           target_tenant_id: string
         }
         Returns: string
+      }
+      register_rider_checkout_internal: {
+        Args: { checkout_session_id_value: string; target_quote_id: string }
+        Returns: string
+      }
+      record_rider_payment_internal: {
+        Args: { amount_minor_value: number; checkout_session_id_value: string; currency_code_value: string; failure_message_value?: string | null; payment_intent_id_value: string; payment_status_value: string }
+        Returns: boolean
       }
       tenant_ledger_summary: { Args: { target_tenant_id: string }; Returns: Json }
       submit_my_driver_trip_rating: {

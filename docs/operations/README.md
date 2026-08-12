@@ -11,3 +11,4 @@ Current operations documents:
 - [Ledger Foundation Manual Test](./ledger-foundation-manual-test.md)
 - [Trip Pricing Manual Test](./trip-pricing-manual-test.md)
 - [Driver Earnings and Wallet V1 Manual Test](./driver-earnings-wallet-manual-test.md)
+- [Rider Payments and Collection V1 Manual Test](./rider-payments-collection-manual-test.md)

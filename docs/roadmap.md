@@ -111,7 +111,9 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: region-aware pickup/destination autocomplete, permanent geocoding with atomic
      Rider booking persistence, embedded Admin/Driver/Rider maps, traffic-aware road routes, live
      Driver markers, distance/ETA, privacy enforcement, and graceful mapping-provider fallback.
-   - Remaining: recurring bookings, pricing, payments, and SMS/push delivery.
+   - Current delivery in progress: Stripe-hosted Rider checkout, verified payment state, paid-only
+     booking finalization, and immutable collection settlement.
+   - Remaining: recurring bookings and SMS/push delivery.
 6. **Reputation**
    - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,
@@ -123,9 +125,11 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: fixed tenant operating currency, integer minor-unit semantics,
      immutable balanced double-entry postings, generic operating accounts, idempotency, tenant RLS,
      audit, and Admin balances/journal visibility.
-   - Current delivery in progress: configurable Driver fare share, per-Driver payable accounts,
+   - Current delivery: configurable Driver fare share, per-Driver payable accounts,
      immutable completed-trip allocation, ledger-derived Driver wallet, and locked trip history.
-   - Remaining: production verification, payments, Rider wallet, collection settlement, reversals,
+   - Current delivery in progress: Rider payment attempts, Stripe collection, prepayment accounting,
+     completed-trip receivable settlement, and Admin payment visibility.
+   - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**
    - Current delivery: tenant route-based trip rates, trusted pre-booking Rider quotes,

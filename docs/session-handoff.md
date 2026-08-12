@@ -4,7 +4,7 @@ Last updated: 2026-08-12
 
 ## Current objective
 
-Complete Driver Earnings and Wallet V1 on the deployed Trip Pricing and Ledger Foundation.
+Complete Rider Payments and Collection V1 on the deployed pricing, ledger, and Driver wallet.
 
 ## Repository and deployment state
 
@@ -29,8 +29,10 @@ Complete Driver Earnings and Wallet V1 on the deployed Trip Pricing and Ledger F
   `20260811000200_fix_ledger_currency_summary.sql` are deployed.
 - Trip Pricing V1 and completed-fare ledger fixes are deployed through commit `eed38f6`; production
   booking, lifecycle completion, and the $48.94 Rider fare display passed.
-- Driver Earnings and Wallet V1 is implemented locally in
-  `20260812000100_driver_earnings_wallet_v1.sql`; it is not committed or deployed.
+- Driver Earnings and Wallet V1, its migration fix, and the Admin six-account validation fix are
+  deployed through commit `9e61228`; production wallet and ledger reconciliation passed.
+- Rider Payments and Collection V1 is implemented locally in
+  `20260812000200_rider_payments_collection_v1.sql`; it is not committed or deployed.
 
 ## Delivered capabilities relevant to the test
 
@@ -92,27 +94,15 @@ one-time links.
 
 ## Open issues
 
-Driver Earnings and Wallet V1 needs owner commit/deployment and production manual testing. The
-migration defaults tenants to an 80% Driver share, locks each
-completed trip split, creates a per-Driver payable account, and backfills existing completed priced
-trips with an immutable reclassification. Payment collection and bank payouts remain deferred, so
-the wallet correctly labels earnings pending and shows available/paid as zero. Supabase, Driver,
-and Admin typechecks pass; Driver and Admin lint pass; Admin tests pass 52/52; both production builds
-pass; `git diff --check` passes. The required Supabase dry-run lists only
-`20260812000100_driver_earnings_wallet_v1.sql`. Existing Next/Supabase dynamic dependency and
-ESLint-plugin warnings remain non-blocking.
-The owner's first production migration attempt stopped transactionally during function creation
-because literal percent signs in a PL/pgSQL `RAISE` message were not escaped. The local migration
-now uses `%%`; the corrected dry-run again lists only the Driver wallet migration. The correction is
-not committed or pushed yet, and the migration remains unapplied.
-
-The corrected migration was subsequently committed as `b2c31d6`, deployed successfully, and its
-historical backfill plus new-trip allocation passed production testing. The Driver wallet shows
-$85.57 across three trips ($8.00, $38.42, and $39.15), exactly matching the Driver-specific payable
-account. Admin Ledger is balanced, but its UI incorrectly warns when there are more than exactly five
-accounts. A local fix now validates presence of the five required foundation account codes while
-allowing Driver-specific payable accounts; it is not committed or deployed.
-Admin typecheck and lint pass, the expanded Admin suite passes 54/54, and `git diff --check` passes.
+Rider Payments V1 needs owner Stripe test configuration, commit/deployment, migration application,
+and production manual testing. It uses
+Stripe-hosted Checkout, verified webhooks as payment truth, paid-only booking finalization, a Rider
+prepayments liability, and balanced collection/settlement journals. Refunds, disputes, processor
+fees, reconciliation, saved methods, and payouts remain deferred.
+Supabase, Stripe, Rider, and Admin typechecks pass; Rider and Admin lint pass; Rider tests pass 4/4;
+Admin tests pass 54/54; both production builds pass; and the required remote Supabase dry-run lists
+only `20260812000200_rider_payments_collection_v1.sql`. Existing Next/Supabase dynamic dependency
+and ESLint-plugin warnings remain non-blocking.
 
 ## Cleanup still required after testing
 
@@ -124,8 +114,9 @@ Admin typecheck and lint pass, the expanded Admin suite passes 54/54, and `git d
 
 ## Exact next action
 
-Finish validating the Admin Ledger warning fix, then owner commits and pushes it and confirms the
-false warning disappears while all six valid accounts remain visible.
+Owner configures Rider Stripe test secrets, commits and pushes the listed files, configures the
+signed Stripe webhook, applies the single verified migration, and follows the Rider Payments manual
+test.
 
 ## Required reading for recovery
 
@@ -144,3 +135,5 @@ false warning disappears while all six valid accounts remain visible.
 - `docs/operations/trip-pricing-manual-test.md`
 - `docs/architecture/driver-earnings-wallet.md`
 - `docs/operations/driver-earnings-wallet-manual-test.md`
+- `docs/architecture/rider-payments-collection.md`
+- `docs/operations/rider-payments-collection-manual-test.md`

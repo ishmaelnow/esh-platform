@@ -153,6 +153,7 @@ export default function RiderHome() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<"book" | "trips">("book");
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
@@ -253,6 +254,25 @@ export default function RiderHome() {
       setReputationTrips([]);
     }
   }, [session, supabase, tenantSlug]);
+
+  useEffect(() => {
+    if (!session) return;
+    const params = new URLSearchParams(window.location.search);
+    const returnedQuoteId = params.get("quote");
+    if (params.get("payment") !== "success" || !returnedQuoteId) return;
+    setBusy(true);
+    void fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).then(async (response) => {
+      const result = await response.json() as { paymentStatus?: string; quote?: Omit<RiderPriceQuote, "fractionDigits">; message?: string };
+      if (!response.ok || result.paymentStatus !== "paid" || !result.quote)
+        throw new Error(result.message ?? "Payment confirmation is still processing. Refresh in a moment.");
+      setPriceQuote({ ...result.quote, fractionDigits: 2 });
+      setPaymentConfirmed(true);
+      setMessage("Payment confirmed. Review the trip details and finish booking.");
+    }).catch((value) => setError(value instanceof Error ? value.message : "Payment status could not be loaded."))
+      .finally(() => setBusy(false));
+  }, [session]);
 
   useEffect(() => {
     if (!supabase) {
@@ -438,7 +458,7 @@ export default function RiderHome() {
         throw new Error("Choose the pickup address from the suggestions.");
       if (!destinationSelection || destinationSelection.label !== destinationQuery)
         throw new Error("Choose the destination from the suggestions.");
-      if (!priceQuote || Date.parse(priceQuote.expiresAt) <= Date.now()) {
+      if (!priceQuote || (!paymentConfirmed && Date.parse(priceQuote.expiresAt) <= Date.now())) {
         const response = await fetch("/api/pricing/quote", {
           method: "POST",
           headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
@@ -447,10 +467,22 @@ export default function RiderHome() {
         const result = (await response.json().catch(() => null)) as (RiderPriceQuote & { message?: string }) | null;
         if (!response.ok || !result) throw new Error(result?.message ?? "Fare quote could not be created.");
         setPriceQuote(result);
+        setPaymentConfirmed(false);
         setPickupQuery(result.pickupAddress); setDestinationQuery(result.destinationAddress);
         setPickupSelection({ ...pickupSelection, label: result.pickupAddress });
         setDestinationSelection({ ...destinationSelection, label: result.destinationAddress });
         setMessage("Review the locked fare, then confirm your trip.");
+        return;
+      }
+      if (!paymentConfirmed) {
+        const response = await fetch("/api/payments/checkout", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug }),
+        });
+        const result = await response.json() as { url?: string; message?: string };
+        if (!response.ok || !result.url) throw new Error(result.message ?? "Payment checkout could not be opened.");
+        window.location.assign(result.url);
         return;
       }
       const result = await supabase.rpc("create_my_rider_priced_booking", {
@@ -470,6 +502,7 @@ export default function RiderHome() {
       setPickupSuggestions([]);
       setDestinationSuggestions([]);
       setPriceQuote(null);
+      setPaymentConfirmed(false);
       await loadPortal();
       setActivePortalTab("trips");
       setMessage(
@@ -791,14 +824,14 @@ export default function RiderHome() {
                   <p className="kicker">Locked fare estimate</p>
                   <h2>{new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.fareAmountMinor / 10 ** priceQuote.fractionDigits)}</h2>
                   <p className="area">Road route {(priceQuote.routeDistanceMeters / 1609.344).toFixed(1)} mi · {Math.max(1, Math.round(priceQuote.routeDurationSeconds / 60))} min · valid until {formatDate(priceQuote.expiresAt)}</p>
-                  <p className="area">Payment is not collected yet. This is the fare that will be recorded for the trip.</p>
+                  <p className="area">{paymentConfirmed ? "Payment confirmed. Finish booking to request the trip." : "Secure payment is collected by Stripe before the trip request is created."}</p>
                 </div>
               ) : null}
               <button
                 className="button primary"
                 disabled={busy || portal.serviceAreas.length === 0}
               >
-                {busy ? "Working…" : priceQuote ? "Confirm trip at this fare" : "Review fare"}
+                {busy ? "Working…" : priceQuote ? paymentConfirmed ? "Finish booking" : "Continue to secure payment" : "Review fare"}
               </button>
             </form>
           </section>

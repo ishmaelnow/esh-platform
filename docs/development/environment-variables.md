@@ -11,7 +11,9 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `NEXT_PUBLIC_SUPABASE_URL`      | All apps            | each app's `.env.local` | Admin, Rider, Driver | Supabase project URL exposed to the browser.                                 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All apps            | each app's `.env.local` | Admin, Rider, Driver | Publishable/anonymous Supabase key; authorization remains enforced by RLS.   |
 | `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Live trip maps     | each app's `.env.local` | Admin, Rider, Driver | Public, URL-restricted Mapbox token for permanent geocoding, road routes, maps, and ETA. |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Admin server routes | `apps/admin/.env.local` | Admin only           | Privileged server-side Supabase access. Never expose to client code.         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Privileged server routes | app-specific `.env.local` | Admin, Rider | Privileged server-side Supabase access. Never expose to client code.         |
+| `STRIPE_SECRET_KEY`            | Rider payment routes | `apps/rider/.env.local` | Rider only | Creates Stripe Checkout Sessions. Server-only. |
+| `STRIPE_WEBHOOK_SECRET`        | Rider Stripe webhook | `apps/rider/.env.local` | Rider only | Verifies Stripe webhook signatures. Server-only. |
 | `RESEND_API_KEY`                | Admin server routes | `apps/admin/.env.local` | Admin only           | Sends invitation and password-reset email.                                   |
 | `RESEND_WEBHOOK_SECRET`         | Admin webhook route | `apps/admin/.env.local` | Admin only           | Verifies Resend webhook signatures.                                          |
 | `INVITATION_FROM_EMAIL`         | Admin server routes | `apps/admin/.env.local` | Admin only           | Verified Resend sender, for example `ESH Platform <onboarding@example.com>`. |
@@ -23,7 +25,9 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 
 `NODE_ENV` is set by Next.js/Vercel and normally should not be entered manually. `NEXT_PUBLIC_APP_ENV` (`local`, `staging`, or `production`) and `LOG_LEVEL` (`debug`, `info`, `warn`, or `error`) have defaults but may be set per app when shared configuration consumes them.
 
-The shared Stripe package requires `STRIPE_SECRET_KEY` when a runtime creates a Stripe client and `STRIPE_WEBHOOK_SECRET` when it verifies a Stripe webhook. No current application imports that package, so these are conditional rather than deployment requirements today. Add them only to the Vercel project that begins using Stripe.
+The Rider deployment requires `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and
+`SUPABASE_SERVICE_ROLE_KEY` for payment collection. Configure the Stripe webhook endpoint as
+`https://rider.eshapp.com/api/webhooks/stripe`. Never place these values in public variables.
 
 ## Tests and tooling
 

@@ -1,5 +1,7 @@
 import Stripe from "stripe";
 
+export type { Stripe };
+
 export function createStripeClient(secretKey = process.env.STRIPE_SECRET_KEY) {
   if (!secretKey) {
     throw new Error("STRIPE_SECRET_KEY is required for Stripe access.");
