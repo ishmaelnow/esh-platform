@@ -34,8 +34,12 @@ Complete Driver Stripe Connect Onboarding V1 on deployed Rider collection and Dr
 - Rider Payments and Collection V1 is implemented locally in
   `20260812000200_rider_payments_collection_v1.sql`; it is deployed through commit `ee21e67`, and
   paid-trip recovery fix `688693b` is deployed.
-- Driver Connect Onboarding V1 is implemented locally in
-  `20260812000300_driver_connect_onboarding_v1.sql`; it is not committed or deployed.
+- Driver Connect Onboarding V1 is deployed through commit `9eb69ee`, and migration
+  `20260812000300_driver_connect_onboarding_v1.sql` is applied. Production showed the Driver wallet
+  and payout setup control, but Stripe rejected legacy Express account creation on the newly
+  registered Connect platform. A local compatibility fix now creates accounts with explicit
+  controller properties; Driver tests, typecheck, production build, and diff checks pass. It needs
+  owner commit/deployment and manual retest.
 
 ## Delivered capabilities relevant to the test
 
@@ -98,11 +102,12 @@ one-time links.
 ## Open issues
 
 Rider payment collection, the $49.39 paid-trip recovery flow, booking, and trip completion passed in
-production. Driver Connect Onboarding V1 needs owner Connect sandbox setup, commit/deployment,
-migration application, and manual testing. It creates
-Stripe Express accounts with transfers capability, uses Stripe-hosted onboarding and dashboard
-links, verifies a distinct connected-account webhook, and exposes collected versus uncollected
-earnings. It does not create transfers or payouts.
+production. Driver Connect infrastructure, payout settings, connected-account webhook, deployment,
+and migration are complete. Production account creation currently fails because commit `9eb69ee`
+uses the legacy `type: express` request against a newly registered Connect platform. The local fix
+uses controller properties for an Express Dashboard, platform-paid fees, platform loss liability,
+and transfers capability. Driver tests, typecheck, production build, and diff checks pass. It needs
+owner commit/deployment and manual retesting. This version does not create transfers or payouts.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
 remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
@@ -118,9 +123,9 @@ dynamic dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner configures Driver server-only Stripe/Supabase secrets, commits and pushes the listed files,
-creates the connected-account webhook, applies the single verified migration, and runs the Connect
-manual test.
+Owner commits and pushes the validated controller-property account-creation fix, then redeploys
+Driver. Retest **Set up payouts** and complete Stripe-hosted onboarding; do not repeat secret,
+webhook, migration, or Connect payout configuration.
 
 ## Required reading for recovery
 

@@ -23,8 +23,13 @@ export async function POST(request: Request) {
       if (record.error || !record.data) throw new Error("Payout account is unavailable.");
       providerAccountId = record.data.provider_account_id;
     } else {
-      const account = await stripe.accounts.create({ type: "express", country: "US",
+      const account = await stripe.accounts.create({ country: "US",
         ...(driver.email ? { email: driver.email } : {}),
+        controller: {
+          fees: { payer: "application" },
+          losses: { payments: "application" },
+          stripe_dashboard: { type: "express" },
+        },
         capabilities: { transfers: { requested: true } }, metadata: { driver_profile_id: driver.driverProfileId } },
         { idempotencyKey: `driver_connect_${driver.driverProfileId}` });
       providerAccountId = account.id;
