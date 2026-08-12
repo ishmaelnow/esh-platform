@@ -384,6 +384,12 @@ export type Database = {
         Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; currency_code?: string; failure_message?: string | null; paid_at?: string | null; payment_attempt_id?: string; provider?: string; provider_checkout_session_id?: string; provider_payment_intent_id?: string | null; quote_id?: string; rider_profile_id?: string; status?: string; tenant_id?: string; updated_at?: string }
         Relationships: []
       }
+      driver_payout_accounts: {
+        Row: { charges_enabled: boolean; created_at: string; details_submitted: boolean; disabled_reason: string | null; driver_payout_account_id: string; driver_profile_id: string; onboarding_status: string; payouts_enabled: boolean; provider: string; provider_account_id: string; requirements_currently_due: string[]; requirements_eventually_due: string[]; tenant_id: string; transfers_capability_status: string | null; updated_at: string }
+        Insert: { charges_enabled?: boolean; created_at?: string; details_submitted?: boolean; disabled_reason?: string | null; driver_payout_account_id?: string; driver_profile_id: string; onboarding_status?: string; payouts_enabled?: boolean; provider?: string; provider_account_id: string; requirements_currently_due?: string[]; requirements_eventually_due?: string[]; tenant_id: string; transfers_capability_status?: string | null; updated_at?: string }
+        Update: { charges_enabled?: boolean; created_at?: string; details_submitted?: boolean; disabled_reason?: string | null; driver_payout_account_id?: string; driver_profile_id?: string; onboarding_status?: string; payouts_enabled?: boolean; provider?: string; provider_account_id?: string; requirements_currently_due?: string[]; requirements_eventually_due?: string[]; tenant_id?: string; transfers_capability_status?: string | null; updated_at?: string }
+        Relationships: []
+      }
       dispatch_offers: {
         Row: {
           booking_id: string
@@ -2165,6 +2171,7 @@ export type Database = {
       my_driver_location_sharing: { Args: never; Returns: Json }
       my_driver_reputation: { Args: never; Returns: Json }
       my_driver_wallet: { Args: never; Returns: Json }
+      my_driver_payout_account: { Args: never; Returns: Json }
       my_rider_portal: {
         Args: { target_tenant_slug: string }
         Returns: Json
@@ -2195,6 +2202,14 @@ export type Database = {
       register_rider_checkout_internal: {
         Args: { checkout_session_id_value: string; target_quote_id: string }
         Returns: string
+      }
+      register_driver_payout_account_internal: {
+        Args: { provider_account_id_value: string; target_driver_profile_id: string }
+        Returns: string
+      }
+      update_driver_payout_account_internal: {
+        Args: { charges_enabled_value: boolean; currently_due_value: string[]; details_submitted_value: boolean; disabled_reason_value: string | null; eventually_due_value: string[]; payouts_enabled_value: boolean; provider_account_id_value: string; transfers_capability_status_value: string | null }
+        Returns: boolean
       }
       record_rider_payment_internal: {
         Args: { amount_minor_value: number; checkout_session_id_value: string; currency_code_value: string; failure_message_value?: string | null; payment_intent_id_value: string; payment_status_value: string }

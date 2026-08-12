@@ -141,8 +141,9 @@ type DriverLocationSharing = {
 };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null };
-type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; fareAmountMinor: number; earningsAmountMinor: number; platformFeeMinor: number; shareBasisPoints: number };
+type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; fareAmountMinor: number; earningsAmountMinor: number; platformFeeMinor: number; shareBasisPoints: number; paymentCollected: boolean };
 type DriverWallet = { currencyCode: string; balanceMinor: number; pendingMinor: number; availableMinor: number; paidMinor: number; trips: DriverWalletTrip[] };
+type DriverPayoutAccount = { exists: boolean; onboardingStatus: "not_started" | "details_required" | "under_review" | "enabled" | "restricted"; detailsSubmitted: boolean; payoutsEnabled: boolean; transfersCapabilityStatus: string | null; requirementsCurrentlyDue: string[]; disabledReason: string | null; updatedAt: string | null };
 
 type DriverPortalTab =
   | "overview"
@@ -197,6 +198,9 @@ export default function DriverHome() {
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [wallet, setWallet] = useState<DriverWallet | null>(null);
+  const [payoutAccount, setPayoutAccount] = useState<DriverPayoutAccount | null>(null);
+  const [payoutBusy, setPayoutBusy] = useState(false);
+  const [payoutMessage, setPayoutMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
@@ -261,6 +265,8 @@ export default function DriverHome() {
     setReputationTrips(reputationResult.error ? [] : (reputationResult.data as unknown as ReputationTrip[]));
     const walletResult = await supabase.rpc("my_driver_wallet");
     setWallet(walletResult.error || !walletResult.data ? null : (walletResult.data as unknown as DriverWallet));
+    const payoutResult = await supabase.rpc("my_driver_payout_account");
+    setPayoutAccount(payoutResult.error || !payoutResult.data ? null : (payoutResult.data as unknown as DriverPayoutAccount));
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -316,6 +322,7 @@ export default function DriverHome() {
       setDispatch({ offers: [], trips: [] });
       setReputationTrips([]);
       setWallet(null);
+      setPayoutAccount(null);
       setLocationSharing(null);
       return;
     }
@@ -401,6 +408,18 @@ export default function DriverHome() {
       options: { emailRedirectTo: redirectUrl.toString(), shouldCreateUser: false },
     });
     setMessage(error ? error.message : "Check your email for the secure sign-in link.");
+  }
+
+  async function openPayoutRoute(path: "onboarding" | "dashboard") {
+    if (!session) return;
+    setPayoutBusy(true); setPayoutMessage(null);
+    try {
+      const response = await fetch(`/api/payouts/${path}`, { method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` } });
+      const result = await response.json() as { url?: string; message?: string };
+      if (!response.ok || !result.url) throw new Error(result.message ?? "Stripe payout setup is unavailable.");
+      window.location.assign(result.url);
+    } catch (value) { setPayoutMessage(value instanceof Error ? value.message : "Stripe payout setup is unavailable."); setPayoutBusy(false); }
   }
 
   async function uploadEvidence(document: DriverDocument, file: File) {
@@ -1351,11 +1370,22 @@ export default function DriverHome() {
                     Completed-trip earnings are recorded here as money the platform owes you. Rider payment collection and transfers to your bank are not active yet, so earnings remain pending.
                   </p>
                 </div>
+                <article className="document-card">
+                  <div className="document-heading"><strong>Payout account</strong><span>{payoutAccount?.onboardingStatus.replaceAll("_", " ") ?? "unavailable"}</span></div>
+                  <span>{payoutAccount?.onboardingStatus === "enabled" ? "Stripe has enabled this account to receive future ESH transfers." : payoutAccount?.onboardingStatus === "under_review" ? "Stripe is reviewing the submitted payout information." : payoutAccount?.onboardingStatus === "restricted" ? "Stripe requires attention before payouts can be enabled." : "Set up and verify your payout account on Stripe's secure website."}</span>
+                  {payoutAccount?.requirementsCurrentlyDue.length ? <span>Information currently due: {payoutAccount.requirementsCurrentlyDue.length} item(s)</span> : null}
+                  {payoutAccount?.disabledReason ? <span>Stripe status: {payoutAccount.disabledReason}</span> : null}
+                  <div className="row-actions">
+                    {payoutAccount?.onboardingStatus === "enabled" ? <button disabled={payoutBusy} onClick={() => void openPayoutRoute("dashboard")} type="button">Manage payout account</button> : <button disabled={payoutBusy} onClick={() => void openPayoutRoute("onboarding")} type="button">{payoutAccount?.exists ? "Continue payout setup" : "Set up payouts"}</button>}
+                  </div>
+                  <p className="document-help">ESH never receives or stores your bank account or identity documents. Actual transfers are not active in this version.</p>
+                  {payoutMessage ? <p className="upload-message">{payoutMessage}</p> : null}
+                </article>
                 {wallet ? (
                   <>
                     <dl className="location-details">
                       <div><dt>Pending earnings</dt><dd>{formatCurrency(wallet.pendingMinor, wallet.currencyCode)}</dd></div>
-                      <div><dt>Available to withdraw</dt><dd>{formatCurrency(wallet.availableMinor, wallet.currencyCode)}</dd></div>
+                      <div><dt>Collected earnings</dt><dd>{formatCurrency(wallet.availableMinor, wallet.currencyCode)}</dd></div>
                       <div><dt>Paid</dt><dd>{formatCurrency(wallet.paidMinor, wallet.currencyCode)}</dd></div>
                       <div><dt>Ledger amount owed</dt><dd>{formatCurrency(wallet.balanceMinor, wallet.currencyCode)}</dd></div>
                     </dl>
@@ -1364,7 +1394,7 @@ export default function DriverHome() {
                         <div className="document-heading"><strong>{formatCurrency(trip.earningsAmountMinor, wallet.currencyCode)} earned</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
                         <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
                         <span>Rider fare: {formatCurrency(trip.fareAmountMinor, wallet.currencyCode)}</span>
-                        <span>Your share: {(trip.shareBasisPoints / 100).toFixed(2).replace(/\.00$/, "")}% · Platform fee: {formatCurrency(trip.platformFeeMinor, wallet.currencyCode)}</span>
+                        <span>Your share: {(trip.shareBasisPoints / 100).toFixed(2).replace(/\.00$/, "")}% · Platform fee: {formatCurrency(trip.platformFeeMinor, wallet.currencyCode)} · {trip.paymentCollected ? "Rider payment collected" : "Payment not collected"}</span>
                       </article>
                     ))}
                     {wallet.trips.length === 0 ? <p className="document-help">Your completed priced trips will appear here.</p> : null}

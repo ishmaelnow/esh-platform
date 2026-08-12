@@ -55,6 +55,7 @@ export async function loadTenantSummary(
     pricingSettingsResult,
     driverEarningsSettingsResult,
     riderPaymentAttemptsResult,
+    driverPayoutAccountsResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -151,6 +152,7 @@ export async function loadTenantSummary(
     supabase.from("tenant_pricing_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("tenant_driver_earnings_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("rider_payment_attempts").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
+    supabase.from("driver_payout_accounts").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
   ]);
 
   if (tenantResult.error) {
@@ -264,6 +266,8 @@ export async function loadTenantSummary(
     throw driverEarningsSettingsResult.error;
   if (riderPaymentAttemptsResult.error && !riderPaymentAttemptsResult.error.message.includes("rider_payment_attempts"))
     throw riderPaymentAttemptsResult.error;
+  if (driverPayoutAccountsResult.error && !driverPayoutAccountsResult.error.message.includes("driver_payout_accounts"))
+    throw driverPayoutAccountsResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -302,6 +306,7 @@ export async function loadTenantSummary(
     pricingSettings: pricingSettingsResult.data ?? null,
     driverEarningsSettings: driverEarningsSettingsResult.data ?? null,
     riderPaymentAttempts: riderPaymentAttemptsResult.data ?? [],
+    driverPayoutAccounts: driverPayoutAccountsResult.data ?? [],
   };
 }
 

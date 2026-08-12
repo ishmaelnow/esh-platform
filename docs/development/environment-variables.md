@@ -14,6 +14,8 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `SUPABASE_SERVICE_ROLE_KEY`     | Privileged server routes | app-specific `.env.local` | Admin, Rider | Privileged server-side Supabase access. Never expose to client code.         |
 | `STRIPE_SECRET_KEY`            | Rider payment routes | `apps/rider/.env.local` | Rider only | Creates Stripe Checkout Sessions. Server-only. |
 | `STRIPE_WEBHOOK_SECRET`        | Rider Stripe webhook | `apps/rider/.env.local` | Rider only | Verifies Stripe webhook signatures. Server-only. |
+| `STRIPE_SECRET_KEY`            | Driver payout routes | `apps/driver/.env.local` | Driver only | Creates Stripe Express accounts and hosted links. Server-only. |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | Driver Connect webhook | `apps/driver/.env.local` | Driver only | Verifies connected-account events. Distinct from the Rider webhook secret. |
 | `RESEND_API_KEY`                | Admin server routes | `apps/admin/.env.local` | Admin only           | Sends invitation and password-reset email.                                   |
 | `RESEND_WEBHOOK_SECRET`         | Admin webhook route | `apps/admin/.env.local` | Admin only           | Verifies Resend webhook signatures.                                          |
 | `INVITATION_FROM_EMAIL`         | Admin server routes | `apps/admin/.env.local` | Admin only           | Verified Resend sender, for example `ESH Platform <onboarding@example.com>`. |
@@ -28,6 +30,9 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 The Rider deployment requires `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and
 `SUPABASE_SERVICE_ROLE_KEY` for payment collection. Configure the Stripe webhook endpoint as
 `https://rider.eshapp.com/api/webhooks/stripe`. Never place these values in public variables.
+The Driver deployment requires `STRIPE_SECRET_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET`, and
+`SUPABASE_SERVICE_ROLE_KEY`. Its Connect destination is
+`https://driver.eshapp.com/api/webhooks/stripe-connect` and uses its own signing secret.
 
 ## Tests and tooling
 

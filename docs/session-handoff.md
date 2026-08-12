@@ -4,7 +4,7 @@ Last updated: 2026-08-12
 
 ## Current objective
 
-Complete Rider Payments and Collection V1 on the deployed pricing, ledger, and Driver wallet.
+Complete Driver Stripe Connect Onboarding V1 on deployed Rider collection and Driver earnings.
 
 ## Repository and deployment state
 
@@ -32,7 +32,10 @@ Complete Rider Payments and Collection V1 on the deployed pricing, ledger, and D
 - Driver Earnings and Wallet V1, its migration fix, and the Admin six-account validation fix are
   deployed through commit `9e61228`; production wallet and ledger reconciliation passed.
 - Rider Payments and Collection V1 is implemented locally in
-  `20260812000200_rider_payments_collection_v1.sql`; it is not committed or deployed.
+  `20260812000200_rider_payments_collection_v1.sql`; it is deployed through commit `ee21e67`, and
+  paid-trip recovery fix `688693b` is deployed.
+- Driver Connect Onboarding V1 is implemented locally in
+  `20260812000300_driver_connect_onboarding_v1.sql`; it is not committed or deployed.
 
 ## Delivered capabilities relevant to the test
 
@@ -94,22 +97,16 @@ one-time links.
 
 ## Open issues
 
-Rider Payments V1 needs owner Stripe test configuration, commit/deployment, migration application,
-and production manual testing. It uses
-Stripe-hosted Checkout, verified webhooks as payment truth, paid-only booking finalization, a Rider
-prepayments liability, and balanced collection/settlement journals. Refunds, disputes, processor
-fees, reconciliation, saved methods, and payouts remain deferred.
-Supabase, Stripe, Rider, and Admin typechecks pass; Rider and Admin lint pass; Rider tests pass 4/4;
-Admin tests pass 54/54; both production builds pass; and the required remote Supabase dry-run lists
-only `20260812000200_rider_payments_collection_v1.sql`. Existing Next/Supabase dynamic dependency
-and ESLint-plugin warnings remain non-blocking.
-
-Stripe sandbox configuration is complete and the first $49.39 Checkout payment was confirmed. The
-post-payment Rider screen was ambiguous and a refresh could clear in-memory service-area/address
-state before the paid booking was finalized. A local UI recovery fix now reloads the complete paid
-draft from the quote, explicitly states that no trip exists yet, and labels the one-time action
-`Request this paid trip`. Rider typecheck/lint and tests 4/4 pass; the fix is not committed or
-deployed.
+Rider payment collection, the $49.39 paid-trip recovery flow, booking, and trip completion passed in
+production. Driver Connect Onboarding V1 needs owner Connect sandbox setup, commit/deployment,
+migration application, and manual testing. It creates
+Stripe Express accounts with transfers capability, uses Stripe-hosted onboarding and dashboard
+links, verifies a distinct connected-account webhook, and exposes collected versus uncollected
+earnings. It does not create transfers or payouts.
+Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
+9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
+remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
+dynamic dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Cleanup still required after testing
 
@@ -121,8 +118,9 @@ deployed.
 
 ## Exact next action
 
-Owner commits and pushes the paid-trip recovery wording fix, then refreshes the returned $49.39
-payment URL and selects `Request this paid trip` once to complete the production test.
+Owner configures Driver server-only Stripe/Supabase secrets, commits and pushes the listed files,
+creates the connected-account webhook, applies the single verified migration, and runs the Connect
+manual test.
 
 ## Required reading for recovery
 
@@ -143,3 +141,5 @@ payment URL and selects `Request this paid trip` once to complete the production
 - `docs/operations/driver-earnings-wallet-manual-test.md`
 - `docs/architecture/rider-payments-collection.md`
 - `docs/operations/rider-payments-collection-manual-test.md`
+- `docs/architecture/driver-connect-onboarding.md`
+- `docs/operations/driver-connect-onboarding-manual-test.md`

@@ -129,6 +129,8 @@ deferred from this milestone and were delivered under the later milestones below
      immutable completed-trip allocation, ledger-derived Driver wallet, and locked trip history.
    - Current delivery in progress: Rider payment attempts, Stripe collection, prepayment accounting,
      completed-trip receivable settlement, and Admin payment visibility.
+   - Current delivery in progress: Stripe Express Driver onboarding, payout readiness, collected-
+     earnings availability, signed Connect status updates, and Admin visibility.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**
