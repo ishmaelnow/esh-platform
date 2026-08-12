@@ -101,6 +101,10 @@ and Admin typechecks pass; Driver and Admin lint pass; Admin tests pass 52/52; b
 pass; `git diff --check` passes. The required Supabase dry-run lists only
 `20260812000100_driver_earnings_wallet_v1.sql`. Existing Next/Supabase dynamic dependency and
 ESLint-plugin warnings remain non-blocking.
+The owner's first production migration attempt stopped transactionally during function creation
+because literal percent signs in a PL/pgSQL `RAISE` message were not escaped. The local migration
+now uses `%%`; the corrected dry-run again lists only the Driver wallet migration. The correction is
+not committed or pushed yet, and the migration remains unapplied.
 
 ## Cleanup still required after testing
 
@@ -112,8 +116,8 @@ ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner stages and commits the listed Driver wallet files, pushes `main`, applies the single verified
-migration, and runs `docs/operations/driver-earnings-wallet-manual-test.md` in production.
+Owner commits and pushes the one-line migration correction, repeats the dry-run, applies the single
+verified migration, and runs `docs/operations/driver-earnings-wallet-manual-test.md` in production.
 
 ## Required reading for recovery
 

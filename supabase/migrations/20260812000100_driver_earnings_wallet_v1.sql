@@ -42,7 +42,7 @@ returns boolean language plpgsql security definer set search_path = public as $$
 declare actor_id uuid := public.current_person_id();
 begin
   if not public.can_manage_pricing(target_tenant_id) then raise exception 'pricing management access is required'; end if;
-  if driver_share_basis_points_value not between 0 and 10000 then raise exception 'Driver share must be between 0% and 100%'; end if;
+  if driver_share_basis_points_value not between 0 and 10000 then raise exception 'Driver share must be between 0%% and 100%%'; end if;
   insert into public.tenant_driver_earnings_settings
     (tenant_id, driver_share_basis_points, updated_by_person_id)
   values (target_tenant_id, driver_share_basis_points_value, actor_id)
