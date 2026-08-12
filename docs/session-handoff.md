@@ -104,6 +104,13 @@ Admin tests pass 54/54; both production builds pass; and the required remote Sup
 only `20260812000200_rider_payments_collection_v1.sql`. Existing Next/Supabase dynamic dependency
 and ESLint-plugin warnings remain non-blocking.
 
+Stripe sandbox configuration is complete and the first $49.39 Checkout payment was confirmed. The
+post-payment Rider screen was ambiguous and a refresh could clear in-memory service-area/address
+state before the paid booking was finalized. A local UI recovery fix now reloads the complete paid
+draft from the quote, explicitly states that no trip exists yet, and labels the one-time action
+`Request this paid trip`. Rider typecheck/lint and tests 4/4 pass; the fix is not committed or
+deployed.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -114,9 +121,8 @@ and ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner configures Rider Stripe test secrets, commits and pushes the listed files, configures the
-signed Stripe webhook, applies the single verified migration, and follows the Rider Payments manual
-test.
+Owner commits and pushes the paid-trip recovery wording fix, then refreshes the returned $49.39
+payment URL and selects `Request this paid trip` once to complete the production test.
 
 ## Required reading for recovery
 

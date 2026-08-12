@@ -89,6 +89,7 @@ type RiderTripLocation = {
 };
 type ServiceAreaContext = { latitude: number; longitude: number; radiusKm: number };
 type RiderPriceQuote = { quoteId: string; fareAmountMinor: number; currencyCode: string; fractionDigits: number; expiresAt: string; pickupAddress: string; destinationAddress: string; routeDistanceMeters: number; routeDurationSeconds: number };
+type PaidRiderPriceQuote = Omit<RiderPriceQuote, "fractionDigits"> & { serviceAreaId: string };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
@@ -256,7 +257,7 @@ export default function RiderHome() {
   }, [session, supabase, tenantSlug]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !supabase) return;
     const params = new URLSearchParams(window.location.search);
     const returnedQuoteId = params.get("quote");
     if (params.get("payment") !== "success" || !returnedQuoteId) return;
@@ -264,15 +265,27 @@ export default function RiderHome() {
     void fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     }).then(async (response) => {
-      const result = await response.json() as { paymentStatus?: string; quote?: Omit<RiderPriceQuote, "fractionDigits">; message?: string };
+      const result = await response.json() as { paymentStatus?: string; quote?: PaidRiderPriceQuote; message?: string };
       if (!response.ok || result.paymentStatus !== "paid" || !result.quote)
         throw new Error(result.message ?? "Payment confirmation is still processing. Refresh in a moment.");
       setPriceQuote({ ...result.quote, fractionDigits: 2 });
+      setServiceAreaId(result.quote.serviceAreaId);
+      const area = await supabase.rpc("my_rider_service_area_context", {
+        target_tenant_slug: tenantSlug,
+        target_service_area_id: result.quote.serviceAreaId,
+      });
+      if (area.error || !area.data) throw area.error ?? new Error("Paid trip service area is unavailable.");
+      setServiceAreaContext(area.data as ServiceAreaContext);
+      setPickupQuery(result.quote.pickupAddress);
+      setDestinationQuery(result.quote.destinationAddress);
+      setPickupSelection({ mapboxId: `paid:${result.quote.quoteId}:pickup`, label: result.quote.pickupAddress });
+      setDestinationSelection({ mapboxId: `paid:${result.quote.quoteId}:destination`, label: result.quote.destinationAddress });
       setPaymentConfirmed(true);
-      setMessage("Payment confirmed. Review the trip details and finish booking.");
+      setActivePortalTab("book");
+      setMessage("Payment received. No trip has been requested yet. Review this paid trip, then request it once.");
     }).catch((value) => setError(value instanceof Error ? value.message : "Payment status could not be loaded."))
       .finally(() => setBusy(false));
-  }, [session]);
+  }, [session, supabase, tenantSlug]);
 
   useEffect(() => {
     if (!supabase) {
@@ -510,6 +523,10 @@ export default function RiderHome() {
           ? "Trip scheduled. We will begin finding a driver closer to pickup."
           : "Trip requested. Dispatch can now find an eligible driver.",
       );
+      const completedUrl = new URL(window.location.href);
+      completedUrl.searchParams.delete("payment");
+      completedUrl.searchParams.delete("quote");
+      window.history.replaceState({}, "", completedUrl);
     } catch (value) {
       setError(riderErrorMessage(value));
     } finally {
@@ -824,14 +841,14 @@ export default function RiderHome() {
                   <p className="kicker">Locked fare estimate</p>
                   <h2>{new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.fareAmountMinor / 10 ** priceQuote.fractionDigits)}</h2>
                   <p className="area">Road route {(priceQuote.routeDistanceMeters / 1609.344).toFixed(1)} mi · {Math.max(1, Math.round(priceQuote.routeDurationSeconds / 60))} min · valid until {formatDate(priceQuote.expiresAt)}</p>
-                  <p className="area">{paymentConfirmed ? "Payment confirmed. Finish booking to request the trip." : "Secure payment is collected by Stripe before the trip request is created."}</p>
+                  <p className="area">{paymentConfirmed ? "Payment received. This trip has not been requested yet. Select the button below once to create this paid trip and notify dispatch." : "Secure payment is collected by Stripe before the trip request is created."}</p>
                 </div>
               ) : null}
               <button
                 className="button primary"
                 disabled={busy || portal.serviceAreas.length === 0}
               >
-                {busy ? "Working…" : priceQuote ? paymentConfirmed ? "Finish booking" : "Continue to secure payment" : "Review fare"}
+                {busy ? "Working…" : priceQuote ? paymentConfirmed ? "Request this paid trip" : "Continue to secure payment" : "Review fare"}
               </button>
             </form>
           </section>
