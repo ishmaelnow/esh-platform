@@ -90,7 +90,12 @@ one-time links.
 
 ## Open issues
 
-Ledger currency-summary and signed-zero fixes are deployed. Trip Pricing typechecks pass across
+Ledger currency-summary and signed-zero fixes are deployed. Trip Pricing commit `6340255` and
+migration `20260811000300_trip_pricing_v1.sql` are deployed. Production quote creation passed, but
+booking confirmation failed because the RPC used an ambiguous `tenant_slug` identifier. Local
+forward-only migration `20260811000400_fix_priced_booking_confirmation.sql` fixes it. The Rider UI
+also now uses **Book trip** and **My trips** tabs, switches to My trips after booking, and preserves
+plain-object Supabase error messages. These fixes are not yet committed or deployed. Trip Pricing typechecks pass across
 Rider, Driver, Admin, Maps, and Supabase. Maps tests pass 10/10, Admin tests pass 52/52, Rider,
 Driver, and Admin lint pass, all three production builds pass, and `git diff --check` passes. The
 required dry run lists only `20260811000300_trip_pricing_v1.sql`. Existing Next/Supabase dynamic
@@ -106,9 +111,8 @@ dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner stages, commits, and pushes Trip Pricing V1, confirms `SUPABASE_SERVICE_ROLE_KEY` is configured
-as a server-only Rider deployment secret, applies the migration, and follows
-`docs/operations/trip-pricing-manual-test.md`.
+Owner commits and deploys the priced-booking/Rider-tabs fix, applies the hotfix migration, then uses
+the existing locked quote if still valid or requests a new one and resumes confirmation testing.
 
 ## Required reading for recovery
 

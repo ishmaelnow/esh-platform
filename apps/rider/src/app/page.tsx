@@ -153,6 +153,7 @@ export default function RiderHome() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [activePortalTab, setActivePortalTab] = useState<"book" | "trips">("book");
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
 
@@ -470,6 +471,7 @@ export default function RiderHome() {
       setDestinationSuggestions([]);
       setPriceQuote(null);
       await loadPortal();
+      setActivePortalTab("trips");
       setMessage(
         bookingTiming === "scheduled"
           ? "Trip scheduled. We will begin finding a driver closer to pickup."
@@ -646,7 +648,13 @@ export default function RiderHome() {
           </form>
         </section>
       ) : (
-        <div className="portal-grid">
+        <>
+        <nav className="rider-tabs" aria-label="Rider portal sections">
+          <button className={activePortalTab === "book" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("book")} type="button">Book trip</button>
+          <button className={activePortalTab === "trips" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("trips")} type="button">My trips{portal.bookings.length ? ` (${portal.bookings.length})` : ""}</button>
+        </nav>
+        <div className={activePortalTab === "book" ? "portal-grid booking-only" : "portal-grid trips-only"}>
+          {activePortalTab === "book" ? (
           <section className="card booking-card">
             <p className="kicker">{portal.tenant.displayName}</p>
             <h2>Request a trip</h2>
@@ -794,7 +802,9 @@ export default function RiderHome() {
               </button>
             </form>
           </section>
+          ) : null}
 
+          {activePortalTab === "trips" ? (
           <section className="history">
             <div className="section-heading">
               <div>
@@ -900,6 +910,8 @@ export default function RiderHome() {
               ))
             )}
           </section>
+          ) : null}
+          {activePortalTab === "trips" ? (
           <section className="history reputation-history">
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
@@ -921,7 +933,9 @@ export default function RiderHome() {
               </article>
             ))}
           </section>
+          ) : null}
         </div>
+        </>
       )}
     </main>
   );

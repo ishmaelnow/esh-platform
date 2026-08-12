@@ -33,6 +33,7 @@ describe("rider booking helpers", () => {
   it("normalizes tenant links and unknown errors", () => {
     expect(normalizeTenantSlug(" Dallas-Rides ")).toBe("dallas-rides");
     expect(riderErrorMessage(new Error("Not available"))).toBe("Not available");
+    expect(riderErrorMessage({ message: "Database rejected booking" })).toBe("Database rejected booking");
     expect(riderErrorMessage("unknown")).toBe("Something went wrong. Please try again.");
   });
 });

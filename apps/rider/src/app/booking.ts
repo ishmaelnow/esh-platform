@@ -25,8 +25,10 @@ export function normalizeTenantSlug(value: string | null) {
 
 export function riderErrorMessage(value: unknown) {
   const fallback = "Something went wrong. Please try again.";
-  if (!(value instanceof Error)) return fallback;
-  const message = value.message.trim();
+  const message = value instanceof Error
+    ? value.message.trim()
+    : typeof value === "object" && value !== null && "message" in value
+      && typeof value.message === "string" ? value.message.trim() : "";
   return message || fallback;
 }
 

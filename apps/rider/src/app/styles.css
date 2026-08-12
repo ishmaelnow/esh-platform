@@ -241,6 +241,25 @@ textarea:focus {
   gap: 24px;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
 }
+.rider-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.booking-only {
+  display: block;
+  max-width: 720px;
+}
+.booking-only .booking-card {
+  position: static;
+}
+.trips-only {
+  grid-template-columns: 1fr;
+  max-width: 860px;
+}
+.trips-only .reputation-history {
+  grid-column: auto;
+}
 .booking-card {
   position: sticky;
   top: 24px;
