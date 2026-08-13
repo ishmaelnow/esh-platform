@@ -62,6 +62,7 @@ export type TenantPricingSettingsRow = Tables<"tenant_pricing_settings">;
 export type TripPriceQuoteRow = Tables<"trip_price_quotes">;
 export type TenantDriverEarningsSettingsRow = Tables<"tenant_driver_earnings_settings">;
 export type RiderPaymentAttemptRow = Tables<"rider_payment_attempts">;
+export type RiderPaymentRefundRow = Tables<"rider_payment_refunds">;
 export type DriverPayoutAccountRow = Tables<"driver_payout_accounts">;
 export type DriverEarningTransferRow = Tables<"driver_earning_transfers">;
 export type DriverBankPayoutRow = Tables<"driver_bank_payouts">;

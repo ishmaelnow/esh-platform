@@ -539,12 +539,20 @@ export default function RiderHome() {
     setBusy(true);
     setError("");
     try {
-      const { error: cancelError } = await supabase.rpc("cancel_my_rider_booking", {
-        target_booking_id: bookingId,
-      });
-      if (cancelError) throw cancelError;
+      const booking = portal?.bookings.find((item) => item.bookingId === bookingId);
+      if (booking?.finalFareMinor != null) {
+        if (!session) throw new Error("Authentication is required.");
+        const response = await fetch("/api/payments/refund", { method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingId }) });
+        const result = await response.json() as { refunded?: boolean; message?: string };
+        if (!response.ok || !result.refunded) throw new Error(result.message ?? "Trip refund failed.");
+      } else {
+        const { error: cancelError } = await supabase.rpc("cancel_my_rider_booking", { target_booking_id: bookingId });
+        if (cancelError) throw cancelError;
+      }
       await loadPortal();
-      setMessage("Trip cancelled.");
+      setMessage(booking?.finalFareMinor != null ? "Trip cancelled and payment refunded." : "Trip cancelled.");
     } catch (value) {
       setError(riderErrorMessage(value));
     } finally {

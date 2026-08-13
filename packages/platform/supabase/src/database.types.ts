@@ -384,6 +384,12 @@ export type Database = {
         Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; currency_code?: string; failure_message?: string | null; paid_at?: string | null; payment_attempt_id?: string; provider?: string; provider_checkout_session_id?: string; provider_payment_intent_id?: string | null; quote_id?: string; rider_profile_id?: string; status?: string; tenant_id?: string; updated_at?: string }
         Relationships: []
       }
+      rider_payment_refunds: {
+        Row: { amount_minor: number; booking_id: string; created_at: string; currency_code: string; failure_message: string | null; payment_attempt_id: string; provider: string; provider_refund_id: string | null; reason: string; refund_id: string; refunded_at: string | null; status: string; tenant_id: string; updated_at: string }
+        Insert: { amount_minor: number; booking_id: string; created_at?: string; currency_code: string; failure_message?: string | null; payment_attempt_id: string; provider?: string; provider_refund_id?: string | null; reason: string; refund_id?: string; refunded_at?: string | null; status?: string; tenant_id: string; updated_at?: string }
+        Update: { amount_minor?: number; booking_id?: string; created_at?: string; currency_code?: string; failure_message?: string | null; payment_attempt_id?: string; provider?: string; provider_refund_id?: string | null; reason?: string; refund_id?: string; refunded_at?: string | null; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       driver_payout_accounts: {
         Row: { charges_enabled: boolean; created_at: string; details_submitted: boolean; disabled_reason: string | null; driver_payout_account_id: string; driver_profile_id: string; onboarding_status: string; payouts_enabled: boolean; provider: string; provider_account_id: string; requirements_currently_due: string[]; requirements_eventually_due: string[]; tenant_id: string; transfers_capability_status: string | null; updated_at: string }
         Insert: { charges_enabled?: boolean; created_at?: string; details_submitted?: boolean; disabled_reason?: string | null; driver_payout_account_id?: string; driver_profile_id: string; onboarding_status?: string; payouts_enabled?: boolean; provider?: string; provider_account_id: string; requirements_currently_due?: string[]; requirements_eventually_due?: string[]; tenant_id: string; transfers_capability_status?: string | null; updated_at?: string }
@@ -2189,6 +2195,9 @@ export type Database = {
         Args: { amount_minor_value: number; automatic_value: boolean; currency_code_value: string; destination_reference_value: string | null; expected_arrival_at_value: string | null; failure_code_value: string | null; failure_message_value: string | null; method_value: string | null; provider_account_id_value: string; provider_created_at_value: string; provider_payout_id_value: string; status_value: string }
         Returns: boolean
       }
+      prepare_pretrip_refund_internal: { Args: { target_booking_id: string }; Returns: Json }
+      complete_pretrip_refund_internal: { Args: { provider_refund_id_value: string; target_refund_id: string }; Returns: boolean }
+      fail_pretrip_refund_internal: { Args: { failure_message_value: string; target_refund_id: string }; Returns: boolean }
       prepare_driver_earning_transfer_internal: {
         Args: { target_booking_id: string; target_driver_profile_id: string }
         Returns: Json

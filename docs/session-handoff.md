@@ -4,7 +4,7 @@ Last updated: 2026-08-12
 
 ## Current objective
 
-Complete Driver Bank Payout Reconciliation V1 on the production-verified Stripe transfer.
+Complete Pre-trip Rider Refunds V1 on the deployed payment and ledger foundation.
 
 ## Repository and deployment state
 
@@ -145,10 +145,17 @@ capability. It uses existing trips, paid payment attempts, immutable transfer re
 balances rather than storing duplicate totals.
 Admin tests pass 54/54; Admin typecheck and diff checks pass. It needs owner commit/deployment and
 production UI verification.
-Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
-9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
-remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
-dynamic dependency and ESLint-plugin warnings remain non-blocking.
+
+Pre-trip Rider Refunds V1 is implemented locally for paid bookings before `in_progress`. Rider and
+authorized Admin cancellation use server-only Stripe refunds; ESH cancels only after Stripe accepts,
+marks the attempt refunded, and posts a balanced prepayment/cash reversal. A database trigger blocks
+trip start while Stripe is processing the refund. Completed/in-progress refunds and transferred
+earnings are deliberately excluded. Rider, Admin, and Supabase typechecks pass; Rider tests pass 4/4;
+Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required remote
+dry run lists only `20260813000300_pretrip_rider_refunds_v1.sql`. Existing Next/Supabase dynamic
+dependency and ESLint-plugin warnings remain non-blocking. Next: owner adds Admin
+`STRIPE_SECRET_KEY`, commits and deploys the applications, applies the migration, and runs the
+production manual test.
 
 ## Cleanup still required after testing
 
@@ -189,3 +196,5 @@ connected-account webhook, have the owner commit/push and deploy, dry-run/apply 
 - `docs/operations/driver-transfers-manual-test.md`
 - `docs/architecture/driver-payout-reconciliation.md`
 - `docs/operations/driver-payout-reconciliation-manual-test.md`
+- `docs/architecture/pretrip-rider-refunds.md`
+- `docs/operations/pretrip-rider-refunds-manual-test.md`

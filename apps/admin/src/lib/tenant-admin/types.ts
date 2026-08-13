@@ -33,6 +33,7 @@ import type {
   DriverPayoutAccountRow,
   DriverBankPayoutRow,
   DriverEarningTransferRow,
+  RiderPaymentRefundRow,
 } from "@esh-platform/supabase";
 
 export const foundationTenantRoles = ["tenant_owner", "tenant_admin", "tenant_member"] as const;
@@ -91,6 +92,7 @@ export type TenantSummary = {
   driverPayoutAccounts: DriverPayoutAccountRow[];
   driverBankPayouts: DriverBankPayoutRow[];
   driverEarningTransfers: DriverEarningTransferRow[];
+  riderPaymentRefunds: RiderPaymentRefundRow[];
 };
 
 export type ActiveTenantOption = {

@@ -75,6 +75,9 @@ importers:
       '@esh-platform/maps':
         specifier: workspace:*
         version: link:../../packages/platform/maps
+      '@esh-platform/stripe':
+        specifier: workspace:*
+        version: link:../../packages/platform/stripe
       '@esh-platform/supabase':
         specifier: workspace:*
         version: link:../../packages/platform/supabase
