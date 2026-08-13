@@ -18,3 +18,8 @@ Rider messages deep-link to `view=payments`; Driver messages deep-link to `view=
 
 V1 is email-only. Push/SMS, Admin financial alerts, configurable event-by-event preferences, digest
 delivery, and retroactive notification generation are deferred.
+
+Automatic outbox delivery currently runs with the existing daily notification job. Tenant Admin can
+deliver or retry queued financial messages immediately from Notifications. More frequent automatic
+delivery requires a scheduler that supports sub-daily execution; Vercel Hobby cron is deliberately
+not configured beyond its once-daily limit.

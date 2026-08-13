@@ -316,6 +316,10 @@ export default function RiderHome() {
     const params = new URLSearchParams(window.location.search);
     const returnedQuoteId = params.get("quote");
     if (params.get("payment") !== "success" || !returnedQuoteId) return;
+    const recoveredUrl = new URL(window.location.href);
+    recoveredUrl.searchParams.delete("payment");
+    recoveredUrl.searchParams.delete("quote");
+    window.history.replaceState({}, "", recoveredUrl);
     setBusy(true);
     void fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
@@ -338,7 +342,7 @@ export default function RiderHome() {
       setPaymentConfirmed(true);
       setActivePortalTab("book");
       setMessage("Payment received. No trip has been requested yet. Review this paid trip, then request it once.");
-    }).catch((value) => setError(value instanceof Error ? value.message : "Payment status could not be loaded."))
+    }).catch(() => setError("We could not refresh the payment details. Your payment history is unchanged; check Payments or My trips before trying again."))
       .finally(() => setBusy(false));
   }, [session, supabase, tenantSlug]);
 

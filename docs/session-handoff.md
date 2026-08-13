@@ -186,6 +186,17 @@ pass; all three production builds pass; `git diff --check` passes; and the remot
 lists only `20260813000400_payment_payout_notifications_v1.sql`. Existing Supabase realtime and
 Next ESLint-plugin warnings remain non-blocking.
 
+The first production notification test booked successfully and sent the existing Driver offer email,
+but Rider showed a false `Payment status could not be loaded` alongside the successful paid-trip
+recovery message, and financial emails had not yet arrived. Repository evidence showed the Stripe
+return parameters could retrigger recovery and the shared delivery cron ran only once daily. The
+local fix consumes the return parameters before recovery, treats an already-booked trip as success,
+and documents immediate delivery through Admin Notifications. A sub-daily Vercel cron was rejected
+from the design because Hobby deployments permit only once-daily schedules. Next: validate and
+deploy Rider, then deliver the already queued financial notifications from Admin.
+Rider tests pass 4/4; Rider typecheck, production build, and `git diff --check` pass. Existing
+Supabase realtime and Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -196,8 +207,8 @@ Next ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Have the owner commit/deploy Payment and Payout Notifications V1, apply its isolated migration, and
-run the production manual test.
+Have the owner deploy the Stripe-return recovery fix, then open Admin Notifications, deliver the
+already queued financial messages, and continue the production notification test.
 
 ## Required reading for recovery
 

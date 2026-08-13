@@ -6,6 +6,8 @@
 2. Run the required database dry run and confirm only
    `20260813000400_payment_payout_notifications_v1.sql`, then apply it.
 3. Confirm Admin's existing notification delivery cron and Resend webhook remain healthy.
+4. For an immediate test, open Admin **Notifications** and select **Deliver queued**. This uses the
+   same durable path as the daily automatic run; do not wait for the once-daily cron.
 
 ## Rider
 
