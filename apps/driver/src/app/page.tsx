@@ -144,6 +144,7 @@ type ReputationTrip = { bookingId: string; completedAt: string; pickupAddress: s
 type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; fareAmountMinor: number; earningsAmountMinor: number; platformFeeMinor: number; shareBasisPoints: number; paymentCollected: boolean; transferStatus: "pending" | "succeeded" | "failed" | "reversed" | null };
 type DriverWallet = { currencyCode: string; balanceMinor: number; pendingMinor: number; availableMinor: number; paidMinor: number; trips: DriverWalletTrip[] };
 type DriverPayoutAccount = { exists: boolean; onboardingStatus: "not_started" | "details_required" | "under_review" | "enabled" | "restricted"; detailsSubmitted: boolean; payoutsEnabled: boolean; transfersCapabilityStatus: string | null; requirementsCurrentlyDue: string[]; disabledReason: string | null; updatedAt: string | null };
+type DriverBankPayout = { payoutId: string; status: "pending" | "in_transit" | "paid" | "failed" | "canceled"; currencyCode: string; amountMinor: number; automatic: boolean; method: string | null; expectedArrivalAt: string | null; failureCode: string | null; failureMessage: string | null; providerCreatedAt: string; paidAt: string | null; failedAt: string | null };
 
 type DriverPortalTab =
   | "overview"
@@ -199,6 +200,7 @@ export default function DriverHome() {
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [wallet, setWallet] = useState<DriverWallet | null>(null);
   const [payoutAccount, setPayoutAccount] = useState<DriverPayoutAccount | null>(null);
+  const [bankPayouts, setBankPayouts] = useState<DriverBankPayout[]>([]);
   const [payoutBusy, setPayoutBusy] = useState(false);
   const [payoutMessage, setPayoutMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
@@ -267,6 +269,8 @@ export default function DriverHome() {
     setWallet(walletResult.error || !walletResult.data ? null : (walletResult.data as unknown as DriverWallet));
     const payoutResult = await supabase.rpc("my_driver_payout_account");
     setPayoutAccount(payoutResult.error || !payoutResult.data ? null : (payoutResult.data as unknown as DriverPayoutAccount));
+    const bankPayoutResult = await supabase.rpc("my_driver_bank_payouts");
+    setBankPayouts(bankPayoutResult.error ? [] : (bankPayoutResult.data as unknown as DriverBankPayout[]));
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -323,6 +327,7 @@ export default function DriverHome() {
       setReputationTrips([]);
       setWallet(null);
       setPayoutAccount(null);
+      setBankPayouts([]);
       setLocationSharing(null);
       return;
     }
@@ -1396,6 +1401,7 @@ export default function DriverHome() {
                   <p className="document-help">ESH never receives or stores your bank account or identity documents. A transfer moves money to your Stripe balance; bank payout timing is managed by Stripe.</p>
                   {payoutMessage ? <p className="upload-message">{payoutMessage}</p> : null}
                 </article>
+                <div><h4>Bank payout activity</h4>{bankPayouts.length === 0 ? <p className="document-help">Stripe bank payouts will appear here after funds leave your connected Stripe balance.</p> : bankPayouts.map((payout) => <article className="document-card" key={payout.payoutId}><div className="document-heading"><strong>{formatCurrency(payout.amountMinor, payout.currencyCode)}</strong><span>{payout.status.replaceAll("_", " ")}</span></div><span>{payout.automatic ? "Automatic" : "Manual"} {payout.method ?? "standard"} payout · Created {new Date(payout.providerCreatedAt).toLocaleString()}</span>{payout.expectedArrivalAt ? <span>Expected arrival: {new Date(payout.expectedArrivalAt).toLocaleDateString()}</span> : null}{payout.failureMessage ? <span>Stripe reported: {payout.failureMessage}</span> : payout.failureCode ? <span>Stripe failure: {payout.failureCode}</span> : null}</article>)}</div>
                 {wallet ? (
                   <>
                     <dl className="location-details">

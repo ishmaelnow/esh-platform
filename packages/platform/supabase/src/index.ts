@@ -64,6 +64,7 @@ export type TenantDriverEarningsSettingsRow = Tables<"tenant_driver_earnings_set
 export type RiderPaymentAttemptRow = Tables<"rider_payment_attempts">;
 export type DriverPayoutAccountRow = Tables<"driver_payout_accounts">;
 export type DriverEarningTransferRow = Tables<"driver_earning_transfers">;
+export type DriverBankPayoutRow = Tables<"driver_bank_payouts">;
 export type VehicleEvidenceRow = Tables<"vehicle_evidence">;
 export type VehicleEvidenceRequirementRow = Tables<"vehicle_evidence_requirements">;
 export type TenantRow = Tables<"tenants">;

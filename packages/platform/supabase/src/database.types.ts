@@ -396,6 +396,12 @@ export type Database = {
         Update: { amount_minor?: number; booking_id?: string; created_at?: string; currency_code?: string; driver_earning_transfer_id?: string; driver_profile_id?: string; failure_message?: string | null; payment_attempt_id?: string; provider?: string; provider_transfer_id?: string | null; status?: string; tenant_id?: string; transferred_at?: string | null; updated_at?: string }
         Relationships: []
       }
+      driver_bank_payouts: {
+        Row: { amount_minor: number; automatic: boolean; created_at: string; currency_code: string; destination_reference: string | null; driver_bank_payout_id: string; driver_payout_account_id: string; driver_profile_id: string; expected_arrival_at: string | null; failed_at: string | null; failure_code: string | null; failure_message: string | null; method: string | null; paid_at: string | null; provider: string; provider_created_at: string; provider_payout_id: string; status: string; tenant_id: string; updated_at: string }
+        Insert: { amount_minor: number; automatic?: boolean; created_at?: string; currency_code: string; destination_reference?: string | null; driver_bank_payout_id?: string; driver_payout_account_id: string; driver_profile_id: string; expected_arrival_at?: string | null; failed_at?: string | null; failure_code?: string | null; failure_message?: string | null; method?: string | null; paid_at?: string | null; provider?: string; provider_created_at: string; provider_payout_id: string; status: string; tenant_id: string; updated_at?: string }
+        Update: { amount_minor?: number; automatic?: boolean; created_at?: string; currency_code?: string; destination_reference?: string | null; driver_bank_payout_id?: string; driver_payout_account_id?: string; driver_profile_id?: string; expected_arrival_at?: string | null; failed_at?: string | null; failure_code?: string | null; failure_message?: string | null; method?: string | null; paid_at?: string | null; provider?: string; provider_created_at?: string; provider_payout_id?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       dispatch_offers: {
         Row: {
           booking_id: string
@@ -2178,6 +2184,11 @@ export type Database = {
       my_driver_reputation: { Args: never; Returns: Json }
       my_driver_wallet: { Args: never; Returns: Json }
       my_driver_payout_account: { Args: never; Returns: Json }
+      my_driver_bank_payouts: { Args: never; Returns: Json }
+      record_driver_bank_payout_internal: {
+        Args: { amount_minor_value: number; automatic_value: boolean; currency_code_value: string; destination_reference_value: string | null; expected_arrival_at_value: string | null; failure_code_value: string | null; failure_message_value: string | null; method_value: string | null; provider_account_id_value: string; provider_created_at_value: string; provider_payout_id_value: string; status_value: string }
+        Returns: boolean
+      }
       prepare_driver_earning_transfer_internal: {
         Args: { target_booking_id: string; target_driver_profile_id: string }
         Returns: Json

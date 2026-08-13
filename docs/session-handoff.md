@@ -4,7 +4,7 @@ Last updated: 2026-08-12
 
 ## Current objective
 
-Complete Driver Transfers V1 on the verified unified Connect sandbox payment and Driver account.
+Complete Driver Bank Payout Reconciliation V1 on the production-verified Stripe transfer.
 
 ## Repository and deployment state
 
@@ -115,12 +115,17 @@ environment for new collection and transfer activity. This version still creates
 payouts. A new $51.31 Rider payment in RideEasy Connect Test completed successfully; its $41.05
 Driver share is the intended first transfer test. Local Driver Transfers V1 now implements a
 per-trip, source-payment-verified, idempotent Stripe transfer and balanced payable settlement.
-Driver tests, typecheck, production build, diff checks, and the migration dry-run pass; the dry-run
-lists only `20260813000100_driver_transfers_v1.sql`. The first production application stopped at
-the initial `create table` because `rider_payment_attempts` lacked composite uniqueness for the
-tenant-scoped foreign key; no migration statements were applied. The local migration now adds
-`unique (tenant_id, payment_attempt_id)` first and needs owner commit/deployment, a fresh dry-run,
-migration retry, and production test.
+Driver Transfers V1 is deployed through commits `b8e0705` and `6f6008a`, its corrected migration is
+applied, and production passed end to end. The $41.05 Driver share created exactly one Stripe
+transfer, reduced cash clearing and the Driver payable by $41.05, moved the Driver wallet amount
+from Collected to Transferred to Stripe, and left the old-sandbox $39.51 untouched.
+
+Driver Bank Payout Reconciliation V1 is implemented locally. It records signature-verified
+connected-account `payout.created`, `payout.updated`, `payout.paid`, and `payout.failed` lifecycle
+without a second ledger posting, and exposes Driver/Admin status. Driver tests, Driver/Admin/
+Supabase typechecks, Admin tests, both production builds, and diff checks pass. The migration dry-run
+lists only `20260813000200_driver_payout_reconciliation_v1.sql`. It needs webhook event selection,
+owner commit/deployment, migration application, and production test.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
 remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
@@ -136,10 +141,9 @@ dynamic dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Validate Driver Transfers V1, then have the owner commit/push and deploy it. Dry-run and apply only
-`20260813000100_driver_transfers_v1.sql`, then transfer only the $41.05 earning for booking
-`b133d49b-a359-4c11-afcc-bfebc994655e`. Confirm the old $39.51 cannot pass Stripe provenance
-verification.
+Validate Driver Bank Payout Reconciliation V1. Then add the four payout events to the existing
+connected-account webhook, have the owner commit/push and deploy, dry-run/apply only
+`20260813000200_driver_payout_reconciliation_v1.sql`, and perform the success-path payout test.
 
 ## Required reading for recovery
 
@@ -164,3 +168,5 @@ verification.
 - `docs/operations/driver-connect-onboarding-manual-test.md`
 - `docs/architecture/driver-transfers.md`
 - `docs/operations/driver-transfers-manual-test.md`
+- `docs/architecture/driver-payout-reconciliation.md`
+- `docs/operations/driver-payout-reconciliation-manual-test.md`

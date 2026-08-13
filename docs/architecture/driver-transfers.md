@@ -16,5 +16,6 @@ transfer does the database post a balanced immutable journal: debit the Driver-s
 credit cash/payment clearing. Transfer records are tenant-scoped, Driver-readable, manager-readable,
 and service-only mutable. Retry cannot duplicate either Stripe movement or ledger settlement.
 
-Deferred: automatic batching, scheduled or instant bank payouts, payout event reconciliation,
+Connected-account bank payout event reconciliation is delivered in the next slice. Deferred:
+automatic batching, ESH-created scheduled or instant bank payouts, transfer-to-payout allocation,
 reversals, refunds, disputes, processor fees, reserves, minimum thresholds, and tax reporting.

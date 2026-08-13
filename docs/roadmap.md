@@ -133,6 +133,8 @@ deferred from this milestone and were delivered under the later milestones below
      earnings availability, signed Connect status updates, and Admin visibility.
    - Current delivery in progress: Driver-initiated, per-trip Stripe transfers with source-payment
      provenance validation, idempotent settlement, and immutable payable clearing.
+   - Current delivery in progress: connected-account bank payout lifecycle reconciliation with
+     verified Stripe events and Driver/Admin operational status.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**
