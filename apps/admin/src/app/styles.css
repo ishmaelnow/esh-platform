@@ -435,6 +435,26 @@ td span {
   gap: 8px;
 }
 
+.ledger-workspace-nav,
+.ledger-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ledger-pagination {
+  justify-content: flex-end;
+}
+
+.ledger-search {
+  min-width: min(100%, 320px);
+}
+
+.ledger-search input {
+  width: 100%;
+}
+
 .onboarding-checklist {
   display: flex;
   flex-direction: column;

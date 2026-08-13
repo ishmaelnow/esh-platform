@@ -131,6 +131,12 @@ During the payout manual test, **Manage payout account** replaced the Driver pag
 Express and provided no ESH return control. A local UX fix now opens only the Express Dashboard link
 in a separate tab while preserving the current-tab hosted-onboarding return flow. It needs Driver
 owner commit/deployment; Driver tests, typecheck, and diff checks pass.
+
+The owner requested an Admin Ledger redesign before financial records scale to many Drivers. A local
+workspace redesign separates Overview, Driver balances, Rider payments, Bank payouts, Journal, and
+Manual journal. Operational lists are searchable and paginated; journal entries and processor IDs
+are collapsed by default. Admin tests pass 54/54; Admin typecheck, production build, and diff checks
+pass. It needs owner commit/deployment and production UI verification.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
 remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase

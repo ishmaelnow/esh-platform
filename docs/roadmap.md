@@ -135,6 +135,8 @@ deferred from this milestone and were delivered under the later milestones below
      provenance validation, idempotent settlement, and immutable payable clearing.
    - Current delivery in progress: connected-account bank payout lifecycle reconciliation with
      verified Stripe events and Driver/Admin operational status.
+   - Current delivery: scalable Admin financial workspace with separated overview, Driver balances,
+     Rider payments, bank payouts, filtered journal, pagination, and manual adjustments.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**
