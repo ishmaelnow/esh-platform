@@ -63,7 +63,15 @@ export function buildDriverNotificationContent(
   const pickupAddress = textValue(payload.pickup_address);
   const destinationAddress = textValue(payload.destination_address);
   const offerExpiresAt = textValue(payload.expires_at);
-  const portalUrl = new URL("/", driverAppUrl).toString();
+  const amount = moneyValue(payload.amount_minor, payload.currency_code);
+  const expectedArrivalAt = textValue(payload.expected_arrival_at);
+  const failureMessage = textValue(payload.failure_message);
+  const financialNotification = notificationType.startsWith("driver_earnings_")
+    || notificationType.startsWith("driver_transfer_")
+    || notificationType.startsWith("driver_bank_payout_");
+  const portalUrlValue = new URL("/", driverAppUrl);
+  if (financialNotification) portalUrlValue.searchParams.set("view", "earnings");
+  const portalUrl = portalUrlValue.toString();
   const messages: Record<string, { subject: string; intro: string; detail?: string }> = {
     driver_account_ready: {
       subject: "Your ESH driver account is ready",
@@ -134,11 +142,36 @@ export function buildDriverNotificationContent(
         .filter(Boolean)
         .join("\n"),
     },
+    driver_earnings_recorded: {
+      subject: "Your trip earnings were recorded",
+      intro: `${driverName}, ${amount || "your earnings"} from a completed trip were added to your ESH wallet.`,
+      detail: [pickupAddress ? `Pickup: ${pickupAddress}` : "", destinationAddress ? `Destination: ${destinationAddress}` : ""].filter(Boolean).join("\n"),
+    },
+    driver_transfer_succeeded: {
+      subject: "Your earnings were transferred to Stripe",
+      intro: `${driverName}, ${amount || "your earnings"} were transferred to your Stripe balance.`,
+      detail: [pickupAddress ? `Pickup: ${pickupAddress}` : "", destinationAddress ? `Destination: ${destinationAddress}` : ""].filter(Boolean).join("\n"),
+    },
+    driver_bank_payout_created: {
+      subject: "Stripe started your bank payout",
+      intro: `${driverName}, Stripe started a bank payout${amount ? ` for ${amount}` : ""}.`,
+      ...(expectedArrivalAt ? { detail: `Expected arrival: ${formatDateTime(expectedArrivalAt)}` } : {}),
+    },
+    driver_bank_payout_paid: {
+      subject: "Your Stripe bank payout was paid",
+      intro: `${driverName}, Stripe marked your bank payout${amount ? ` for ${amount}` : ""} as paid.`,
+    },
+    driver_bank_payout_failed: {
+      subject: "Action needed for your Stripe bank payout",
+      intro: `${driverName}, Stripe reported that your bank payout${amount ? ` for ${amount}` : ""} failed.`,
+      ...(failureMessage ? { detail: `Reason: ${failureMessage}` } : {}),
+    },
   };
   const message = messages[notificationType];
   if (!message) throw new Error("Unsupported driver notification type.");
 
-  const lines = [message.intro, message.detail, "", "Open the Driver portal:", portalUrl].filter(
+  const portalLabel = financialNotification ? "View your earnings:" : "Open the Driver portal:";
+  const lines = [message.intro, message.detail, "", portalLabel, portalUrl].filter(
     (line): line is string => line !== undefined,
   );
   return {
@@ -147,7 +180,7 @@ export function buildDriverNotificationContent(
     html: [
       `<p>${escapeHtml(message.intro)}</p>`,
       message.detail ? `<p>${escapeHtml(message.detail)}</p>` : "",
-      `<p><a href="${escapeHtml(portalUrl)}">Open Driver portal</a></p>`,
+      `<p><a href="${escapeHtml(portalUrl)}">${financialNotification ? "View earnings" : "Open Driver portal"}</a></p>`,
     ].join(""),
   };
 }
@@ -173,8 +206,12 @@ export function buildRiderNotificationContent(
       }).format(new Date(scheduledPickupAt))
     : "";
   const tenantSlug = textValue(payload.tenant_slug);
+  const amount = moneyValue(payload.amount_minor, payload.currency_code);
+  const financialNotification = notificationType === "rider_payment_succeeded"
+    || notificationType === "rider_refund_succeeded";
   const portalUrl = new URL("/", riderAppUrl);
   if (tenantSlug) portalUrl.searchParams.set("tenant", tenantSlug);
+  if (financialNotification) portalUrl.searchParams.set("view", "payments");
   const messages: Record<string, { subject: string; intro: string; details?: string[] }> = {
     rider_booking_created: {
       subject: "Your trip request was received",
@@ -223,6 +260,14 @@ export function buildRiderNotificationContent(
       subject: "Your trip was cancelled",
       intro: `${riderName}, your trip booking has been cancelled.`,
     },
+    rider_payment_succeeded: {
+      subject: "Your ESH trip payment was confirmed",
+      intro: `${riderName}, your payment${amount ? ` of ${amount}` : ""} was confirmed.`,
+    },
+    rider_refund_succeeded: {
+      subject: "Your ESH trip refund was issued",
+      intro: `${riderName}, your refund${amount ? ` of ${amount}` : ""} was issued to the original payment method.`,
+    },
   };
   const message = messages[notificationType];
   if (!message) throw new Error("Unsupported rider notification type.");
@@ -234,17 +279,29 @@ export function buildRiderNotificationContent(
   const link = portalUrl.toString();
   return {
     subject: message.subject,
-    text: [message.intro, ...details, "", "View your trip:", link].join("\n"),
+    text: [message.intro, ...details, "", financialNotification ? "View your payments:" : "View your trip:", link].join("\n"),
     html: [
       `<p>${escapeHtml(message.intro)}</p>`,
       ...details.map((detail) => `<p>${escapeHtml(detail)}</p>`),
-      `<p><a href="${escapeHtml(link)}">View your trip</a></p>`,
+      `<p><a href="${escapeHtml(link)}">${financialNotification ? "View payments" : "View your trip"}</a></p>`,
     ].join(""),
   };
 }
 
 function textValue(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function moneyValue(amount: unknown, currency: unknown) {
+  const amountMinor = typeof amount === "number" ? amount : Number(amount);
+  const currencyCode = textValue(currency).toUpperCase();
+  if (!Number.isFinite(amountMinor) || !currencyCode) return "";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).format(amountMinor / 100);
+}
+
+function formatDateTime(value: string) {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(parsed);
 }
 
 function escapeHtml(value: string) {

@@ -67,7 +67,7 @@ type RiderPortal = {
   serviceAreas: ServiceArea[];
   bookings: RiderBooking[];
 };
-type RiderNotificationPreferences = { tripUpdatesEnabled: boolean };
+type RiderNotificationPreferences = { tripUpdatesEnabled: boolean; paymentUpdatesEnabled: boolean };
 type RiderScheduling = {
   timeZone: string;
   settings: {
@@ -378,6 +378,13 @@ export default function RiderHome() {
   }, [supabase]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const requestedView = new URLSearchParams(window.location.search).get("view");
+    if (requestedView === "payments") setActivePortalTab("payments");
+    else if (requestedView === "trips") setActivePortalTab("trips");
+  }, []);
+
+  useEffect(() => {
     if (!tenantSlug || typeof window === "undefined") return;
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.set("tenant", tenantSlug);
@@ -652,13 +659,28 @@ export default function RiderHome() {
         },
       );
       if (preferenceError) throw preferenceError;
-      setNotificationPreferences({ tripUpdatesEnabled: enabled });
+      setNotificationPreferences((current) => current
+        ? { ...current, tripUpdatesEnabled: enabled }
+        : { tripUpdatesEnabled: enabled, paymentUpdatesEnabled: true });
       setMessage(enabled ? "Trip update emails enabled." : "Trip update emails disabled.");
     } catch (value) {
       setError(riderErrorMessage(value));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function setPaymentUpdates(enabled: boolean) {
+    if (!supabase) return;
+    setBusy(true); setError("");
+    try {
+      const { error: preferenceError } = await supabase.rpc("set_my_rider_payment_notification_preferences", {
+        target_tenant_slug: tenantSlug, payment_updates_enabled_value: enabled,
+      });
+      if (preferenceError) throw preferenceError;
+      setNotificationPreferences((current) => current ? { ...current, paymentUpdatesEnabled: enabled } : current);
+      setMessage(enabled ? "Payment update emails enabled." : "Payment update emails disabled.");
+    } catch (value) { setError(riderErrorMessage(value)); } finally { setBusy(false); }
   }
 
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -1064,6 +1086,10 @@ export default function RiderHome() {
               <button className="button secondary compact" onClick={() => void loadPayments()} disabled={busy}>Refresh</button>
             </div>
             <p className="area">Receipts open securely on Stripe. ESH does not store your card or bank details.</p>
+            <div className="card preference-card">
+              <div><strong>Payment update emails</strong><p>Receive payment confirmations and refund updates.</p></div>
+              <label className="switch"><input type="checkbox" checked={notificationPreferences?.paymentUpdatesEnabled ?? true} disabled={busy || !notificationPreferences} onChange={(event) => void setPaymentUpdates(event.target.checked)} /><span>{notificationPreferences?.paymentUpdatesEnabled === false ? "Off" : "On"}</span></label>
+            </div>
             {payments.length === 0 ? <div className="card empty"><p>No payment activity yet.</p></div> : payments.map((payment) => {
               const booking = portal.bookings.find((item) => item.bookingId === payment.bookingId);
               const amount = new Intl.NumberFormat(undefined, { style: "currency", currency: payment.currencyCode }).format(payment.amountMinor / 100);

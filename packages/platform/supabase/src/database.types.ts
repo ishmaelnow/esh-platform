@@ -1161,6 +1161,7 @@ export type Database = {
         Row: {
           created_at: string
           driver_profile_id: string
+          earnings_updates_enabled: boolean
           expiration_reminders_enabled: boolean
           tenant_id: string
           updated_at: string
@@ -1168,6 +1169,7 @@ export type Database = {
         Insert: {
           created_at?: string
           driver_profile_id: string
+          earnings_updates_enabled?: boolean
           expiration_reminders_enabled?: boolean
           tenant_id: string
           updated_at?: string
@@ -1175,6 +1177,7 @@ export type Database = {
         Update: {
           created_at?: string
           driver_profile_id?: string
+          earnings_updates_enabled?: boolean
           expiration_reminders_enabled?: boolean
           tenant_id?: string
           updated_at?: string
@@ -1294,6 +1297,7 @@ export type Database = {
       rider_notification_preferences: {
         Row: {
           created_at: string
+          payment_updates_enabled: boolean
           rider_profile_id: string
           tenant_id: string
           trip_updates_enabled: boolean
@@ -1301,6 +1305,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          payment_updates_enabled?: boolean
           rider_profile_id: string
           tenant_id: string
           trip_updates_enabled?: boolean
@@ -1308,6 +1313,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          payment_updates_enabled?: boolean
           rider_profile_id?: string
           tenant_id?: string
           trip_updates_enabled?: boolean
@@ -2284,6 +2290,7 @@ export type Database = {
         Args: { target_tenant_slug: string }
         Returns: Json
       }
+      my_driver_earnings_notification_preferences: { Args: never; Returns: Json }
       my_rider_scheduling: {
         Args: { target_tenant_slug: string }
         Returns: Json
@@ -2311,6 +2318,10 @@ export type Database = {
       }
       set_my_driver_notification_preferences: {
         Args: { expiration_reminders_enabled_value: boolean }
+        Returns: boolean
+      }
+      set_my_driver_earnings_notification_preferences: {
+        Args: { earnings_updates_enabled_value: boolean }
         Returns: boolean
       }
       set_my_driver_service_area: {
@@ -2350,6 +2361,10 @@ export type Database = {
           target_tenant_slug: string
           trip_updates_enabled_value: boolean
         }
+        Returns: boolean
+      }
+      set_my_rider_payment_notification_preferences: {
+        Args: { target_tenant_slug: string; payment_updates_enabled_value: boolean }
         Returns: boolean
       }
       set_tenant_scheduling_settings: {

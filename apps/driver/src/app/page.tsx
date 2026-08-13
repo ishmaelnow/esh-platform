@@ -177,6 +177,7 @@ export default function DriverHome() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
+  const [earningsUpdatesEnabled, setEarningsUpdatesEnabled] = useState(true);
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
   const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
   const [vehiclePhotoMessage, setVehiclePhotoMessage] = useState<string | null>(null);
@@ -271,11 +272,19 @@ export default function DriverHome() {
     setPayoutAccount(payoutResult.error || !payoutResult.data ? null : (payoutResult.data as unknown as DriverPayoutAccount));
     const bankPayoutResult = await supabase.rpc("my_driver_bank_payouts");
     setBankPayouts(bankPayoutResult.error ? [] : (bankPayoutResult.data as unknown as DriverBankPayout[]));
+    const earningsPreferenceResult = await supabase.rpc("my_driver_earnings_notification_preferences");
+    if (!earningsPreferenceResult.error && earningsPreferenceResult.data)
+      setEarningsUpdatesEnabled((earningsPreferenceResult.data as { earningsUpdatesEnabled: boolean }).earningsUpdatesEnabled);
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
     setMessage("Driver account connected.");
   }, [supabase]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "earnings")
+      setActiveTab("earnings");
+  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -656,6 +665,15 @@ export default function DriverHome() {
         enabled ? "Expiration reminders enabled." : "Expiration reminders disabled.",
       );
     }
+    setUpdatingPreferences(false);
+  }
+
+  async function updateEarningsUpdates(enabled: boolean) {
+    if (!supabase) return;
+    setUpdatingPreferences(true); setPreferenceMessage("Saving earnings email preference…");
+    const result = await supabase.rpc("set_my_driver_earnings_notification_preferences", { earnings_updates_enabled_value: enabled });
+    if (result.error) setPreferenceMessage(result.error.message);
+    else { setEarningsUpdatesEnabled(enabled); setPreferenceMessage(enabled ? "Earnings update emails enabled." : "Earnings update emails disabled."); }
     setUpdatingPreferences(false);
   }
 
@@ -1396,6 +1414,11 @@ export default function DriverHome() {
                     Completed-trip earnings are recorded here as money the platform owes you. Collected earnings can be transferred to your enabled Stripe payout balance; Stripe handles the later bank payout.
                   </p>
                 </div>
+                <section className="notification-preferences">
+                  <div><p className="eyebrow">Notifications</p><h3>Earnings email preferences</h3></div>
+                  <label><input checked={earningsUpdatesEnabled} disabled={updatingPreferences} onChange={(event) => void updateEarningsUpdates(event.target.checked)} type="checkbox" /> Email me about earnings, Stripe transfers, and bank payouts</label>
+                  {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
+                </section>
                 <article className="document-card">
                   <div className="document-heading"><strong>Payout account</strong><span>{payoutAccount?.onboardingStatus.replaceAll("_", " ") ?? "unavailable"}</span></div>
                   <span>{payoutAccount?.onboardingStatus === "enabled" ? "Stripe has enabled this account to receive future ESH transfers." : payoutAccount?.onboardingStatus === "under_review" ? "Stripe is reviewing the submitted payout information." : payoutAccount?.onboardingStatus === "restricted" ? "Stripe requires attention before payouts can be enabled." : "Set up and verify your payout account on Stripe's secure website."}</span>

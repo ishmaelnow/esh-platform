@@ -4,7 +4,7 @@ Last updated: 2026-08-13
 
 ## Current objective
 
-Complete Rider Payments and Receipts V1.
+Complete Payment and Payout Notifications V1.
 
 ## Repository and deployment state
 
@@ -175,6 +175,17 @@ summary; retrieval errors remain visible. Next: validate, owner commit/deploy, a
 sandbox $10.59 receipt. Rider tests pass 4/4; Rider typecheck, production build, and `git diff
 --check` pass. Existing Supabase realtime and Next ESLint-plugin warnings remain non-blocking.
 
+Payment and Payout Notifications V1 is implemented locally on the durable notification outbox. It
+adds independent Rider payment and Driver earnings email preferences; idempotent notifications for
+payment, refund, earnings, transfer, and bank-payout state; minimal financial payloads; and Payments/
+Earnings deep links. It introduces migration `20260813000400_payment_payout_notifications_v1.sql`
+and requires Admin/Rider/Driver deployment plus database application. Next: validate all layers,
+dry-run only the intended migration, then hand off the production manual test. Admin tests pass
+57/57; Rider tests pass 4/4; Driver tests pass 9/9; Admin, Rider, Driver, and Supabase typechecks
+pass; all three production builds pass; `git diff --check` passes; and the remote migration dry run
+lists only `20260813000400_payment_payout_notifications_v1.sql`. Existing Supabase realtime and
+Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -185,8 +196,8 @@ sandbox $10.59 receipt. Rider tests pass 4/4; Rider typecheck, production build,
 
 ## Exact next action
 
-Have the owner commit/deploy the reliable receipt-link follow-up, then retry the current-sandbox
-$10.59 receipt from Rider Payments.
+Have the owner commit/deploy Payment and Payout Notifications V1, apply its isolated migration, and
+run the production manual test.
 
 ## Required reading for recovery
 
@@ -217,3 +228,5 @@ $10.59 receipt from Rider Payments.
 - `docs/operations/pretrip-rider-refunds-manual-test.md`
 - `docs/architecture/rider-payments-receipts.md`
 - `docs/operations/rider-payments-receipts-manual-test.md`
+- `docs/architecture/payment-payout-notifications.md`
+- `docs/operations/payment-payout-notifications-manual-test.md`

@@ -70,6 +70,8 @@ deferred from this milestone and were delivered under the later milestones below
      scheduled expiration reminders.
 3. **Notification Foundation**
    - Generalize invitation delivery into reusable notification contracts.
+   - Current delivery in progress: preference-controlled Rider payment/refund and Driver earnings,
+     transfer, and bank-payout lifecycle emails through the durable outbox.
    - Current delivery: durable driver notification contracts, templates, retries, history, and
      webhook-tracked delivery.
    - Current delivery: driver expiration-reminder preferences and scheduled compliance reminders.

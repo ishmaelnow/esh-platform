@@ -72,6 +72,24 @@ describe("driver notification email content", () => {
     expect(content.text).toContain("Pickup: 100 Main St");
     expect(content.text).toContain("DFW Terminal A");
   });
+
+  it("builds a Driver transfer notice with an Earnings deep link", () => {
+    const content = buildDriverNotificationContent("driver_transfer_succeeded", {
+      driver_name: "Test Driver", amount_minor: 4105, currency_code: "USD",
+    }, "https://driver.eshapp.com");
+    expect(content.subject).toContain("transferred");
+    expect(content.text).toContain("$41.05");
+    expect(content.text).toContain("view=earnings");
+  });
+
+  it("builds a failed bank payout notice with its reason", () => {
+    const content = buildDriverNotificationContent("driver_bank_payout_failed", {
+      driver_name: "Test Driver", amount_minor: 4105, currency_code: "USD",
+      failure_message: "Bank account closed",
+    }, "https://driver.eshapp.com");
+    expect(content.subject).toContain("Action needed");
+    expect(content.text).toContain("Bank account closed");
+  });
 });
 
 describe("rider notification email content", () => {
@@ -131,5 +149,15 @@ describe("rider notification email content", () => {
     expect(content.subject).toBe("Your scheduled trip is confirmed");
     expect(content.text).toContain("10:30 AM");
     expect(content.text).toContain("America/Chicago");
+  });
+
+  it("builds a Rider refund notice with a Payments deep link", () => {
+    const content = buildRiderNotificationContent("rider_refund_succeeded", {
+      rider_name: "Test Rider", tenant_slug: "philadelphia", amount_minor: 1059,
+      currency_code: "USD",
+    }, "https://rider.eshapp.com");
+    expect(content.subject).toContain("refund");
+    expect(content.text).toContain("$10.59");
+    expect(content.text).toContain("view=payments");
   });
 });
