@@ -93,6 +93,18 @@ type RiderTripLocation = {
 type ServiceAreaContext = { latitude: number; longitude: number; radiusKm: number };
 type RiderPriceQuote = { quoteId: string; fareAmountMinor: number; currencyCode: string; fractionDigits: number; expiresAt: string; pickupAddress: string; destinationAddress: string; routeDistanceMeters: number; routeDurationSeconds: number };
 type PaidRiderPriceQuote = Omit<RiderPriceQuote, "fractionDigits"> & { serviceAreaId: string };
+type RiderPayment = {
+  paymentAttemptId: string;
+  bookingId: string | null;
+  amountMinor: number;
+  currencyCode: string;
+  status: string;
+  paidAt: string | null;
+  createdAt: string;
+  refundAmountMinor: number | null;
+  refundStatus: string | null;
+  refundedAt: string | null;
+};
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
@@ -141,6 +153,8 @@ export default function RiderHome() {
   const [scheduling, setScheduling] = useState<RiderScheduling | null>(null);
   const [tripLocations, setTripLocations] = useState<RiderTripLocation[]>([]);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
+  const [payments, setPayments] = useState<RiderPayment[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<Record<string, string>>({});
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled">("now");
   const [serviceAreaId, setServiceAreaId] = useState("");
   const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
@@ -158,7 +172,7 @@ export default function RiderHome() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-  const [activePortalTab, setActivePortalTab] = useState<"book" | "trips">("book");
+  const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments">("book");
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
 
@@ -265,6 +279,36 @@ export default function RiderHome() {
     }
   }, [session, supabase, tenantSlug]);
 
+  const loadPayments = useCallback(async () => {
+    if (!supabase || !session || !portal) return;
+    const [paymentResult, refundResult] = await Promise.all([
+      supabase.from("rider_payment_attempts")
+        .select("payment_attempt_id,booking_id,amount_minor,currency_code,status,paid_at,created_at")
+        .eq("tenant_id", portal.tenant.tenantId).order("created_at", { ascending: false }),
+      supabase.from("rider_payment_refunds")
+        .select("payment_attempt_id,amount_minor,status,refunded_at")
+        .eq("tenant_id", portal.tenant.tenantId),
+    ]);
+    if (paymentResult.error) throw paymentResult.error;
+    if (refundResult.error) throw refundResult.error;
+    const refunds = new Map((refundResult.data ?? []).map((refund) => [refund.payment_attempt_id, refund]));
+    setPayments((paymentResult.data ?? []).map((payment) => {
+      const refund = refunds.get(payment.payment_attempt_id);
+      return {
+        paymentAttemptId: payment.payment_attempt_id,
+        bookingId: payment.booking_id,
+        amountMinor: payment.amount_minor,
+        currencyCode: payment.currency_code,
+        status: payment.status,
+        paidAt: payment.paid_at,
+        createdAt: payment.created_at,
+        refundAmountMinor: refund?.amount_minor ?? null,
+        refundStatus: refund?.status ?? null,
+        refundedAt: refund?.refunded_at ?? null,
+      };
+    }));
+  }, [portal, session, supabase]);
+
   useEffect(() => {
     if (!session || !supabase) return;
     const params = new URLSearchParams(window.location.search);
@@ -347,6 +391,34 @@ export default function RiderHome() {
     }, 10_000);
     return () => window.clearInterval(interval);
   }, [loadPortal, session, tenantSlug]);
+
+  useEffect(() => {
+    if (activePortalTab !== "payments") return;
+    void loadPayments().catch((value) => setError(riderErrorMessage(value)));
+  }, [activePortalTab, loadPayments]);
+
+  async function openPaymentReceipt(paymentAttemptId: string) {
+    if (!session) return;
+    const receiptWindow = window.open("about:blank", "_blank");
+    if (receiptWindow) receiptWindow.opener = null;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/payments/receipt?paymentAttemptId=${encodeURIComponent(paymentAttemptId)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const result = await response.json() as { receiptUrl?: string; paymentMethod?: string; message?: string };
+      if (!response.ok || !result.receiptUrl) throw new Error(result.message ?? "Receipt is unavailable.");
+      if (result.paymentMethod) setPaymentMethods((current) => ({ ...current, [paymentAttemptId]: result.paymentMethod! }));
+      if (receiptWindow) receiptWindow.location.assign(result.receiptUrl);
+      else window.open(result.receiptUrl, "_blank", "noopener,noreferrer");
+    } catch (value) {
+      receiptWindow?.close();
+      setError(riderErrorMessage(value));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function sendSignInLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -719,6 +791,7 @@ export default function RiderHome() {
         <nav className="rider-tabs" aria-label="Rider portal sections">
           <button className={activePortalTab === "book" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("book")} type="button">Book trip</button>
           <button className={activePortalTab === "trips" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("trips")} type="button">My trips{portal.bookings.length ? ` (${portal.bookings.length})` : ""}</button>
+          <button className={activePortalTab === "payments" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("payments")} type="button">Payments</button>
         </nav>
         <div className={activePortalTab === "book" ? "portal-grid booking-only" : "portal-grid trips-only"}>
           {activePortalTab === "book" ? (
@@ -984,6 +1057,27 @@ export default function RiderHome() {
                 </article>
               ))
             )}
+          </section>
+          ) : null}
+          {activePortalTab === "payments" ? (
+          <section className="history">
+            <div className="section-heading">
+              <div><p className="kicker">Payments</p><h2>Payment and refund history</h2></div>
+              <button className="button secondary compact" onClick={() => void loadPayments()} disabled={busy}>Refresh</button>
+            </div>
+            <p className="area">Receipts open securely on Stripe. ESH does not store your card or bank details.</p>
+            {payments.length === 0 ? <div className="card empty"><p>No payment activity yet.</p></div> : payments.map((payment) => {
+              const booking = portal.bookings.find((item) => item.bookingId === payment.bookingId);
+              const amount = new Intl.NumberFormat(undefined, { style: "currency", currency: payment.currencyCode }).format(payment.amountMinor / 100);
+              const refundAmount = payment.refundAmountMinor == null ? null : new Intl.NumberFormat(undefined, { style: "currency", currency: payment.currencyCode }).format(payment.refundAmountMinor / 100);
+              return <article className="card trip-card" key={payment.paymentAttemptId}>
+                <div className="trip-top"><div><span className={`status status-${payment.status}`}>{payment.status}</span><h3>{amount}</h3></div><time>{formatDate(payment.paidAt ?? payment.createdAt)}</time></div>
+                {booking ? <><p>{booking.pickupAddress}</p><p className="destination">to {booking.destinationAddress}</p></> : <p className="area">Payment completed before trip request</p>}
+                {refundAmount ? <p className="area"><strong>{payment.refundStatus === "succeeded" ? "Refunded" : "Refund"}: {refundAmount}</strong>{payment.refundedAt ? ` · ${formatDate(payment.refundedAt)}` : ""}</p> : null}
+                {paymentMethods[payment.paymentAttemptId] ? <p className="area">Paid with {paymentMethods[payment.paymentAttemptId]}</p> : null}
+                {payment.status === "paid" || payment.status === "refunded" ? <button className="text-button" disabled={busy} onClick={() => void openPaymentReceipt(payment.paymentAttemptId)}>View Stripe receipt</button> : null}
+              </article>;
+            })}
           </section>
           ) : null}
           {activePortalTab === "trips" ? (

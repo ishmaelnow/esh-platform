@@ -4,7 +4,7 @@ Last updated: 2026-08-13
 
 ## Current objective
 
-Complete the Rider-visible refund confirmation for Pre-trip Rider Refunds V1.
+Complete Rider Payments and Receipts V1.
 
 ## Repository and deployment state
 
@@ -159,6 +159,15 @@ booking. Rider tests pass 4/4; Rider typecheck, production build, and `git diff 
 existing Supabase realtime and Next ESLint-plugin build warnings remain non-blocking. Next: owner
 commit/deploy and refresh that cancelled Rider trip.
 
+The Rider-visible refund follow-up is deployed through commit `4bceb84` and the production $10.59
+trip permanently shows its full refund. Rider Payments and Receipts V1 is now implemented locally:
+the Payments tab reads existing Rider-RLS payment/refund records, associates finalized payments with
+trip addresses, and requests Stripe-hosted receipts individually through an authenticated server
+route. It requires no migration or new environment variable. Next: validate, owner commit/deploy,
+and run `docs/operations/rider-payments-receipts-manual-test.md`. Rider tests pass 4/4; Rider
+typecheck, production build, and `git diff --check` pass. The existing Supabase realtime dynamic
+dependency and Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -169,8 +178,8 @@ commit/deploy and refresh that cancelled Rider trip.
 
 ## Exact next action
 
-Deploy the Rider-visible refund confirmation, then refresh the production $10.59 cancelled trip and
-confirm it permanently shows `Refunded: $10.59 · Returned to the original payment method`.
+Have the owner commit/deploy Rider Payments and Receipts V1, then run its production manual test
+using the existing paid and $10.59 refunded trips.
 
 ## Required reading for recovery
 
@@ -199,3 +208,5 @@ confirm it permanently shows `Refunded: $10.59 · Returned to the original payme
 - `docs/operations/driver-payout-reconciliation-manual-test.md`
 - `docs/architecture/pretrip-rider-refunds.md`
 - `docs/operations/pretrip-rider-refunds-manual-test.md`
+- `docs/architecture/rider-payments-receipts.md`
+- `docs/operations/rider-payments-receipts-manual-test.md`
