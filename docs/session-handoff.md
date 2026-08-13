@@ -4,7 +4,7 @@ Last updated: 2026-08-12
 
 ## Current objective
 
-Complete Driver Stripe Connect Onboarding V1 on deployed Rider collection and Driver earnings.
+Complete Driver Transfers V1 on the verified unified Connect sandbox payment and Driver account.
 
 ## Repository and deployment state
 
@@ -36,12 +36,9 @@ Complete Driver Stripe Connect Onboarding V1 on deployed Rider collection and Dr
   paid-trip recovery fix `688693b` is deployed.
 - Driver Connect Onboarding V1 is deployed through commit `9eb69ee`, and migration
   `20260812000300_driver_connect_onboarding_v1.sql` is applied. Production showed the Driver wallet
-  and payout setup control, but Stripe rejected legacy Express account creation on the newly
-  registered Connect platform. A local compatibility fix now creates accounts with explicit
-  controller properties. The first production retry correctly reached Stripe but reused the V1
-  idempotency key with changed parameters; the local follow-up versions that key as
-  `driver_connect_v2_<driver-profile-id>`. Driver tests, typecheck, and diff checks pass. It needs
-  owner commit/deployment and manual retest.
+  and payout setup control. Compatibility fixes are deployed through commit `b1c1729`. Production
+  Stripe-hosted onboarding passed, the verified Connect webhook synchronized the account to
+  `enabled`, and **Manage payout account** is available.
 
 ## Delivered capabilities relevant to the test
 
@@ -105,12 +102,22 @@ one-time links.
 
 Rider payment collection, the $49.39 paid-trip recovery flow, booking, and trip completion passed in
 production. Driver Connect infrastructure, payout settings, connected-account webhook, deployment,
-and migration are complete. Production account creation currently fails because commit `9eb69ee`
-uses the legacy `type: express` request against a newly registered Connect platform. The local fix
-uses controller properties for an Express Dashboard, platform-paid fees, platform loss liability,
-and transfers capability. Its account-creation idempotency key is versioned because Stripe retains
-the original legacy request parameters. Driver tests, typecheck, and diff checks pass. It needs
-owner commit/deployment and manual retesting. This version does not create transfers or payouts.
+migration, hosted onboarding, and status synchronization also passed. The Driver account is
+`enabled`; wallet totals remained $85.57 pending, $39.51 collected, $0.00 paid, and $125.08 owed.
+The sandbox payout bank selected during onboarding ends in `2227`, Stripe's insufficient-funds test
+fixture; it did not prevent account enablement but should be changed to the success fixture ending
+`6789` before eventual payout execution testing.
+
+The existing $39.51 collected earning cannot be used for a Stripe transfer: its Rider charge was
+created in the original RideEasy sandbox, while the Driver connected account was created in the
+separate RideEasy Connect Test sandbox. Rider and Driver must use the same Connect-enabled platform
+environment for new collection and transfer activity. This version still creates no transfers or
+payouts. A new $51.31 Rider payment in RideEasy Connect Test completed successfully; its $41.05
+Driver share is the intended first transfer test. Local Driver Transfers V1 now implements a
+per-trip, source-payment-verified, idempotent Stripe transfer and balanced payable settlement.
+Driver tests, typecheck, production build, diff checks, and the migration dry-run pass; the dry-run
+lists only `20260813000100_driver_transfers_v1.sql`. It still needs owner commit/deployment,
+migration application, and production test.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
 remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
@@ -126,9 +133,10 @@ dynamic dependency and ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner commits and pushes the validated controller-property account-creation fix, then redeploys
-Driver. Retest **Set up payouts** and complete Stripe-hosted onboarding; do not repeat secret,
-webhook, migration, or Connect payout configuration.
+Validate Driver Transfers V1, then have the owner commit/push and deploy it. Dry-run and apply only
+`20260813000100_driver_transfers_v1.sql`, then transfer only the $41.05 earning for booking
+`b133d49b-a359-4c11-afcc-bfebc994655e`. Confirm the old $39.51 cannot pass Stripe provenance
+verification.
 
 ## Required reading for recovery
 
@@ -151,3 +159,5 @@ webhook, migration, or Connect payout configuration.
 - `docs/operations/rider-payments-collection-manual-test.md`
 - `docs/architecture/driver-connect-onboarding.md`
 - `docs/operations/driver-connect-onboarding-manual-test.md`
+- `docs/architecture/driver-transfers.md`
+- `docs/operations/driver-transfers-manual-test.md`

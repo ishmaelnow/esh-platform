@@ -141,7 +141,7 @@ type DriverLocationSharing = {
 };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null };
-type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; fareAmountMinor: number; earningsAmountMinor: number; platformFeeMinor: number; shareBasisPoints: number; paymentCollected: boolean };
+type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; fareAmountMinor: number; earningsAmountMinor: number; platformFeeMinor: number; shareBasisPoints: number; paymentCollected: boolean; transferStatus: "pending" | "succeeded" | "failed" | "reversed" | null };
 type DriverWallet = { currencyCode: string; balanceMinor: number; pendingMinor: number; availableMinor: number; paidMinor: number; trips: DriverWalletTrip[] };
 type DriverPayoutAccount = { exists: boolean; onboardingStatus: "not_started" | "details_required" | "under_review" | "enabled" | "restricted"; detailsSubmitted: boolean; payoutsEnabled: boolean; transfersCapabilityStatus: string | null; requirementsCurrentlyDue: string[]; disabledReason: string | null; updatedAt: string | null };
 
@@ -420,6 +420,21 @@ export default function DriverHome() {
       if (!response.ok || !result.url) throw new Error(result.message ?? "Stripe payout setup is unavailable.");
       window.location.assign(result.url);
     } catch (value) { setPayoutMessage(value instanceof Error ? value.message : "Stripe payout setup is unavailable."); setPayoutBusy(false); }
+  }
+
+  async function transferEarnings(bookingId: string) {
+    if (!session) return;
+    setPayoutBusy(true); setPayoutMessage(null);
+    try {
+      const response = await fetch("/api/payouts/transfer", { method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId }) });
+      const result = await response.json() as { transferred?: boolean; message?: string };
+      if (!response.ok || !result.transferred) throw new Error(result.message ?? "Earnings transfer failed.");
+      setPayoutMessage("Earnings transferred to your Stripe payout balance.");
+      await activateAndLoad();
+    } catch (value) { setPayoutMessage(value instanceof Error ? value.message : "Earnings transfer failed."); }
+    setPayoutBusy(false);
   }
 
   async function uploadEvidence(document: DriverDocument, file: File) {
@@ -1367,7 +1382,7 @@ export default function DriverHome() {
                   <p className="eyebrow">Earnings</p>
                   <h3>Driver wallet</h3>
                   <p className="document-help">
-                    Completed-trip earnings are recorded here as money the platform owes you. Rider payment collection and transfers to your bank are not active yet, so earnings remain pending.
+                    Completed-trip earnings are recorded here as money the platform owes you. Collected earnings can be transferred to your enabled Stripe payout balance; Stripe handles the later bank payout.
                   </p>
                 </div>
                 <article className="document-card">
@@ -1378,7 +1393,7 @@ export default function DriverHome() {
                   <div className="row-actions">
                     {payoutAccount?.onboardingStatus === "enabled" ? <button disabled={payoutBusy} onClick={() => void openPayoutRoute("dashboard")} type="button">Manage payout account</button> : <button disabled={payoutBusy} onClick={() => void openPayoutRoute("onboarding")} type="button">{payoutAccount?.exists ? "Continue payout setup" : "Set up payouts"}</button>}
                   </div>
-                  <p className="document-help">ESH never receives or stores your bank account or identity documents. Actual transfers are not active in this version.</p>
+                  <p className="document-help">ESH never receives or stores your bank account or identity documents. A transfer moves money to your Stripe balance; bank payout timing is managed by Stripe.</p>
                   {payoutMessage ? <p className="upload-message">{payoutMessage}</p> : null}
                 </article>
                 {wallet ? (
@@ -1386,7 +1401,7 @@ export default function DriverHome() {
                     <dl className="location-details">
                       <div><dt>Pending earnings</dt><dd>{formatCurrency(wallet.pendingMinor, wallet.currencyCode)}</dd></div>
                       <div><dt>Collected earnings</dt><dd>{formatCurrency(wallet.availableMinor, wallet.currencyCode)}</dd></div>
-                      <div><dt>Paid</dt><dd>{formatCurrency(wallet.paidMinor, wallet.currencyCode)}</dd></div>
+                      <div><dt>Transferred to Stripe</dt><dd>{formatCurrency(wallet.paidMinor, wallet.currencyCode)}</dd></div>
                       <div><dt>Ledger amount owed</dt><dd>{formatCurrency(wallet.balanceMinor, wallet.currencyCode)}</dd></div>
                     </dl>
                     {wallet.trips.map((trip) => (
@@ -1395,6 +1410,7 @@ export default function DriverHome() {
                         <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
                         <span>Rider fare: {formatCurrency(trip.fareAmountMinor, wallet.currencyCode)}</span>
                         <span>Your share: {(trip.shareBasisPoints / 100).toFixed(2).replace(/\.00$/, "")}% · Platform fee: {formatCurrency(trip.platformFeeMinor, wallet.currencyCode)} · {trip.paymentCollected ? "Rider payment collected" : "Payment not collected"}</span>
+                        {trip.transferStatus === "succeeded" ? <strong>Transferred to your Stripe balance</strong> : trip.paymentCollected && payoutAccount?.onboardingStatus === "enabled" ? <button disabled={payoutBusy || trip.transferStatus === "pending"} onClick={() => void transferEarnings(trip.bookingId)} type="button">{trip.transferStatus === "failed" ? "Retry transfer" : "Transfer to Stripe"}</button> : null}
                       </article>
                     ))}
                     {wallet.trips.length === 0 ? <p className="document-help">Your completed priced trips will appear here.</p> : null}

@@ -390,6 +390,12 @@ export type Database = {
         Update: { charges_enabled?: boolean; created_at?: string; details_submitted?: boolean; disabled_reason?: string | null; driver_payout_account_id?: string; driver_profile_id?: string; onboarding_status?: string; payouts_enabled?: boolean; provider?: string; provider_account_id?: string; requirements_currently_due?: string[]; requirements_eventually_due?: string[]; tenant_id?: string; transfers_capability_status?: string | null; updated_at?: string }
         Relationships: []
       }
+      driver_earning_transfers: {
+        Row: { amount_minor: number; booking_id: string; created_at: string; currency_code: string; driver_earning_transfer_id: string; driver_profile_id: string; failure_message: string | null; payment_attempt_id: string; provider: string; provider_transfer_id: string | null; status: string; tenant_id: string; transferred_at: string | null; updated_at: string }
+        Insert: { amount_minor: number; booking_id: string; created_at?: string; currency_code: string; driver_earning_transfer_id?: string; driver_profile_id: string; failure_message?: string | null; payment_attempt_id: string; provider?: string; provider_transfer_id?: string | null; status?: string; tenant_id: string; transferred_at?: string | null; updated_at?: string }
+        Update: { amount_minor?: number; booking_id?: string; created_at?: string; currency_code?: string; driver_earning_transfer_id?: string; driver_profile_id?: string; failure_message?: string | null; payment_attempt_id?: string; provider?: string; provider_transfer_id?: string | null; status?: string; tenant_id?: string; transferred_at?: string | null; updated_at?: string }
+        Relationships: []
+      }
       dispatch_offers: {
         Row: {
           booking_id: string
@@ -2172,6 +2178,18 @@ export type Database = {
       my_driver_reputation: { Args: never; Returns: Json }
       my_driver_wallet: { Args: never; Returns: Json }
       my_driver_payout_account: { Args: never; Returns: Json }
+      prepare_driver_earning_transfer_internal: {
+        Args: { target_booking_id: string; target_driver_profile_id: string }
+        Returns: Json
+      }
+      complete_driver_earning_transfer_internal: {
+        Args: { provider_transfer_id_value: string; target_transfer_id: string }
+        Returns: boolean
+      }
+      fail_driver_earning_transfer_internal: {
+        Args: { failure_message_value: string; target_transfer_id: string }
+        Returns: boolean
+      }
       my_rider_portal: {
         Args: { target_tenant_slug: string }
         Returns: Json
