@@ -24,6 +24,8 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `NEXT_PUBLIC_DRIVER_APP_URL`    | Admin notifications | `apps/admin/.env.local` | Admin only           | Driver portal origin used in driver notification links.                      |
 | `NEXT_PUBLIC_RIDER_APP_URL`     | Admin notifications | `apps/admin/.env.local` | Admin only           | Rider portal origin used in Rider trip notification links.                   |
 | `CRON_SECRET`                   | Admin scheduled job | `apps/admin/.env.local` | Admin only           | Authenticates Vercel's daily notification delivery request.                  |
+| `NOTIFICATION_DELIVERY_URL`     | Transactional notification request | app-specific `.env.local` | Rider, Driver | Exact Admin internal delivery endpoint; server-only despite being a URL. |
+| `NOTIFICATION_DELIVERY_SECRET`  | Transactional notification request | app-specific `.env.local` | Admin, Rider, Driver | Shared high-entropy server credential authorizing event-driven outbox delivery. Never expose publicly. |
 
 `NODE_ENV` is set by Next.js/Vercel and normally should not be entered manually. `NEXT_PUBLIC_APP_ENV` (`local`, `staging`, or `production`) and `LOG_LEVEL` (`debug`, `info`, `warn`, or `error`) have defaults but may be set per app when shared configuration consumes them.
 

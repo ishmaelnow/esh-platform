@@ -19,7 +19,20 @@ Rider messages deep-link to `view=payments`; Driver messages deep-link to `view=
 V1 is email-only. Push/SMS, Admin financial alerts, configurable event-by-event preferences, digest
 delivery, and retroactive notification generation are deferred.
 
-Automatic outbox delivery currently runs with the existing daily notification job. Tenant Admin can
-deliver or retry queued financial messages immediately from Notifications. More frequent automatic
-delivery requires a scheduler that supports sub-daily execution; Vercel Hobby cron is deliberately
-not configured beyond its once-daily limit.
+Automatic delivery is event-driven. After an authoritative payment, refund, earnings, transfer, or
+bank-payout transition commits, the trusted Rider or Driver server requests a tenant-scoped outbox
+delivery from an internal Admin endpoint. Trip completion uses a Driver-authenticated server bridge
+because the lifecycle RPC is called from the browser. Admin-originated refunds invoke the same
+delivery service directly. Callers provide only a tenant ID; they cannot provide recipients,
+templates, or message content.
+
+The internal endpoint is protected by one high-entropy `NOTIFICATION_DELIVERY_SECRET` shared only by
+the Admin, Rider, and Driver server runtimes. Rider and Driver also receive the exact
+`NOTIFICATION_DELIVERY_URL`; neither variable is public or browser-readable. Admin remains the only
+application with Resend credentials and rendering/delivery authority.
+
+Delivery requests are best-effort and time-bounded. A missing configuration, network failure, or
+email-provider failure never reverses a committed financial transition or causes it to appear
+failed. The durable outbox, claim/retry rules, Admin **Deliver queued** control, and once-daily cron
+remain recovery paths. Event and outbox deduplication prevent repeated webhooks or delivery requests
+from producing duplicate financial messages.

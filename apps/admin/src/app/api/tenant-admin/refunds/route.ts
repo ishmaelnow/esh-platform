@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAuthenticatedSupabaseClient, createServiceSupabaseClient } from "@esh-platform/supabase";
 import { createStripeClient } from "@esh-platform/stripe";
+import { getAdminServerConfig } from "@/lib/config";
+import { deliverQueuedNotifications } from "@/lib/notifications/delivery";
 
 type PreparedRefund = { alreadyRefunded: boolean; refundId: string; paymentIntentId?: string; amountMinor?: number };
 
@@ -31,6 +33,9 @@ export async function POST(request: Request) {
       target_refund_id: details.refundId, provider_refund_id_value: refund.id,
     });
     if (completed.error) throw completed.error;
+    await deliverQueuedNotifications(service, getAdminServerConfig(), {
+      tenantId: booking.data.tenant_id, limit: 20,
+    }).catch(() => undefined);
     return NextResponse.json({ refunded: true });
   } catch (error) {
     if (refundId) await createServiceSupabaseClient().rpc("fail_pretrip_refund_internal", {

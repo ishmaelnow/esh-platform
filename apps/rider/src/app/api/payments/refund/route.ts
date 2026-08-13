@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAuthenticatedSupabaseClient, createServiceSupabaseClient } from "@esh-platform/supabase";
 import { createStripeClient } from "@esh-platform/stripe";
+import { requestNotificationDelivery } from "../../../../lib/request-notification-delivery";
 
 type PreparedRefund = { alreadyRefunded: boolean; refundId: string; paymentIntentId?: string; amountMinor?: number };
 
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     const { bookingId } = await request.json() as { bookingId?: string };
     if (!bookingId) throw new Error("Booking is required.");
     const authenticated = createAuthenticatedSupabaseClient(authorization.slice(7));
-    const booking = await authenticated.from("dispatch_bookings").select("booking_id").eq("booking_id", bookingId).single();
+    const booking = await authenticated.from("dispatch_bookings").select("booking_id,tenant_id").eq("booking_id", bookingId).single();
     if (booking.error || !booking.data) throw new Error("Rider booking was not found.");
     const service = createServiceSupabaseClient();
     const prepared = await service.rpc("prepare_pretrip_refund_internal", { target_booking_id: bookingId });
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
       target_refund_id: details.refundId, provider_refund_id_value: refund.id,
     });
     if (completed.error) throw completed.error;
+    await requestNotificationDelivery(booking.data.tenant_id);
     return NextResponse.json({ refunded: true });
   } catch (error) {
     if (refundId) await createServiceSupabaseClient().rpc("fail_pretrip_refund_internal", {

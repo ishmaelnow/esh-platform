@@ -4,7 +4,8 @@ Last updated: 2026-08-13
 
 ## Current objective
 
-Complete Payment and Payout Notifications V1.
+Complete Automatic Transactional Email Delivery V1 for the existing Payment and Payout
+Notifications foundation.
 
 ## Repository and deployment state
 
@@ -204,6 +205,24 @@ booking were valid. The local correction waits for session, Supabase, and tenant
 consuming the one-time Stripe return parameters.
 Rider tests pass 4/4; Rider typecheck and production build pass after this final guard correction.
 
+The Stripe-return guard is deployed through commit `ca77fef`. Financial notifications still require
+Admin **Deliver queued** or the once-daily Hobby cron, which is too slow for transactional email.
+Automatic Transactional Email Delivery V1 is now implemented locally without a migration. Trusted
+Rider and Driver server routes request tenant-scoped Admin outbox delivery after authoritative
+payment, refund, trip-completion earnings, transfer, and connected-account payout transitions.
+Admin refunds invoke the delivery service directly. A Driver-authenticated server bridge handles
+browser-initiated trip completion. The Admin endpoint accepts only a tenant ID and uses a shared,
+server-only high-entropy credential; Resend secrets remain Admin-only. Requests are time-bounded and
+best-effort, so delivery failure cannot reverse or falsely fail a financial operation. Durable
+outbox retries, manual Admin delivery, and the daily cron remain recovery paths. Next: validate all
+three apps, configure the shared delivery secret and Rider/Driver Admin URL, deploy Admin then Rider
+and Driver, and run the automatic-delivery manual test.
+
+Validation is complete: Admin tests pass 57/57, Rider tests pass 4/4, Driver tests pass 9/9; all
+three typechecks and production builds pass; and `git diff --check` passes. The existing Supabase
+Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking. No database
+migration is introduced by this delivery follow-up.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -214,8 +233,9 @@ Rider tests pass 4/4; Rider typecheck and production build pass after this final
 
 ## Exact next action
 
-Have the owner deploy the Stripe-return recovery fix, then open Admin Notifications, deliver the
-already queued financial messages, and continue the production notification test.
+Have the owner configure Automatic Transactional Email Delivery V1's server-only environment
+variables, commit and deploy Admin followed by Rider and Driver, and run
+`docs/operations/payment-payout-notifications-manual-test.md` without pressing **Deliver queued**.
 
 ## Required reading for recovery
 

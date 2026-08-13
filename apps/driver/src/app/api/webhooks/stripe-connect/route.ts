@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@esh-platform/supabase";
 import { createStripeClient } from "@esh-platform/stripe";
 import type { Stripe } from "@esh-platform/stripe";
+import { requestNotificationDelivery } from "../../../../lib/request-notification-delivery";
 
 export async function POST(request: Request) {
   try {
@@ -37,6 +38,12 @@ export async function POST(request: Request) {
       });
     } else return NextResponse.json({ received: true });
     if (result.error) throw result.error;
+    if (event.account && event.type.startsWith("payout.")) {
+      const payoutAccount = await service.from("driver_payout_accounts").select("tenant_id")
+        .eq("provider_account_id", event.account).single();
+      if (!payoutAccount.error && payoutAccount.data)
+        await requestNotificationDelivery(payoutAccount.data.tenant_id);
+    }
     return NextResponse.json({ received: true });
   } catch { return NextResponse.json({ message: "Invalid or unprocessable webhook." }, { status: 400 }); }
 }

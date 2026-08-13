@@ -971,6 +971,9 @@ export default function DriverHome() {
       setDispatch(result.data as unknown as DriverDispatch);
       setDispatchMessage(action === "complete" ? "Trip completed." : "Trip updated.");
       if (action === "complete") {
+        if (session) await fetch("/api/notifications/deliver", {
+          method: "POST", headers: { Authorization: `Bearer ${session.access_token}` },
+        }).catch(() => undefined);
         const walletResult = await supabase.rpc("my_driver_wallet");
         setWallet(walletResult.error || !walletResult.data ? null : (walletResult.data as unknown as DriverWallet));
         setLocationSharing((current) =>

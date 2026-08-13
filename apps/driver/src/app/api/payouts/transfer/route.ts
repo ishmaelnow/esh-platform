@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAuthenticatedSupabaseClient, createServiceSupabaseClient } from "@esh-platform/supabase";
 import { createStripeClient } from "@esh-platform/stripe";
+import { requestNotificationDelivery } from "../../../../lib/request-notification-delivery";
 
 type TransferPreparation = { alreadyTransferred: boolean; transferId: string; amountMinor?: number;
   currencyCode?: string; paymentIntentId?: string; providerAccountId?: string };
@@ -42,6 +43,10 @@ export async function POST(request: Request) {
       target_transfer_id: details.transferId, provider_transfer_id_value: transfer.id,
     });
     if (completed.error) throw completed.error;
+    const transferRecord = await service.from("driver_earning_transfers").select("tenant_id")
+      .eq("driver_earning_transfer_id", details.transferId).single();
+    if (!transferRecord.error && transferRecord.data)
+      await requestNotificationDelivery(transferRecord.data.tenant_id);
     return NextResponse.json({ transferred: true });
   } catch (error) {
     if (transferId) await createServiceSupabaseClient().rpc("fail_driver_earning_transfer_internal", {
