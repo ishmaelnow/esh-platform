@@ -5,8 +5,9 @@
 2. Dry-run the migration and confirm only `20260813000300_pretrip_rider_refunds_v1.sql`, then apply it.
 3. Create and pay for a new identifiable Rider trip, but do not start the trip.
 4. Cancel from Rider. Confirm the message says the trip was canceled and payment refunded.
-5. Confirm Stripe shows one full refund, Rider shows `Cancelled`, and Admin Rider payments shows
-   `refunded` plus the full refund amount/status.
+5. Refresh Rider and confirm the cancelled trip permanently shows `Refunded: <full fare>` and
+   `Returned to the original payment method`. Confirm Stripe shows one full refund and Admin Rider
+   payments shows `refunded` plus the full refund amount/status.
 6. Confirm Admin Journal contains `Paid canceled trip refunded`: debit Rider prepayments and credit
    cash/payment clearing for the full fare. Confirm no fare, Driver earnings, or transfer posting was
    created for this unstarted trip.

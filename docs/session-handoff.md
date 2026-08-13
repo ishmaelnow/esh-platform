@@ -1,10 +1,10 @@
 # Session Handoff
 
-Last updated: 2026-08-12
+Last updated: 2026-08-13
 
 ## Current objective
 
-Complete Pre-trip Rider Refunds V1 on the deployed payment and ledger foundation.
+Complete the Rider-visible refund confirmation for Pre-trip Rider Refunds V1.
 
 ## Repository and deployment state
 
@@ -146,16 +146,18 @@ balances rather than storing duplicate totals.
 Admin tests pass 54/54; Admin typecheck and diff checks pass. It needs owner commit/deployment and
 production UI verification.
 
-Pre-trip Rider Refunds V1 is implemented locally for paid bookings before `in_progress`. Rider and
-authorized Admin cancellation use server-only Stripe refunds; ESH cancels only after Stripe accepts,
-marks the attempt refunded, and posts a balanced prepayment/cash reversal. A database trigger blocks
-trip start while Stripe is processing the refund. Completed/in-progress refunds and transferred
-earnings are deliberately excluded. Rider, Admin, and Supabase typechecks pass; Rider tests pass 4/4;
-Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required remote
-dry run lists only `20260813000300_pretrip_rider_refunds_v1.sql`. Existing Next/Supabase dynamic
-dependency and ESLint-plugin warnings remain non-blocking. Next: owner adds Admin
-`STRIPE_SECRET_KEY`, commits and deploys the applications, applies the migration, and runs the
-production manual test.
+Pre-trip Rider Refunds V1 commit `b95cbc9` and migration
+`20260813000300_pretrip_rider_refunds_v1.sql` are deployed. Rider and authorized Admin cancellation
+use server-only Stripe refunds; ESH cancels only after Stripe accepts, marks the attempt refunded,
+and posts a balanced prepayment/cash reversal. A database trigger blocks trip start while Stripe is
+processing the refund. Completed/in-progress refunds and transferred earnings are deliberately
+excluded. A
+production $10.59 cancellation passed Stripe, Admin payment status, refund record, and ledger
+verification, but the Rider card showed only `Cancelled` and the original fare. The local follow-up
+loads the Rider-authorized refund record and permanently displays the refund amount and state on its
+booking. Rider tests pass 4/4; Rider typecheck, production build, and `git diff --check` pass. The
+existing Supabase realtime and Next ESLint-plugin build warnings remain non-blocking. Next: owner
+commit/deploy and refresh that cancelled Rider trip.
 
 ## Cleanup still required after testing
 
@@ -167,9 +169,8 @@ production manual test.
 
 ## Exact next action
 
-Validate Driver Bank Payout Reconciliation V1. Then add the four payout events to the existing
-connected-account webhook, have the owner commit/push and deploy, dry-run/apply only
-`20260813000200_driver_payout_reconciliation_v1.sql`, and perform the success-path payout test.
+Deploy the Rider-visible refund confirmation, then refresh the production $10.59 cancelled trip and
+confirm it permanently shows `Refunded: $10.59 · Returned to the original payment method`.
 
 ## Required reading for recovery
 

@@ -10,6 +10,10 @@ refunded and posts an immutable balanced reversal: debit Rider prepayments and c
 clearing. Pending offers are canceled, assignment references are cleared, and the transition is
 tenant audited. Refund records are tenant isolated and Rider/manager readable.
 
+The Rider trip history reads the authorized refund record and permanently presents the amount and
+processor state on the corresponding cancelled booking. It does not infer a refund from cancellation
+or fare data, because unpaid bookings can also be cancelled.
+
 Completed and in-progress trips are excluded because their fare, Driver earnings, and possibly a
 Stripe transfer already exist. Those cases require a reviewed recovery/negative-balance policy and
 must not be silently reversed.

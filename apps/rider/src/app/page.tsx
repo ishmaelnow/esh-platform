@@ -48,6 +48,9 @@ type RiderBooking = {
   fareCurrencyCode?: string | null;
   estimatedFareMinor?: number | null;
   finalFareMinor?: number | null;
+  refundAmountMinor?: number | null;
+  refundCurrencyCode?: string | null;
+  refundStatus?: string | null;
   driver: { displayName: string; driverNumber: string } | null;
   vehicle: {
     vehicleNumber: string;
@@ -214,12 +217,13 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult] = await Promise.all([
+      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult, refundResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
         supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude,fare_currency_code,estimated_fare_minor,final_fare_minor").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_reputation", { target_tenant_slug: tenantSlug }),
+        supabase.from("rider_payment_refunds").select("booking_id,amount_minor,currency_code,status").eq("tenant_id", nextPortal.tenant.tenantId),
       ]);
       const { data: preferenceData, error: preferenceError } = preferenceResult;
       if (preferenceError) throw preferenceError;
@@ -227,6 +231,7 @@ export default function RiderHome() {
       if (locationResult.error) throw locationResult.error;
       if (coordinateResult.error) throw coordinateResult.error;
       if (reputationResult.error) throw reputationResult.error;
+      if (refundResult.error) throw refundResult.error;
       setReputationTrips((reputationResult.data ?? []) as unknown as ReputationTrip[]);
       setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
@@ -234,6 +239,7 @@ export default function RiderHome() {
       setScheduling(nextScheduling);
       const schedules = new Map(nextScheduling.bookings.map((item) => [item.bookingId, item]));
       const coordinates = new Map((coordinateResult.data ?? []).map((item) => [item.booking_id, item]));
+      const refunds = new Map((refundResult.data ?? []).map((item) => [item.booking_id, item]));
       setPortal({
         ...nextPortal,
         bookings: nextPortal.bookings.map((booking) => ({
@@ -247,6 +253,9 @@ export default function RiderHome() {
           fareCurrencyCode: coordinates.get(booking.bookingId)?.fare_currency_code ?? null,
           estimatedFareMinor: coordinates.get(booking.bookingId)?.estimated_fare_minor ?? null,
           finalFareMinor: coordinates.get(booking.bookingId)?.final_fare_minor ?? null,
+          refundAmountMinor: refunds.get(booking.bookingId)?.amount_minor ?? null,
+          refundCurrencyCode: refunds.get(booking.bookingId)?.currency_code ?? null,
+          refundStatus: refunds.get(booking.bookingId)?.status ?? null,
         })),
       });
     } else {
@@ -917,6 +926,14 @@ export default function RiderHome() {
                   </div>
                   <p className="area">{booking.serviceAreaName}</p>
                   {booking.fareCurrencyCode && booking.estimatedFareMinor != null ? <p className="area"><strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor) / 100)}</strong></p> : null}
+                  {booking.refundAmountMinor != null && booking.refundCurrencyCode ? (
+                    <p className="area">
+                      <strong>
+                        {booking.refundStatus === "succeeded" ? "Refunded" : booking.refundStatus === "pending" ? "Refund processing" : "Refund issue"}: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.refundCurrencyCode }).format(booking.refundAmountMinor / 100)}
+                      </strong>
+                      {booking.refundStatus === "succeeded" ? " · Returned to the original payment method" : null}
+                    </p>
+                  ) : null}
                   {booking.driver && booking.vehicle ? (
                     <div className="assignment">
                       <strong>{booking.driver.displayName}</strong>

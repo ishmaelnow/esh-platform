@@ -138,7 +138,7 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: scalable Admin financial workspace with separated overview, Driver balances,
      Rider payments, bank payouts, filtered journal, pagination, and manual adjustments.
    - Current delivery in progress: full, idempotent Stripe refunds for paid pre-trip cancellations
-     with immutable prepayment reversal and Rider/Admin controls.
+     with immutable prepayment reversal, Rider/Admin controls, and persistent Rider refund status.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**
