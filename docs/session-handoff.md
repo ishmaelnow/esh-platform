@@ -137,6 +137,14 @@ workspace redesign separates Overview, Driver balances, Rider payments, Bank pay
 Manual journal. Operational lists are searchable and paginated; journal entries and processor IDs
 are collapsed by default. Admin tests pass 54/54; Admin typecheck, production build, and diff checks
 pass. It needs owner commit/deployment and production UI verification.
+
+Production review found the Driver balances table labeled Stripe capability as `Transfers` and did
+not show transferred money. The local follow-up now derives and displays Pending, Collected,
+Transferred to Stripe, and Amount owed per Driver, and renames the status column to Transfer
+capability. It uses existing trips, paid payment attempts, immutable transfer records, and ledger
+balances rather than storing duplicate totals.
+Admin tests pass 54/54; Admin typecheck and diff checks pass. It needs owner commit/deployment and
+production UI verification.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
 remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
