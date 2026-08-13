@@ -312,7 +312,7 @@ export default function RiderHome() {
   }, [portal, session, supabase]);
 
   useEffect(() => {
-    if (!session || !supabase) return;
+    if (!session || !supabase || !tenantSlug) return;
     const params = new URLSearchParams(window.location.search);
     const returnedQuoteId = params.get("quote");
     if (params.get("payment") !== "success" || !returnedQuoteId) return;

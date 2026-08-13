@@ -197,6 +197,13 @@ deploy Rider, then deliver the already queued financial notifications from Admin
 Rider tests pass 4/4; Rider typecheck, production build, and `git diff --check` pass. Existing
 Supabase realtime and Next ESLint-plugin warnings remain non-blocking.
 
+Production retest still showed the safer recovery warning. The root sequencing issue is now
+identified: Stripe-return recovery could run after authentication but before `tenantSlug` had been
+selected, causing the service-area context call to fail with an empty tenant even though payment and
+booking were valid. The local correction waits for session, Supabase, and tenant selection before
+consuming the one-time Stripe return parameters.
+Rider tests pass 4/4; Rider typecheck and production build pass after this final guard correction.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
