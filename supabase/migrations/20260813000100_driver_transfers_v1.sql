@@ -1,5 +1,9 @@
 -- Idempotent per-trip Stripe transfers for collected Driver earnings.
 
+alter table public.rider_payment_attempts
+  add constraint rider_payment_attempts_tenant_attempt_unique
+  unique (tenant_id, payment_attempt_id);
+
 create table public.driver_earning_transfers (
   driver_earning_transfer_id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants (tenant_id) on delete restrict,

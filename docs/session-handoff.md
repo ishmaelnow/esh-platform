@@ -116,8 +116,11 @@ payouts. A new $51.31 Rider payment in RideEasy Connect Test completed successfu
 Driver share is the intended first transfer test. Local Driver Transfers V1 now implements a
 per-trip, source-payment-verified, idempotent Stripe transfer and balanced payable settlement.
 Driver tests, typecheck, production build, diff checks, and the migration dry-run pass; the dry-run
-lists only `20260813000100_driver_transfers_v1.sql`. It still needs owner commit/deployment,
-migration application, and production test.
+lists only `20260813000100_driver_transfers_v1.sql`. The first production application stopped at
+the initial `create table` because `rider_payment_attempts` lacked composite uniqueness for the
+tenant-scoped foreign key; no migration statements were applied. The local migration now adds
+`unique (tenant_id, payment_attempt_id)` first and needs owner commit/deployment, a fresh dry-run,
+migration retry, and production test.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
 remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
