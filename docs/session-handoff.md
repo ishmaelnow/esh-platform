@@ -168,6 +168,13 @@ and run `docs/operations/rider-payments-receipts-manual-test.md`. Rider tests pa
 typecheck, production build, and `git diff --check` pass. The existing Supabase realtime dynamic
 dependency and Next ESLint-plugin warnings remain non-blocking.
 
+Production payment/refund history passed after commit `de62b55`, but **View Stripe receipt** appeared
+to do nothing because its asynchronous popup-dependent launch was unreliable. The local follow-up
+loads the authorized receipt first, then renders a normal new-tab link and sanitized payment-method
+summary; retrieval errors remain visible. Next: validate, owner commit/deploy, and retry the current-
+sandbox $10.59 receipt. Rider tests pass 4/4; Rider typecheck, production build, and `git diff
+--check` pass. Existing Supabase realtime and Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -178,8 +185,8 @@ dependency and Next ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Have the owner commit/deploy Rider Payments and Receipts V1, then run its production manual test
-using the existing paid and $10.59 refunded trips.
+Have the owner commit/deploy the reliable receipt-link follow-up, then retry the current-sandbox
+$10.59 receipt from Rider Payments.
 
 ## Required reading for recovery
 

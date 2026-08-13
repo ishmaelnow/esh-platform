@@ -155,6 +155,8 @@ export default function RiderHome() {
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [payments, setPayments] = useState<RiderPayment[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<Record<string, string>>({});
+  const [paymentReceiptUrls, setPaymentReceiptUrls] = useState<Record<string, string>>({});
+  const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled">("now");
   const [serviceAreaId, setServiceAreaId] = useState("");
   const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
@@ -397,11 +399,9 @@ export default function RiderHome() {
     void loadPayments().catch((value) => setError(riderErrorMessage(value)));
   }, [activePortalTab, loadPayments]);
 
-  async function openPaymentReceipt(paymentAttemptId: string) {
+  async function loadPaymentReceipt(paymentAttemptId: string) {
     if (!session) return;
-    const receiptWindow = window.open("about:blank", "_blank");
-    if (receiptWindow) receiptWindow.opener = null;
-    setBusy(true);
+    setLoadingReceiptId(paymentAttemptId);
     setError("");
     try {
       const response = await fetch(`/api/payments/receipt?paymentAttemptId=${encodeURIComponent(paymentAttemptId)}`, {
@@ -410,13 +410,11 @@ export default function RiderHome() {
       const result = await response.json() as { receiptUrl?: string; paymentMethod?: string; message?: string };
       if (!response.ok || !result.receiptUrl) throw new Error(result.message ?? "Receipt is unavailable.");
       if (result.paymentMethod) setPaymentMethods((current) => ({ ...current, [paymentAttemptId]: result.paymentMethod! }));
-      if (receiptWindow) receiptWindow.location.assign(result.receiptUrl);
-      else window.open(result.receiptUrl, "_blank", "noopener,noreferrer");
+      setPaymentReceiptUrls((current) => ({ ...current, [paymentAttemptId]: result.receiptUrl! }));
     } catch (value) {
-      receiptWindow?.close();
       setError(riderErrorMessage(value));
     } finally {
-      setBusy(false);
+      setLoadingReceiptId(null);
     }
   }
 
@@ -1075,7 +1073,13 @@ export default function RiderHome() {
                 {booking ? <><p>{booking.pickupAddress}</p><p className="destination">to {booking.destinationAddress}</p></> : <p className="area">Payment completed before trip request</p>}
                 {refundAmount ? <p className="area"><strong>{payment.refundStatus === "succeeded" ? "Refunded" : "Refund"}: {refundAmount}</strong>{payment.refundedAt ? ` · ${formatDate(payment.refundedAt)}` : ""}</p> : null}
                 {paymentMethods[payment.paymentAttemptId] ? <p className="area">Paid with {paymentMethods[payment.paymentAttemptId]}</p> : null}
-                {payment.status === "paid" || payment.status === "refunded" ? <button className="text-button" disabled={busy} onClick={() => void openPaymentReceipt(payment.paymentAttemptId)}>View Stripe receipt</button> : null}
+                {paymentReceiptUrls[payment.paymentAttemptId] ? (
+                  <a className="text-button" href={paymentReceiptUrls[payment.paymentAttemptId]} target="_blank" rel="noopener noreferrer">Open Stripe receipt</a>
+                ) : payment.status === "paid" || payment.status === "refunded" ? (
+                  <button className="text-button" disabled={loadingReceiptId !== null} onClick={() => void loadPaymentReceipt(payment.paymentAttemptId)}>
+                    {loadingReceiptId === payment.paymentAttemptId ? "Loading receipt…" : "Load Stripe receipt"}
+                  </button>
+                ) : null}
               </article>;
             })}
           </section>

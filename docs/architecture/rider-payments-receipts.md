@@ -12,5 +12,9 @@ server-only Stripe key, and returns only Stripe's hosted receipt URL plus its sa
 summary (brand and last four when available). Processor secrets, complete card data, Checkout
 identifiers, and PaymentIntent identifiers never enter the browser response.
 
+Receipt retrieval renders the returned URL as an ordinary user-activated link. This avoids browser
+popup blocking and leaves the Rider portal open while Stripe's receipt opens in a new tab. Retrieval
+failures remain visible in the Rider portal.
+
 V1 uses Stripe's hosted receipt as the processor record. ESH-generated tax invoices, PDF statements,
 saved payment methods, processor-fee accounting, and cross-processor receipt recovery are deferred.
