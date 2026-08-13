@@ -423,7 +423,13 @@ export default function DriverHome() {
         headers: { Authorization: `Bearer ${session.access_token}` } });
       const result = await response.json() as { url?: string; message?: string };
       if (!response.ok || !result.url) throw new Error(result.message ?? "Stripe payout setup is unavailable.");
-      window.location.assign(result.url);
+      if (path === "dashboard") {
+        const opened = window.open(result.url, "_blank", "noopener,noreferrer");
+        if (!opened) throw new Error("Allow pop-ups to open your Stripe payout account in a new tab.");
+        setPayoutBusy(false);
+      } else {
+        window.location.assign(result.url);
+      }
     } catch (value) { setPayoutMessage(value instanceof Error ? value.message : "Stripe payout setup is unavailable."); setPayoutBusy(false); }
   }
 

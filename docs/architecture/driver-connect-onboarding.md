@@ -4,6 +4,8 @@ Driver payout setup uses Stripe connected accounts configured with an Express Da
 Stripe-hosted onboarding. The Driver app's authenticated server routes create or resume onboarding
 and generate Express dashboard links. New accounts use explicit controller properties rather than
 the legacy `type: express` account parameter so newly registered Connect platforms can create them.
+Hosted onboarding redirects in the current tab and returns to ESH. The short-lived Express Dashboard
+login link opens in a separate tab because Stripe login links do not accept an ESH return URL.
 Stripe collects bank, identity, tax, and verification information directly; ESH stores only the
 connected-account identifier, readiness flags, outstanding-requirement names, and audit history.
 

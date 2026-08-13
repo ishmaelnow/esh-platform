@@ -126,6 +126,11 @@ without a second ledger posting, and exposes Driver/Admin status. Driver tests, 
 Supabase typechecks, Admin tests, both production builds, and diff checks pass. The migration dry-run
 lists only `20260813000200_driver_payout_reconciliation_v1.sql`. It needs webhook event selection,
 owner commit/deployment, migration application, and production test.
+
+During the payout manual test, **Manage payout account** replaced the Driver page with Stripe
+Express and provided no ESH return control. A local UX fix now opens only the Express Dashboard link
+in a separate tab while preserving the current-tab hosted-onboarding return flow. It needs Driver
+owner commit/deployment; Driver tests, typecheck, and diff checks pass.
 Supabase, Stripe, Driver, and Admin typechecks pass; Driver and Admin lint pass; Driver tests pass
 9/9; Admin tests pass 54/54; both production builds pass; `git diff --check` passes; and the required
 remote dry-run lists only `20260812000300_driver_connect_onboarding_v1.sql`. Existing Next/Supabase
