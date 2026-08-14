@@ -153,6 +153,9 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery in progress: coordinated full refunds for paid completed trips, including
      recoverable Stripe transfer reversal, immutable Driver-earning recovery, and Rider/Admin/Driver
      history that does not rewrite the original trip or journals.
+   - Current delivery in progress: signature-verified Stripe dispute lifecycle, idempotent principal
+     withdrawal/reinstatement accounting, Rider visibility, and Admin recovery warnings without
+     silently clawing back Driver funds.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**

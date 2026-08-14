@@ -4,8 +4,8 @@ Last updated: 2026-08-14
 
 ## Current objective
 
-Complete Completed-Trip Refund and Driver Recovery V1 without weakening Stripe, ledger, payout, or
-historical trip truth.
+Complete Rider Payment Disputes V1 without treating webhook delivery as optional financial truth or
+silently assigning platform chargeback liability to Drivers.
 
 ## Repository and deployment state
 
@@ -305,6 +305,26 @@ typechecks pass, both production builds pass, and `git diff --check` passes. The
 Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking. The remote
 migration dry run lists only `20260814000200_completed_trip_refund_recovery_v1.sql`.
 
+Completed-Trip Refund and Driver Recovery V1 is committed at `538f135`, and the remote database is
+up to date through `20260814000200_completed_trip_refund_recovery_v1.sql`. Production manual-test
+results have not yet been reported.
+
+Rider Payment Disputes V1 is implemented locally. The existing signature-verified Rider Stripe
+webhook accepts dispute created, updated, closed, funds-withdrawn, and funds-reinstated events. A
+tenant/Rider-isolated dispute record supports multiple disputes per payment, stores bounded lifecycle
+state and deadlines, and posts the disputed principal exactly once when Stripe withdraws funds and
+the exact inverse if Stripe reinstates them. Admin has a searchable Disputes workspace and flags
+successful Driver transfers for reviewed recovery; Rider Payments shows the dispute without changing
+the underlying successful PaymentIntent state. V1 deliberately does not submit evidence, account for
+Stripe dispute fees, or silently reverse Driver transfers. Migration
+`20260814000300_rider_payment_disputes_v1.sql`, client types, architecture, webhook setup, unit tests,
+and production test are included. Next: finish validation and dry-run only the intended migration.
+
+Validation is complete: Rider tests pass 6/6, Admin tests pass 57/57, Rider, Admin, and Supabase
+typechecks pass, both production builds pass, and `git diff --check` passes. The existing Supabase
+Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking. The remote
+migration dry run lists only `20260814000300_rider_payment_disputes_v1.sql`.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -315,9 +335,9 @@ migration dry run lists only `20260814000200_completed_trip_refund_recovery_v1.s
 
 ## Exact next action
 
-Owner stages and commits the Completed-Trip Refund and Driver Recovery V1 files, applies the already
-dry-run migration, pushes/deploys Admin and Driver, then runs
-`docs/operations/completed-trip-refund-recovery-manual-test.md`.
+Owner stages and commits Rider Payment Disputes V1, applies the already dry-run migration, adds the
+five documented dispute events to the existing Rider Stripe destination, pushes/deploys Rider and
+Admin, then runs `docs/operations/rider-payment-disputes-manual-test.md`.
 
 ## Required reading for recovery
 
@@ -358,3 +378,5 @@ dry-run migration, pushes/deploys Admin and Driver, then runs
 - `docs/operations/manual-ledger-reversals-manual-test.md`
 - `docs/architecture/completed-trip-refund-recovery.md`
 - `docs/operations/completed-trip-refund-recovery-manual-test.md`
+- `docs/architecture/rider-payment-disputes.md`
+- `docs/operations/rider-payment-disputes-manual-test.md`

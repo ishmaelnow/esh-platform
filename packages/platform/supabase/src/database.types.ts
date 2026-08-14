@@ -396,6 +396,12 @@ export type Database = {
         Update: { amount_minor?: number; booking_id?: string; created_at?: string; currency_code?: string; failure_message?: string | null; payment_attempt_id?: string; provider?: string; provider_refund_id?: string | null; reason?: string; refund_id?: string; refund_scope?: string; refunded_at?: string | null; status?: string; tenant_id?: string; updated_at?: string }
         Relationships: []
       }
+      rider_payment_disputes: {
+        Row: { amount_minor: number; booking_id: string | null; created_at: string; currency_code: string; evidence_due_at: string | null; funds_reinstated_at: string | null; funds_withdrawn_at: string | null; payment_attempt_id: string; provider: string; provider_charge_id: string; provider_dispute_id: string; reason: string; rider_payment_dispute_id: string; status: string; tenant_id: string; updated_at: string }
+        Insert: { amount_minor: number; booking_id?: string | null; created_at?: string; currency_code: string; evidence_due_at?: string | null; funds_reinstated_at?: string | null; funds_withdrawn_at?: string | null; payment_attempt_id: string; provider?: string; provider_charge_id: string; provider_dispute_id: string; reason: string; rider_payment_dispute_id?: string; status: string; tenant_id: string; updated_at?: string }
+        Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; currency_code?: string; evidence_due_at?: string | null; funds_reinstated_at?: string | null; funds_withdrawn_at?: string | null; payment_attempt_id?: string; provider?: string; provider_charge_id?: string; provider_dispute_id?: string; reason?: string; rider_payment_dispute_id?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       completed_trip_refund_recoveries: {
         Row: { booking_id: string; completed_at: string | null; completed_trip_refund_recovery_id: string; created_at: string; driver_earning_transfer_id: string | null; failure_message: string | null; provider_transfer_reversal_id: string | null; refund_id: string; requested_by_person_id: string; status: string; tenant_id: string; transfer_reversed_at: string | null; updated_at: string }
         Insert: { booking_id: string; completed_at?: string | null; completed_trip_refund_recovery_id?: string; created_at?: string; driver_earning_transfer_id?: string | null; failure_message?: string | null; provider_transfer_reversal_id?: string | null; refund_id: string; requested_by_person_id: string; status?: string; tenant_id: string; transfer_reversed_at?: string | null; updated_at?: string }
@@ -2240,6 +2246,10 @@ export type Database = {
       record_completed_trip_transfer_reversal_internal: { Args: { provider_transfer_reversal_id_value: string; target_recovery_id: string }; Returns: boolean }
       complete_completed_trip_refund_internal: { Args: { provider_refund_id_value: string; target_recovery_id: string }; Returns: boolean }
       fail_completed_trip_refund_recovery_internal: { Args: { failure_message_value: string; target_recovery_id: string }; Returns: boolean }
+      record_rider_payment_dispute_internal: {
+        Args: { amount_minor_value: number; currency_code_value: string; evidence_due_at_value: string | null; event_type_value: string; provider_charge_id_value: string; provider_dispute_id_value: string; provider_payment_intent_id_value: string; reason_value: string; status_value: string }
+        Returns: boolean
+      }
       prepare_driver_earning_transfer_internal: {
         Args: { target_booking_id: string; target_driver_profile_id: string }
         Returns: Json

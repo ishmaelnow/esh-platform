@@ -104,7 +104,9 @@ type RiderPayment = {
   refundAmountMinor: number | null;
   refundStatus: string | null;
   refundedAt: string | null;
+  disputes: RiderPaymentDispute[];
 };
+type RiderPaymentDispute = { disputeId: string; amountMinor: number; status: string; reason: string; evidenceDueAt: string | null; fundsWithdrawnAt: string | null; fundsReinstatedAt: string | null };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
@@ -283,17 +285,27 @@ export default function RiderHome() {
 
   const loadPayments = useCallback(async () => {
     if (!supabase || !session || !portal) return;
-    const [paymentResult, refundResult] = await Promise.all([
+    const [paymentResult, refundResult, disputeResult] = await Promise.all([
       supabase.from("rider_payment_attempts")
         .select("payment_attempt_id,booking_id,amount_minor,currency_code,status,paid_at,created_at")
         .eq("tenant_id", portal.tenant.tenantId).order("created_at", { ascending: false }),
       supabase.from("rider_payment_refunds")
         .select("payment_attempt_id,amount_minor,status,refunded_at")
         .eq("tenant_id", portal.tenant.tenantId),
+      supabase.from("rider_payment_disputes")
+        .select("rider_payment_dispute_id,payment_attempt_id,amount_minor,status,reason,evidence_due_at,funds_withdrawn_at,funds_reinstated_at")
+        .eq("tenant_id", portal.tenant.tenantId).order("created_at", { ascending: false }),
     ]);
     if (paymentResult.error) throw paymentResult.error;
     if (refundResult.error) throw refundResult.error;
+    if (disputeResult.error) throw disputeResult.error;
     const refunds = new Map((refundResult.data ?? []).map((refund) => [refund.payment_attempt_id, refund]));
+    const disputes = new Map<string, RiderPaymentDispute[]>();
+    for (const dispute of disputeResult.data ?? []) {
+      const records = disputes.get(dispute.payment_attempt_id) ?? [];
+      records.push({ disputeId: dispute.rider_payment_dispute_id, amountMinor: dispute.amount_minor, status: dispute.status, reason: dispute.reason, evidenceDueAt: dispute.evidence_due_at, fundsWithdrawnAt: dispute.funds_withdrawn_at, fundsReinstatedAt: dispute.funds_reinstated_at });
+      disputes.set(dispute.payment_attempt_id, records);
+    }
     setPayments((paymentResult.data ?? []).map((payment) => {
       const refund = refunds.get(payment.payment_attempt_id);
       return {
@@ -307,6 +319,7 @@ export default function RiderHome() {
         refundAmountMinor: refund?.amount_minor ?? null,
         refundStatus: refund?.status ?? null,
         refundedAt: refund?.refunded_at ?? null,
+        disputes: disputes.get(payment.payment_attempt_id) ?? [],
       };
     }));
   }, [portal, session, supabase]);
@@ -1102,6 +1115,7 @@ export default function RiderHome() {
                 <div className="trip-top"><div><span className={`status status-${payment.status}`}>{payment.status}</span><h3>{amount}</h3></div><time>{formatDate(payment.paidAt ?? payment.createdAt)}</time></div>
                 {booking ? <><p>{booking.pickupAddress}</p><p className="destination">to {booking.destinationAddress}</p></> : <p className="area">Payment completed before trip request</p>}
                 {refundAmount ? <p className="area"><strong>{payment.refundStatus === "succeeded" ? "Refunded" : "Refund"}: {refundAmount}</strong>{payment.refundedAt ? ` · ${formatDate(payment.refundedAt)}` : ""}</p> : null}
+                {payment.disputes.map((dispute) => <p className="area" key={dispute.disputeId}><strong>Payment dispute: {new Intl.NumberFormat(undefined, { style: "currency", currency: payment.currencyCode }).format(dispute.amountMinor / 100)} · {dispute.status.replaceAll("_", " ")}</strong><br />Reason: {dispute.reason.replaceAll("_", " ")}{dispute.fundsReinstatedAt ? ` · Funds reinstated ${formatDate(dispute.fundsReinstatedAt)}` : dispute.fundsWithdrawnAt ? ` · Funds withdrawn ${formatDate(dispute.fundsWithdrawnAt)}` : ""}{dispute.evidenceDueAt && !["won", "lost", "warning_closed", "prevented"].includes(dispute.status) ? ` · Response due ${formatDate(dispute.evidenceDueAt)}` : ""}</p>)}
                 {paymentMethods[payment.paymentAttemptId] ? <p className="area">Paid with {paymentMethods[payment.paymentAttemptId]}</p> : null}
                 {paymentReceiptUrls[payment.paymentAttemptId] ? (
                   <a className="text-button" href={paymentReceiptUrls[payment.paymentAttemptId]} target="_blank" rel="noopener noreferrer">Open Stripe receipt</a>

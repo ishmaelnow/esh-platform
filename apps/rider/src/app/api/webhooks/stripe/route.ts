@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@esh-platform/supabase";
 import { createStripeClient, getStripeWebhookSecret, type Stripe } from "@esh-platform/stripe";
 import { requestNotificationDelivery } from "../../../../lib/request-notification-delivery";
+import { disputeRecordArgs, isStripeDisputeEvent } from "../../../../lib/stripe-dispute";
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +10,17 @@ export async function POST(request: Request) {
     if (!signature) throw new Error("Stripe signature is required.");
     const stripe = createStripeClient();
     const event = stripe.webhooks.constructEvent(await request.text(), signature, getStripeWebhookSecret());
+    if (isStripeDisputeEvent(event.type)) {
+      const dispute = event.data.object as Stripe.Dispute;
+      const args = disputeRecordArgs(dispute, event.type);
+      const service = createServiceSupabaseClient();
+      const result = await service.rpc("record_rider_payment_dispute_internal", args);
+      if (result.error) throw result.error;
+      const attempt = await service.from("rider_payment_attempts").select("tenant_id")
+        .eq("provider_payment_intent_id", args.provider_payment_intent_id_value).single();
+      if (!attempt.error && attempt.data) await requestNotificationDelivery(attempt.data.tenant_id);
+      return NextResponse.json({ received: true });
+    }
     if (!["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type))
       return NextResponse.json({ received: true });
     const session = event.data.object as Stripe.Checkout.Session;
