@@ -148,6 +148,8 @@ deferred from this milestone and were delivered under the later milestones below
      transferred, and separately reconciled bank-payout totals plus local CSV/print output.
    - Current delivery in progress: automatic Stripe payout-to-transfer reconciliation with verified
      connected-account balance activity, matched/unmatched totals, and Driver/Admin visibility.
+   - Current delivery in progress: immutable, reasoned, audited reversals for manual journals while
+     preventing ledger-only reversal of system-generated financial lifecycle records.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**

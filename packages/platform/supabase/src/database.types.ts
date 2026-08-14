@@ -635,6 +635,12 @@ export type Database = {
         Update: { account_id?: string; created_at?: string; credit_amount_minor?: number; debit_amount_minor?: number; entry_id?: string; entry_sequence?: number; memo?: string | null; tenant_id?: string; transaction_id?: string }
         Relationships: []
       }
+      ledger_transaction_reversals: {
+        Row: { created_at: string; created_by_person_id: string; ledger_transaction_reversal_id: string; original_transaction_id: string; reason: string; reversal_transaction_id: string; tenant_id: string }
+        Insert: { created_at?: string; created_by_person_id: string; ledger_transaction_reversal_id?: string; original_transaction_id: string; reason: string; reversal_transaction_id: string; tenant_id: string }
+        Update: { created_at?: string; created_by_person_id?: string; ledger_transaction_reversal_id?: string; original_transaction_id?: string; reason?: string; reversal_transaction_id?: string; tenant_id?: string }
+        Relationships: []
+      }
       tenant_driver_earnings_settings: {
         Row: { created_at: string; driver_share_basis_points: number; tenant_id: string; updated_at: string; updated_by_person_id: string }
         Insert: { created_at?: string; driver_share_basis_points?: number; tenant_id: string; updated_at?: string; updated_by_person_id: string }
@@ -2255,6 +2261,10 @@ export type Database = {
           target_booking_id?: string
           target_tenant_id: string
         }
+        Returns: string
+      }
+      reverse_tenant_manual_ledger_transaction: {
+        Args: { reason_value: string; target_tenant_id: string; target_transaction_id: string }
         Returns: string
       }
       register_rider_checkout_internal: {

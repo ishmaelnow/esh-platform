@@ -4,7 +4,7 @@ Last updated: 2026-08-13
 
 ## Current objective
 
-Complete Transfer-to-Payout Reconciliation V1 without repeating statement or payout-lifecycle work.
+Complete Manual Ledger Reversals V1 without weakening immutable ledger or domain financial state.
 
 ## Repository and deployment state
 
@@ -257,6 +257,24 @@ pass; and `git diff --check` passes. The remote migration dry run lists only
 `20260813000500_transfer_payout_reconciliation_v1.sql`. Existing Supabase Realtime and Next ESLint-
 plugin warnings remain non-blocking.
 
+The owner accepted Transfer-to-Payout Reconciliation V1 with live payout-event observation deferred
+until Stripe creates the scheduled automatic payout. Commit `5522bea` is pushed and the repository
+was clean when Manual Ledger Reversals V1 began.
+
+Manual Ledger Reversals V1 is implemented locally. Authorized tenant finance managers can reverse
+only `manual:*` journals through a new RPC and Admin Journal control. The database posts the exact
+swapped entries, preserves both immutable transactions, stores an immutable one-to-one link with a
+required reason and actor, returns the existing reversal on replay, and audits the correction.
+Automated fare, payment, earnings, transfer, payout, refund, and booking-linked journals are rejected
+because ledger-only reversal would contradict their domain state. Migration
+`20260814000100_manual_ledger_reversals_v1.sql`, client types, architecture, and production test are
+included. Next: validate, dry-run only that migration, then owner apply/deploy and manual test.
+
+Validation is complete: Supabase and Admin typechecks pass, Admin tests pass 57/57, the Admin
+production build passes, and `git diff --check` passes. The remote migration dry run lists only
+`20260814000100_manual_ledger_reversals_v1.sql`. Existing Supabase Realtime and Next ESLint-plugin
+warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -267,8 +285,8 @@ plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Have the owner commit, apply only `20260813000500_transfer_payout_reconciliation_v1.sql`, deploy
-Driver and Admin, and run `docs/operations/transfer-payout-reconciliation-manual-test.md`.
+Have the owner commit, apply only `20260814000100_manual_ledger_reversals_v1.sql`, push/deploy Admin,
+and run `docs/operations/manual-ledger-reversals-manual-test.md`.
 
 ## Required reading for recovery
 
@@ -305,3 +323,5 @@ Driver and Admin, and run `docs/operations/transfer-payout-reconciliation-manual
 - `docs/operations/driver-earnings-statements-manual-test.md`
 - `docs/architecture/transfer-payout-reconciliation.md`
 - `docs/operations/transfer-payout-reconciliation-manual-test.md`
+- `docs/architecture/manual-ledger-reversals.md`
+- `docs/operations/manual-ledger-reversals-manual-test.md`

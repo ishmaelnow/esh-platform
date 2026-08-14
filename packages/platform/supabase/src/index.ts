@@ -54,6 +54,7 @@ export type TenantFinancialSettingsRow = Tables<"tenant_financial_settings">;
 export type LedgerAccountRow = Tables<"ledger_accounts">;
 export type LedgerTransactionRow = Tables<"ledger_transactions">;
 export type LedgerEntryRow = Tables<"ledger_entries">;
+export type LedgerTransactionReversalRow = Tables<"ledger_transaction_reversals">;
 export type RiderProfileRow = Tables<"rider_profiles">;
 export type RiderNotificationPreferenceRow = Tables<"rider_notification_preferences">;
 export type TenantSchedulingSettingsRow = Tables<"tenant_scheduling_settings">;

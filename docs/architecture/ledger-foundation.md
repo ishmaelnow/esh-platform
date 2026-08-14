@@ -25,6 +25,10 @@ Transactions and entries cannot be updated or deleted. Corrections must be new r
 adjusting transactions. Reusing an external key with identical content returns the original
 transaction; reusing it with different content fails.
 
+Manual Ledger Reversals V1 now provides a linked, reasoned inverse for tenant-admin `manual:*`
+journals. Automated domain postings remain excluded because their operational state must be
+recovered together with the ledger rather than corrected in isolation.
+
 Initialization creates five generic accounts: cash/payment clearing, Rider receivables, Driver
 payables, platform fee revenue, and operating adjustments. Account balances are derived from entries
 and are never stored as mutable totals.
@@ -44,6 +48,6 @@ data, bank data, and Stripe objects never belong in these tables.
 - fare quotes and trip pricing;
 - Rider charges, refunds, wallet balances, and payment methods;
 - Driver earnings, transfers, and payouts;
-- automated reversals and reconciliation;
+- domain-specific automated reversals;
 - Stripe integration and webhooks; and
 - multi-currency tenant ledgers.
