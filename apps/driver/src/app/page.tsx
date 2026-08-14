@@ -13,6 +13,7 @@ import {
   vehicleEvidenceLabel,
 } from "../lib/availability";
 import { offerCountdownLabel, offerSecondsRemaining } from "../lib/dispatch";
+import { buildEarningsStatement, earningsStatementCsv } from "../lib/earnings-statement";
 import { locationErrorMessage } from "../lib/location";
 
 type DriverSummary = {
@@ -204,11 +205,27 @@ export default function DriverHome() {
   const [bankPayouts, setBankPayouts] = useState<DriverBankPayout[]>([]);
   const [payoutBusy, setPayoutBusy] = useState(false);
   const [payoutMessage, setPayoutMessage] = useState<string | null>(null);
+  const [statementStartDate, setStatementStartDate] = useState(() => firstDayOfCurrentMonth());
+  const [statementEndDate, setStatementEndDate] = useState(() => localDateValue(new Date()));
   const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
   const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
   const knownDispatchOfferIds = useRef<Set<string>>(new Set());
+  const earningsStatement = useMemo(() => buildEarningsStatement(
+    wallet?.trips ?? [], bankPayouts, { startDate: statementStartDate, endDate: statementEndDate },
+  ), [bankPayouts, statementEndDate, statementStartDate, wallet?.trips]);
+
+  const downloadEarningsStatement = useCallback(() => {
+    if (!wallet) return;
+    const csv = earningsStatementCsv(earningsStatement, wallet.currencyCode);
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `esh-earnings-${statementStartDate}-to-${statementEndDate}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [earningsStatement, statementEndDate, statementStartDate, wallet]);
 
   const activateAndLoad = useCallback(async () => {
     if (!supabase) {
@@ -1442,6 +1459,41 @@ export default function DriverHome() {
                       <div><dt>Transferred to Stripe</dt><dd>{formatCurrency(wallet.paidMinor, wallet.currencyCode)}</dd></div>
                       <div><dt>Ledger amount owed</dt><dd>{formatCurrency(wallet.balanceMinor, wallet.currencyCode)}</dd></div>
                     </dl>
+                    <section className="earnings-statement">
+                      <div className="statement-heading">
+                        <div><p className="eyebrow">Statement</p><h3>Earnings statement</h3></div>
+                        <div className="row-actions print-hidden">
+                          <button className="secondary" onClick={downloadEarningsStatement} type="button">Download CSV</button>
+                          <button className="secondary" onClick={() => window.print()} type="button">Print statement</button>
+                        </div>
+                      </div>
+                      <div className="statement-dates print-hidden">
+                        <label>From<input max={statementEndDate} onChange={(event) => setStatementStartDate(event.target.value)} type="date" value={statementStartDate} /></label>
+                        <label>Through<input min={statementStartDate} onChange={(event) => setStatementEndDate(event.target.value)} type="date" value={statementEndDate} /></label>
+                      </div>
+                      <p className="document-help">{statementStartDate} through {statementEndDate} · Dates use this device&apos;s local time. Bank payouts are reported separately because Stripe has not linked them to individual trip transfers.</p>
+                      <dl className="location-details statement-totals">
+                        <div><dt>Completed trips</dt><dd>{earningsStatement.tripCount}</dd></div>
+                        <div><dt>Rider fares</dt><dd>{formatCurrency(earningsStatement.grossFaresMinor, wallet.currencyCode)}</dd></div>
+                        <div><dt>Driver earnings</dt><dd>{formatCurrency(earningsStatement.earningsMinor, wallet.currencyCode)}</dd></div>
+                        <div><dt>Platform fees</dt><dd>{formatCurrency(earningsStatement.platformFeesMinor, wallet.currencyCode)}</dd></div>
+                        <div><dt>Pending payment</dt><dd>{formatCurrency(earningsStatement.pendingMinor, wallet.currencyCode)}</dd></div>
+                        <div><dt>Collected</dt><dd>{formatCurrency(earningsStatement.collectedMinor, wallet.currencyCode)}</dd></div>
+                        <div><dt>Transferred to Stripe</dt><dd>{formatCurrency(earningsStatement.transferredMinor, wallet.currencyCode)}</dd></div>
+                        <div><dt>Bank payouts paid</dt><dd>{formatCurrency(earningsStatement.bankPaidMinor, wallet.currencyCode)}</dd></div>
+                      </dl>
+                      <div className="statement-table-wrap">
+                        <table className="statement-table">
+                          <thead><tr><th>Date</th><th>Trip</th><th>Rider fare</th><th>Earnings</th><th>Status</th></tr></thead>
+                          <tbody>
+                            {earningsStatement.trips.map((trip) => <tr key={trip.bookingId}><td>{new Date(trip.completedAt).toLocaleDateString()}</td><td>{trip.pickupAddress}<br /><span>to {trip.destinationAddress}</span></td><td>{formatCurrency(trip.fareAmountMinor, wallet.currencyCode)}</td><td>{formatCurrency(trip.earningsAmountMinor, wallet.currencyCode)}</td><td>{trip.transferStatus === "succeeded" ? "Transferred" : trip.paymentCollected ? "Collected" : "Pending payment"}</td></tr>)}
+                            {earningsStatement.trips.length === 0 ? <tr><td colSpan={5}>No completed-trip earnings in this period.</td></tr> : null}
+                          </tbody>
+                        </table>
+                      </div>
+                      {earningsStatement.payouts.length ? <div><h4>Bank payout activity in this period</h4>{earningsStatement.payouts.map((payout) => <p className="statement-payout" key={payout.payoutId}><span>{new Date(payout.providerCreatedAt).toLocaleDateString()} · {payout.status.replaceAll("_", " ")}</span><strong>{formatCurrency(payout.amountMinor, payout.currencyCode)}</strong></p>)}</div> : null}
+                      <p className="statement-disclaimer">This operational statement is not a tax form. Amounts come from ESH&apos;s immutable trip and transfer records plus Stripe-reported bank payout status.</p>
+                    </section>
                     {wallet.trips.map((trip) => (
                       <article className="document-card" key={trip.bookingId}>
                         <div className="document-heading"><strong>{formatCurrency(trip.earningsAmountMinor, wallet.currencyCode)} earned</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
@@ -1747,6 +1799,17 @@ function currentPosition() {
 
 function formatCurrency(amountMinor: number, currencyCode: string) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currencyCode }).format(amountMinor / 100);
+}
+
+function localDateValue(date: Date) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function firstDayOfCurrentMonth() {
+  const date = new Date();
+  date.setDate(1);
+  return localDateValue(date);
 }
 
 function locationPermissionLabel(permission: PermissionState | "unsupported" | "unknown") {

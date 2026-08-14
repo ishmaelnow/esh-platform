@@ -319,6 +319,50 @@ h3 {
   padding: 16px;
 }
 
+.earnings-statement {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.statement-heading,
+.statement-payout {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.statement-dates {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.statement-table-wrap { overflow-x: auto; }
+.statement-table { border-collapse: collapse; min-width: 620px; width: 100%; }
+.statement-table th,
+.statement-table td { border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+.statement-table th { color: #586174; font-size: .78rem; text-transform: uppercase; }
+.statement-table td span { color: #586174; }
+.statement-payout { border-bottom: 1px solid #e5e7eb; margin: 0; padding: 10px 0; }
+.statement-disclaimer { color: #586174; font-size: .8rem; margin: 0; }
+
+@media print {
+  body { background: white; }
+  .shell { display: block; padding: 0; }
+  .portal-card { border: 0; box-shadow: none; max-width: none; padding: 0; }
+  .portal-card > :not(.status-grid),
+  .driver-tabs,
+  .status-grid > :not(.documents),
+  .documents > :not(.earnings-statement),
+  .print-hidden { display: none !important; }
+  .earnings-statement { border: 0; padding: 0; }
+  .statement-table-wrap { overflow: visible; }
+}
+
 .document-heading {
   align-items: center;
   display: flex;

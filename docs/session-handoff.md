@@ -4,8 +4,7 @@ Last updated: 2026-08-13
 
 ## Current objective
 
-Complete Automatic Transactional Email Delivery V1 for the existing Payment and Payout
-Notifications foundation.
+Complete Driver Earnings Statements V1.
 
 ## Repository and deployment state
 
@@ -223,6 +222,20 @@ three typechecks and production builds pass; and `git diff --check` passes. The 
 Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking. No database
 migration is introduced by this delivery follow-up.
 
+Automatic Transactional Email Delivery V1 is committed at `97a4ae8`; the repository was clean when
+Driver Earnings Statements V1 began. Statements are now implemented locally as a date-bounded
+projection of the existing role-derived Driver wallet and bank-payout activity. They show locked
+fares, earnings, platform fees, pending/collected/transferred totals, and separately reported paid
+bank payouts; provide local CSV download and print output; and explicitly avoid unproven
+transfer-to-payout allocation or tax-form claims. The pure calculation/export module has unit tests.
+No migration or environment variable is required. Next: complete Driver validation, then owner
+commit/deploy and run `docs/operations/driver-earnings-statements-manual-test.md`.
+
+Driver Earnings Statements validation is complete: the Driver typecheck passes with incremental
+output disabled for the restricted workspace, all 11 Driver tests pass (including 2 statement
+calculation/export tests), the production build passes, and `git diff --check` passes. The existing
+Supabase Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -233,9 +246,8 @@ migration is introduced by this delivery follow-up.
 
 ## Exact next action
 
-Have the owner configure Automatic Transactional Email Delivery V1's server-only environment
-variables, commit and deploy Admin followed by Rider and Driver, and run
-`docs/operations/payment-payout-notifications-manual-test.md` without pressing **Deliver queued**.
+Have the owner commit/deploy Driver Earnings Statements V1 and run
+`docs/operations/driver-earnings-statements-manual-test.md`.
 
 ## Required reading for recovery
 
@@ -268,3 +280,5 @@ variables, commit and deploy Admin followed by Rider and Driver, and run
 - `docs/operations/rider-payments-receipts-manual-test.md`
 - `docs/architecture/payment-payout-notifications.md`
 - `docs/operations/payment-payout-notifications-manual-test.md`
+- `docs/architecture/driver-earnings-statements.md`
+- `docs/operations/driver-earnings-statements-manual-test.md`
