@@ -390,6 +390,18 @@ export type Database = {
         Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; currency_code?: string; failure_message?: string | null; paid_at?: string | null; payment_attempt_id?: string; provider?: string; provider_checkout_session_id?: string; provider_payment_intent_id?: string | null; quote_id?: string; rider_profile_id?: string; status?: string; tenant_id?: string; updated_at?: string }
         Relationships: []
       }
+      rider_wallet_entries: {
+        Row: { amount_minor: number; booking_id: string | null; created_at: string; created_by_person_id: string | null; currency_code: string; description: string; direction: string; entry_type: string; external_key: string; quote_id: string | null; rider_profile_id: string; rider_wallet_entry_id: string; tenant_id: string }
+        Insert: { amount_minor: number; booking_id?: string | null; created_at?: string; created_by_person_id?: string | null; currency_code: string; description: string; direction: string; entry_type: string; external_key: string; quote_id?: string | null; rider_profile_id: string; rider_wallet_entry_id?: string; tenant_id: string }
+        Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; created_by_person_id?: string | null; currency_code?: string; description?: string; direction?: string; entry_type?: string; external_key?: string; quote_id?: string | null; rider_profile_id?: string; rider_wallet_entry_id?: string; tenant_id?: string }
+        Relationships: []
+      }
+      rider_wallet_quote_allocations: {
+        Row: { amount_minor: number; applied_at: string | null; booking_id: string | null; created_at: string; currency_code: string; quote_id: string; restored_at: string | null; rider_profile_id: string; rider_wallet_quote_allocation_id: string; status: string; tenant_id: string; updated_at: string }
+        Insert: { amount_minor: number; applied_at?: string | null; booking_id?: string | null; created_at?: string; currency_code: string; quote_id: string; restored_at?: string | null; rider_profile_id: string; rider_wallet_quote_allocation_id?: string; status?: string; tenant_id: string; updated_at?: string }
+        Update: { amount_minor?: number; applied_at?: string | null; booking_id?: string | null; created_at?: string; currency_code?: string; quote_id?: string; restored_at?: string | null; rider_profile_id?: string; rider_wallet_quote_allocation_id?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       rider_payment_refunds: {
         Row: { amount_minor: number; booking_id: string; created_at: string; currency_code: string; failure_message: string | null; payment_attempt_id: string; provider: string; provider_refund_id: string | null; reason: string; refund_id: string; refund_scope: string; refunded_at: string | null; status: string; tenant_id: string; updated_at: string }
         Insert: { amount_minor: number; booking_id: string; created_at?: string; currency_code: string; failure_message?: string | null; payment_attempt_id: string; provider?: string; provider_refund_id?: string | null; reason: string; refund_id?: string; refund_scope?: string; refunded_at?: string | null; status?: string; tenant_id: string; updated_at?: string }
@@ -2039,6 +2051,11 @@ export type Database = {
         Returns: boolean
       }
       can_manage_ledger: { Args: { target_tenant_id: string }; Returns: boolean }
+      issue_rider_wallet_credit: { Args: { target_tenant_id: string; target_rider_profile_id: string; amount_minor_value: number; reason_value: string; request_key_value: string }; Returns: string }
+      my_rider_wallet: { Args: { target_tenant_slug: string }; Returns: Json }
+      prepare_rider_wallet_checkout_internal: { Args: { target_quote_id: string }; Returns: Json }
+      cancel_wallet_only_booking_internal: { Args: { target_booking_id: string }; Returns: boolean }
+      restore_rider_wallet_for_booking_internal: { Args: { target_booking_id: string }; Returns: number }
       can_manage_pricing: { Args: { target_tenant_id: string }; Returns: boolean }
       can_manage_driver_management: {
         Args: { target_tenant_id: string }

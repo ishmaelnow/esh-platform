@@ -156,7 +156,10 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery in progress: signature-verified Stripe dispute lifecycle, idempotent principal
      withdrawal/reinstatement accounting, Rider visibility, and Admin recovery warnings without
      silently clawing back Driver funds.
-   - Remaining: production verification, Rider wallet, reversals,
+   - Current delivery in progress: tenant-scoped Rider trip credits, immutable wallet history,
+     Admin issuance, automatic split wallet/card checkout, cancellation restoration, and ledger
+     settlement without overstating Stripe-funded Driver earnings.
+   - Remaining: production verification, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**
    - Current delivery: tenant route-based trip rates, trusted pre-booking Rider quotes,

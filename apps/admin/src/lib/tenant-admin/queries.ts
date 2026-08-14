@@ -61,6 +61,8 @@ export async function loadTenantSummary(
     driverEarningTransfersResult,
     riderPaymentRefundsResult,
     riderPaymentDisputesResult,
+    riderProfilesResult,
+    riderWalletEntriesResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -163,6 +165,8 @@ export async function loadTenantSummary(
     supabase.from("driver_earning_transfers").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("rider_payment_refunds").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("rider_payment_disputes").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
+    supabase.from("rider_profiles").select("*").eq("tenant_id", tenantId).order("display_name"),
+    supabase.from("rider_wallet_entries").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
   ]);
 
   if (tenantResult.error) {
@@ -288,6 +292,9 @@ export async function loadTenantSummary(
     throw riderPaymentRefundsResult.error;
   if (riderPaymentDisputesResult.error && !riderPaymentDisputesResult.error.message.includes("rider_payment_disputes"))
     throw riderPaymentDisputesResult.error;
+  if (riderProfilesResult.error) throw riderProfilesResult.error;
+  if (riderWalletEntriesResult.error && !riderWalletEntriesResult.error.message.includes("rider_wallet_entries"))
+    throw riderWalletEntriesResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -332,6 +339,8 @@ export async function loadTenantSummary(
     driverEarningTransfers: driverEarningTransfersResult.data ?? [],
     riderPaymentRefunds: riderPaymentRefundsResult.data ?? [],
     riderPaymentDisputes: riderPaymentDisputesResult.data ?? [],
+    riderProfiles: riderProfilesResult.data ?? [],
+    riderWalletEntries: riderWalletEntriesResult.data ?? [],
   };
 }
 

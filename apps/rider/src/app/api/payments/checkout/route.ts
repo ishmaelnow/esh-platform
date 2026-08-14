@@ -15,23 +15,33 @@ export async function POST(request: Request) {
     if (quoteResult.error || !quoteResult.data) throw new Error("Price quote is unavailable.");
     const quote = quoteResult.data;
     if (quote.status !== "quoted" || Date.parse(quote.expires_at) <= Date.now()) throw new Error("Price quote has expired.");
+    const service = createServiceSupabaseClient();
+    const walletResult = await service.rpc("prepare_rider_wallet_checkout_internal", {
+      target_quote_id: quote.quote_id,
+    });
+    if (walletResult.error || !walletResult.data) throw walletResult.error ?? new Error("Wallet credit could not be prepared.");
+    const split = walletResult.data as unknown as { walletAmountMinor: number; cardAmountMinor: number };
+    if (split.cardAmountMinor === 0) {
+      return NextResponse.json({ walletOnly: true, walletAmountMinor: split.walletAmountMinor });
+    }
     const origin = new URL(request.url).origin;
     const stripe = createStripeClient();
     const checkout = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [{ price_data: { currency: quote.currency_code.toLowerCase(), unit_amount: quote.fare_amount_minor,
+      line_items: [{ price_data: { currency: quote.currency_code.toLowerCase(), unit_amount: split.cardAmountMinor,
         product_data: { name: "ESH trip", description: `${quote.pickup_address} to ${quote.destination_address}` } }, quantity: 1 }],
       success_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=success&quote=${quote.quote_id}`,
       cancel_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=cancelled`,
-      metadata: { quote_id: quote.quote_id, tenant_id: quote.tenant_id },
+      metadata: { quote_id: quote.quote_id, tenant_id: quote.tenant_id,
+        wallet_amount_minor: String(split.walletAmountMinor) },
     }, { idempotencyKey: `rider_quote_${quote.quote_id}` });
     if (!checkout.url) throw new Error("Payment checkout is unavailable.");
-    const service = createServiceSupabaseClient();
     const registered = await service.rpc("register_rider_checkout_internal", {
       target_quote_id: quote.quote_id, checkout_session_id_value: checkout.id,
     });
     if (registered.error) throw registered.error;
-    return NextResponse.json({ url: checkout.url });
+    return NextResponse.json({ url: checkout.url, walletAmountMinor: split.walletAmountMinor,
+      cardAmountMinor: split.cardAmountMinor });
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : "Checkout could not be created." }, { status: 400 });
   }
@@ -44,14 +54,17 @@ export async function GET(request: Request) {
     const quoteId = new URL(request.url).searchParams.get("quote");
     if (!quoteId) throw new Error("Price quote is required.");
     const authenticated = createAuthenticatedSupabaseClient(authorization.slice(7));
-    const [quoteResult, paymentResult] = await Promise.all([
+    const [quoteResult, paymentResult, walletResult] = await Promise.all([
       authenticated.from("trip_price_quotes").select("quote_id,service_area_id,fare_amount_minor,currency_code,pickup_address,destination_address,route_distance_meters,route_duration_seconds,expires_at,status").eq("quote_id", quoteId).single(),
       authenticated.from("rider_payment_attempts").select("status").eq("quote_id", quoteId).single(),
+      authenticated.from("rider_wallet_quote_allocations").select("amount_minor,status").eq("quote_id", quoteId).maybeSingle(),
     ]);
     if (quoteResult.error || !quoteResult.data) throw new Error("Price quote is unavailable.");
-    if (paymentResult.error || !paymentResult.data) throw new Error("Payment status is unavailable.");
+    const walletCoversFare = walletResult.data?.status === "reserved"
+      && walletResult.data.amount_minor === quoteResult.data.fare_amount_minor;
+    if ((paymentResult.error || !paymentResult.data) && !walletCoversFare) throw new Error("Payment status is unavailable.");
     return NextResponse.json({
-      paymentStatus: paymentResult.data.status,
+      paymentStatus: walletCoversFare ? "paid" : paymentResult.data?.status,
       quote: {
         quoteId: quoteResult.data.quote_id, serviceAreaId: quoteResult.data.service_area_id,
         fareAmountMinor: quoteResult.data.fare_amount_minor,

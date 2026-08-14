@@ -107,6 +107,7 @@ type RiderPayment = {
   disputes: RiderPaymentDispute[];
 };
 type RiderPaymentDispute = { disputeId: string; amountMinor: number; feeMinor: number; status: string; reason: string; evidenceDueAt: string | null; fundsWithdrawnAt: string | null; fundsWithdrawnMinor: number; fundsReinstatedAt: string | null; fundsReinstatedMinor: number };
+type RiderWallet = { currencyCode: string; fractionDigits: number; balanceMinor: number; availableMinor: number; entries: Array<{ entryId: string; direction: "credit" | "debit"; entryType: string; amountMinor: number; description: string; bookingId: string | null; createdAt: string }> };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
@@ -156,6 +157,7 @@ export default function RiderHome() {
   const [tripLocations, setTripLocations] = useState<RiderTripLocation[]>([]);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [payments, setPayments] = useState<RiderPayment[]>([]);
+  const [wallet, setWallet] = useState<RiderWallet | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<Record<string, string>>({});
   const [paymentReceiptUrls, setPaymentReceiptUrls] = useState<Record<string, string>>({});
   const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
@@ -176,7 +178,7 @@ export default function RiderHome() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-  const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments">("book");
+  const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments" | "wallet">("book");
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
 
@@ -324,6 +326,13 @@ export default function RiderHome() {
     }));
   }, [portal, session, supabase]);
 
+  const loadWallet = useCallback(async () => {
+    if (!supabase || !session || !tenantSlug) return;
+    const result = await supabase.rpc("my_rider_wallet", { target_tenant_slug: tenantSlug });
+    if (result.error) throw result.error;
+    setWallet(result.data as unknown as RiderWallet);
+  }, [session, supabase, tenantSlug]);
+
   useEffect(() => {
     if (!session || !supabase || !tenantSlug) return;
     const params = new URLSearchParams(window.location.search);
@@ -398,6 +407,7 @@ export default function RiderHome() {
     if (typeof window === "undefined") return;
     const requestedView = new URLSearchParams(window.location.search).get("view");
     if (requestedView === "payments") setActivePortalTab("payments");
+    else if (requestedView === "wallet") setActivePortalTab("wallet");
     else if (requestedView === "trips") setActivePortalTab("trips");
   }, []);
 
@@ -422,6 +432,11 @@ export default function RiderHome() {
     if (activePortalTab !== "payments") return;
     void loadPayments().catch((value) => setError(riderErrorMessage(value)));
   }, [activePortalTab, loadPayments]);
+
+  useEffect(() => {
+    if (!portal?.profile || (activePortalTab !== "wallet" && activePortalTab !== "book")) return;
+    void loadWallet().catch((value) => setError(riderErrorMessage(value)));
+  }, [activePortalTab, loadWallet, portal?.profile]);
 
   async function loadPaymentReceipt(paymentAttemptId: string) {
     if (!session) return;
@@ -596,8 +611,15 @@ export default function RiderHome() {
           headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
           body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug }),
         });
-        const result = await response.json() as { url?: string; message?: string };
-        if (!response.ok || !result.url) throw new Error(result.message ?? "Payment checkout could not be opened.");
+        const result = await response.json() as { url?: string; walletOnly?: boolean; walletAmountMinor?: number; message?: string };
+        if (!response.ok) throw new Error(result.message ?? "Payment checkout could not be opened.");
+        if (result.walletOnly) {
+          setPaymentConfirmed(true);
+          await loadWallet();
+          setMessage("Your wallet covers this fare. Review the trip, then request it once.");
+          return;
+        }
+        if (!result.url) throw new Error(result.message ?? "Payment checkout could not be opened.");
         window.location.assign(result.url);
         return;
       }
@@ -648,14 +670,15 @@ export default function RiderHome() {
         const response = await fetch("/api/payments/refund", { method: "POST",
           headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
           body: JSON.stringify({ bookingId }) });
-        const result = await response.json() as { refunded?: boolean; message?: string };
+        const result = await response.json() as { refunded?: boolean; walletRestored?: boolean; message?: string };
         if (!response.ok || !result.refunded) throw new Error(result.message ?? "Trip refund failed.");
+        setMessage(result.walletRestored ? "Trip cancelled. Card payment refunded and wallet credit restored." : "Trip cancelled and card payment refunded.");
       } else {
         const { error: cancelError } = await supabase.rpc("cancel_my_rider_booking", { target_booking_id: bookingId });
         if (cancelError) throw cancelError;
       }
       await loadPortal();
-      setMessage(booking?.finalFareMinor != null ? "Trip cancelled and payment refunded." : "Trip cancelled.");
+      if (booking?.finalFareMinor == null) setMessage("Trip cancelled.");
     } catch (value) {
       setError(riderErrorMessage(value));
     } finally {
@@ -829,6 +852,7 @@ export default function RiderHome() {
           <button className={activePortalTab === "book" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("book")} type="button">Book trip</button>
           <button className={activePortalTab === "trips" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("trips")} type="button">My trips{portal.bookings.length ? ` (${portal.bookings.length})` : ""}</button>
           <button className={activePortalTab === "payments" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("payments")} type="button">Payments</button>
+          <button className={activePortalTab === "wallet" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("wallet")} type="button">Wallet</button>
         </nav>
         <div className={activePortalTab === "book" ? "portal-grid booking-only" : "portal-grid trips-only"}>
           {activePortalTab === "book" ? (
@@ -968,16 +992,25 @@ export default function RiderHome() {
                   <p className="kicker">Locked fare estimate</p>
                   <h2>{new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.fareAmountMinor / 10 ** priceQuote.fractionDigits)}</h2>
                   <p className="area">Road route {(priceQuote.routeDistanceMeters / 1609.344).toFixed(1)} mi · {Math.max(1, Math.round(priceQuote.routeDurationSeconds / 60))} min · valid until {formatDate(priceQuote.expiresAt)}</p>
-                  <p className="area">{paymentConfirmed ? "Payment received. This trip has not been requested yet. Select the button below once to create this paid trip and notify dispatch." : "Secure payment is collected by Stripe before the trip request is created."}</p>
+                  <p className="area">{paymentConfirmed ? "Payment or wallet credit is confirmed. This trip has not been requested yet. Select the button below once to create it and notify dispatch." : wallet && wallet.availableMinor > 0 ? `${new Intl.NumberFormat(undefined, { style: "currency", currency: wallet.currencyCode }).format(wallet.availableMinor / 10 ** wallet.fractionDigits)} available wallet credit will be applied automatically; Stripe securely collects any remainder.` : "Secure payment is collected by Stripe before the trip request is created."}</p>
                 </div>
               ) : null}
               <button
                 className="button primary"
                 disabled={busy || portal.serviceAreas.length === 0}
               >
-                {busy ? "Working…" : priceQuote ? paymentConfirmed ? "Request this paid trip" : "Continue to secure payment" : "Review fare"}
+                {busy ? "Working…" : priceQuote ? paymentConfirmed ? "Request this trip" : "Apply wallet and continue" : "Review fare"}
               </button>
             </form>
+          </section>
+          ) : null}
+
+          {activePortalTab === "wallet" ? (
+          <section className="history">
+            <div className="section-heading"><div><p className="kicker">Wallet</p><h2>ESH trip credit</h2></div><button className="button secondary compact" onClick={() => void loadWallet()} disabled={busy}>Refresh</button></div>
+            <div className="card preference-card"><div><strong>{wallet ? new Intl.NumberFormat(undefined, { style: "currency", currency: wallet.currencyCode }).format(wallet.balanceMinor / 10 ** wallet.fractionDigits) : "Loading…"}</strong><p>Available credit is applied automatically to your next fare. Any remainder is paid securely through Stripe.</p></div></div>
+            <p className="area">Trip credit has no cash value and cannot be withdrawn. Every credit and use remains in this history.</p>
+            {!wallet || wallet.entries.length === 0 ? <div className="card empty"><p>No wallet activity yet.</p></div> : wallet.entries.map((entry) => <article className="card trip-card" key={entry.entryId}><div className="trip-top"><div><span className={`status ${entry.direction === "credit" ? "status-paid" : "status-refunded"}`}>{entry.direction}</span><h3>{entry.direction === "credit" ? "+" : "−"}{new Intl.NumberFormat(undefined, { style: "currency", currency: wallet.currencyCode }).format(entry.amountMinor / 10 ** wallet.fractionDigits)}</h3></div><time>{formatDate(entry.createdAt)}</time></div><p>{entry.description}</p>{entry.bookingId ? <p className="area">Trip {entry.bookingId.slice(0, 8)}</p> : null}</article>)}
           </section>
           ) : null}
 

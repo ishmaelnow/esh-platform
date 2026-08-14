@@ -4,8 +4,7 @@ Last updated: 2026-08-14
 
 ## Current objective
 
-Complete Rider Payment Disputes V1 without treating webhook delivery as optional financial truth or
-silently assigning platform chargeback liability to Drivers.
+Complete Rider Wallet and Credits V1 while the Stripe sandbox dispute retry issue remains deferred.
 
 ## Repository and deployment state
 
@@ -347,6 +346,19 @@ follow-up now logs only the verified event type/object ID and sanitized error na
 code, details, and hint. It never logs the signature, payload, payment credentials, or secrets and
 keeps the public 400 response generic. Next: deploy Rider diagnostics and inspect one automatic retry.
 
+The diagnostic is deployed through commit `b25be36`. No post-deployment Stripe retry has occurred,
+so the sandbox dispute issue is explicitly deferred and does not block normal payments or bookings.
+Rider Wallet and Credits V1 is now implemented locally. It adds immutable Rider subledger entries,
+an aggregate wallet-credit liability, audited Admin credit issuance, role-derived Rider balance and
+history, concurrency-safe quote reservations, wallet-only and split wallet/Stripe checkout,
+prepayment application, pre-trip restoration, and conservative Driver transfer eligibility. It
+introduces `20260814000500_rider_wallet_credits_v1.sql` and requires Supabase, Admin, and Rider
+deployment, database application, and the production manual test. Validation is complete: Rider
+tests pass 6/6, Admin tests pass 57/57, Rider/Admin/Supabase typechecks pass, both production builds
+pass, and `git diff --check` passes. The remote migration dry run lists only
+`20260814000500_rider_wallet_credits_v1.sql`. Existing Supabase Realtime and missing Next ESLint-
+plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -357,8 +369,8 @@ keeps the public 400 response generic. Next: deploy Rider diagnostics and inspec
 
 ## Exact next action
 
-Owner commits and deploys the Rider webhook diagnostic, then waits for one automatic dispute retry
-and reads its sanitized Vercel function error before making another financial change.
+Validate Rider Wallet and Credits V1, dry-run only its intended migration, then hand the owner the
+database, Admin, and Rider deployment order plus the manual test.
 
 ## Required reading for recovery
 
@@ -401,3 +413,5 @@ and reads its sanitized Vercel function error before making another financial ch
 - `docs/operations/completed-trip-refund-recovery-manual-test.md`
 - `docs/architecture/rider-payment-disputes.md`
 - `docs/operations/rider-payment-disputes-manual-test.md`
+- `docs/architecture/rider-wallet-credits.md`
+- `docs/operations/rider-wallet-credits-manual-test.md`

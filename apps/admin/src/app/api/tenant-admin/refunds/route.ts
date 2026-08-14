@@ -4,7 +4,7 @@ import { createStripeClient } from "@esh-platform/stripe";
 import { getAdminServerConfig } from "@/lib/config";
 import { deliverQueuedNotifications } from "@/lib/notifications/delivery";
 
-type PreparedRefund = { alreadyRefunded: boolean; refundId: string; paymentIntentId?: string; amountMinor?: number };
+type PreparedRefund = { alreadyRefunded: boolean; refundId?: string; paymentIntentId?: string; amountMinor?: number };
 
 export async function POST(request: Request) {
   let refundId: string | null = null;
@@ -19,11 +19,19 @@ export async function POST(request: Request) {
     const permission = await authenticated.rpc("can_manage_ledger", { target_tenant_id: booking.data.tenant_id });
     if (permission.error || !permission.data) throw new Error("Ledger management access is required.");
     const service = createServiceSupabaseClient();
+    const payment = await service.from("rider_payment_attempts").select("payment_attempt_id")
+      .eq("booking_id", bookingId).eq("status", "paid").maybeSingle();
+    if (payment.error) throw payment.error;
+    if (!payment.data) {
+      const cancelled = await service.rpc("cancel_wallet_only_booking_internal", { target_booking_id: bookingId });
+      if (cancelled.error) throw cancelled.error;
+      return NextResponse.json({ refunded: true, walletRestored: true });
+    }
     const prepared = await service.rpc("prepare_pretrip_refund_internal", { target_booking_id: bookingId });
     if (prepared.error || !prepared.data) throw prepared.error ?? new Error("Refund could not be prepared.");
-    const details = prepared.data as unknown as PreparedRefund; refundId = details.refundId;
+    const details = prepared.data as unknown as PreparedRefund; refundId = details.refundId ?? null;
     if (details.alreadyRefunded) return NextResponse.json({ refunded: true });
-    if (!details.paymentIntentId || !details.amountMinor) throw new Error("Refund details are incomplete.");
+    if (!details.refundId || !details.paymentIntentId || !details.amountMinor) throw new Error("Refund details are incomplete.");
     const refund = await createStripeClient().refunds.create({ payment_intent: details.paymentIntentId,
       amount: details.amountMinor, reason: "requested_by_customer",
       metadata: { booking_id: bookingId, rider_payment_refund_id: details.refundId } },
