@@ -339,6 +339,14 @@ both production builds pass; and `git diff --check` passes. The existing Supabas
 ESLint-plugin warnings remain non-blocking. The remote dry run lists only
 `20260814000400_dispute_event_order_recovery.sql`.
 
+A fresh $48.36 dispute reproduced the failure: Stripe delivered dispute creation and withdrawal
+before Checkout completion, and both returned 400 as expected at first, but an automatic retry after
+Checkout also returned 400. Vercel confirmed correct routing and firewall allowance but exposed no
+exception because the webhook catch block returned only its generic public error. A local diagnostic
+follow-up now logs only the verified event type/object ID and sanitized error name, message, database
+code, details, and hint. It never logs the signature, payload, payment credentials, or secrets and
+keeps the public 400 response generic. Next: deploy Rider diagnostics and inspect one automatic retry.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -349,9 +357,8 @@ ESLint-plugin warnings remain non-blocking. The remote dry run lists only
 
 ## Exact next action
 
-Owner commits the dispute event-order recovery, applies its already dry-run migration, pushes Rider
-and Admin, then resends production event `evt_1U4FK3BagW577lj0fjPrhGsD` and continues
-`docs/operations/rider-payment-disputes-manual-test.md`.
+Owner commits and deploys the Rider webhook diagnostic, then waits for one automatic dispute retry
+and reads its sanitized Vercel function error before making another financial change.
 
 ## Required reading for recovery
 

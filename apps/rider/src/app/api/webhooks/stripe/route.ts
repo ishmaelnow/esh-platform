@@ -5,11 +5,16 @@ import { requestNotificationDelivery } from "../../../../lib/request-notificatio
 import { disputeRecordArgs, isStripeDisputeEvent } from "../../../../lib/stripe-dispute";
 
 export async function POST(request: Request) {
+  let eventType = "unverified";
+  let objectId = "unavailable";
   try {
     const signature = request.headers.get("stripe-signature");
     if (!signature) throw new Error("Stripe signature is required.");
     const stripe = createStripeClient();
     const event = stripe.webhooks.constructEvent(await request.text(), signature, getStripeWebhookSecret());
+    eventType = event.type;
+    const eventObject = event.data.object as { id?: unknown };
+    if (typeof eventObject.id === "string") objectId = eventObject.id;
     if (isStripeDisputeEvent(event.type)) {
       const dispute = event.data.object as Stripe.Dispute;
       const args = disputeRecordArgs(dispute, event.type);
@@ -42,7 +47,17 @@ export async function POST(request: Request) {
       .eq("provider_checkout_session_id", session.id).single();
     if (!attempt.error && attempt.data) await requestNotificationDelivery(attempt.data.tenant_id);
     return NextResponse.json({ received: true });
-  } catch {
+  } catch (error) {
+    const record = typeof error === "object" && error !== null ? error as Record<string, unknown> : {};
+    console.error("Stripe webhook processing failed", {
+      eventType,
+      objectId,
+      name: error instanceof Error ? error.name : typeof record.name === "string" ? record.name : "UnknownError",
+      message: error instanceof Error ? error.message : typeof record.message === "string" ? record.message : "Unknown webhook error",
+      code: typeof record.code === "string" ? record.code : undefined,
+      details: typeof record.details === "string" ? record.details : undefined,
+      hint: typeof record.hint === "string" ? record.hint : undefined,
+    });
     return NextResponse.json({ message: "Invalid or unprocessable webhook." }, { status: 400 });
   }
 }
