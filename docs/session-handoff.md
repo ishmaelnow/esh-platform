@@ -275,6 +275,13 @@ production build passes, and `git diff --check` passes. The remote migration dry
 `20260814000100_manual_ledger_reversals_v1.sql`. Existing Supabase Realtime and Next ESLint-plugin
 warnings remain non-blocking.
 
+The owner deployed Manual Ledger Reversals V1 at commit `5f18488`. The first production test exposed
+a client-only post-success error: `postJournal` accessed React's `event.currentTarget` after awaiting
+the database call, when it was null. The ledger posting itself likely succeeded. A local hotfix now
+captures the form element before the await and resets that stable reference. Next: validate and
+deploy the hotfix, refresh Journal before posting again, then continue the reversal test using the
+single existing test journal if present.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -285,8 +292,8 @@ warnings remain non-blocking.
 
 ## Exact next action
 
-Have the owner commit, apply only `20260814000100_manual_ledger_reversals_v1.sql`, push/deploy Admin,
-and run `docs/operations/manual-ledger-reversals-manual-test.md`.
+Validate and deploy the manual-journal form reset hotfix, refresh Journal to avoid duplicating the
+likely successful test posting, then continue `docs/operations/manual-ledger-reversals-manual-test.md`.
 
 ## Required reading for recovery
 

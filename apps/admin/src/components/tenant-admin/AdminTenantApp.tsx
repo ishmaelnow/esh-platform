@@ -4237,7 +4237,8 @@ function LedgerPanel({ canManageTenant, summary }: { canManageTenant: boolean; s
 
   async function postJournal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!ledger?.settings) return;
-    const form = new FormData(event.currentTarget); setBusy(true); setMessage(null);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement); setBusy(true); setMessage(null);
     try {
       const amountMinor = parseMoneyToMinorUnits(formValue(form, "amount"), ledger.settings.fractionDigits);
       const debit = formValue(form, "debitAccount"); const credit = formValue(form, "creditAccount");
@@ -4249,7 +4250,7 @@ function LedgerPanel({ canManageTenant, summary }: { canManageTenant: boolean; s
         entries_value: [{ accountCode: debit, side: "debit", amountMinor }, { accountCode: credit, side: "credit", amountMinor }],
       });
       if (result.error) throw result.error;
-      setMessage("Balanced journal transaction posted."); event.currentTarget.reset(); await loadLedger();
+      setMessage("Balanced journal transaction posted."); formElement.reset(); await loadLedger();
     } catch (value) { setMessage(value instanceof Error ? value.message : "Transaction could not be posted."); }
     setBusy(false);
   }
