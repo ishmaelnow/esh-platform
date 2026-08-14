@@ -8,6 +8,7 @@ export type StatementTrip = {
   platformFeeMinor: number;
   paymentCollected: boolean;
   transferStatus: "pending" | "succeeded" | "failed" | "reversed" | null;
+  earningsReversed?: boolean;
 };
 
 export type StatementPayout = {
@@ -28,17 +29,18 @@ export function buildEarningsStatement(
   const startsAt = startOfLocalDate(period.startDate);
   const endsAt = dayAfterLocalDate(period.endDate);
   const includedTrips = trips.filter((trip) => inPeriod(trip.completedAt, startsAt, endsAt));
+  const activeTrips = includedTrips.filter((trip) => !trip.earningsReversed);
   const includedPayouts = payouts.filter((payout) => inPeriod(payout.providerCreatedAt, startsAt, endsAt));
   return {
     trips: includedTrips,
     payouts: includedPayouts,
-    tripCount: includedTrips.length,
-    grossFaresMinor: sum(includedTrips.map((trip) => trip.fareAmountMinor)),
-    earningsMinor: sum(includedTrips.map((trip) => trip.earningsAmountMinor)),
-    platformFeesMinor: sum(includedTrips.map((trip) => trip.platformFeeMinor)),
-    pendingMinor: sum(includedTrips.filter((trip) => !trip.paymentCollected).map((trip) => trip.earningsAmountMinor)),
-    collectedMinor: sum(includedTrips.filter((trip) => trip.paymentCollected && trip.transferStatus !== "succeeded").map((trip) => trip.earningsAmountMinor)),
-    transferredMinor: sum(includedTrips.filter((trip) => trip.transferStatus === "succeeded").map((trip) => trip.earningsAmountMinor)),
+    tripCount: activeTrips.length,
+    grossFaresMinor: sum(activeTrips.map((trip) => trip.fareAmountMinor)),
+    earningsMinor: sum(activeTrips.map((trip) => trip.earningsAmountMinor)),
+    platformFeesMinor: sum(activeTrips.map((trip) => trip.platformFeeMinor)),
+    pendingMinor: sum(activeTrips.filter((trip) => !trip.paymentCollected).map((trip) => trip.earningsAmountMinor)),
+    collectedMinor: sum(activeTrips.filter((trip) => trip.paymentCollected && trip.transferStatus !== "succeeded").map((trip) => trip.earningsAmountMinor)),
+    transferredMinor: sum(activeTrips.filter((trip) => trip.transferStatus === "succeeded").map((trip) => trip.earningsAmountMinor)),
     bankPaidMinor: sum(includedPayouts.filter((payout) => payout.status === "paid").map((payout) => payout.amountMinor)),
   };
 }
@@ -53,7 +55,7 @@ export function earningsStatementCsv(
   ]];
   for (const trip of statement.trips) rows.push([
     trip.completedAt, "Trip earning",
-    trip.transferStatus === "succeeded" ? "Transferred to Stripe" : trip.paymentCollected ? "Collected" : "Pending payment",
+    trip.earningsReversed ? "Reversed after refund" : trip.transferStatus === "succeeded" ? "Transferred to Stripe" : trip.paymentCollected ? "Collected" : "Pending payment",
     trip.bookingId, trip.pickupAddress, trip.destinationAddress,
     minorDecimal(trip.fareAmountMinor), minorDecimal(trip.earningsAmountMinor),
     minorDecimal(trip.platformFeeMinor), "", currencyCode,

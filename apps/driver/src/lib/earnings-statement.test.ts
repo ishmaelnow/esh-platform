@@ -23,4 +23,12 @@ describe("Driver earnings statements", () => {
     expect(csv).toContain('"Bank payout","paid","payout-paid"');
     expect(csv).not.toContain("outside");
   });
+
+  it("retains refunded-trip history but excludes reversed earnings from active totals", () => {
+    const reversed = { ...trips[0]!, bookingId: "refunded", earningsReversed: true };
+    const statement = buildEarningsStatement([reversed, trips[1]!], [], { startDate: "2026-08-12", endDate: "2026-08-13" });
+    expect(statement).toMatchObject({ tripCount: 1, grossFaresMinor: 2500, earningsMinor: 2000, transferredMinor: 0 });
+    expect(statement.trips).toHaveLength(2);
+    expect(earningsStatementCsv(statement, "USD")).toContain("Reversed after refund");
+  });
 });

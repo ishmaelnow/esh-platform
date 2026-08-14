@@ -1,10 +1,11 @@
 # Session Handoff
 
-Last updated: 2026-08-13
+Last updated: 2026-08-14
 
 ## Current objective
 
-Complete Manual Ledger Reversals V1 without weakening immutable ledger or domain financial state.
+Complete Completed-Trip Refund and Driver Recovery V1 without weakening Stripe, ledger, payout, or
+historical trip truth.
 
 ## Repository and deployment state
 
@@ -282,6 +283,28 @@ captures the form element before the await and resets that stable reference. Nex
 deploy the hotfix, refresh Journal before posting again, then continue the reversal test using the
 single existing test journal if present.
 
+The manual-journal reset hotfix is deployed through commit `afdae77`, and production verification of
+Manual Ledger Reversals V1 passed. Two test journals remained immutable, each received exactly one
+linked inverse with the required reason, and the entries displayed the correct swapped sides.
+
+Completed-Trip Refund and Driver Recovery V1 is implemented locally. An authorized finance manager
+can fully refund a paid completed trip. If its Driver earning was transferred but has not entered an
+active or paid bank payout, Admin reverses that exact Stripe transfer first, persists a retry
+checkpoint, then creates the full Rider refund. One database transaction posts the transfer recovery
+when applicable, Driver-earning reversal, and Rider refund; updates payment, refund, transfer, and
+booking state; and audits the recovery without rewriting original history. Stable processor
+idempotency keys make retries safe. Rider history and the existing refund notification reuse the
+durable refund record. Driver wallet/history retains the trip, labels the reversed earning, and
+excludes it from active pending, collected, and transferred totals. Migration
+`20260814000200_completed_trip_refund_recovery_v1.sql`, Admin recovery UI/API, Driver presentation,
+client types, architecture, and production test are included. Next: complete validation, dry-run
+only the intended migration, then owner apply/deploy and production manual test.
+
+Validation is complete: Admin tests pass 57/57, Driver tests pass 13/13, Admin, Driver, and Supabase
+typechecks pass, both production builds pass, and `git diff --check` passes. The existing Supabase
+Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking. The remote
+migration dry run lists only `20260814000200_completed_trip_refund_recovery_v1.sql`.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -292,8 +315,9 @@ single existing test journal if present.
 
 ## Exact next action
 
-Validate and deploy the manual-journal form reset hotfix, refresh Journal to avoid duplicating the
-likely successful test posting, then continue `docs/operations/manual-ledger-reversals-manual-test.md`.
+Owner stages and commits the Completed-Trip Refund and Driver Recovery V1 files, applies the already
+dry-run migration, pushes/deploys Admin and Driver, then runs
+`docs/operations/completed-trip-refund-recovery-manual-test.md`.
 
 ## Required reading for recovery
 
@@ -332,3 +356,5 @@ likely successful test posting, then continue `docs/operations/manual-ledger-rev
 - `docs/operations/transfer-payout-reconciliation-manual-test.md`
 - `docs/architecture/manual-ledger-reversals.md`
 - `docs/operations/manual-ledger-reversals-manual-test.md`
+- `docs/architecture/completed-trip-refund-recovery.md`
+- `docs/operations/completed-trip-refund-recovery-manual-test.md`

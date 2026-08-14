@@ -150,6 +150,9 @@ deferred from this milestone and were delivered under the later milestones below
      connected-account balance activity, matched/unmatched totals, and Driver/Admin visibility.
    - Current delivery in progress: immutable, reasoned, audited reversals for manual journals while
      preventing ledger-only reversal of system-generated financial lifecycle records.
+   - Current delivery in progress: coordinated full refunds for paid completed trips, including
+     recoverable Stripe transfer reversal, immutable Driver-earning recovery, and Rider/Admin/Driver
+     history that does not rewrite the original trip or journals.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**
