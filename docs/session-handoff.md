@@ -316,7 +316,7 @@ state and deadlines, and posts the disputed principal exactly once when Stripe w
 the exact inverse if Stripe reinstates them. Admin has a searchable Disputes workspace and flags
 successful Driver transfers for reviewed recovery; Rider Payments shows the dispute without changing
 the underlying successful PaymentIntent state. V1 deliberately does not submit evidence, account for
-Stripe dispute fees, or silently reverse Driver transfers. Migration
+Stripe fees unrelated to the dispute, or silently reverse Driver transfers. Migration
 `20260814000300_rider_payment_disputes_v1.sql`, client types, architecture, webhook setup, unit tests,
 and production test are included. Next: finish validation and dry-run only the intended migration.
 
@@ -324,6 +324,20 @@ Validation is complete: Rider tests pass 6/6, Admin tests pass 57/57, Rider, Adm
 typechecks pass, both production builds pass, and `git diff --check` passes. The existing Supabase
 Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking. The remote
 migration dry run lists only `20260814000300_rider_payment_disputes_v1.sql`.
+
+The first production dispute exposed a valid out-of-order webhook case. Stripe delivered
+`charge.dispute.funds_withdrawn` before `checkout.session.completed`, so ESH could not yet resolve the
+PaymentIntent and returned 400. A later automatic retry of `charge.dispute.created` succeeded, but
+the initial implementation did not inspect that event's included balance transactions; Admin showed
+the $104.04 dispute as not finalized/not withdrawn. A local recovery migration and webhook update now
+process authoritative balance transactions from every dispute event, backfill the later booking,
+and post the exact $119.04 Stripe withdrawal ($104.04 principal plus $15.00 dispute fee) once. After
+deployment, resend the successful `charge.dispute.created` event to recover this production record.
+
+Recovery validation is complete: Rider tests pass 6/6; Rider, Admin, and Supabase typechecks pass;
+both production builds pass; and `git diff --check` passes. The existing Supabase Realtime and Next
+ESLint-plugin warnings remain non-blocking. The remote dry run lists only
+`20260814000400_dispute_event_order_recovery.sql`.
 
 ## Cleanup still required after testing
 
@@ -335,9 +349,9 @@ migration dry run lists only `20260814000300_rider_payment_disputes_v1.sql`.
 
 ## Exact next action
 
-Owner stages and commits Rider Payment Disputes V1, applies the already dry-run migration, adds the
-five documented dispute events to the existing Rider Stripe destination, pushes/deploys Rider and
-Admin, then runs `docs/operations/rider-payment-disputes-manual-test.md`.
+Owner commits the dispute event-order recovery, applies its already dry-run migration, pushes Rider
+and Admin, then resends production event `evt_1U4FK3BagW577lj0fjPrhGsD` and continues
+`docs/operations/rider-payment-disputes-manual-test.md`.
 
 ## Required reading for recovery
 

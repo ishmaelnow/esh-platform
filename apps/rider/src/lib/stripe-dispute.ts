@@ -16,6 +16,8 @@ export function disputeRecordArgs(dispute: Stripe.Dispute, eventType: string) {
   const paymentIntentId = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id;
   const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
   if (!paymentIntentId || !chargeId) throw new Error("Stripe dispute payment references are required.");
+  const withdrawals = dispute.balance_transactions.filter((transaction) => transaction.net < 0);
+  const reinstatements = dispute.balance_transactions.filter((transaction) => transaction.net > 0);
   return {
     provider_dispute_id_value: dispute.id,
     provider_charge_id_value: chargeId,
@@ -24,6 +26,9 @@ export function disputeRecordArgs(dispute: Stripe.Dispute, eventType: string) {
     reason_value: dispute.reason,
     currency_code_value: dispute.currency.toUpperCase(),
     amount_minor_value: dispute.amount,
+    fee_minor_value: withdrawals.reduce((total, transaction) => total + Math.max(0, transaction.fee), 0),
+    withdrawn_minor_value: withdrawals.reduce((total, transaction) => total + Math.abs(transaction.net), 0),
+    reinstated_minor_value: reinstatements.reduce((total, transaction) => total + transaction.net, 0),
     evidence_due_at_value: dispute.evidence_details.due_by
       ? new Date(dispute.evidence_details.due_by * 1000).toISOString() : null,
     event_type_value: eventType,

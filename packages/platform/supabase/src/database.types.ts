@@ -397,9 +397,9 @@ export type Database = {
         Relationships: []
       }
       rider_payment_disputes: {
-        Row: { amount_minor: number; booking_id: string | null; created_at: string; currency_code: string; evidence_due_at: string | null; funds_reinstated_at: string | null; funds_withdrawn_at: string | null; payment_attempt_id: string; provider: string; provider_charge_id: string; provider_dispute_id: string; reason: string; rider_payment_dispute_id: string; status: string; tenant_id: string; updated_at: string }
-        Insert: { amount_minor: number; booking_id?: string | null; created_at?: string; currency_code: string; evidence_due_at?: string | null; funds_reinstated_at?: string | null; funds_withdrawn_at?: string | null; payment_attempt_id: string; provider?: string; provider_charge_id: string; provider_dispute_id: string; reason: string; rider_payment_dispute_id?: string; status: string; tenant_id: string; updated_at?: string }
-        Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; currency_code?: string; evidence_due_at?: string | null; funds_reinstated_at?: string | null; funds_withdrawn_at?: string | null; payment_attempt_id?: string; provider?: string; provider_charge_id?: string; provider_dispute_id?: string; reason?: string; rider_payment_dispute_id?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Row: { amount_minor: number; booking_id: string | null; created_at: string; currency_code: string; evidence_due_at: string | null; fee_minor: number; funds_reinstated_at: string | null; funds_reinstated_minor: number; funds_withdrawn_at: string | null; funds_withdrawn_minor: number; payment_attempt_id: string; provider: string; provider_charge_id: string; provider_dispute_id: string; reason: string; rider_payment_dispute_id: string; status: string; tenant_id: string; updated_at: string }
+        Insert: { amount_minor: number; booking_id?: string | null; created_at?: string; currency_code: string; evidence_due_at?: string | null; fee_minor?: number; funds_reinstated_at?: string | null; funds_reinstated_minor?: number; funds_withdrawn_at?: string | null; funds_withdrawn_minor?: number; payment_attempt_id: string; provider?: string; provider_charge_id: string; provider_dispute_id: string; reason: string; rider_payment_dispute_id?: string; status: string; tenant_id: string; updated_at?: string }
+        Update: { amount_minor?: number; booking_id?: string | null; created_at?: string; currency_code?: string; evidence_due_at?: string | null; fee_minor?: number; funds_reinstated_at?: string | null; funds_reinstated_minor?: number; funds_withdrawn_at?: string | null; funds_withdrawn_minor?: number; payment_attempt_id?: string; provider?: string; provider_charge_id?: string; provider_dispute_id?: string; reason?: string; rider_payment_dispute_id?: string; status?: string; tenant_id?: string; updated_at?: string }
         Relationships: []
       }
       completed_trip_refund_recoveries: {
@@ -2247,7 +2247,7 @@ export type Database = {
       complete_completed_trip_refund_internal: { Args: { provider_refund_id_value: string; target_recovery_id: string }; Returns: boolean }
       fail_completed_trip_refund_recovery_internal: { Args: { failure_message_value: string; target_recovery_id: string }; Returns: boolean }
       record_rider_payment_dispute_internal: {
-        Args: { amount_minor_value: number; currency_code_value: string; evidence_due_at_value: string | null; event_type_value: string; provider_charge_id_value: string; provider_dispute_id_value: string; provider_payment_intent_id_value: string; reason_value: string; status_value: string }
+        Args: { amount_minor_value: number; currency_code_value: string; evidence_due_at_value: string | null; event_type_value: string; fee_minor_value: number; provider_charge_id_value: string; provider_dispute_id_value: string; provider_payment_intent_id_value: string; reason_value: string; reinstated_minor_value: number; status_value: string; withdrawn_minor_value: number }
         Returns: boolean
       }
       prepare_driver_earning_transfer_internal: {

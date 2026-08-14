@@ -9,12 +9,12 @@ The record retains the processor dispute reference, bounded reason, status, resp
 the times Stripe reports funds withdrawn or reinstated. Rider RLS exposes only disputes attached to
 that Rider's payments; finance managers see only their tenant.
 
-Lifecycle-only events update operational state. `charge.dispute.funds_withdrawn` posts the disputed
-principal once by debiting operating adjustments and crediting cash clearing.
-`charge.dispute.funds_reinstated` posts the exact inverse once. Stable ledger external keys make
-webhook replay idempotent, and audit records capture status or funds-state transitions. Stripe
-dispute fees are deliberately excluded until processor-fee accounting can use authoritative balance
-transactions.
+Lifecycle-only events update operational state. Any dispute event can carry authoritative Stripe
+balance transactions, allowing a later delivery to recover when `funds_withdrawn` arrived before
+Checkout completion linked the PaymentIntent. ESH posts the exact negative net balance transaction—
+disputed principal plus Stripe's reported dispute fee—by debiting operating adjustments and
+crediting cash clearing. A positive reinstatement posts the exact inverse. Stable ledger external
+keys make webhook replay idempotent, and audit records capture status or funds-state transitions.
 
 For ESH's separate-charges-and-transfers model, Stripe debits the platform for disputes and does not
 automatically recover a related Driver transfer. Admin therefore flags a disputed booking with a
@@ -25,5 +25,5 @@ the loss. Those actions require a deliberate policy and sufficient connected-acc
 Riders see the dispute amount, reason, status, response deadline, and funds outcome in Payments.
 Admin receives a searchable Disputes workspace alongside the immutable journal.
 
-Deferred: evidence submission, automatic Driver recovery, dispute fees, partial funds events,
-negative balances, externally created refunds, Admin notifications, and chargeback analytics.
+Deferred: evidence submission, automatic Driver recovery, partial funds events, negative balances,
+externally created refunds, Admin notifications, and chargeback analytics.

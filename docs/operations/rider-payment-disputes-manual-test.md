@@ -16,7 +16,8 @@ Use Stripe sandbox only. Never use a real card to simulate a dispute.
    `needs response`, `fraudulent`, its booking reference, and evidence deadline.
 6. Confirm the funds state becomes withdrawn. In Journal confirm exactly one
    `Stripe dispute funds withdrawn` transaction debits operating adjustments and credits cash
-   clearing for the disputed principal. Stripe's dispute fee is not included in V1.
+   clearing for Stripe's exact negative balance transaction: disputed principal plus the displayed
+   dispute fee.
 7. Refresh and replay the same webhook events. Confirm no duplicate dispute or ledger transaction.
 8. In Rider **Payments**, confirm the same dispute amount, reason, status, deadline, and funds-
    withdrawn state appear only for that Rider.
@@ -30,5 +31,5 @@ Use Stripe sandbox only. Never use a real card to simulate a dispute.
     webhook and confirm it changes no dispute or ledger state.
 
 Pass requires verified event origin, exact payment linkage, tenant/Rider isolation, one withdrawal
-and one reinstatement posting, replay idempotency, honest fee exclusion, and no automatic Driver
+and one reinstatement posting, replay idempotency, exact Stripe-reported fee handling, and no automatic Driver
 clawback. Return any test Driver offline and cancel unfinished bookings afterward.
