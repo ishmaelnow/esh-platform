@@ -3,6 +3,7 @@ import { createServiceSupabaseClient } from "@esh-platform/supabase";
 import { createStripeClient } from "@esh-platform/stripe";
 import type { Stripe } from "@esh-platform/stripe";
 import { requestNotificationDelivery } from "../../../../lib/request-notification-delivery";
+import { transferReferencesFromBalanceTransactions, type StripeBalanceTransactionReference } from "../../../../lib/payout-reconciliation";
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,32 @@ export async function POST(request: Request) {
         failure_code_value: payout.failure_code ?? null, failure_message_value: payout.failure_message ?? null,
         provider_created_at_value: new Date(payout.created * 1000).toISOString(),
       });
+      if (result.error) throw result.error;
+      try {
+        const balanceTransactions: StripeBalanceTransactionReference[] = [];
+        if (payout.automatic) {
+          for await (const transaction of stripe.balanceTransactions.list(
+            { payout: payout.id, limit: 100 }, { stripeAccount: event.account },
+          )) {
+            balanceTransactions.push(transaction);
+          }
+        }
+        const references = transferReferencesFromBalanceTransactions(balanceTransactions);
+        const reconciliation = await service.rpc("reconcile_driver_bank_payout_internal", {
+          provider_account_id_value: event.account,
+          provider_payout_id_value: payout.id,
+          provider_transfer_ids_value: references.map(({ providerTransferId }) => providerTransferId),
+          provider_balance_transaction_ids_value: references.map(({ providerBalanceTransactionId }) => providerBalanceTransactionId),
+        });
+        if (reconciliation.error) throw reconciliation.error;
+      } catch (error) {
+        await service.rpc("fail_driver_bank_payout_reconciliation_internal", {
+          provider_account_id_value: event.account,
+          provider_payout_id_value: payout.id,
+          failure_message_value: error instanceof Error ? error.message : "Stripe payout reconciliation failed.",
+        });
+        throw error;
+      }
     } else return NextResponse.json({ received: true });
     if (result.error) throw result.error;
     if (event.account && event.type.startsWith("payout.")) {

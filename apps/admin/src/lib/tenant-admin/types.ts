@@ -32,6 +32,7 @@ import type {
   RiderPaymentAttemptRow,
   DriverPayoutAccountRow,
   DriverBankPayoutRow,
+  DriverPayoutTransferAllocationRow,
   DriverEarningTransferRow,
   RiderPaymentRefundRow,
 } from "@esh-platform/supabase";
@@ -91,6 +92,7 @@ export type TenantSummary = {
   riderPaymentAttempts: RiderPaymentAttemptRow[];
   driverPayoutAccounts: DriverPayoutAccountRow[];
   driverBankPayouts: DriverBankPayoutRow[];
+  driverPayoutTransferAllocations: DriverPayoutTransferAllocationRow[];
   driverEarningTransfers: DriverEarningTransferRow[];
   riderPaymentRefunds: RiderPaymentRefundRow[];
 };

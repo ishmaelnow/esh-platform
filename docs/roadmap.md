@@ -144,8 +144,10 @@ deferred from this milestone and were delivered under the later milestones below
      with immutable prepayment reversal, Rider/Admin controls, and persistent Rider refund status.
    - Current delivery in progress: Rider payment/refund history with RLS-authorized, server-mediated
      access to Stripe-hosted receipts.
-   - Current delivery in progress: Driver date-range earnings statements with pending, collected,
+   - Current delivery: Driver date-range earnings statements with pending, collected,
      transferred, and separately reconciled bank-payout totals plus local CSV/print output.
+   - Current delivery in progress: automatic Stripe payout-to-transfer reconciliation with verified
+     connected-account balance activity, matched/unmatched totals, and Driver/Admin visibility.
    - Remaining: production verification, Rider wallet, reversals,
      payouts, statements, and reconciliation.
 8. **Pricing and Billing**

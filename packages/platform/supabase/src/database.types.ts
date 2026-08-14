@@ -403,9 +403,15 @@ export type Database = {
         Relationships: []
       }
       driver_bank_payouts: {
-        Row: { amount_minor: number; automatic: boolean; created_at: string; currency_code: string; destination_reference: string | null; driver_bank_payout_id: string; driver_payout_account_id: string; driver_profile_id: string; expected_arrival_at: string | null; failed_at: string | null; failure_code: string | null; failure_message: string | null; method: string | null; paid_at: string | null; provider: string; provider_created_at: string; provider_payout_id: string; status: string; tenant_id: string; updated_at: string }
-        Insert: { amount_minor: number; automatic?: boolean; created_at?: string; currency_code: string; destination_reference?: string | null; driver_bank_payout_id?: string; driver_payout_account_id: string; driver_profile_id: string; expected_arrival_at?: string | null; failed_at?: string | null; failure_code?: string | null; failure_message?: string | null; method?: string | null; paid_at?: string | null; provider?: string; provider_created_at: string; provider_payout_id: string; status: string; tenant_id: string; updated_at?: string }
-        Update: { amount_minor?: number; automatic?: boolean; created_at?: string; currency_code?: string; destination_reference?: string | null; driver_bank_payout_id?: string; driver_payout_account_id?: string; driver_profile_id?: string; expected_arrival_at?: string | null; failed_at?: string | null; failure_code?: string | null; failure_message?: string | null; method?: string | null; paid_at?: string | null; provider?: string; provider_created_at?: string; provider_payout_id?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Row: { amount_minor: number; automatic: boolean; created_at: string; currency_code: string; destination_reference: string | null; driver_bank_payout_id: string; driver_payout_account_id: string; driver_profile_id: string; expected_arrival_at: string | null; failed_at: string | null; failure_code: string | null; failure_message: string | null; matched_amount_minor: number; method: string | null; paid_at: string | null; provider: string; provider_created_at: string; provider_payout_id: string; reconciliation_error: string | null; reconciliation_status: string; reconciled_at: string | null; status: string; tenant_id: string; unmatched_amount_minor: number; updated_at: string }
+        Insert: { amount_minor: number; automatic?: boolean; created_at?: string; currency_code: string; destination_reference?: string | null; driver_bank_payout_id?: string; driver_payout_account_id: string; driver_profile_id: string; expected_arrival_at?: string | null; failed_at?: string | null; failure_code?: string | null; failure_message?: string | null; matched_amount_minor?: number; method?: string | null; paid_at?: string | null; provider?: string; provider_created_at: string; provider_payout_id: string; reconciliation_error?: string | null; reconciliation_status?: string; reconciled_at?: string | null; status: string; tenant_id: string; unmatched_amount_minor?: number; updated_at?: string }
+        Update: { amount_minor?: number; automatic?: boolean; created_at?: string; currency_code?: string; destination_reference?: string | null; driver_bank_payout_id?: string; driver_payout_account_id?: string; driver_profile_id?: string; expected_arrival_at?: string | null; failed_at?: string | null; failure_code?: string | null; failure_message?: string | null; matched_amount_minor?: number; method?: string | null; paid_at?: string | null; provider?: string; provider_created_at?: string; provider_payout_id?: string; reconciliation_error?: string | null; reconciliation_status?: string; reconciled_at?: string | null; status?: string; tenant_id?: string; unmatched_amount_minor?: number; updated_at?: string }
+        Relationships: []
+      }
+      driver_payout_transfer_allocations: {
+        Row: { amount_minor: number; created_at: string; driver_bank_payout_id: string; driver_earning_transfer_id: string; driver_payout_transfer_allocation_id: string; driver_profile_id: string; provider_balance_transaction_id: string; tenant_id: string }
+        Insert: { amount_minor: number; created_at?: string; driver_bank_payout_id: string; driver_earning_transfer_id: string; driver_payout_transfer_allocation_id?: string; driver_profile_id: string; provider_balance_transaction_id: string; tenant_id: string }
+        Update: { amount_minor?: number; created_at?: string; driver_bank_payout_id?: string; driver_earning_transfer_id?: string; driver_payout_transfer_allocation_id?: string; driver_profile_id?: string; provider_balance_transaction_id?: string; tenant_id?: string }
         Relationships: []
       }
       dispatch_offers: {
@@ -2199,6 +2205,14 @@ export type Database = {
       my_driver_bank_payouts: { Args: never; Returns: Json }
       record_driver_bank_payout_internal: {
         Args: { amount_minor_value: number; automatic_value: boolean; currency_code_value: string; destination_reference_value: string | null; expected_arrival_at_value: string | null; failure_code_value: string | null; failure_message_value: string | null; method_value: string | null; provider_account_id_value: string; provider_created_at_value: string; provider_payout_id_value: string; status_value: string }
+        Returns: boolean
+      }
+      reconcile_driver_bank_payout_internal: {
+        Args: { provider_account_id_value: string; provider_balance_transaction_ids_value: string[]; provider_payout_id_value: string; provider_transfer_ids_value: string[] }
+        Returns: Json
+      }
+      fail_driver_bank_payout_reconciliation_internal: {
+        Args: { failure_message_value: string; provider_account_id_value: string; provider_payout_id_value: string }
         Returns: boolean
       }
       prepare_pretrip_refund_internal: { Args: { target_booking_id: string }; Returns: Json }

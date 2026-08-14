@@ -8,8 +8,8 @@ role-derived wallet and payout RPCs.
 For each completed trip, the statement shows the locked Rider fare, Driver earnings, platform fee,
 and whether the earning is pending Rider collection, collected, or transferred to Stripe. Period
 totals use integer minor units. Stripe-reported bank payouts are listed and totaled separately:
-V1 has no transfer-to-payout allocation, so it must not imply that a particular bank payout contains
-a particular trip.
+Automatic payouts may show transfer-to-trip allocations only when verified through Stripe balance
+transactions. Manual and unmatched payout activity remains separate and must never be guessed.
 
 Drivers select an inclusive local-date range, print the statement, or download CSV. CSV contains
 ESH booking and payout record identifiers but excludes Stripe processor IDs, card/bank details,
@@ -17,5 +17,5 @@ secrets, Rider identity, and tax identifiers. Printed and downloaded reports are
 from the already authorized projection and cause no financial mutation.
 
 V1 is an operational earnings statement, not a tax form. Deferred: server-generated PDFs, tenant
-time-zone period closing, statement snapshots, transfer-to-payout allocation, adjustments and
+time-zone period closing, statement snapshots, manual-payout allocation, adjustments and
 reversals, processor fees, annual tax forms, and Admin statement generation.

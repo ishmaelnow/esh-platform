@@ -17,5 +17,7 @@ cleared when ESH created the Stripe transfer, and the subsequent payout moves fu
 the connected Stripe balance and the Driver's external account. Driver and Admin surfaces expose
 operational status under tenant RLS.
 
-Deferred: ESH-created manual/instant payouts, payout scheduling, transfer-to-payout allocation,
-reversal accounting, refunds, disputes, processor fees, reconciliation reports, and notifications.
+Automatic payout-to-transfer allocation is delivered separately in Transfer-to-Payout
+Reconciliation V1. Deferred: ESH-created manual/instant payouts, payout scheduling, manual-payout
+allocation, reversal accounting, refunds, disputes, processor fees, and expanded reconciliation
+reports.

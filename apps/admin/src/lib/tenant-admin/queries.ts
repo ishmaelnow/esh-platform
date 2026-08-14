@@ -57,6 +57,7 @@ export async function loadTenantSummary(
     riderPaymentAttemptsResult,
     driverPayoutAccountsResult,
     driverBankPayoutsResult,
+    driverPayoutTransferAllocationsResult,
     driverEarningTransfersResult,
     riderPaymentRefundsResult,
   ] = await Promise.all([
@@ -157,6 +158,7 @@ export async function loadTenantSummary(
     supabase.from("rider_payment_attempts").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("driver_payout_accounts").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("driver_bank_payouts").select("*").eq("tenant_id", tenantId).order("provider_created_at", { ascending: false }),
+    supabase.from("driver_payout_transfer_allocations").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("driver_earning_transfers").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("rider_payment_refunds").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
   ]);
@@ -276,6 +278,8 @@ export async function loadTenantSummary(
     throw driverPayoutAccountsResult.error;
   if (driverBankPayoutsResult.error && !driverBankPayoutsResult.error.message.includes("driver_bank_payouts"))
     throw driverBankPayoutsResult.error;
+  if (driverPayoutTransferAllocationsResult.error && !driverPayoutTransferAllocationsResult.error.message.includes("driver_payout_transfer_allocations"))
+    throw driverPayoutTransferAllocationsResult.error;
   if (driverEarningTransfersResult.error && !driverEarningTransfersResult.error.message.includes("driver_earning_transfers"))
     throw driverEarningTransfersResult.error;
   if (riderPaymentRefundsResult.error && !riderPaymentRefundsResult.error.message.includes("rider_payment_refunds"))
@@ -320,6 +324,7 @@ export async function loadTenantSummary(
     riderPaymentAttempts: riderPaymentAttemptsResult.data ?? [],
     driverPayoutAccounts: driverPayoutAccountsResult.data ?? [],
     driverBankPayouts: driverBankPayoutsResult.data ?? [],
+    driverPayoutTransferAllocations: driverPayoutTransferAllocationsResult.data ?? [],
     driverEarningTransfers: driverEarningTransfersResult.data ?? [],
     riderPaymentRefunds: riderPaymentRefundsResult.data ?? [],
   };

@@ -4,7 +4,7 @@ Last updated: 2026-08-13
 
 ## Current objective
 
-Complete Driver Earnings Statements V1.
+Complete Transfer-to-Payout Reconciliation V1 without repeating statement or payout-lifecycle work.
 
 ## Repository and deployment state
 
@@ -236,6 +236,27 @@ output disabled for the restricted workspace, all 11 Driver tests pass (includin
 calculation/export tests), the production build passes, and `git diff --check` passes. The existing
 Supabase Realtime dynamic-dependency and missing Next ESLint-plugin warnings remain non-blocking.
 
+The owner deployed Driver Earnings Statements V1 and reported the production manual test passed.
+Date filtering, period totals, trip rows, separately reported bank payouts, CSV download, and print
+output are therefore accepted as the current production checkpoint.
+
+Transfer-to-Payout Reconciliation V1 is implemented locally. For automatic connected-account
+payouts, the signature-verified Driver webhook queries Stripe balance transactions using the payout
+filter and connected-account context, then a service-only RPC links only same-tenant, same-Driver,
+same-currency successful ESH transfers. A tenant-RLS allocation table and payout-level matched,
+unmatched, status, error, and reconciliation timestamps support Driver/Admin visibility. Manual
+payouts are explicitly unsupported for automatic allocation; partial/unmatched results are exposed
+rather than guessed. Replays replace derived links and audit only changed results. No additional
+ledger posting is created. Migration `20260813000500_transfer_payout_reconciliation_v1.sql` and
+client types are included. Next: validate, dry-run only that migration, then owner apply/deploy and
+run `docs/operations/transfer-payout-reconciliation-manual-test.md`.
+
+Validation is complete: Supabase, Driver, and Admin typechecks pass; Driver tests pass 12/12
+(including the balance-transaction reference test); Admin tests pass 57/57; both production builds
+pass; and `git diff --check` passes. The remote migration dry run lists only
+`20260813000500_transfer_payout_reconciliation_v1.sql`. Existing Supabase Realtime and Next ESLint-
+plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -246,8 +267,8 @@ Supabase Realtime dynamic-dependency and missing Next ESLint-plugin warnings rem
 
 ## Exact next action
 
-Have the owner commit/deploy Driver Earnings Statements V1 and run
-`docs/operations/driver-earnings-statements-manual-test.md`.
+Have the owner commit, apply only `20260813000500_transfer_payout_reconciliation_v1.sql`, deploy
+Driver and Admin, and run `docs/operations/transfer-payout-reconciliation-manual-test.md`.
 
 ## Required reading for recovery
 
@@ -282,3 +303,5 @@ Have the owner commit/deploy Driver Earnings Statements V1 and run
 - `docs/operations/payment-payout-notifications-manual-test.md`
 - `docs/architecture/driver-earnings-statements.md`
 - `docs/operations/driver-earnings-statements-manual-test.md`
+- `docs/architecture/transfer-payout-reconciliation.md`
+- `docs/operations/transfer-payout-reconciliation-manual-test.md`
