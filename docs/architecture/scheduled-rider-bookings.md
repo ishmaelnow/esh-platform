@@ -32,9 +32,13 @@ continue unchanged.
 Riders may cancel scheduled trips before dispatch or any later pre-trip state. The same RLS,
 ownership, audit, outbox, retry, and Resend webhook contracts apply.
 
+Recurring Rider Bookings V1 extends this contract with Rider-owned schedule templates and unpaid
+occurrences. Each occurrence is priced and paid separately before it becomes an ordinary scheduled
+booking. Series cancellation affects only unpaid occurrences; paid bookings use the existing
+individual cancellation and refund lifecycle.
+
 ## Deferred
 
-- recurring schedules;
 - advance driver reservation;
 - automatic matching;
 - pricing and payment authorization;

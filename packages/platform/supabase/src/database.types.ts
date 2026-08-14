@@ -402,6 +402,18 @@ export type Database = {
         Update: { amount_minor?: number; applied_at?: string | null; booking_id?: string | null; created_at?: string; currency_code?: string; quote_id?: string; restored_at?: string | null; rider_profile_id?: string; rider_wallet_quote_allocation_id?: string; status?: string; tenant_id?: string; updated_at?: string }
         Relationships: []
       }
+      rider_booking_series: {
+        Row: { booking_notes: string | null; cancelled_at: string | null; created_at: string; created_by_person_id: string; destination_address: string; destination_latitude: number; destination_longitude: number; end_date: string; local_pickup_time: string; pickup_address: string; pickup_latitude: number; pickup_longitude: number; rider_booking_series_id: string; rider_profile_id: string; service_area_id: string; start_date: string; status: string; tenant_id: string; time_zone: string; updated_at: string; weekdays: number[] }
+        Insert: { booking_notes?: string | null; cancelled_at?: string | null; created_at?: string; created_by_person_id: string; destination_address: string; destination_latitude: number; destination_longitude: number; end_date: string; local_pickup_time: string; pickup_address: string; pickup_latitude: number; pickup_longitude: number; rider_booking_series_id?: string; rider_profile_id: string; service_area_id: string; start_date: string; status?: string; tenant_id: string; time_zone: string; updated_at?: string; weekdays: number[] }
+        Update: { booking_notes?: string | null; cancelled_at?: string | null; created_at?: string; created_by_person_id?: string; destination_address?: string; destination_latitude?: number; destination_longitude?: number; end_date?: string; local_pickup_time?: string; pickup_address?: string; pickup_latitude?: number; pickup_longitude?: number; rider_booking_series_id?: string; rider_profile_id?: string; service_area_id?: string; start_date?: string; status?: string; tenant_id?: string; time_zone?: string; updated_at?: string; weekdays?: number[] }
+        Relationships: []
+      }
+      rider_booking_series_occurrences: {
+        Row: { booking_id: string | null; cancelled_at: string | null; created_at: string; quote_id: string | null; rider_booking_series_id: string; rider_booking_series_occurrence_id: string; rider_profile_id: string; scheduled_pickup_at: string; status: string; tenant_id: string; updated_at: string }
+        Insert: { booking_id?: string | null; cancelled_at?: string | null; created_at?: string; quote_id?: string | null; rider_booking_series_id: string; rider_booking_series_occurrence_id?: string; rider_profile_id: string; scheduled_pickup_at: string; status?: string; tenant_id: string; updated_at?: string }
+        Update: { booking_id?: string | null; cancelled_at?: string | null; created_at?: string; quote_id?: string | null; rider_booking_series_id?: string; rider_booking_series_occurrence_id?: string; rider_profile_id?: string; scheduled_pickup_at?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       rider_payment_refunds: {
         Row: { amount_minor: number; booking_id: string; created_at: string; currency_code: string; failure_message: string | null; payment_attempt_id: string; provider: string; provider_refund_id: string | null; reason: string; refund_id: string; refund_scope: string; refunded_at: string | null; status: string; tenant_id: string; updated_at: string }
         Insert: { amount_minor: number; booking_id: string; created_at?: string; currency_code: string; failure_message?: string | null; payment_attempt_id: string; provider?: string; provider_refund_id?: string | null; reason: string; refund_id?: string; refund_scope?: string; refunded_at?: string | null; status?: string; tenant_id: string; updated_at?: string }
@@ -2056,6 +2068,13 @@ export type Database = {
       prepare_rider_wallet_checkout_internal: { Args: { target_quote_id: string }; Returns: Json }
       cancel_wallet_only_booking_internal: { Args: { target_booking_id: string }; Returns: boolean }
       restore_rider_wallet_for_booking_internal: { Args: { target_booking_id: string }; Returns: number }
+      create_my_rider_booking_series: { Args: { target_quote_id: string; start_date_value: string; end_date_value: string; local_pickup_time_value: string; weekdays_value: number[]; scheduled_pickup_at_values: string[]; booking_notes_value?: string }; Returns: string }
+      my_rider_booking_series: { Args: { target_tenant_slug: string }; Returns: Json }
+      cancel_my_rider_series_occurrence: { Args: { target_occurrence_id: string }; Returns: boolean }
+      cancel_my_rider_booking_series: { Args: { target_series_id: string }; Returns: number }
+      create_my_rider_recurring_booking: { Args: { target_quote_id: string; target_occurrence_id: string; booking_notes_value?: string }; Returns: string }
+      claim_recurring_occurrence_checkout_internal: { Args: { target_occurrence_id: string; target_quote_id: string }; Returns: boolean }
+      release_recurring_occurrence_checkout_internal: { Args: { target_occurrence_id: string; target_quote_id: string }; Returns: boolean }
       can_manage_pricing: { Args: { target_tenant_id: string }; Returns: boolean }
       can_manage_driver_management: {
         Args: { target_tenant_id: string }

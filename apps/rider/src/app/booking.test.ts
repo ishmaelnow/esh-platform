@@ -6,6 +6,7 @@ import {
   riderErrorMessage,
   formatDateTimeInputInZone,
   zonedDateTimeToIso,
+  generateRecurringPickupTimes,
 } from "./booking";
 
 describe("rider booking helpers", () => {
@@ -28,6 +29,21 @@ describe("rider booking helpers", () => {
   it("presents lifecycle statuses in rider language", () => {
     expect(bookingStatusLabel("requested")).toBe("Finding a driver");
     expect(bookingStatusLabel("in_progress")).toBe("Trip in progress");
+  });
+
+  it("generates selected recurring weekdays in the tenant time zone", () => {
+    expect(generateRecurringPickupTimes({ startDate: "2026-08-03", endDate: "2026-08-10",
+      localTime: "09:15", weekdays: [1, 3], timeZone: "America/New_York" })).toEqual([
+      "2026-08-03T13:15:00.000Z", "2026-08-05T13:15:00.000Z",
+      "2026-08-10T13:15:00.000Z",
+    ]);
+  });
+
+  it("rejects empty and oversized recurring schedules", () => {
+    expect(() => generateRecurringPickupTimes({ startDate: "2026-08-03", endDate: "2026-08-03",
+      localTime: "09:15", weekdays: [1], timeZone: "UTC" })).toThrow("at least two trips");
+    expect(() => generateRecurringPickupTimes({ startDate: "2026-08-01", endDate: "2026-09-30",
+      localTime: "09:15", weekdays: [1, 2, 3, 4, 5, 6, 7], timeZone: "UTC", maximum: 5 })).toThrow("limited to 5 trips");
   });
 
   it("normalizes tenant links and unknown errors", () => {

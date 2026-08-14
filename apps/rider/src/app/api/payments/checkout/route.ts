@@ -3,19 +3,45 @@ import { createAuthenticatedSupabaseClient, createServiceSupabaseClient } from "
 import { createStripeClient } from "@esh-platform/stripe";
 
 export async function POST(request: Request) {
+  let claimedOccurrenceId: string | null = null;
+  let claimedQuoteId: string | null = null;
+  let providerSessionCreated = false;
   try {
     const authorization = request.headers.get("authorization");
     if (!authorization?.startsWith("Bearer ")) throw new Error("Authentication is required.");
-    const { quoteId, tenantSlug } = await request.json() as { quoteId?: string; tenantSlug?: string };
+    const { quoteId, tenantSlug, occurrenceId } = await request.json() as { quoteId?: string; tenantSlug?: string; occurrenceId?: string };
     if (!quoteId || !tenantSlug) throw new Error("Price quote and tenant are required.");
     const authenticated = createAuthenticatedSupabaseClient(authorization.slice(7));
     const quoteResult = await authenticated.from("trip_price_quotes")
-      .select("quote_id,tenant_id,fare_amount_minor,currency_code,pickup_address,destination_address,status,expires_at")
+      .select("quote_id,tenant_id,service_area_id,fare_amount_minor,currency_code,pickup_address,destination_address,status,expires_at")
       .eq("quote_id", quoteId).single();
     if (quoteResult.error || !quoteResult.data) throw new Error("Price quote is unavailable.");
     const quote = quoteResult.data;
     if (quote.status !== "quoted" || Date.parse(quote.expires_at) <= Date.now()) throw new Error("Price quote has expired.");
+    if (occurrenceId) {
+      const occurrence = await authenticated.from("rider_booking_series_occurrences")
+        .select("rider_booking_series_occurrence_id,rider_booking_series_id,status,scheduled_pickup_at").eq("rider_booking_series_occurrence_id", occurrenceId).single();
+      if (occurrence.error || occurrence.data?.status !== "awaiting_payment")
+        throw new Error("Recurring trip occurrence is unavailable.");
+      const series = await authenticated.from("rider_booking_series")
+        .select("service_area_id,pickup_address,destination_address,status")
+        .eq("rider_booking_series_id", occurrence.data.rider_booking_series_id).single();
+      if (series.error || series.data.status !== "active" || series.data.service_area_id !== quote.service_area_id
+        || series.data.pickup_address !== quote.pickup_address || series.data.destination_address !== quote.destination_address)
+        throw new Error("Fare quote does not match this recurring trip.");
+      const scheduling = await authenticated.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug });
+      const minimumNoticeMinutes = (scheduling.data as unknown as { settings?: { minimumNoticeMinutes?: number } })?.settings?.minimumNoticeMinutes ?? 60;
+      if (Date.parse(occurrence.data.scheduled_pickup_at) < Date.now() + minimumNoticeMinutes * 60_000)
+        throw new Error("This recurring trip is too close to pickup for payment. Skip it or choose another occurrence.");
+    }
     const service = createServiceSupabaseClient();
+    if (occurrenceId) {
+      const claimed = await service.rpc("claim_recurring_occurrence_checkout_internal", {
+        target_occurrence_id: occurrenceId, target_quote_id: quote.quote_id,
+      });
+      if (claimed.error) throw claimed.error;
+      claimedOccurrenceId = occurrenceId; claimedQuoteId = quote.quote_id;
+    }
     const walletResult = await service.rpc("prepare_rider_wallet_checkout_internal", {
       target_quote_id: quote.quote_id,
     });
@@ -30,11 +56,12 @@ export async function POST(request: Request) {
       mode: "payment",
       line_items: [{ price_data: { currency: quote.currency_code.toLowerCase(), unit_amount: split.cardAmountMinor,
         product_data: { name: "ESH trip", description: `${quote.pickup_address} to ${quote.destination_address}` } }, quantity: 1 }],
-      success_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=success&quote=${quote.quote_id}`,
+      success_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=success&quote=${quote.quote_id}${occurrenceId ? `&occurrence=${encodeURIComponent(occurrenceId)}` : ""}`,
       cancel_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=cancelled`,
       metadata: { quote_id: quote.quote_id, tenant_id: quote.tenant_id,
         wallet_amount_minor: String(split.walletAmountMinor) },
     }, { idempotencyKey: `rider_quote_${quote.quote_id}` });
+    providerSessionCreated = true;
     if (!checkout.url) throw new Error("Payment checkout is unavailable.");
     const registered = await service.rpc("register_rider_checkout_internal", {
       target_quote_id: quote.quote_id, checkout_session_id_value: checkout.id,
@@ -43,6 +70,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: checkout.url, walletAmountMinor: split.walletAmountMinor,
       cardAmountMinor: split.cardAmountMinor });
   } catch (error) {
+    if (claimedOccurrenceId && claimedQuoteId && !providerSessionCreated) {
+      await createServiceSupabaseClient().rpc("release_recurring_occurrence_checkout_internal", {
+        target_occurrence_id: claimedOccurrenceId, target_quote_id: claimedQuoteId,
+      });
+    }
     return NextResponse.json({ message: error instanceof Error ? error.message : "Checkout could not be created." }, { status: 400 });
   }
 }

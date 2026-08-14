@@ -116,7 +116,10 @@ deferred from this milestone and were delivered under the later milestones below
      Driver markers, distance/ETA, privacy enforcement, and graceful mapping-provider fallback.
    - Current delivery in progress: Stripe-hosted Rider checkout, verified payment state, paid-only
      booking finalization, and immutable collection settlement.
-   - Remaining: recurring bookings and SMS/push delivery.
+   - Current delivery in progress: tenant-local recurring Rider schedules with verified routes,
+     individually priced/paid occurrences, one-occurrence and remaining-unpaid-series cancellation,
+     Admin visibility, tenant isolation, and duplicate-safe scheduled booking creation.
+   - Remaining: SMS/push delivery.
 6. **Reputation**
    - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,

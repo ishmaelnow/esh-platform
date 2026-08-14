@@ -18,6 +18,7 @@ import {
   normalizeTenantSlug,
   riderErrorMessage,
   zonedDateTimeToIso,
+  generateRecurringPickupTimes,
 } from "./booking";
 
 type BookingTenant = { tenant_slug: string; display_name: string };
@@ -108,6 +109,9 @@ type RiderPayment = {
 };
 type RiderPaymentDispute = { disputeId: string; amountMinor: number; feeMinor: number; status: string; reason: string; evidenceDueAt: string | null; fundsWithdrawnAt: string | null; fundsWithdrawnMinor: number; fundsReinstatedAt: string | null; fundsReinstatedMinor: number };
 type RiderWallet = { currencyCode: string; fractionDigits: number; balanceMinor: number; availableMinor: number; entries: Array<{ entryId: string; direction: "credit" | "debit"; entryType: string; amountMinor: number; description: string; bookingId: string | null; createdAt: string }> };
+type RiderBookingSeries = { seriesId: string; serviceAreaId: string; pickupAddress: string; destinationAddress: string; timeZone: string; localPickupTime: string; weekdays: number[]; startDate: string; endDate: string; status: string; createdAt: string };
+type RiderSeriesOccurrence = { occurrenceId: string; seriesId: string; scheduledPickupAt: string; status: string; quoteId: string | null; bookingId: string | null };
+type RiderSeriesSummary = { series: RiderBookingSeries[]; occurrences: RiderSeriesOccurrence[] };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
@@ -158,10 +162,12 @@ export default function RiderHome() {
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [payments, setPayments] = useState<RiderPayment[]>([]);
   const [wallet, setWallet] = useState<RiderWallet | null>(null);
+  const [recurring, setRecurring] = useState<RiderSeriesSummary>({ series: [], occurrences: [] });
+  const [recurringOccurrenceId, setRecurringOccurrenceId] = useState<string | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<Record<string, string>>({});
   const [paymentReceiptUrls, setPaymentReceiptUrls] = useState<Record<string, string>>({});
   const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
-  const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled">("now");
+  const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled" | "recurring">("now");
   const [serviceAreaId, setServiceAreaId] = useState("");
   const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
@@ -333,14 +339,23 @@ export default function RiderHome() {
     setWallet(result.data as unknown as RiderWallet);
   }, [session, supabase, tenantSlug]);
 
+  const loadRecurring = useCallback(async () => {
+    if (!supabase || !session || !tenantSlug) return;
+    const result = await supabase.rpc("my_rider_booking_series", { target_tenant_slug: tenantSlug });
+    if (result.error) throw result.error;
+    setRecurring(result.data as unknown as RiderSeriesSummary);
+  }, [session, supabase, tenantSlug]);
+
   useEffect(() => {
     if (!session || !supabase || !tenantSlug) return;
     const params = new URLSearchParams(window.location.search);
     const returnedQuoteId = params.get("quote");
+    const returnedOccurrenceId = params.get("occurrence");
     if (params.get("payment") !== "success" || !returnedQuoteId) return;
     const recoveredUrl = new URL(window.location.href);
     recoveredUrl.searchParams.delete("payment");
     recoveredUrl.searchParams.delete("quote");
+    recoveredUrl.searchParams.delete("occurrence");
     window.history.replaceState({}, "", recoveredUrl);
     setBusy(true);
     void fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
@@ -362,6 +377,7 @@ export default function RiderHome() {
       setPickupSelection({ mapboxId: `paid:${result.quote.quoteId}:pickup`, label: result.quote.pickupAddress });
       setDestinationSelection({ mapboxId: `paid:${result.quote.quoteId}:destination`, label: result.quote.destinationAddress });
       setPaymentConfirmed(true);
+      setRecurringOccurrenceId(returnedOccurrenceId);
       setActivePortalTab("book");
       setMessage("Payment received. No trip has been requested yet. Review this paid trip, then request it once.");
     }).catch(() => setError("We could not refresh the payment details. Your payment history is unchanged; check Payments or My trips before trying again."))
@@ -437,6 +453,11 @@ export default function RiderHome() {
     if (!portal?.profile || (activePortalTab !== "wallet" && activePortalTab !== "book")) return;
     void loadWallet().catch((value) => setError(riderErrorMessage(value)));
   }, [activePortalTab, loadWallet, portal?.profile]);
+
+  useEffect(() => {
+    if (!portal?.profile) return;
+    void loadRecurring().catch((value) => setError(riderErrorMessage(value)));
+  }, [loadRecurring, portal?.profile]);
 
   async function loadPaymentReceipt(paymentAttemptId: string) {
     if (!session) return;
@@ -605,11 +626,34 @@ export default function RiderHome() {
         setMessage("Review the locked fare, then confirm your trip.");
         return;
       }
+      if (bookingTiming === "recurring" && !recurringOccurrenceId) {
+        const weekdays = form.getAll("recurringWeekday").map(Number);
+        const occurrenceTimes = generateRecurringPickupTimes({
+          startDate: formValue(form, "recurringStartDate"), endDate: formValue(form, "recurringEndDate"),
+          localTime: formValue(form, "recurringPickupTime"), weekdays,
+          timeZone: scheduling?.timeZone ?? "UTC",
+        });
+        const series = await supabase.rpc("create_my_rider_booking_series", {
+          target_quote_id: priceQuote.quoteId,
+          start_date_value: formValue(form, "recurringStartDate"),
+          end_date_value: formValue(form, "recurringEndDate"),
+          local_pickup_time_value: formValue(form, "recurringPickupTime"),
+          weekdays_value: weekdays,
+          scheduled_pickup_at_values: occurrenceTimes,
+          booking_notes_value: formValue(form, "bookingNotes"),
+        });
+        if (series.error) throw series.error;
+        formElement.reset(); setPriceQuote(null); setPickupSelection(null); setDestinationSelection(null);
+        setPickupQuery(""); setDestinationQuery(""); setServiceAreaId(""); setServiceAreaContext(null);
+        await loadRecurring(); setActivePortalTab("trips");
+        setMessage(`Recurring schedule created with ${occurrenceTimes.length} trips. Pay each occurrence before its pickup deadline.`);
+        return;
+      }
       if (!paymentConfirmed) {
         const response = await fetch("/api/payments/checkout", {
           method: "POST",
           headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug }),
+          body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug, occurrenceId: recurringOccurrenceId }),
         });
         const result = await response.json() as { url?: string; walletOnly?: boolean; walletAmountMinor?: number; message?: string };
         if (!response.ok) throw new Error(result.message ?? "Payment checkout could not be opened.");
@@ -623,11 +667,16 @@ export default function RiderHome() {
         window.location.assign(result.url);
         return;
       }
-      const result = await supabase.rpc("create_my_rider_priced_booking", {
-        target_quote_id: priceQuote.quoteId,
-        booking_notes_value: formValue(form, "bookingNotes"),
-        ...(bookingTiming === "scheduled" ? { scheduled_pickup_at_value: zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") } : {}),
-      });
+      const result = recurringOccurrenceId
+        ? await supabase.rpc("create_my_rider_recurring_booking", {
+          target_quote_id: priceQuote.quoteId, target_occurrence_id: recurringOccurrenceId,
+          ...(formValue(form, "bookingNotes") ? { booking_notes_value: formValue(form, "bookingNotes") } : {}),
+        })
+        : await supabase.rpc("create_my_rider_priced_booking", {
+          target_quote_id: priceQuote.quoteId,
+          booking_notes_value: formValue(form, "bookingNotes"),
+          ...(bookingTiming === "scheduled" ? { scheduled_pickup_at_value: zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") } : {}),
+        });
       const bookingError = result.error;
       if (bookingError) throw bookingError;
       formElement.reset();
@@ -641,7 +690,9 @@ export default function RiderHome() {
       setDestinationSuggestions([]);
       setPriceQuote(null);
       setPaymentConfirmed(false);
+      setRecurringOccurrenceId(null);
       await loadPortal();
+      await loadRecurring();
       setActivePortalTab("trips");
       setMessage(
         bookingTiming === "scheduled"
@@ -651,12 +702,88 @@ export default function RiderHome() {
       const completedUrl = new URL(window.location.href);
       completedUrl.searchParams.delete("payment");
       completedUrl.searchParams.delete("quote");
+      completedUrl.searchParams.delete("occurrence");
       window.history.replaceState({}, "", completedUrl);
     } catch (value) {
       setError(riderErrorMessage(value));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function payRecurringOccurrence(occurrence: RiderSeriesOccurrence, series: RiderBookingSeries) {
+    if (!session) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const quoteResponse = await fetch("/api/pricing/quote", { method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantSlug, serviceAreaId: series.serviceAreaId,
+          pickupAddress: series.pickupAddress, destinationAddress: series.destinationAddress }) });
+      const quote = await quoteResponse.json() as RiderPriceQuote & { message?: string };
+      if (!quoteResponse.ok || !quote.quoteId) throw new Error(quote.message ?? "Fare quote could not be created.");
+      setRecurringOccurrenceId(occurrence.occurrenceId); setPriceQuote(quote); setServiceAreaId(series.serviceAreaId);
+      const area = await supabase?.rpc("my_rider_service_area_context", {
+        target_tenant_slug: tenantSlug, target_service_area_id: series.serviceAreaId,
+      });
+      if (area?.error || !area?.data) throw area?.error ?? new Error("Recurring service area is unavailable.");
+      setServiceAreaContext(area.data as ServiceAreaContext);
+      setPickupQuery(quote.pickupAddress); setDestinationQuery(quote.destinationAddress);
+      setPickupSelection({ mapboxId: `series:${series.seriesId}:pickup`, label: quote.pickupAddress });
+      setDestinationSelection({ mapboxId: `series:${series.seriesId}:destination`, label: quote.destinationAddress });
+      setBookingTiming("scheduled"); setActivePortalTab("book");
+      const checkoutResponse = await fetch("/api/payments/checkout", { method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteId: quote.quoteId, tenantSlug, occurrenceId: occurrence.occurrenceId }) });
+      const checkout = await checkoutResponse.json() as { url?: string; walletOnly?: boolean; message?: string };
+      if (!checkoutResponse.ok) throw new Error(checkout.message ?? "Payment checkout could not be opened.");
+      if (checkout.walletOnly) {
+        setPaymentConfirmed(true); await loadWallet();
+        setMessage(`Wallet credit covers the ${formatDate(occurrence.scheduledPickupAt)} trip. Review and request it once.`);
+      } else if (checkout.url) window.location.assign(checkout.url);
+      else throw new Error("Payment checkout could not be opened.");
+    } catch (value) { setError(riderErrorMessage(value)); setBusy(false); }
+  }
+
+  async function cancelRecurringOccurrence(occurrenceId: string) {
+    if (!supabase || !window.confirm("Cancel this unpaid recurring occurrence?")) return;
+    setBusy(true); setError("");
+    const result = await supabase.rpc("cancel_my_rider_series_occurrence", { target_occurrence_id: occurrenceId });
+    if (result.error) setError(riderErrorMessage(result.error));
+    else { await loadRecurring(); setMessage("Recurring occurrence cancelled."); }
+    setBusy(false);
+  }
+
+  async function resumeRecurringOccurrence(occurrence: RiderSeriesOccurrence, series: RiderBookingSeries) {
+    if (!session || !occurrence.quoteId || !supabase) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(occurrence.quoteId)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const result = await response.json() as { paymentStatus?: string; quote?: PaidRiderPriceQuote; message?: string };
+      if (!response.ok || result.paymentStatus !== "paid" || !result.quote)
+        throw new Error(result.message ?? "Payment is not confirmed yet. Finish Stripe Checkout or wait for it to expire.");
+      const area = await supabase.rpc("my_rider_service_area_context", {
+        target_tenant_slug: tenantSlug, target_service_area_id: series.serviceAreaId,
+      });
+      if (area.error || !area.data) throw area.error ?? new Error("Recurring service area is unavailable.");
+      setRecurringOccurrenceId(occurrence.occurrenceId); setPriceQuote({ ...result.quote, fractionDigits: 2 });
+      setServiceAreaId(series.serviceAreaId); setServiceAreaContext(area.data as ServiceAreaContext);
+      setPickupQuery(result.quote.pickupAddress); setDestinationQuery(result.quote.destinationAddress);
+      setPickupSelection({ mapboxId: `series:${series.seriesId}:pickup`, label: result.quote.pickupAddress });
+      setDestinationSelection({ mapboxId: `series:${series.seriesId}:destination`, label: result.quote.destinationAddress });
+      setBookingTiming("scheduled"); setPaymentConfirmed(true); setActivePortalTab("book");
+      setMessage("Payment confirmed. Review this recurring occurrence, then request it once.");
+    } catch (value) { setError(riderErrorMessage(value)); } finally { setBusy(false); }
+  }
+
+  async function cancelRecurringSeries(seriesId: string) {
+    if (!supabase || !window.confirm("Cancel all remaining unpaid occurrences in this recurring schedule? Paid trips must still be cancelled individually.")) return;
+    setBusy(true); setError("");
+    const result = await supabase.rpc("cancel_my_rider_booking_series", { target_series_id: seriesId });
+    if (result.error) setError(riderErrorMessage(result.error));
+    else { await loadRecurring(); setMessage(`${result.data ?? 0} remaining unpaid occurrence(s) cancelled. Existing paid trips are unchanged.`); }
+    setBusy(false);
   }
 
   async function cancelBooking(bookingId: string) {
@@ -864,13 +991,16 @@ export default function RiderHome() {
                 When do you need the ride?
                 <select
                   value={bookingTiming}
-                  onChange={(event) => setBookingTiming(event.target.value as "now" | "scheduled")}
+                  disabled={Boolean(recurringOccurrenceId)}
+                  onChange={(event) => setBookingTiming(event.target.value as "now" | "scheduled" | "recurring")}
                 >
                   <option value="now">Ride now</option>
                   <option value="scheduled">Schedule for later</option>
+                  <option value="recurring">Repeat on selected weekdays</option>
                 </select>
               </label>
-              {bookingTiming === "scheduled" ? (
+              {recurringOccurrenceId ? <p className="wide field-hint">This fare belongs to a recurring occurrence with its pickup time already fixed.</p> : null}
+              {bookingTiming === "scheduled" && !recurringOccurrenceId ? (
                 <label className="wide">
                   Pickup date and time
                   <input
@@ -890,6 +1020,20 @@ export default function RiderHome() {
                     {scheduling?.settings.minimumNoticeMinutes ?? 60} minutes.
                   </span>
                 </label>
+              ) : null}
+              {bookingTiming === "recurring" && !recurringOccurrenceId ? (
+                <div className="wide card">
+                  <p className="kicker">Repeat schedule</p>
+                  <div className="form-grid">
+                    <label>Start date<input name="recurringStartDate" type="date" required /></label>
+                    <label>End date<input name="recurringEndDate" type="date" required /></label>
+                    <label>Pickup time<input name="recurringPickupTime" type="time" required /></label>
+                    <fieldset className="wide"><legend>Weekdays</legend><div className="rider-tabs">
+                      {[[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"],[7,"Sun"]].map(([day, label]) => <label key={day}><input name="recurringWeekday" type="checkbox" value={day} /> {label}</label>)}
+                    </div></fieldset>
+                  </div>
+                  <p className="field-hint">Each occurrence is priced and paid separately before it becomes a scheduled trip. Maximum 50 trips within the provider&apos;s advance-booking window.</p>
+                </div>
               ) : null}
               <label className="wide">
                 Service area
@@ -992,14 +1136,14 @@ export default function RiderHome() {
                   <p className="kicker">Locked fare estimate</p>
                   <h2>{new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.fareAmountMinor / 10 ** priceQuote.fractionDigits)}</h2>
                   <p className="area">Road route {(priceQuote.routeDistanceMeters / 1609.344).toFixed(1)} mi · {Math.max(1, Math.round(priceQuote.routeDurationSeconds / 60))} min · valid until {formatDate(priceQuote.expiresAt)}</p>
-                  <p className="area">{paymentConfirmed ? "Payment or wallet credit is confirmed. This trip has not been requested yet. Select the button below once to create it and notify dispatch." : wallet && wallet.availableMinor > 0 ? `${new Intl.NumberFormat(undefined, { style: "currency", currency: wallet.currencyCode }).format(wallet.availableMinor / 10 ** wallet.fractionDigits)} available wallet credit will be applied automatically; Stripe securely collects any remainder.` : "Secure payment is collected by Stripe before the trip request is created."}</p>
+                  <p className="area">{bookingTiming === "recurring" && !recurringOccurrenceId ? "This verifies the recurring route. No payment is collected until you choose an individual occurrence." : paymentConfirmed ? "Payment or wallet credit is confirmed. This trip has not been requested yet. Select the button below once to create it and notify dispatch." : wallet && wallet.availableMinor > 0 ? `${new Intl.NumberFormat(undefined, { style: "currency", currency: wallet.currencyCode }).format(wallet.availableMinor / 10 ** wallet.fractionDigits)} available wallet credit will be applied automatically; Stripe securely collects any remainder.` : "Secure payment is collected by Stripe before the trip request is created."}</p>
                 </div>
               ) : null}
               <button
                 className="button primary"
                 disabled={busy || portal.serviceAreas.length === 0}
               >
-                {busy ? "Working…" : priceQuote ? paymentConfirmed ? "Request this trip" : "Apply wallet and continue" : "Review fare"}
+                {busy ? "Working…" : priceQuote ? bookingTiming === "recurring" && !recurringOccurrenceId ? "Create recurring schedule" : paymentConfirmed ? "Request this trip" : "Apply wallet and continue" : bookingTiming === "recurring" ? "Review recurring route" : "Review fare"}
               </button>
             </form>
           </section>
@@ -1044,6 +1188,18 @@ export default function RiderHome() {
                 <span>{notificationPreferences?.tripUpdatesEnabled === false ? "Off" : "On"}</span>
               </label>
             </div>
+            {recurring.series.length > 0 ? <div className="panel-stack">
+              <div className="section-heading"><div><p className="kicker">Recurring schedules</p><h3>Upcoming repeat trips</h3></div></div>
+              {recurring.series.map((series) => {
+                const occurrences = recurring.occurrences.filter((item) => item.seriesId === series.seriesId);
+                return <article className="card trip-card" key={series.seriesId}>
+                  <div className="trip-top"><div><span className={`status status-${series.status}`}>{series.status}</span><h3>{series.pickupAddress}</h3><p className="destination">to {series.destinationAddress}</p></div><time>{series.startDate} through {series.endDate}</time></div>
+                  <p className="area">Repeats {series.weekdays.map((day) => ["","Mon","Tue","Wed","Thu","Fri","Sat","Sun"][day]).join(", ")} at {series.localPickupTime.slice(0, 5)} ({series.timeZone})</p>
+                  {series.status === "active" ? <button className="text-button danger" disabled={busy} onClick={() => void cancelRecurringSeries(series.seriesId)} type="button">Cancel remaining schedule</button> : null}
+                  <div className="panel-stack">{occurrences.map((occurrence) => <div className="preference-card" key={occurrence.occurrenceId}><div><strong>{formatDate(occurrence.scheduledPickupAt, series.timeZone)}</strong><p>{occurrence.status === "awaiting_payment" ? "Awaiting fare review and payment" : occurrence.status === "payment_pending" ? "Payment started; finish booking after confirmation" : occurrence.status === "booked" ? `Scheduled trip ${occurrence.bookingId?.slice(0, 8)}` : "Cancelled"}</p></div>{occurrence.status === "awaiting_payment" && series.status === "active" ? <div><button className="button primary compact" disabled={busy} onClick={() => void payRecurringOccurrence(occurrence, series)} type="button">Price and pay</button><button className="text-button danger" disabled={busy} onClick={() => void cancelRecurringOccurrence(occurrence.occurrenceId)} type="button">Skip</button></div> : occurrence.status === "payment_pending" && series.status === "active" ? <button className="button secondary compact" disabled={busy} onClick={() => void resumeRecurringOccurrence(occurrence, series)} type="button">Check payment</button> : null}</div>)}</div>
+                </article>;
+              })}
+            </div> : null}
             {portal.bookings.length === 0 ? (
               <div className="card empty">
                 <p>Your trip requests will appear here.</p>

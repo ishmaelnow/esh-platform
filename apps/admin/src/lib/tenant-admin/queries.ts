@@ -63,6 +63,8 @@ export async function loadTenantSummary(
     riderPaymentDisputesResult,
     riderProfilesResult,
     riderWalletEntriesResult,
+    riderBookingSeriesResult,
+    riderBookingSeriesOccurrencesResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -167,6 +169,8 @@ export async function loadTenantSummary(
     supabase.from("rider_payment_disputes").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("rider_profiles").select("*").eq("tenant_id", tenantId).order("display_name"),
     supabase.from("rider_wallet_entries").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
+    supabase.from("rider_booking_series").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
+    supabase.from("rider_booking_series_occurrences").select("*").eq("tenant_id", tenantId).order("scheduled_pickup_at"),
   ]);
 
   if (tenantResult.error) {
@@ -295,6 +299,10 @@ export async function loadTenantSummary(
   if (riderProfilesResult.error) throw riderProfilesResult.error;
   if (riderWalletEntriesResult.error && !riderWalletEntriesResult.error.message.includes("rider_wallet_entries"))
     throw riderWalletEntriesResult.error;
+  if (riderBookingSeriesResult.error && !riderBookingSeriesResult.error.message.includes("rider_booking_series"))
+    throw riderBookingSeriesResult.error;
+  if (riderBookingSeriesOccurrencesResult.error && !riderBookingSeriesOccurrencesResult.error.message.includes("rider_booking_series_occurrences"))
+    throw riderBookingSeriesOccurrencesResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -341,6 +349,8 @@ export async function loadTenantSummary(
     riderPaymentDisputes: riderPaymentDisputesResult.data ?? [],
     riderProfiles: riderProfilesResult.data ?? [],
     riderWalletEntries: riderWalletEntriesResult.data ?? [],
+    riderBookingSeries: riderBookingSeriesResult.data ?? [],
+    riderBookingSeriesOccurrences: riderBookingSeriesOccurrencesResult.data ?? [],
   };
 }
 

@@ -4,7 +4,7 @@ Last updated: 2026-08-14
 
 ## Current objective
 
-Complete Rider Wallet and Credits V1 while the Stripe sandbox dispute retry issue remains deferred.
+Complete Recurring Rider Bookings V1 while the Stripe sandbox dispute retry issue remains deferred.
 
 ## Repository and deployment state
 
@@ -359,6 +359,19 @@ pass, and `git diff --check` passes. The remote migration dry run lists only
 `20260814000500_rider_wallet_credits_v1.sql`. Existing Supabase Realtime and missing Next ESLint-
 plugin warnings remain non-blocking.
 
+Rider Wallet and Credits V1 is deployed through commit `53440af`; the owner reported its production
+manual test passed. Recurring Rider Bookings V1 is now implemented locally. A tenant-local series
+stores one verified route and two to 50 occurrence times without pre-creating bookings or charging
+the series. Each occurrence receives a fresh current-price quote and uses the existing wallet/Stripe
+payment flow before atomically becoming one normal scheduled booking. Riders can skip one unpaid
+occurrence or cancel the remaining unpaid series; paid trips retain the existing individual refund
+contract. Admin has read-only operational visibility. Migration
+`20260815000100_recurring_rider_bookings_v1.sql`, client types, helper tests, architecture, and the
+production test are included. Validation is complete: Rider tests pass 8/8, Admin tests pass 57/57,
+Rider/Admin/Supabase typechecks pass, both production builds pass, and `git diff --check` passes.
+The remote migration dry run lists only `20260815000100_recurring_rider_bookings_v1.sql`. Existing
+Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -369,8 +382,9 @@ plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Validate Rider Wallet and Credits V1, dry-run only its intended migration, then hand the owner the
-database, Admin, and Rider deployment order plus the manual test.
+Owner commits the completed Recurring Rider Bookings V1 files, applies the single verified migration
+before production code deployment, pushes `main`, then runs the recurring-booking production manual
+test.
 
 ## Required reading for recovery
 
@@ -415,3 +429,5 @@ database, Admin, and Rider deployment order plus the manual test.
 - `docs/operations/rider-payment-disputes-manual-test.md`
 - `docs/architecture/rider-wallet-credits.md`
 - `docs/operations/rider-wallet-credits-manual-test.md`
+- `docs/architecture/recurring-rider-bookings.md`
+- `docs/operations/recurring-rider-bookings-manual-test.md`

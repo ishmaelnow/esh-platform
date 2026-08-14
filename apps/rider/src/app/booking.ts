@@ -73,3 +73,29 @@ export function zonedDateTimeToIso(localValue: string, timeZone: string) {
   }
   return new Date(candidate).toISOString();
 }
+
+export function generateRecurringPickupTimes(options: {
+  startDate: string; endDate: string; localTime: string; weekdays: number[]; timeZone: string; maximum?: number;
+}) {
+  const { startDate, endDate, localTime, timeZone } = options;
+  const maximum = options.maximum ?? 50;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate))
+    throw new Error("Choose valid recurring start and end dates.");
+  if (!/^\d{2}:\d{2}$/.test(localTime)) throw new Error("Choose a valid recurring pickup time.");
+  const weekdays = new Set(options.weekdays.filter((day) => Number.isInteger(day) && day >= 1 && day <= 7));
+  if (weekdays.size === 0) throw new Error("Choose at least one weekday.");
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  if (!Number.isFinite(start.valueOf()) || !Number.isFinite(end.valueOf()) || end < start)
+    throw new Error("Recurring end date must be on or after the start date.");
+  const result: string[] = [];
+  for (let current = start; current <= end; current = new Date(current.valueOf() + 86_400_000)) {
+    const isoWeekday = current.getUTCDay() === 0 ? 7 : current.getUTCDay();
+    if (!weekdays.has(isoWeekday)) continue;
+    const date = current.toISOString().slice(0, 10);
+    result.push(zonedDateTimeToIso(`${date}T${localTime}`, timeZone));
+    if (result.length > maximum) throw new Error(`Recurring schedules are limited to ${maximum} trips.`);
+  }
+  if (result.length < 2) throw new Error("Choose dates and weekdays that create at least two trips.");
+  return result;
+}
