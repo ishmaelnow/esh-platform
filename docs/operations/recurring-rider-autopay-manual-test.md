@@ -15,6 +15,8 @@ away unless invoking the protected cron manually, and clean up unfinished test t
    autopay** with only brand/last-four display.
 5. Enable autopay and confirm the Rider warns that future occurrences use current pricing and wallet
    credit first. Refresh and confirm it remains on; Admin Dispatch must show `Autopay: on`.
+   Eligible future occurrences must say **Autopay scheduled**, offer quiet **Pay early** and **Skip**
+   controls, and no longer present manual **Price and pay** as the primary action.
 6. For a controlled test, invoke the protected cron from Vercel or wait for its scheduled run with an
    unpaid occurrence inside 48 hours but outside minimum notice.
 7. Confirm exactly one new Stripe PaymentIntent for the current fare/card remainder, exactly one

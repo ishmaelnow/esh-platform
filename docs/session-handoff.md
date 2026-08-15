@@ -386,6 +386,15 @@ Rider/Admin/Supabase typechecks pass, both production builds pass, and `git diff
 The remote migration dry run lists only `20260815000200_recurring_rider_autopay_v2.sql`. Existing
 Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
+Recurring Rider Autopay V2 is deployed through commit `038ec7a`, its migration is applied, and the
+existing Rider production schedule detects the saved Stripe method and offers **Enable autopay**.
+A local Rider UX follow-up now treats autopay as the primary path: enabled future occurrences show
+**Autopay scheduled**, retain quiet **Pay early** and **Skip** recovery controls, hide payment
+controls while processing, and promote **Price and pay** only after definitive failure or when
+autopay is off. No migration or environment-variable change is required. Rider tests pass 8/8,
+Rider typecheck and production build pass, and `git diff --check` passes; the known Supabase
+Realtime and missing Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -396,9 +405,8 @@ Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner commits Recurring Rider Autopay V2, selects the two PaymentIntent recovery events on the
-existing Rider Stripe webhook, applies the single verified migration before production code
-deployment, pushes `main`, then runs the production manual test.
+Validate and deploy the recurring-autopay Rider control hierarchy follow-up, then continue the
+production autopay test with one eligible unpaid occurrence.
 
 ## Required reading for recovery
 

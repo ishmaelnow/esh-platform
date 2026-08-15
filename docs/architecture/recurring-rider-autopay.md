@@ -4,7 +4,10 @@ Recurring autopay is explicit and series-scoped. An ordinary Stripe Checkout sav
 payment method through `setup_future_usage=off_session`; ESH stores only Stripe customer/payment-
 method identifiers and limited display metadata (brand, last four, expiry), never card credentials.
 The Rider must separately enable autopay on an active recurring series and may disable it at any
-time without cancelling the schedule.
+time without cancelling the schedule. While enabled, unpaid occurrences present autopay as the
+primary state and retain a quiet **Pay early** recovery action. **Price and pay** becomes prominent
+only when autopay is disabled or has definitively failed; **Skip** remains available until payment
+processing starts.
 
 A protected Rider cron claims due unpaid occurrences at most 48 hours before pickup. Claims use row
 locks and occurrence status to prevent concurrent processing. The worker obtains a fresh Mapbox road
