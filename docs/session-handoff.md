@@ -4,7 +4,7 @@ Last updated: 2026-08-14
 
 ## Current objective
 
-Complete Recurring Rider Bookings V1 while the Stripe sandbox dispute retry issue remains deferred.
+Complete Recurring Rider Autopay V2 while the Stripe sandbox dispute retry issue remains deferred.
 
 ## Repository and deployment state
 
@@ -372,6 +372,20 @@ Rider/Admin/Supabase typechecks pass, both production builds pass, and `git diff
 The remote migration dry run lists only `20260815000100_recurring_rider_bookings_v1.sql`. Existing
 Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
+Recurring Rider Bookings V1 is deployed through commit `714fcf4`; the owner reported production
+series creation, one paid scheduled occurrence, and later unpaid occurrences all display correctly.
+Recurring Rider Autopay V2 is now implemented locally. Ordinary Stripe Checkout saves only reusable
+Stripe references after explicit card consent. Riders separately enable autopay per active series.
+The protected Rider cron prices each due occurrence at current rates, applies wallet credit first,
+charges the saved method off-session, atomically creates one scheduled booking, and records bounded
+retry or manual-recovery state. Rider and Admin visibility, action-required email, RLS, service-only
+mutation, audit, client types, architecture, and the production manual test are included. Migration
+`20260815000200_recurring_rider_autopay_v2.sql` requires owner application before the Rider/Admin
+deployment. Validation is complete: Rider tests pass 8/8, Admin tests pass 59/59,
+Rider/Admin/Supabase typechecks pass, both production builds pass, and `git diff --check` passes.
+The remote migration dry run lists only `20260815000200_recurring_rider_autopay_v2.sql`. Existing
+Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -382,9 +396,9 @@ Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner commits the completed Recurring Rider Bookings V1 files, applies the single verified migration
-before production code deployment, pushes `main`, then runs the recurring-booking production manual
-test.
+Owner commits Recurring Rider Autopay V2, selects the two PaymentIntent recovery events on the
+existing Rider Stripe webhook, applies the single verified migration before production code
+deployment, pushes `main`, then runs the production manual test.
 
 ## Required reading for recovery
 
@@ -431,3 +445,5 @@ test.
 - `docs/operations/rider-wallet-credits-manual-test.md`
 - `docs/architecture/recurring-rider-bookings.md`
 - `docs/operations/recurring-rider-bookings-manual-test.md`
+- `docs/architecture/recurring-rider-autopay.md`
+- `docs/operations/recurring-rider-autopay-manual-test.md`

@@ -23,7 +23,7 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `TENANT_ADMIN_BASE_URL`         | Admin server routes | `apps/admin/.env.local` | Admin only           | Public tenant/Rider origin used after invitation acceptance.                 |
 | `NEXT_PUBLIC_DRIVER_APP_URL`    | Admin notifications | `apps/admin/.env.local` | Admin only           | Driver portal origin used in driver notification links.                      |
 | `NEXT_PUBLIC_RIDER_APP_URL`     | Admin notifications | `apps/admin/.env.local` | Admin only           | Rider portal origin used in Rider trip notification links.                   |
-| `CRON_SECRET`                   | Admin scheduled job | `apps/admin/.env.local` | Admin only           | Authenticates Vercel's daily notification delivery request.                  |
+| `CRON_SECRET`                   | Scheduled jobs | app-specific `.env.local` | Admin, Rider | Authenticates Vercel's daily notification and recurring-autopay requests. Use a server-only high-entropy value. |
 | `NOTIFICATION_DELIVERY_URL`     | Transactional notification request | app-specific `.env.local` | Rider, Driver | Exact Admin internal delivery endpoint; server-only despite being a URL. |
 | `NOTIFICATION_DELIVERY_SECRET`  | Transactional notification request | app-specific `.env.local` | Admin, Rider, Driver | Shared high-entropy server credential authorizing event-driven outbox delivery. Never expose publicly. |
 

@@ -12,4 +12,5 @@ Current operations documents:
 - [Trip Pricing Manual Test](./trip-pricing-manual-test.md)
 - [Driver Earnings and Wallet V1 Manual Test](./driver-earnings-wallet-manual-test.md)
 - [Rider Payments and Collection V1 Manual Test](./rider-payments-collection-manual-test.md)
+- [Recurring Rider Autopay V2 Manual Test](./recurring-rider-autopay-manual-test.md)
 - [Driver Stripe Connect Onboarding V1 Manual Test](./driver-connect-onboarding-manual-test.md)

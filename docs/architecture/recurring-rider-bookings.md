@@ -23,6 +23,10 @@ refund lifecycle is honored. Cancelling a series never silently cancels or refun
 Tenant dispatch managers receive read-only series and occurrence visibility; Rider RLS prevents
 cross-Rider and cross-tenant access.
 
-Deferred: automatic payment reminders, automatic off-session charging, saved payment methods,
-series editing, rolling generation beyond the tenant advance window, bulk cancellation/refund of
-paid occurrences, advance Driver reservation, and series-level fare guarantees.
+Recurring Rider Autopay V2 adds explicit per-series authorization, one saved Stripe payment-method
+reference, current-price off-session collection, bounded retries, action-required email, and manual
+recovery without changing V1's safe cancellation boundary.
+
+Deferred: multiple saved payment methods, series editing, rolling generation beyond the tenant
+advance window, bulk cancellation/refund of paid occurrences, advance Driver reservation, and
+series-level fare guarantees.

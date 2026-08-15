@@ -54,12 +54,14 @@ export async function POST(request: Request) {
     const stripe = createStripeClient();
     const checkout = await stripe.checkout.sessions.create({
       mode: "payment",
+      customer_creation: "always",
       line_items: [{ price_data: { currency: quote.currency_code.toLowerCase(), unit_amount: split.cardAmountMinor,
         product_data: { name: "ESH trip", description: `${quote.pickup_address} to ${quote.destination_address}` } }, quantity: 1 }],
       success_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=success&quote=${quote.quote_id}${occurrenceId ? `&occurrence=${encodeURIComponent(occurrenceId)}` : ""}`,
       cancel_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=cancelled`,
       metadata: { quote_id: quote.quote_id, tenant_id: quote.tenant_id,
         wallet_amount_minor: String(split.walletAmountMinor) },
+      payment_intent_data: { setup_future_usage: "off_session" },
     }, { idempotencyKey: `rider_quote_${quote.quote_id}` });
     providerSessionCreated = true;
     if (!checkout.url) throw new Error("Payment checkout is unavailable.");

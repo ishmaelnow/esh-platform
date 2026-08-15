@@ -69,6 +69,7 @@ export type RiderWalletEntryRow = Tables<"rider_wallet_entries">;
 export type RiderWalletQuoteAllocationRow = Tables<"rider_wallet_quote_allocations">;
 export type RiderBookingSeriesRow = Tables<"rider_booking_series">;
 export type RiderBookingSeriesOccurrenceRow = Tables<"rider_booking_series_occurrences">;
+export type RiderSavedPaymentMethodRow = Tables<"rider_saved_payment_methods">;
 export type CompletedTripRefundRecoveryRow = Tables<"completed_trip_refund_recoveries">;
 export type DriverPayoutAccountRow = Tables<"driver_payout_accounts">;
 export type DriverEarningTransferRow = Tables<"driver_earning_transfers">;

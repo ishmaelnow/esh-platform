@@ -208,7 +208,8 @@ export function buildRiderNotificationContent(
   const tenantSlug = textValue(payload.tenant_slug);
   const amount = moneyValue(payload.amount_minor, payload.currency_code);
   const financialNotification = notificationType === "rider_payment_succeeded"
-    || notificationType === "rider_refund_succeeded";
+    || notificationType === "rider_refund_succeeded"
+    || notificationType.startsWith("rider_recurring_autopay_");
   const portalUrl = new URL("/", riderAppUrl);
   if (tenantSlug) portalUrl.searchParams.set("tenant", tenantSlug);
   if (financialNotification) portalUrl.searchParams.set("view", "payments");
@@ -267,6 +268,16 @@ export function buildRiderNotificationContent(
     rider_refund_succeeded: {
       subject: "Your ESH trip refund was issued",
       intro: `${riderName}, your refund${amount ? ` of ${amount}` : ""} was issued to the original payment method.`,
+    },
+    rider_recurring_autopay_succeeded: {
+      subject: "Your recurring ESH trip was paid and scheduled",
+      intro: `${riderName}, automatic payment succeeded and your recurring trip is scheduled.`,
+      details: scheduledPickup ? [`Pickup time: ${scheduledPickup} (${tenantTimeZone})`] : [],
+    },
+    rider_recurring_autopay_failed: {
+      subject: "Action needed for your recurring ESH trip",
+      intro: `${riderName}, we could not automatically pay for your upcoming recurring trip. Open ESH to review the fare and pay manually.`,
+      details: scheduledPickup ? [`Pickup time: ${scheduledPickup} (${tenantTimeZone})`] : [],
     },
   };
   const message = messages[notificationType];

@@ -160,4 +160,24 @@ describe("rider notification email content", () => {
     expect(content.text).toContain("$10.59");
     expect(content.text).toContain("view=payments");
   });
+
+  it("builds a recurring autopay success notice with the tenant-local pickup", () => {
+    const content = buildRiderNotificationContent("rider_recurring_autopay_succeeded", {
+      rider_name: "Repeat Rider", tenant_slug: "philadelphia",
+      scheduled_pickup_at: "2026-08-16T00:40:00.000Z", tenant_time_zone: "America/New_York",
+      pickup_address: "1200 Sansom Street", destination_address: "237 McClellan Street",
+    }, "https://rider.eshapp.com");
+    expect(content.subject).toContain("paid and scheduled");
+    expect(content.text).toContain("8:40 PM");
+    expect(content.text).toContain("view=payments");
+  });
+
+  it("builds an actionable recurring autopay failure notice", () => {
+    const content = buildRiderNotificationContent("rider_recurring_autopay_failed", {
+      rider_name: "Repeat Rider", tenant_slug: "philadelphia",
+      scheduled_pickup_at: "2026-08-16T00:40:00.000Z", tenant_time_zone: "America/New_York",
+    }, "https://rider.eshapp.com");
+    expect(content.subject).toContain("Action needed");
+    expect(content.text).toContain("pay manually");
+  });
 });

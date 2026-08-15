@@ -119,6 +119,9 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery in progress: tenant-local recurring Rider schedules with verified routes,
      individually priced/paid occurrences, one-occurrence and remaining-unpaid-series cancellation,
      Admin visibility, tenant isolation, and duplicate-safe scheduled booking creation.
+   - Current delivery in progress: explicit recurring-trip autopay authorization, saved Stripe
+     payment-method references, fresh per-occurrence pricing, wallet-first off-session collection,
+     bounded retry/manual recovery, Rider alerts, and Admin failure visibility.
    - Remaining: SMS/push delivery.
 6. **Reputation**
    - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-

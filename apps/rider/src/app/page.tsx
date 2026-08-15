@@ -109,9 +109,9 @@ type RiderPayment = {
 };
 type RiderPaymentDispute = { disputeId: string; amountMinor: number; feeMinor: number; status: string; reason: string; evidenceDueAt: string | null; fundsWithdrawnAt: string | null; fundsWithdrawnMinor: number; fundsReinstatedAt: string | null; fundsReinstatedMinor: number };
 type RiderWallet = { currencyCode: string; fractionDigits: number; balanceMinor: number; availableMinor: number; entries: Array<{ entryId: string; direction: "credit" | "debit"; entryType: string; amountMinor: number; description: string; bookingId: string | null; createdAt: string }> };
-type RiderBookingSeries = { seriesId: string; serviceAreaId: string; pickupAddress: string; destinationAddress: string; timeZone: string; localPickupTime: string; weekdays: number[]; startDate: string; endDate: string; status: string; createdAt: string };
-type RiderSeriesOccurrence = { occurrenceId: string; seriesId: string; scheduledPickupAt: string; status: string; quoteId: string | null; bookingId: string | null };
-type RiderSeriesSummary = { series: RiderBookingSeries[]; occurrences: RiderSeriesOccurrence[] };
+type RiderBookingSeries = { seriesId: string; serviceAreaId: string; pickupAddress: string; destinationAddress: string; timeZone: string; localPickupTime: string; weekdays: number[]; startDate: string; endDate: string; status: string; autopayEnabled: boolean; createdAt: string };
+type RiderSeriesOccurrence = { occurrenceId: string; seriesId: string; scheduledPickupAt: string; status: string; autopayStatus: string; autopayFailureMessage: string | null; quoteId: string | null; bookingId: string | null };
+type RiderSeriesSummary = { savedPaymentMethod: { brand: string | null; last4: string | null; expiresMonth: number | null; expiresYear: number | null } | null; series: RiderBookingSeries[]; occurrences: RiderSeriesOccurrence[] };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
@@ -162,7 +162,7 @@ export default function RiderHome() {
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [payments, setPayments] = useState<RiderPayment[]>([]);
   const [wallet, setWallet] = useState<RiderWallet | null>(null);
-  const [recurring, setRecurring] = useState<RiderSeriesSummary>({ series: [], occurrences: [] });
+  const [recurring, setRecurring] = useState<RiderSeriesSummary>({ savedPaymentMethod: null, series: [], occurrences: [] });
   const [recurringOccurrenceId, setRecurringOccurrenceId] = useState<string | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<Record<string, string>>({});
   const [paymentReceiptUrls, setPaymentReceiptUrls] = useState<Record<string, string>>({});
@@ -786,6 +786,24 @@ export default function RiderHome() {
     setBusy(false);
   }
 
+  async function setRecurringAutopay(series: RiderBookingSeries, enabled: boolean) {
+    if (!supabase) return;
+    const warning = enabled
+      ? "Enable automatic payment for future occurrences using your saved Stripe payment method? Each fare will use current pricing and wallet credit first."
+      : "Turn off automatic payment for this recurring schedule?";
+    if (!window.confirm(warning)) return;
+    setBusy(true); setError(""); setMessage("");
+    const result = await supabase.rpc("set_my_rider_booking_series_autopay", {
+      target_series_id: series.seriesId, enabled_value: enabled,
+    });
+    if (result.error) setError(riderErrorMessage(result.error));
+    else {
+      await loadRecurring();
+      setMessage(enabled ? "Automatic payment enabled. Future trips will be priced and charged before pickup." : "Automatic payment disabled. Future trips require manual payment.");
+    }
+    setBusy(false);
+  }
+
   async function cancelBooking(bookingId: string) {
     if (!supabase || !window.confirm("Cancel this trip request?")) return;
     setBusy(true);
@@ -1195,8 +1213,9 @@ export default function RiderHome() {
                 return <article className="card trip-card" key={series.seriesId}>
                   <div className="trip-top"><div><span className={`status status-${series.status}`}>{series.status}</span><h3>{series.pickupAddress}</h3><p className="destination">to {series.destinationAddress}</p></div><time>{series.startDate} through {series.endDate}</time></div>
                   <p className="area">Repeats {series.weekdays.map((day) => ["","Mon","Tue","Wed","Thu","Fri","Sat","Sun"][day]).join(", ")} at {series.localPickupTime.slice(0, 5)} ({series.timeZone})</p>
+                  <div className="preference-card"><div><strong>Automatic payment</strong><p>{series.autopayEnabled ? `On${recurring.savedPaymentMethod?.last4 ? ` · ${recurring.savedPaymentMethod.brand ?? "card"} ending ${recurring.savedPaymentMethod.last4}` : ""}. Current fare is charged before each trip.` : recurring.savedPaymentMethod ? "Off · Enable to price and pay upcoming trips automatically." : "Complete one card payment to securely save a Stripe payment method, then enable autopay."}</p></div>{series.status === "active" && (recurring.savedPaymentMethod || series.autopayEnabled) ? <button className="button secondary compact" disabled={busy} onClick={() => void setRecurringAutopay(series, !series.autopayEnabled)} type="button">{series.autopayEnabled ? "Turn off autopay" : "Enable autopay"}</button> : null}</div>
                   {series.status === "active" ? <button className="text-button danger" disabled={busy} onClick={() => void cancelRecurringSeries(series.seriesId)} type="button">Cancel remaining schedule</button> : null}
-                  <div className="panel-stack">{occurrences.map((occurrence) => <div className="preference-card" key={occurrence.occurrenceId}><div><strong>{formatDate(occurrence.scheduledPickupAt, series.timeZone)}</strong><p>{occurrence.status === "awaiting_payment" ? "Awaiting fare review and payment" : occurrence.status === "payment_pending" ? "Payment started; finish booking after confirmation" : occurrence.status === "booked" ? `Scheduled trip ${occurrence.bookingId?.slice(0, 8)}` : "Cancelled"}</p></div>{occurrence.status === "awaiting_payment" && series.status === "active" ? <div><button className="button primary compact" disabled={busy} onClick={() => void payRecurringOccurrence(occurrence, series)} type="button">Price and pay</button><button className="text-button danger" disabled={busy} onClick={() => void cancelRecurringOccurrence(occurrence.occurrenceId)} type="button">Skip</button></div> : occurrence.status === "payment_pending" && series.status === "active" ? <button className="button secondary compact" disabled={busy} onClick={() => void resumeRecurringOccurrence(occurrence, series)} type="button">Check payment</button> : null}</div>)}</div>
+                  <div className="panel-stack">{occurrences.map((occurrence) => <div className="preference-card" key={occurrence.occurrenceId}><div><strong>{formatDate(occurrence.scheduledPickupAt, series.timeZone)}</strong><p>{occurrence.status === "awaiting_payment" ? occurrence.autopayStatus === "processing" ? "Automatic payment processing" : occurrence.autopayStatus === "retryable" ? "Automatic payment will retry" : occurrence.autopayStatus === "failed" ? "Automatic payment failed—pay manually to keep this trip" : series.autopayEnabled ? "Autopay scheduled before pickup" : "Awaiting fare review and payment" : occurrence.status === "payment_pending" ? "Payment started; finish booking after confirmation" : occurrence.status === "booked" ? `Scheduled trip ${occurrence.bookingId?.slice(0, 8)}${occurrence.autopayStatus === "succeeded" ? " · paid automatically" : ""}` : "Cancelled"}</p>{occurrence.autopayFailureMessage ? <p className="field-hint">{occurrence.autopayFailureMessage}</p> : null}</div>{occurrence.status === "awaiting_payment" && series.status === "active" ? <div><button className="button primary compact" disabled={busy || occurrence.autopayStatus === "processing"} onClick={() => void payRecurringOccurrence(occurrence, series)} type="button">Price and pay</button><button className="text-button danger" disabled={busy || occurrence.autopayStatus === "processing"} onClick={() => void cancelRecurringOccurrence(occurrence.occurrenceId)} type="button">Skip</button></div> : occurrence.status === "payment_pending" && series.status === "active" ? <button className="button secondary compact" disabled={busy} onClick={() => void resumeRecurringOccurrence(occurrence, series)} type="button">Check payment</button> : null}</div>)}</div>
                 </article>;
               })}
             </div> : null}
