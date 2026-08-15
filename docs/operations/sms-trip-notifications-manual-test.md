@@ -8,7 +8,8 @@
 3. Dry-run and apply only `20260815000400_sms_trip_notifications_v1.sql`, then deploy Admin,
    Rider, and Driver.
 4. In Rider **My trips**, enter a test mobile number in E.164 format, request a code, enter the
-   received code, and confirm the UI shows only the last four digits.
+   received code, and confirm success or failure appears inside the Text alerts card and the enabled
+   UI shows only the last four digits.
 5. Repeat in Driver **Text alerts**. Confirm an incorrect or expired code does not enable texts.
 6. Create a test trip. Confirm Driver receives one generic new-offer text with no Rider name,
    address, or fare.

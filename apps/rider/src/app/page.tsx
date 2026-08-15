@@ -193,6 +193,7 @@ export default function RiderHome() {
   const [smsCode, setSmsCode] = useState("");
   const [smsPending, setSmsPending] = useState(false);
   const [smsBusy, setSmsBusy] = useState(false);
+  const [smsFeedback, setSmsFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments" | "wallet">("book");
   const [loading, setLoading] = useState(true);
@@ -915,22 +916,22 @@ export default function RiderHome() {
 
   async function updateRiderSms(action: "start" | "check" | "disable") {
     if (!session || !supabase) return;
-    setSmsBusy(true); setError(""); setMessage("");
+    setSmsBusy(true); setSmsFeedback(null);
     try {
       if (action === "disable") {
         const result = await supabase.rpc("disable_my_rider_sms_notifications", { target_tenant_slug: tenantSlug });
         if (result.error) throw result.error;
         setSmsSettings((current) => ({ ...current, enabled: false })); setSmsPending(false);
-        setMessage("Text alerts disabled."); return;
+        setSmsFeedback({ kind: "success", message: "Text alerts disabled." }); return;
       }
       const response = await fetch("/api/notifications/sms", { method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ action, phone: smsPhone, code: smsCode, tenantSlug }) });
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message ?? "SMS verification failed.");
-      if (action === "start") { setSmsPending(true); setMessage("Verification code sent. Standard message rates may apply."); }
-      else { setSmsPending(false); setSmsCode(""); setMessage("Phone verified and transactional text alerts enabled."); await loadPortal(); }
-    } catch (value) { setError(riderErrorMessage(value)); } finally { setSmsBusy(false); }
+      if (action === "start") { setSmsPending(true); setSmsFeedback({ kind: "success", message: "Verification code sent. Check this phone for the SMS. Standard message rates may apply." }); }
+      else { setSmsPending(false); setSmsCode(""); setSmsFeedback({ kind: "success", message: "Phone verified and transactional text alerts enabled." }); await loadPortal(); }
+    } catch (value) { setSmsFeedback({ kind: "error", message: riderErrorMessage(value) }); } finally { setSmsBusy(false); }
   }
 
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -1282,6 +1283,7 @@ export default function RiderHome() {
                 <label>Mobile number<input value={smsPhone} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" inputMode="tel" /></label>
                 {!smsPending ? <button className="button secondary compact" disabled={smsBusy || !smsPhone} onClick={() => void updateRiderSms("start")} type="button">Send verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="button secondary compact" disabled={smsBusy || !smsCode} onClick={() => void updateRiderSms("check")} type="button">Verify and enable texts</button></>}
               </div>}
+              {smsFeedback ? <p className={smsFeedback.kind === "error" ? "error" : "notice"} role="status">{smsFeedback.message}</p> : null}
             </div>
             {recurring.series.length > 0 ? <div className="panel-stack">
               <div className="section-heading"><div><p className="kicker">Recurring schedules</p><h3>Upcoming repeat trips</h3></div></div>

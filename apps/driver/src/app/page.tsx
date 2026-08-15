@@ -189,6 +189,7 @@ export default function DriverHome() {
   const [smsCode, setSmsCode] = useState("");
   const [smsPending, setSmsPending] = useState(false);
   const [smsBusy, setSmsBusy] = useState(false);
+  const [smsFeedback, setSmsFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
   const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
   const [vehiclePhotoMessage, setVehiclePhotoMessage] = useState<string | null>(null);
@@ -746,22 +747,22 @@ export default function DriverHome() {
 
   async function updateDriverSms(action: "start" | "check" | "disable") {
     if (!session || !supabase) return;
-    setSmsBusy(true); setPreferenceMessage(null);
+    setSmsBusy(true); setSmsFeedback(null);
     try {
       if (action === "disable") {
         const result = await supabase.rpc("disable_my_driver_sms_notifications");
         if (result.error) throw result.error;
         setSmsSettings((current) => ({ ...current, enabled: false })); setSmsPending(false);
-        setPreferenceMessage("Text alerts disabled."); return;
+        setSmsFeedback({ kind: "success", message: "Text alerts disabled." }); return;
       }
       const response = await fetch("/api/notifications/sms", { method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ action, phone: smsPhone, code: smsCode }) });
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message ?? "SMS verification failed.");
-      if (action === "start") { setSmsPending(true); setPreferenceMessage("Verification code sent. Standard message rates may apply."); }
-      else { setSmsPending(false); setSmsCode(""); setSmsSettings({ enabled: true, maskedPhone: `••••${smsPhone.replace(/\D/g, "").slice(-4)}`, verifiedAt: new Date().toISOString() }); setPreferenceMessage("Phone verified and transactional text alerts enabled."); }
-    } catch (error) { setPreferenceMessage(error instanceof Error ? error.message : "SMS verification failed."); }
+      if (action === "start") { setSmsPending(true); setSmsFeedback({ kind: "success", message: "Verification code sent. Check this phone for the SMS. Standard message rates may apply." }); }
+      else { setSmsPending(false); setSmsCode(""); setSmsSettings({ enabled: true, maskedPhone: `••••${smsPhone.replace(/\D/g, "").slice(-4)}`, verifiedAt: new Date().toISOString() }); setSmsFeedback({ kind: "success", message: "Phone verified and transactional text alerts enabled." }); }
+    } catch (error) { setSmsFeedback({ kind: "error", message: error instanceof Error ? error.message : "SMS verification failed." }); }
     finally { setSmsBusy(false); }
   }
 
@@ -1856,6 +1857,7 @@ export default function DriverHome() {
                 <label>Mobile number<input value={smsPhone} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" inputMode="tel" /></label>
                 {!smsPending ? <button className="secondary" disabled={smsBusy || !smsPhone} onClick={() => void updateDriverSms("start")} type="button">Send verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="secondary" disabled={smsBusy || !smsCode} onClick={() => void updateDriverSms("check")} type="button">Verify and enable texts</button></>}
               </>}
+              {smsFeedback ? <p className={smsFeedback.kind === "error" ? "form-error" : "upload-message"} role="status">{smsFeedback.message}</p> : null}
             </section>
             <button
               className="secondary"

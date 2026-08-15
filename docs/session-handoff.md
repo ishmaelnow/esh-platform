@@ -423,6 +423,11 @@ Admin, Rider, Driver, and Supabase typechecks pass; all three production builds 
 `20260815000400_sms_trip_notifications_v1.sql`. Existing Supabase Realtime and missing Next
 ESLint-plugin warnings remain non-blocking.
 
+Production verification exposed that Rider SMS success/failure used the distant page-level banner.
+A local UX correction now gives Rider and Driver dedicated inline SMS status beside the initiating
+control, including code-sent, verification, opt-out, and provider/configuration errors. It requires
+owner commit/deployment before continuing the phone-verification test.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
