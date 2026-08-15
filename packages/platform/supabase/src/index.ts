@@ -53,6 +53,7 @@ export type DriverServiceAreaAssignmentRow = Tables<"driver_service_area_assignm
 export type DispatchBookingRow = Tables<"dispatch_bookings">;
 export type DispatchOfferRow = Tables<"dispatch_offers">;
 export type TripRatingRow = Tables<"trip_ratings">;
+export type TripRatingAppealRow = Tables<"trip_rating_appeals">;
 export type CurrencyCodeRow = Tables<"currency_codes">;
 export type TenantFinancialSettingsRow = Tables<"tenant_financial_settings">;
 export type LedgerAccountRow = Tables<"ledger_accounts">;

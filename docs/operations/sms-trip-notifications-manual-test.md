@@ -25,3 +25,10 @@
 Pass requires verified ownership, explicit consent, role/tenant-derived subscription mutation,
 masked browser display, privacy-safe copy, idempotent attempts, independent channels, audit events,
 and immediate opt-out.
+
+## Current production blocker
+
+Twilio rejected the first Rider verification request because the configured account is suspended
+with an unexplained negative balance. Twilio billing ticket `#29018616` requests the transaction-
+level balance history. Do not change ESH credentials or retry production SMS until Twilio confirms
+the account is active. Email and Web Push remain unaffected.

@@ -1,6 +1,7 @@
 # Operations
 
 - [SMS Trip Notifications V1 production test](./sms-trip-notifications-manual-test.md)
+- [Reputation Appeals V2 production test](./trip-reputation-appeals-manual-test.md)
 
 This directory will document production operations.
 

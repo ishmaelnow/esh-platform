@@ -4,8 +4,8 @@ Last updated: 2026-08-15
 
 ## Current objective
 
-Complete SMS Trip Notifications V1 after Web Push Notifications V1 passed production testing;
-the Stripe sandbox dispute retry issue remains deferred.
+Complete Reputation Appeals V2 while SMS production verification waits on Twilio billing ticket
+`#29018616`; the Stripe sandbox dispute retry issue also remains deferred.
 
 ## Repository and deployment state
 
@@ -424,9 +424,23 @@ Admin, Rider, Driver, and Supabase typechecks pass; all three production builds 
 ESLint-plugin warnings remain non-blocking.
 
 Production verification exposed that Rider SMS success/failure used the distant page-level banner.
-A local UX correction now gives Rider and Driver dedicated inline SMS status beside the initiating
-control, including code-sent, verification, opt-out, and provider/configuration errors. It requires
-owner commit/deployment before continuing the phone-verification test.
+The inline-feedback correction is deployed through commit `5ca506e`. The next verification request
+reached Twilio but was rejected because the configured account is suspended with an unexplained
+negative balance. Twilio billing ticket `#29018616` requests the transaction-level history. SMS
+production testing is deferred until Twilio reactivates the account; email and Web Push remain
+operational.
+
+Reputation Appeals V2 is implemented locally. Riders and Drivers can submit one appeal only for a
+received rating already revealed by the existing retaliation-resistant disclosure rule. The
+database derives trip ownership and appellant role, keeps the source rating and appeal history,
+and records tenant audit events. Admin Reputation loads tenant-scoped appeals and can uphold or
+remove a rating with required resolution notes; Rider and Driver portals show the appeal outcome.
+Migration `20260815000500_trip_rating_appeals_v2.sql`, shared client types, architecture, and the
+production manual test are included. Supabase, Admin, Rider, and Driver typechecks pass; Admin tests
+pass 63/63, Rider tests pass 8/8, Driver tests pass 13/13; all three production builds and
+`git diff --check` pass. The existing Supabase Realtime and missing Next ESLint-plugin warnings
+remain non-blocking. The remote migration dry run lists only the intended appeals migration. Next:
+owner apply/deploy and run the manual test.
 
 ## Cleanup still required after testing
 
@@ -438,8 +452,8 @@ owner commit/deployment before continuing the phone-verification test.
 
 ## Exact next action
 
-Complete SMS validation, dry-run only `20260815000400_sms_trip_notifications_v1.sql`, then hand the
-owner exact Twilio configuration, migration, Git, deployment, and production-test steps.
+Apply the single Reputation Appeals V2 migration, commit/deploy the validated changes, and run the
+production manual test.
 
 ## Required reading for recovery
 
@@ -452,6 +466,7 @@ owner exact Twilio configuration, migration, Git, deployment, and production-tes
 - `docs/architecture/automatic-driver-matching.md`
 - `docs/architecture/realtime-driver-location.md`
 - `docs/architecture/trip-reputation.md`
+- `docs/operations/trip-reputation-appeals-manual-test.md`
 - `docs/architecture/ledger-foundation.md`
 - `docs/operations/ledger-foundation-manual-test.md`
 - `docs/architecture/trip-pricing.md`

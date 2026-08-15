@@ -143,6 +143,7 @@ type DriverLocationSharing = {
 };
 type TripRating = { overall: number; criteria: Record<string, number>; comment: string | null; submittedAt: string };
 type ReputationTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null };
+type RatingAppeal = { appealId: string; bookingId: string; status: "submitted" | "upheld" | "removed"; reason: string; resolutionNotes: string | null; submittedAt: string; resolvedAt: string | null };
 type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string; fareAmountMinor: number; earningsAmountMinor: number; platformFeeMinor: number; shareBasisPoints: number; paymentCollected: boolean; transferStatus: "pending" | "succeeded" | "failed" | "reversed" | null; earningsReversed: boolean; earningsReversalReason: string | null };
 type DriverWallet = { currencyCode: string; balanceMinor: number; pendingMinor: number; availableMinor: number; paidMinor: number; trips: DriverWalletTrip[] };
 type DriverPayoutAccount = { exists: boolean; onboardingStatus: "not_started" | "details_required" | "under_review" | "enabled" | "restricted"; detailsSubmitted: boolean; payoutsEnabled: boolean; transfersCapabilityStatus: string | null; requirementsCurrentlyDue: string[]; disabledReason: string | null; updatedAt: string | null };
@@ -211,6 +212,7 @@ export default function DriverHome() {
   const [dispatchBusy, setDispatchBusy] = useState(false);
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
+  const [ratingAppeals, setRatingAppeals] = useState<RatingAppeal[]>([]);
   const [wallet, setWallet] = useState<DriverWallet | null>(null);
   const [payoutAccount, setPayoutAccount] = useState<DriverPayoutAccount | null>(null);
   const [bankPayouts, setBankPayouts] = useState<DriverBankPayout[]>([]);
@@ -294,6 +296,8 @@ export default function DriverHome() {
     }
     const reputationResult = await supabase.rpc("my_driver_reputation");
     setReputationTrips(reputationResult.error ? [] : (reputationResult.data as unknown as ReputationTrip[]));
+    const appealResult = await supabase.rpc("my_driver_rating_appeals");
+    setRatingAppeals(appealResult.error ? [] : (appealResult.data as unknown as RatingAppeal[]));
     const walletResult = await supabase.rpc("my_driver_wallet");
     setWallet(walletResult.error || !walletResult.data ? null : (walletResult.data as unknown as DriverWallet));
     const payoutResult = await supabase.rpc("my_driver_payout_account");
@@ -1046,6 +1050,20 @@ export default function DriverHome() {
     setDispatchBusy(false);
   }
 
+  async function submitRatingAppeal(bookingId: string) {
+    if (!supabase) return;
+    const reason = window.prompt("Explain why this received rating should be reviewed (10–1,000 characters).");
+    if (!reason?.trim()) return;
+    setDispatchBusy(true); setDispatchMessage("Submitting rating appeal…");
+    const result = await supabase.rpc("submit_my_driver_rating_appeal", {
+      target_booking_id: bookingId,
+      reason_value: reason,
+    });
+    if (result.error) setDispatchMessage(result.error.message);
+    else { setDispatchMessage("Your rating appeal was submitted for review."); await activateAndLoad(); }
+    setDispatchBusy(false);
+  }
+
   async function advanceTrip(bookingId: string, action: "arrive" | "start" | "complete") {
     if (!supabase) return;
     setDispatchBusy(true);
@@ -1583,19 +1601,21 @@ export default function DriverHome() {
             {activeTab === "reputation" ? (
               <section className="documents">
                 <div><p className="eyebrow">Reputation</p><h3>Post-trip ratings</h3><p className="document-help">Ratings stay private until both sides submit, or seven days pass.</p></div>
-                {reputationTrips.map((trip) => (
-                  <article className="document-card" key={trip.bookingId}>
+                {reputationTrips.map((trip) => {
+                  const appeal = ratingAppeals.find((item) => item.bookingId === trip.bookingId);
+                  return <article className="document-card" key={trip.bookingId}>
                     <div className="document-heading"><strong>{trip.subjectName}</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
                     <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
                     {trip.submittedRating ? <span>Your rating: {trip.submittedRating.overall}/5</span> : null}
                     {trip.receivedRating ? <span>Rider rating: {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</span> : null}
+                    {appeal ? <span><strong>Appeal: {appeal.status.replaceAll("_", " ")}</strong> · {appeal.reason}{appeal.resolutionNotes ? ` · Resolution: ${appeal.resolutionNotes}` : ""}</span> : trip.receivedRating ? <button disabled={dispatchBusy} onClick={() => void submitRatingAppeal(trip.bookingId)} type="button">Appeal received rating</button> : null}
                     {trip.canSubmit ? <form className="upload-form" onSubmit={(event) => void submitTripRating(event, trip.bookingId)}>
                       {[["overall", "Overall"], ["communication", "Communication"], ["readiness", "Readiness"], ["respect", "Respect"]].map(([name, label]) => <label key={name}>{label}<select name={name} defaultValue="5">{[5,4,3,2,1].map((value) => <option value={value} key={value}>{value} / 5</option>)}</select></label>)}
                       <label>Optional comment<textarea name="comment" maxLength={1000} rows={3} /></label>
                       <button disabled={dispatchBusy} type="submit">Submit private rating</button>
                     </form> : !trip.submittedRating ? <span>The 30-day rating window has closed.</span> : null}
-                  </article>
-                ))}
+                  </article>;
+                })}
                 {reputationTrips.length === 0 ? <p className="document-help">Completed Rider trips will appear here.</p> : null}
                 {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
               </section>

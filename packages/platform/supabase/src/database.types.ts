@@ -653,6 +653,54 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_rating_appeals: {
+        Row: {
+          appellant_person_id: string
+          appellant_type: string
+          booking_id: string
+          rating_appeal_id: string
+          rating_id: string
+          reason: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by_person_id: string | null
+          status: string
+          submitted_at: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          appellant_person_id: string
+          appellant_type: string
+          booking_id: string
+          rating_appeal_id?: string
+          rating_id: string
+          reason: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by_person_id?: string | null
+          status?: string
+          submitted_at?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          appellant_person_id?: string
+          appellant_type?: string
+          booking_id?: string
+          rating_appeal_id?: string
+          rating_id?: string
+          reason?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by_person_id?: string | null
+          status?: string
+          submitted_at?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       currency_codes: {
         Row: { currency_code: string; display_name: string; fraction_digits: number }
         Insert: { currency_code: string; display_name: string; fraction_digits: number }
@@ -2299,6 +2347,7 @@ export type Database = {
       my_driver_service_areas: { Args: never; Returns: Json }
       my_driver_location_sharing: { Args: never; Returns: Json }
       my_driver_reputation: { Args: never; Returns: Json }
+      my_driver_rating_appeals: { Args: never; Returns: Json }
       my_driver_wallet: { Args: never; Returns: Json }
       my_driver_payout_account: { Args: never; Returns: Json }
       my_driver_bank_payouts: { Args: never; Returns: Json }
@@ -2345,8 +2394,16 @@ export type Database = {
         Args: { target_tenant_slug: string }
         Returns: Json
       }
+      my_rider_rating_appeals: {
+        Args: { target_tenant_slug: string }
+        Returns: Json
+      }
       moderate_trip_rating: {
         Args: { reason_value: string; target_rating_id: string; target_status: string }
+        Returns: boolean
+      }
+      resolve_trip_rating_appeal: {
+        Args: { resolution_notes_value: string; resolution_value: string; target_appeal_id: string }
         Returns: boolean
       }
       initialize_tenant_ledger: {
@@ -2396,6 +2453,10 @@ export type Database = {
         }
         Returns: string
       }
+      submit_my_driver_rating_appeal: {
+        Args: { reason_value: string; target_booking_id: string }
+        Returns: string
+      }
       submit_my_rider_trip_rating: {
         Args: {
           comment_value?: string
@@ -2405,6 +2466,10 @@ export type Database = {
           target_booking_id: string
           vehicle_cleanliness_rating_value: number
         }
+        Returns: string
+      }
+      submit_my_rider_rating_appeal: {
+        Args: { reason_value: string; target_booking_id: string; target_tenant_slug: string }
         Returns: string
       }
       my_rider_service_area_context: {

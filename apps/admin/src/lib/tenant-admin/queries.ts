@@ -52,6 +52,7 @@ export async function loadTenantSummary(
     schedulingSettingsResult,
     matchingSettingsResult,
     tripRatingsResult,
+    tripRatingAppealsResult,
     pricingSettingsResult,
     driverEarningsSettingsResult,
     riderPaymentAttemptsResult,
@@ -158,6 +159,7 @@ export async function loadTenantSummary(
     supabase.from("tenant_scheduling_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("tenant_matching_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("trip_ratings").select("*").eq("tenant_id", tenantId).order("submitted_at", { ascending: false }),
+    supabase.from("trip_rating_appeals").select("*").eq("tenant_id", tenantId).order("submitted_at", { ascending: false }),
     supabase.from("tenant_pricing_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("tenant_driver_earnings_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("rider_payment_attempts").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
@@ -278,6 +280,8 @@ export async function loadTenantSummary(
     throw matchingSettingsResult.error;
   if (tripRatingsResult.error && !tripRatingsResult.error.message.includes("trip_ratings"))
     throw tripRatingsResult.error;
+  if (tripRatingAppealsResult.error && !tripRatingAppealsResult.error.message.includes("trip_rating_appeals"))
+    throw tripRatingAppealsResult.error;
   if (pricingSettingsResult.error && !pricingSettingsResult.error.message.includes("tenant_pricing_settings"))
     throw pricingSettingsResult.error;
   if (driverEarningsSettingsResult.error && !driverEarningsSettingsResult.error.message.includes("tenant_driver_earnings_settings"))
@@ -338,6 +342,7 @@ export async function loadTenantSummary(
     schedulingSettings: schedulingSettingsResult.data ?? null,
     matchingSettings: matchingSettingsResult.data ?? null,
     tripRatings: tripRatingsResult.data ?? [],
+    tripRatingAppeals: tripRatingAppealsResult.data ?? [],
     pricingSettings: pricingSettingsResult.data ?? null,
     driverEarningsSettings: driverEarningsSettingsResult.data ?? null,
     riderPaymentAttempts: riderPaymentAttemptsResult.data ?? [],

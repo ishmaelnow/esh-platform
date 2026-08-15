@@ -27,6 +27,7 @@ import type {
   TenantSchedulingSettingsRow,
   TenantMatchingSettingsRow,
   TripRatingRow,
+  TripRatingAppealRow,
   TenantPricingSettingsRow,
   TenantDriverEarningsSettingsRow,
   RiderPaymentAttemptRow,
@@ -92,6 +93,7 @@ export type TenantSummary = {
   schedulingSettings: TenantSchedulingSettingsRow | null;
   matchingSettings: TenantMatchingSettingsRow | null;
   tripRatings: TripRatingRow[];
+  tripRatingAppeals: TripRatingAppealRow[];
   pricingSettings: TenantPricingSettingsRow | null;
   driverEarningsSettings: TenantDriverEarningsSettingsRow | null;
   riderPaymentAttempts: RiderPaymentAttemptRow[];
