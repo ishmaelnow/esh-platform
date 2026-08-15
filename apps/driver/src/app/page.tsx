@@ -147,6 +147,7 @@ type DriverWalletTrip = { bookingId: string; completedAt: string; pickupAddress:
 type DriverWallet = { currencyCode: string; balanceMinor: number; pendingMinor: number; availableMinor: number; paidMinor: number; trips: DriverWalletTrip[] };
 type DriverPayoutAccount = { exists: boolean; onboardingStatus: "not_started" | "details_required" | "under_review" | "enabled" | "restricted"; detailsSubmitted: boolean; payoutsEnabled: boolean; transfersCapabilityStatus: string | null; requirementsCurrentlyDue: string[]; disabledReason: string | null; updatedAt: string | null };
 type DriverBankPayout = { payoutId: string; status: "pending" | "in_transit" | "paid" | "failed" | "canceled"; currencyCode: string; amountMinor: number; automatic: boolean; method: string | null; expectedArrivalAt: string | null; failureCode: string | null; failureMessage: string | null; providerCreatedAt: string; paidAt: string | null; failedAt: string | null; reconciliationStatus: "pending" | "matched" | "partial" | "unmatched" | "unsupported_manual" | "failed"; matchedAmountMinor: number; unmatchedAmountMinor: number; reconciliationError: string | null; reconciledAt: string | null; allocations: Array<{ bookingId: string; amountMinor: number; transferredAt: string | null }> };
+type SmsSettings = { enabled: boolean; maskedPhone: string | null; verifiedAt: string | null };
 
 type DriverPortalTab =
   | "overview"
@@ -183,6 +184,11 @@ export default function DriverHome() {
   const [earningsUpdatesEnabled, setEarningsUpdatesEnabled] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  const [smsSettings, setSmsSettings] = useState<SmsSettings>({ enabled: false, maskedPhone: null, verifiedAt: null });
+  const [smsPhone, setSmsPhone] = useState("");
+  const [smsCode, setSmsCode] = useState("");
+  const [smsPending, setSmsPending] = useState(false);
+  const [smsBusy, setSmsBusy] = useState(false);
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
   const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
   const [vehiclePhotoMessage, setVehiclePhotoMessage] = useState<string | null>(null);
@@ -296,6 +302,8 @@ export default function DriverHome() {
     const earningsPreferenceResult = await supabase.rpc("my_driver_earnings_notification_preferences");
     if (!earningsPreferenceResult.error && earningsPreferenceResult.data)
       setEarningsUpdatesEnabled((earningsPreferenceResult.data as { earningsUpdatesEnabled: boolean }).earningsUpdatesEnabled);
+    const smsResult = await supabase.rpc("my_driver_sms_notification_settings");
+    if (!smsResult.error && smsResult.data) setSmsSettings(smsResult.data as unknown as SmsSettings);
     setVehiclePhotoUrl(null);
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
@@ -734,6 +742,27 @@ export default function DriverHome() {
     if (result.error) setPreferenceMessage(result.error.message);
     else { setEarningsUpdatesEnabled(enabled); setPreferenceMessage(enabled ? "Earnings update emails enabled." : "Earnings update emails disabled."); }
     setUpdatingPreferences(false);
+  }
+
+  async function updateDriverSms(action: "start" | "check" | "disable") {
+    if (!session || !supabase) return;
+    setSmsBusy(true); setPreferenceMessage(null);
+    try {
+      if (action === "disable") {
+        const result = await supabase.rpc("disable_my_driver_sms_notifications");
+        if (result.error) throw result.error;
+        setSmsSettings((current) => ({ ...current, enabled: false })); setSmsPending(false);
+        setPreferenceMessage("Text alerts disabled."); return;
+      }
+      const response = await fetch("/api/notifications/sms", { method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action, phone: smsPhone, code: smsCode }) });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message ?? "SMS verification failed.");
+      if (action === "start") { setSmsPending(true); setPreferenceMessage("Verification code sent. Standard message rates may apply."); }
+      else { setSmsPending(false); setSmsCode(""); setSmsSettings({ enabled: true, maskedPhone: `••••${smsPhone.replace(/\D/g, "").slice(-4)}`, verifiedAt: new Date().toISOString() }); setPreferenceMessage("Phone verified and transactional text alerts enabled."); }
+    } catch (error) { setPreferenceMessage(error instanceof Error ? error.message : "SMS verification failed."); }
+    finally { setSmsBusy(false); }
   }
 
   async function updateAvailability(targetStatus: "online" | "offline") {
@@ -1819,6 +1848,14 @@ export default function DriverHome() {
               <label><input checked={pushEnabled} disabled={pushBusy || !pushSupported()} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label>
               <p>Lock-screen alerts use privacy-safe summaries and never include Rider addresses or financial account details.</p>
               {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
+            </section>
+            <section className="notification-preferences">
+              <div><p className="eyebrow">Text alerts</p><h3>Transactional SMS</h3></div>
+              <p>Opt in to privacy-safe texts for new trip offers and urgent payout issues. Message and data rates may apply. No marketing messages.</p>
+              {smsSettings.enabled ? <><strong>On · verified {smsSettings.maskedPhone}</strong><button className="secondary" disabled={smsBusy} onClick={() => void updateDriverSms("disable")} type="button">Turn off texts</button></> : <>
+                <label>Mobile number<input value={smsPhone} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" inputMode="tel" /></label>
+                {!smsPending ? <button className="secondary" disabled={smsBusy || !smsPhone} onClick={() => void updateDriverSms("start")} type="button">Send verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="secondary" disabled={smsBusy || !smsCode} onClick={() => void updateDriverSms("check")} type="button">Verify and enable texts</button></>}
+              </>}
             </section>
             <button
               className="secondary"

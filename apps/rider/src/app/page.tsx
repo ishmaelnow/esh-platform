@@ -70,6 +70,7 @@ type RiderPortal = {
   bookings: RiderBooking[];
 };
 type RiderNotificationPreferences = { tripUpdatesEnabled: boolean; paymentUpdatesEnabled: boolean };
+type SmsSettings = { enabled: boolean; maskedPhone: string | null; verifiedAt: string | null };
 type RiderScheduling = {
   timeZone: string;
   settings: {
@@ -187,6 +188,11 @@ export default function RiderHome() {
   const [busy, setBusy] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  const [smsSettings, setSmsSettings] = useState<SmsSettings>({ enabled: false, maskedPhone: null, verifiedAt: null });
+  const [smsPhone, setSmsPhone] = useState("");
+  const [smsCode, setSmsCode] = useState("");
+  const [smsPending, setSmsPending] = useState(false);
+  const [smsBusy, setSmsBusy] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments" | "wallet">("book");
   const [loading, setLoading] = useState(true);
@@ -247,13 +253,14 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult, refundResult] = await Promise.all([
+      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult, refundResult, smsResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
         supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude,fare_currency_code,estimated_fare_minor,final_fare_minor").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_reputation", { target_tenant_slug: tenantSlug }),
         supabase.from("rider_payment_refunds").select("booking_id,amount_minor,currency_code,status").eq("tenant_id", nextPortal.tenant.tenantId),
+        supabase.rpc("my_rider_sms_notification_settings", { target_tenant_slug: tenantSlug }),
       ]);
       const { data: preferenceData, error: preferenceError } = preferenceResult;
       if (preferenceError) throw preferenceError;
@@ -262,6 +269,7 @@ export default function RiderHome() {
       if (coordinateResult.error) throw coordinateResult.error;
       if (reputationResult.error) throw reputationResult.error;
       if (refundResult.error) throw refundResult.error;
+      if (!smsResult.error && smsResult.data) setSmsSettings(smsResult.data as unknown as SmsSettings);
       setReputationTrips((reputationResult.data ?? []) as unknown as ReputationTrip[]);
       setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
@@ -905,6 +913,26 @@ export default function RiderHome() {
     } catch (value) { setError(riderErrorMessage(value)); } finally { setBusy(false); }
   }
 
+  async function updateRiderSms(action: "start" | "check" | "disable") {
+    if (!session || !supabase) return;
+    setSmsBusy(true); setError(""); setMessage("");
+    try {
+      if (action === "disable") {
+        const result = await supabase.rpc("disable_my_rider_sms_notifications", { target_tenant_slug: tenantSlug });
+        if (result.error) throw result.error;
+        setSmsSettings((current) => ({ ...current, enabled: false })); setSmsPending(false);
+        setMessage("Text alerts disabled."); return;
+      }
+      const response = await fetch("/api/notifications/sms", { method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action, phone: smsPhone, code: smsCode, tenantSlug }) });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message ?? "SMS verification failed.");
+      if (action === "start") { setSmsPending(true); setMessage("Verification code sent. Standard message rates may apply."); }
+      else { setSmsPending(false); setSmsCode(""); setMessage("Phone verified and transactional text alerts enabled."); await loadPortal(); }
+    } catch (value) { setError(riderErrorMessage(value)); } finally { setSmsBusy(false); }
+  }
+
   if (!supabaseUrl || !supabaseAnonKey) {
     return (
       <main className="shell">
@@ -1246,6 +1274,14 @@ export default function RiderHome() {
             <div className="card preference-card">
               <div><strong>Device alerts</strong><p>Receive privacy-safe browser alerts for urgent trip and payment updates. Permission applies only to this browser.</p></div>
               <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy || !pushSupported()} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label>
+            </div>
+            <div className="card">
+              <strong>Text alerts</strong>
+              <p>Opt in to privacy-safe transactional texts for urgent trip and payment updates. Message and data rates may apply. No marketing messages.</p>
+              {smsSettings.enabled ? <div className="preference-card"><span>On · verified {smsSettings.maskedPhone}</span><button className="button secondary compact" disabled={smsBusy} onClick={() => void updateRiderSms("disable")} type="button">Turn off texts</button></div> : <div className="panel-stack">
+                <label>Mobile number<input value={smsPhone} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" inputMode="tel" /></label>
+                {!smsPending ? <button className="button secondary compact" disabled={smsBusy || !smsPhone} onClick={() => void updateRiderSms("start")} type="button">Send verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="button secondary compact" disabled={smsBusy || !smsCode} onClick={() => void updateRiderSms("check")} type="button">Verify and enable texts</button></>}
+              </div>}
             </div>
             {recurring.series.length > 0 ? <div className="panel-stack">
               <div className="section-heading"><div><p className="kicker">Recurring schedules</p><h3>Upcoming repeat trips</h3></div></div>

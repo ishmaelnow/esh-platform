@@ -124,7 +124,9 @@ deferred from this milestone and were delivered under the later milestones below
      bounded retry/manual recovery, Rider alerts, and Admin failure visibility.
    - Current delivery in progress: explicit per-browser Rider and Driver Web Push subscriptions,
      privacy-safe urgent alerts, independent delivery attempts, and expired-endpoint cleanup.
-   - Remaining: SMS and native mobile push delivery.
+   - Current delivery in progress: verified, explicitly consented Rider and Driver transactional
+     SMS for urgent events with privacy-safe copy and independent delivery attempts.
+   - Remaining: native mobile push delivery and carrier delivery-status/STOP reconciliation.
 6. **Reputation**
    - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,

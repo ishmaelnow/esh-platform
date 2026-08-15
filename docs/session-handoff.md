@@ -1,10 +1,11 @@
 # Session Handoff
 
-Last updated: 2026-08-14
+Last updated: 2026-08-15
 
 ## Current objective
 
-Complete Web Push Notifications V1 while the Stripe sandbox dispute retry issue remains deferred.
+Complete SMS Trip Notifications V1 after Web Push Notifications V1 passed production testing;
+the Stripe sandbox dispute retry issue remains deferred.
 
 ## Repository and deployment state
 
@@ -408,6 +409,20 @@ deployment. Validation is complete: Admin tests pass 61/61, Rider tests pass 8/8
 remote migration dry run lists only `20260815000300_web_push_notifications_v1.sql`. Existing
 Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
+Web Push Notifications V1 is deployed through commit `6e34687`; the owner configured one VAPID
+pair and reported Rider and Driver production testing passed. SMS Trip Notifications V1 is now
+implemented locally with Twilio Verify ownership checks, explicit Rider/Driver consent and opt-out,
+service-only tenant/profile subscriptions, independent idempotent attempts, privacy-safe urgent
+copy, channel-specific Admin results, client types, environment templates, architecture, and a
+production test. Migration `20260815000400_sms_trip_notifications_v1.sql` requires validation and
+owner application before deploying Admin, Rider, and Driver.
+
+SMS validation is complete: Admin tests pass 63/63, Rider tests pass 8/8, Driver tests pass 13/13;
+Admin, Rider, Driver, and Supabase typechecks pass; all three production builds pass; and
+`git diff --check` passes. The remote migration dry run lists only
+`20260815000400_sms_trip_notifications_v1.sql`. Existing Supabase Realtime and missing Next
+ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -418,9 +433,8 @@ Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Owner generates/configures one VAPID pair, commits Web Push Notifications V1, applies the single
-verified migration before production code deployment, pushes `main`, then runs the production
-manual test.
+Complete SMS validation, dry-run only `20260815000400_sms_trip_notifications_v1.sql`, then hand the
+owner exact Twilio configuration, migration, Git, deployment, and production-test steps.
 
 ## Required reading for recovery
 
@@ -471,3 +485,5 @@ manual test.
 - `docs/operations/recurring-rider-autopay-manual-test.md`
 - `docs/architecture/web-push-notifications.md`
 - `docs/operations/web-push-notifications-manual-test.md`
+- `docs/architecture/sms-trip-notifications.md`
+- `docs/operations/sms-trip-notifications-manual-test.md`

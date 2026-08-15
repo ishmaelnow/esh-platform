@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     const service = createServiceSupabaseClient();
     const config = getAdminServerConfig();
-    const { sent, failed } = await deliverQueuedNotifications(service, config, {
+    const { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed } = await deliverQueuedNotifications(service, config, {
       tenantId,
       ...(notificationId ? { notificationId } : {}),
       limit: 10,
@@ -41,9 +41,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: `${sent} notification${sent === 1 ? "" : "s"} sent; ${failed} failed.`,
+      message: `${sent} email${sent === 1 ? "" : "s"} sent; ${pushDelivered} push delivered; ${smsAccepted} text${smsAccepted === 1 ? "" : "s"} accepted; ${failed + pushFailed + smsFailed} channel attempt${failed + pushFailed + smsFailed === 1 ? "" : "s"} failed.`,
       sent,
       failed,
+      pushDelivered,
+      pushFailed,
+      smsAccepted,
+      smsFailed,
     });
   } catch (error) {
     return NextResponse.json(

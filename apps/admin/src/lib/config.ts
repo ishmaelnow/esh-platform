@@ -24,6 +24,11 @@ export type AdminServerConfig = AdminPublicConfig & {
     publicKey: string;
     privateKey: string;
   };
+  twilio: {
+    accountSid: string;
+    authToken: string;
+    messagingServiceSid: string;
+  };
 };
 
 type AdminConfigSource = Partial<Record<AdminConfigKey, string | undefined>> | NodeJS.ProcessEnv;
@@ -40,7 +45,10 @@ type AdminConfigKey =
   | "NEXT_PUBLIC_RIDER_APP_URL"
   | "VAPID_SUBJECT"
   | "VAPID_PUBLIC_KEY"
-  | "VAPID_PRIVATE_KEY";
+  | "VAPID_PRIVATE_KEY"
+  | "TWILIO_ACCOUNT_SID"
+  | "TWILIO_AUTH_TOKEN"
+  | "TWILIO_MESSAGING_SERVICE_SID";
 
 let cachedServerConfig: AdminServerConfig | null = null;
 
@@ -109,6 +117,9 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
   const vapidSubject = source.VAPID_SUBJECT?.trim() ?? "";
   const vapidPublicKey = source.VAPID_PUBLIC_KEY?.trim() ?? "";
   const vapidPrivateKey = source.VAPID_PRIVATE_KEY?.trim() ?? "";
+  const twilioAccountSid = source.TWILIO_ACCOUNT_SID?.trim() ?? "";
+  const twilioAuthToken = source.TWILIO_AUTH_TOKEN?.trim() ?? "";
+  const twilioMessagingServiceSid = source.TWILIO_MESSAGING_SERVICE_SID?.trim() ?? "";
 
   assertNoConfigErrors(errors);
 
@@ -134,6 +145,11 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
       subject: vapidSubject,
       publicKey: vapidPublicKey,
       privateKey: vapidPrivateKey,
+    },
+    twilio: {
+      accountSid: twilioAccountSid,
+      authToken: twilioAuthToken,
+      messagingServiceSid: twilioMessagingServiceSid,
     },
   };
 }

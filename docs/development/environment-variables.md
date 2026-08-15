@@ -62,3 +62,10 @@ These variables are not production deployment settings:
 Copy `apps/admin/.env.example` to `apps/admin/.env.local`. Create equivalent `.env.local` files in `apps/rider` and `apps/driver` containing the two public Supabase variables. Values printed by `pnpm supabase:status` can be used with the local Supabase stack.
 
 Keep production and preview values separate in Vercel. In particular, preview `INVITATION_BASE_URL` and `TENANT_ADMIN_BASE_URL` must point to stable, authorized origins if invitation flows are tested there; do not put secrets in `vercel.json`.
+## Twilio transactional SMS
+
+Use the same Twilio account in all three server runtimes. Admin requires `TWILIO_ACCOUNT_SID`,
+`TWILIO_AUTH_TOKEN`, and `TWILIO_MESSAGING_SERVICE_SID`. Rider and Driver require
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_VERIFY_SERVICE_SID`. These are server-only;
+never prefix them with `NEXT_PUBLIC_`. The Messaging Service sends urgent texts and the Verify
+Service proves that a Rider or Driver controls the number before consent is activated.

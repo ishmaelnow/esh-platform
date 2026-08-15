@@ -2,6 +2,7 @@ import type { PlatformSupabaseClient } from "@esh-platform/supabase";
 import type { AdminServerConfig } from "@/lib/config";
 import { sendNotificationEmail } from "./email";
 import { deliverNotificationPush } from "./push";
+import { deliverNotificationSms } from "./sms";
 
 export type DeliveryScope = {
   tenantId?: string;
@@ -45,6 +46,8 @@ export async function deliverQueuedNotifications(
   let failed = 0;
   let pushDelivered = 0;
   let pushFailed = 0;
+  let smsAccepted = 0;
+  let smsFailed = 0;
   for (const notification of notifications ?? []) {
     const attemptedAt = new Date().toISOString();
     const { data: claimed, error: claimError } = await service
@@ -65,6 +68,9 @@ export async function deliverQueuedNotifications(
     const push = await deliverNotificationPush(service, config, notification).catch(() => ({ delivered: 0, failed: 1, skipped: false }));
     pushDelivered += push.delivered;
     pushFailed += push.failed;
+    const sms = await deliverNotificationSms(service, config, notification).catch(() => ({ accepted: 0, failed: 1, skipped: false }));
+    smsAccepted += sms.accepted;
+    smsFailed += sms.failed;
 
     try {
       const result = await sendNotificationEmail(config, {
@@ -95,5 +101,5 @@ export async function deliverQueuedNotifications(
     }
   }
 
-  return { sent, failed, pushDelivered, pushFailed };
+  return { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed };
 }

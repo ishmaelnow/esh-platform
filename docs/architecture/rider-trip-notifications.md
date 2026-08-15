@@ -53,9 +53,12 @@ subscriptions, privacy-safe lock-screen content, and independent delivery attemp
 
 ## Deferred
 
-- SMS and native mobile push delivery
+- native mobile push delivery
 - marketing messages
 - tenant-customizable templates
 - per-event preference switches
 - localization
 - scheduled booking reminders
+
+SMS Trip Notifications V1 adds verified, opt-in urgent Rider texts without changing email
+preferences or placing private trip details in the text.

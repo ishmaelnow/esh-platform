@@ -1,5 +1,7 @@
 # Operations
 
+- [SMS Trip Notifications V1 production test](./sms-trip-notifications-manual-test.md)
+
 This directory will document production operations.
 
 Future topics should include environment management, deployment process, observability, incident response, backup and restore, tenant support procedures, and security operations.

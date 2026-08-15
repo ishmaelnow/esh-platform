@@ -16,7 +16,8 @@ trip addresses, expected payout arrival, or sanitized failure explanation. They 
 secrets, bank/card details, provider PaymentIntent IDs, transfer IDs, and payout destination data.
 Rider messages deep-link to `view=payments`; Driver messages deep-link to `view=earnings`.
 
-Web Push V1 supplements enabled financial emails with privacy-safe generic device alerts. SMS,
+Web Push V1 supplements enabled financial emails with privacy-safe generic device alerts.
+SMS Trip Notifications V1 adds opt-in generic texts for recurring-autopay and bank-payout failures.
 Admin financial alerts, configurable event-by-event preferences, push-only event queuing, digest
 delivery, and retroactive notification generation are deferred.
 

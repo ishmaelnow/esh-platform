@@ -2027,7 +2027,7 @@ function NotificationsPanel({
       <section className="panel">
         <PanelHeader
           title="Transactional notifications"
-          description="Review and safely deliver tenant-wide Rider, Driver, vehicle, and dispatch email. Bulk delivery is limited to 10 messages."
+          description="Review and safely deliver tenant-wide email plus opted-in privacy-safe push and SMS. Bulk delivery is limited to 10 messages."
         />
         <div className="notification-metrics">
           <div>

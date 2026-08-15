@@ -20,5 +20,8 @@ operations return aggregate push success/failure counts without exposing subscri
 
 V1 push supplements notification events that are already queued under the existing email
 preferences. It does not create a second lifecycle trigger system. Deferred: native mobile push,
-push-only event preferences independent of email, SMS, localization, notification actions, and
+push-only event preferences independent of email, localization, notification actions, and
 tenant-customizable lock-screen content.
+
+SMS Trip Notifications V1 now provides a separate verified, explicitly consented urgent-text
+channel with its own delivery attempts.

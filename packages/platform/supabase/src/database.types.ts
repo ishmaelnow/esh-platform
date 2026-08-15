@@ -1366,6 +1366,18 @@ export type Database = {
         Update: { attempt_count?: number; created_at?: string; delivered_at?: string | null; failure_message?: string | null; notification_id?: string; push_delivery_attempt_id?: string; push_subscription_id?: string; response_status?: number | null; status?: string; tenant_id?: string; updated_at?: string }
         Relationships: []
       }
+      sms_notification_subscriptions: {
+        Row: { consented_at: string; created_at: string; disabled_at: string | null; driver_profile_id: string | null; person_id: string; phone_e164: string; rider_profile_id: string | null; sms_subscription_id: string; status: string; tenant_id: string; updated_at: string; verified_at: string }
+        Insert: { consented_at?: string; created_at?: string; disabled_at?: string | null; driver_profile_id?: string | null; person_id: string; phone_e164: string; rider_profile_id?: string | null; sms_subscription_id?: string; status?: string; tenant_id: string; updated_at?: string; verified_at?: string }
+        Update: { consented_at?: string; created_at?: string; disabled_at?: string | null; driver_profile_id?: string | null; person_id?: string; phone_e164?: string; rider_profile_id?: string | null; sms_subscription_id?: string; status?: string; tenant_id?: string; updated_at?: string; verified_at?: string }
+        Relationships: []
+      }
+      sms_delivery_attempts: {
+        Row: { attempt_count: number; created_at: string; delivered_at: string | null; failure_message: string | null; notification_id: string; provider_message_id: string | null; provider_status: string | null; sms_delivery_attempt_id: string; sms_subscription_id: string; status: string; tenant_id: string; updated_at: string }
+        Insert: { attempt_count?: number; created_at?: string; delivered_at?: string | null; failure_message?: string | null; notification_id: string; provider_message_id?: string | null; provider_status?: string | null; sms_delivery_attempt_id?: string; sms_subscription_id: string; status?: string; tenant_id: string; updated_at?: string }
+        Update: { attempt_count?: number; created_at?: string; delivered_at?: string | null; failure_message?: string | null; notification_id?: string; provider_message_id?: string | null; provider_status?: string | null; sms_delivery_attempt_id?: string; sms_subscription_id?: string; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       rider_notification_preferences: {
         Row: {
           created_at: string
@@ -2404,6 +2416,8 @@ export type Database = {
         Returns: Json
       }
       my_driver_earnings_notification_preferences: { Args: never; Returns: Json }
+      my_driver_sms_notification_settings: { Args: never; Returns: Json }
+      my_rider_sms_notification_settings: { Args: { target_tenant_slug: string }; Returns: Json }
       my_rider_scheduling: {
         Args: { target_tenant_slug: string }
         Returns: Json
@@ -2437,6 +2451,10 @@ export type Database = {
         Args: { earnings_updates_enabled_value: boolean }
         Returns: boolean
       }
+      disable_my_driver_sms_notifications: { Args: never; Returns: boolean }
+      disable_my_rider_sms_notifications: { Args: { target_tenant_slug: string }; Returns: boolean }
+      confirm_driver_sms_subscription_internal: { Args: { target_auth_user_id: string; phone_e164_value: string }; Returns: boolean }
+      confirm_rider_sms_subscription_internal: { Args: { target_auth_user_id: string; target_tenant_slug: string; phone_e164_value: string }; Returns: boolean }
       set_my_driver_service_area: {
         Args: { target_service_area_id: string }
         Returns: Json
