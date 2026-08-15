@@ -20,6 +20,7 @@ import {
   zonedDateTimeToIso,
   generateRecurringPickupTimes,
 } from "./booking";
+import { currentPushSubscription, pushSupported, vapidApplicationKey } from "../lib/push";
 
 type BookingTenant = { tenant_slug: string; display_name: string };
 type ServiceArea = { serviceAreaId: string; name: string; description: string | null };
@@ -141,6 +142,7 @@ export default function RiderHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const supabase = useMemo(
     () =>
       supabaseUrl && supabaseAnonKey
@@ -183,6 +185,8 @@ export default function RiderHome() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments" | "wallet">("book");
   const [loading, setLoading] = useState(true);
@@ -457,7 +461,40 @@ export default function RiderHome() {
   useEffect(() => {
     if (!portal?.profile) return;
     void loadRecurring().catch((value) => setError(riderErrorMessage(value)));
+    void currentPushSubscription().then((subscription) => setPushEnabled(Boolean(subscription))).catch(() => undefined);
   }, [loadRecurring, portal?.profile]);
+
+  async function setRiderPush(enabled: boolean) {
+    if (!supabase || !portal?.profile || !tenantSlug) return;
+    setPushBusy(true); setError(""); setMessage("");
+    try {
+      if (!pushSupported()) throw new Error("This browser does not support push notifications.");
+      const existing = await currentPushSubscription();
+      if (!enabled) {
+        if (existing) {
+          const disabled = await supabase.rpc("disable_my_push_subscription", { endpoint_value: existing.endpoint });
+          if (disabled.error) throw disabled.error;
+          await existing.unsubscribe();
+        }
+        setPushEnabled(false); setMessage("Device alerts disabled on this browser."); return;
+      }
+      if (!vapidPublicKey) throw new Error("Device alerts are not configured for this Rider app.");
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") throw new Error("Notification permission was not granted.");
+      const registration = await navigator.serviceWorker.register("/push-sw.js");
+      const subscription = existing ?? await registration.pushManager.subscribe({ userVisibleOnly: true,
+        applicationServerKey: vapidApplicationKey(vapidPublicKey) });
+      const json = subscription.toJSON();
+      if (!json.keys?.p256dh || !json.keys.auth) throw new Error("Browser push keys are unavailable.");
+      const saved = await supabase.rpc("register_my_rider_push_subscription", {
+        target_tenant_slug: tenantSlug, endpoint_value: subscription.endpoint,
+        p256dh_key_value: json.keys.p256dh, auth_key_value: json.keys.auth,
+        user_agent_value: navigator.userAgent,
+      });
+      if (saved.error) throw saved.error;
+      setPushEnabled(true); setMessage("Device alerts enabled on this browser.");
+    } catch (value) { setError(riderErrorMessage(value)); } finally { setPushBusy(false); }
+  }
 
   async function loadPaymentReceipt(paymentAttemptId: string) {
     if (!session) return;
@@ -1205,6 +1242,10 @@ export default function RiderHome() {
                 />
                 <span>{notificationPreferences?.tripUpdatesEnabled === false ? "Off" : "On"}</span>
               </label>
+            </div>
+            <div className="card preference-card">
+              <div><strong>Device alerts</strong><p>Receive privacy-safe browser alerts for urgent trip and payment updates. Permission applies only to this browser.</p></div>
+              <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy || !pushSupported()} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label>
             </div>
             {recurring.series.length > 0 ? <div className="panel-stack">
               <div className="section-heading"><div><p className="kicker">Recurring schedules</p><h3>Upcoming repeat trips</h3></div></div>

@@ -19,6 +19,11 @@ export type AdminServerConfig = AdminPublicConfig & {
     driverAppUrl: string;
     riderAppUrl: string;
   };
+  webPush: {
+    subject: string;
+    publicKey: string;
+    privateKey: string;
+  };
 };
 
 type AdminConfigSource = Partial<Record<AdminConfigKey, string | undefined>> | NodeJS.ProcessEnv;
@@ -32,7 +37,10 @@ type AdminConfigKey =
   | "INVITATION_BASE_URL"
   | "TENANT_ADMIN_BASE_URL"
   | "NEXT_PUBLIC_DRIVER_APP_URL"
-  | "NEXT_PUBLIC_RIDER_APP_URL";
+  | "NEXT_PUBLIC_RIDER_APP_URL"
+  | "VAPID_SUBJECT"
+  | "VAPID_PUBLIC_KEY"
+  | "VAPID_PRIVATE_KEY";
 
 let cachedServerConfig: AdminServerConfig | null = null;
 
@@ -98,6 +106,9 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
     "https://rider.eshapp.com",
     errors,
   );
+  const vapidSubject = source.VAPID_SUBJECT?.trim() ?? "";
+  const vapidPublicKey = source.VAPID_PUBLIC_KEY?.trim() ?? "";
+  const vapidPrivateKey = source.VAPID_PRIVATE_KEY?.trim() ?? "";
 
   assertNoConfigErrors(errors);
 
@@ -118,6 +129,11 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
       tenantAdminBaseUrl,
       driverAppUrl,
       riderAppUrl,
+    },
+    webPush: {
+      subject: vapidSubject,
+      publicKey: vapidPublicKey,
+      privateKey: vapidPrivateKey,
     },
   };
 }

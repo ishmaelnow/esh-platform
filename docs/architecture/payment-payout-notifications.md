@@ -16,7 +16,8 @@ trip addresses, expected payout arrival, or sanitized failure explanation. They 
 secrets, bank/card details, provider PaymentIntent IDs, transfer IDs, and payout destination data.
 Rider messages deep-link to `view=payments`; Driver messages deep-link to `view=earnings`.
 
-V1 is email-only. Push/SMS, Admin financial alerts, configurable event-by-event preferences, digest
+Web Push V1 supplements enabled financial emails with privacy-safe generic device alerts. SMS,
+Admin financial alerts, configurable event-by-event preferences, push-only event queuing, digest
 delivery, and retroactive notification generation are deferred.
 
 Automatic delivery is event-driven. After an authoritative payment, refund, earnings, transfer, or

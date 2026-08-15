@@ -48,9 +48,12 @@ Rider may turn trip update emails off or on from the Rider portal. Disabling the
 Preference changes are tenant audited. RLS and security-definer RPCs derive the Rider identity from
 `auth.uid()` and do not accept a caller-provided Rider profile ID.
 
+Web Push Notifications V1 now supplements enabled email events with explicit per-browser Rider
+subscriptions, privacy-safe lock-screen content, and independent delivery attempts.
+
 ## Deferred
 
-- SMS and push delivery
+- SMS and native mobile push delivery
 - marketing messages
 - tenant-customizable templates
 - per-event preference switches

@@ -1354,6 +1354,18 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: { auth_key: string; created_at: string; disabled_at: string | null; driver_profile_id: string | null; endpoint: string; last_used_at: string | null; p256dh_key: string; person_id: string; push_subscription_id: string; rider_profile_id: string | null; status: string; tenant_id: string; updated_at: string; user_agent: string | null }
+        Insert: { auth_key: string; created_at?: string; disabled_at?: string | null; driver_profile_id?: string | null; endpoint: string; last_used_at?: string | null; p256dh_key: string; person_id: string; push_subscription_id?: string; rider_profile_id?: string | null; status?: string; tenant_id: string; updated_at?: string; user_agent?: string | null }
+        Update: { auth_key?: string; created_at?: string; disabled_at?: string | null; driver_profile_id?: string | null; endpoint?: string; last_used_at?: string | null; p256dh_key?: string; person_id?: string; push_subscription_id?: string; rider_profile_id?: string | null; status?: string; tenant_id?: string; updated_at?: string; user_agent?: string | null }
+        Relationships: []
+      }
+      push_delivery_attempts: {
+        Row: { attempt_count: number; created_at: string; delivered_at: string | null; failure_message: string | null; notification_id: string; push_delivery_attempt_id: string; push_subscription_id: string; response_status: number | null; status: string; tenant_id: string; updated_at: string }
+        Insert: { attempt_count?: number; created_at?: string; delivered_at?: string | null; failure_message?: string | null; notification_id: string; push_delivery_attempt_id?: string; push_subscription_id: string; response_status?: number | null; status?: string; tenant_id: string; updated_at?: string }
+        Update: { attempt_count?: number; created_at?: string; delivered_at?: string | null; failure_message?: string | null; notification_id?: string; push_delivery_attempt_id?: string; push_subscription_id?: string; response_status?: number | null; status?: string; tenant_id?: string; updated_at?: string }
+        Relationships: []
+      }
       rider_notification_preferences: {
         Row: {
           created_at: string
@@ -2076,6 +2088,9 @@ export type Database = {
       restore_rider_wallet_for_booking_internal: { Args: { target_booking_id: string }; Returns: number }
       create_my_rider_booking_series: { Args: { target_quote_id: string; start_date_value: string; end_date_value: string; local_pickup_time_value: string; weekdays_value: number[]; scheduled_pickup_at_values: string[]; booking_notes_value?: string }; Returns: string }
       my_rider_booking_series: { Args: { target_tenant_slug: string }; Returns: Json }
+      register_my_rider_push_subscription: { Args: { target_tenant_slug: string; endpoint_value: string; p256dh_key_value: string; auth_key_value: string; user_agent_value?: string | null }; Returns: string }
+      register_my_driver_push_subscription: { Args: { endpoint_value: string; p256dh_key_value: string; auth_key_value: string; user_agent_value?: string | null }; Returns: string }
+      disable_my_push_subscription: { Args: { endpoint_value: string }; Returns: boolean }
       set_my_rider_booking_series_autopay: { Args: { target_series_id: string; enabled_value: boolean }; Returns: boolean }
       record_rider_saved_payment_method_internal: { Args: { target_quote_id: string; provider_customer_id_value: string; provider_payment_method_id_value: string; brand_value?: string | null; last4_value?: string | null; expires_month_value?: number | null; expires_year_value?: number | null }; Returns: string }
       claim_due_recurring_autopay_internal: { Args: { target_limit?: number }; Returns: Json }

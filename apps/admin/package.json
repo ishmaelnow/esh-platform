@@ -13,10 +13,14 @@
     "@esh-platform/config": "workspace:*",
     "@esh-platform/logger": "workspace:*",
     "@esh-platform/maps": "workspace:*",
-    "@esh-platform/supabase": "workspace:*",
     "@esh-platform/stripe": "workspace:*",
+    "@esh-platform/supabase": "workspace:*",
     "next": "15.5.20",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/web-push": "^3.6.4"
   }
 }

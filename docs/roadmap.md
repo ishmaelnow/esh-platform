@@ -122,7 +122,9 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery in progress: explicit recurring-trip autopay authorization, saved Stripe
      payment-method references, fresh per-occurrence pricing, wallet-first off-session collection,
      bounded retry/manual recovery, Rider alerts, and Admin failure visibility.
-   - Remaining: SMS/push delivery.
+   - Current delivery in progress: explicit per-browser Rider and Driver Web Push subscriptions,
+     privacy-safe urgent alerts, independent delivery attempts, and expired-endpoint cleanup.
+   - Remaining: SMS and native mobile push delivery.
 6. **Reputation**
    - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,

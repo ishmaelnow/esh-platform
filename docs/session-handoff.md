@@ -4,7 +4,7 @@ Last updated: 2026-08-14
 
 ## Current objective
 
-Complete Recurring Rider Autopay V2 while the Stripe sandbox dispute retry issue remains deferred.
+Complete Web Push Notifications V1 while the Stripe sandbox dispute retry issue remains deferred.
 
 ## Repository and deployment state
 
@@ -395,6 +395,19 @@ autopay is off. No migration or environment-variable change is required. Rider t
 Rider typecheck and production build pass, and `git diff --check` passes; the known Supabase
 Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
+The recurring-autopay control hierarchy is deployed through commit `37fcd7d`; production shows
+**Autopay scheduled**, **Pay early**, and **Skip** correctly. Web Push Notifications V1 is now
+implemented locally. Rider and Driver explicitly subscribe each browser with one public VAPID key;
+Admin holds the private key and supplements existing queued email events with privacy-safe push.
+Tenant/profile-scoped subscriptions, independent delivery attempts, expired-endpoint cleanup,
+service workers, portal controls, Admin delivery integration, client types, environment templates,
+architecture, and the production test are included. Migration
+`20260815000300_web_push_notifications_v1.sql` requires owner application before Admin/Rider/Driver
+deployment. Validation is complete: Admin tests pass 61/61, Rider tests pass 8/8, Driver tests pass
+13/13, all four typechecks and all three production builds pass, and `git diff --check` passes. The
+remote migration dry run lists only `20260815000300_web_push_notifications_v1.sql`. Existing
+Supabase Realtime and missing Next ESLint-plugin warnings remain non-blocking.
+
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -405,8 +418,9 @@ Realtime and missing Next ESLint-plugin warnings remain non-blocking.
 
 ## Exact next action
 
-Validate and deploy the recurring-autopay Rider control hierarchy follow-up, then continue the
-production autopay test with one eligible unpaid occurrence.
+Owner generates/configures one VAPID pair, commits Web Push Notifications V1, applies the single
+verified migration before production code deployment, pushes `main`, then runs the production
+manual test.
 
 ## Required reading for recovery
 
@@ -455,3 +469,5 @@ production autopay test with one eligible unpaid occurrence.
 - `docs/operations/recurring-rider-bookings-manual-test.md`
 - `docs/architecture/recurring-rider-autopay.md`
 - `docs/operations/recurring-rider-autopay-manual-test.md`
+- `docs/architecture/web-push-notifications.md`
+- `docs/operations/web-push-notifications-manual-test.md`

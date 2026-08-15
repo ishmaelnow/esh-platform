@@ -15,6 +15,7 @@ import {
 import { offerCountdownLabel, offerSecondsRemaining } from "../lib/dispatch";
 import { buildEarningsStatement, earningsStatementCsv } from "../lib/earnings-statement";
 import { locationErrorMessage } from "../lib/location";
+import { currentPushSubscription, pushSupported, vapidApplicationKey } from "../lib/push";
 
 type DriverSummary = {
   driverProfileId: string;
@@ -163,6 +164,7 @@ export default function DriverHome() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const supabase = useMemo(() => {
     if (!supabaseUrl || !supabaseAnonKey) return null;
     return createIsolatedBrowserSupabaseClient("esh-driver-portal-auth", {
@@ -179,6 +181,8 @@ export default function DriverHome() {
   const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [earningsUpdatesEnabled, setEarningsUpdatesEnabled] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState<string | null>(null);
   const [vehiclePhotoError, setVehiclePhotoError] = useState(false);
   const [vehiclePhotoMessage, setVehiclePhotoMessage] = useState<string | null>(null);
@@ -297,6 +301,44 @@ export default function DriverHome() {
     setVehiclePhotoMessage(null);
     setMessage("Driver account connected.");
   }, [supabase]);
+
+  useEffect(() => {
+    if (!summary?.driverProfileId) return;
+    void currentPushSubscription().then((subscription) => setPushEnabled(Boolean(subscription))).catch(() => undefined);
+  }, [summary?.driverProfileId]);
+
+  async function setDriverPush(enabled: boolean) {
+    if (!supabase || !summary) return;
+    setPushBusy(true); setPreferenceMessage(null);
+    try {
+      if (!pushSupported()) throw new Error("This browser does not support push notifications.");
+      const existing = await currentPushSubscription();
+      if (!enabled) {
+        if (existing) {
+          const disabled = await supabase.rpc("disable_my_push_subscription", { endpoint_value: existing.endpoint });
+          if (disabled.error) throw disabled.error;
+          await existing.unsubscribe();
+        }
+        setPushEnabled(false); setPreferenceMessage("Device alerts disabled on this browser."); return;
+      }
+      if (!vapidPublicKey) throw new Error("Device alerts are not configured for this Driver app.");
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") throw new Error("Notification permission was not granted.");
+      const registration = await navigator.serviceWorker.register("/push-sw.js");
+      const subscription = existing ?? await registration.pushManager.subscribe({ userVisibleOnly: true,
+        applicationServerKey: vapidApplicationKey(vapidPublicKey) });
+      const json = subscription.toJSON();
+      if (!json.keys?.p256dh || !json.keys.auth) throw new Error("Browser push keys are unavailable.");
+      const saved = await supabase.rpc("register_my_driver_push_subscription", {
+        endpoint_value: subscription.endpoint, p256dh_key_value: json.keys.p256dh,
+        auth_key_value: json.keys.auth, user_agent_value: navigator.userAgent,
+      });
+      if (saved.error) throw saved.error;
+      setPushEnabled(true); setPreferenceMessage("Device alerts enabled on this browser.");
+    } catch (value) {
+      setPreferenceMessage(value instanceof Error ? value.message : "Device alerts could not be updated.");
+    } finally { setPushBusy(false); }
+  }
 
   useEffect(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "earnings")
@@ -1772,6 +1814,12 @@ export default function DriverHome() {
                 {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
               </section>
             ) : null}
+            <section className="notification-preferences">
+              <div><p className="eyebrow">Device alerts</p><h3>Browser push notifications</h3></div>
+              <label><input checked={pushEnabled} disabled={pushBusy || !pushSupported()} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label>
+              <p>Lock-screen alerts use privacy-safe summaries and never include Rider addresses or financial account details.</p>
+              {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
+            </section>
             <button
               className="secondary"
               onClick={() => void supabase?.auth.signOut()}
