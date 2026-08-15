@@ -1,6 +1,7 @@
 # Operations
 
 - [SMS Trip Notifications V1 production test](./sms-trip-notifications-manual-test.md)
+- [Mobile app shell manual test](./mobile-app-shell-manual-test.md)
 
 This directory will document production operations.
 

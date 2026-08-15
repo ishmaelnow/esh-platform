@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ESH Rider</string>
+    <string name="title_activity_main">ESH Rider</string>
+    <string name="package_name">com.esh.rider</string>
+    <string name="custom_url_scheme">com.esh.rider</string>
+</resources>

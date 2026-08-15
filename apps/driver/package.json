@@ -4,17 +4,27 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "mobile:sync": "cap sync",
+    "mobile:open:android": "cap open android",
+    "mobile:open:ios": "cap open ios",
     "dev": "next dev --port 3002",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/geolocation": "^8.2.2",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/push-notifications": "^8.1.2",
     "@esh-platform/config": "workspace:*",
     "@esh-platform/logger": "workspace:*",
     "@esh-platform/maps": "workspace:*",
-    "@esh-platform/supabase": "workspace:*",
     "@esh-platform/stripe": "workspace:*",
+    "@esh-platform/supabase": "workspace:*",
     "next": "15.5.20",
     "react": "19.1.0",
     "react-dom": "19.1.0"

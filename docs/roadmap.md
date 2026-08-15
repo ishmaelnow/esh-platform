@@ -182,6 +182,13 @@ deferred from this milestone and were delivered under the later milestones below
 9. **Optimization**
    - Demand intelligence, performance, levels, loyalty, and incentives.
 
+## Mobile delivery
+
+- Current delivery in progress: Capacitor Rider and Driver shells load the existing deployed apps
+  with separate native identities and secure defaults.
+- Remaining: native platform projects, store signing, APNs/FCM push integration, and reviewed
+  background location behavior.
+
 ## Release Gates for the Current Milestone
 
 - Dry-run and apply only the intended ledger migration.

@@ -4,8 +4,9 @@ Last updated: 2026-08-15
 
 ## Current objective
 
-Continue SMS production verification when Twilio resolves billing ticket `#29018616`; the Stripe
-sandbox dispute retry issue remains deferred.
+Complete the Capacitor mobile app shell foundation for Rider and Driver; SMS production verification
+waits on Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry issue remains
+deferred.
 
 ## Repository and deployment state
 
@@ -70,6 +71,14 @@ Reputation V1 has role-derived Rider and Driver submission RPCs, a 30-day submis
 seven-day/both-submitted disclosure, tenant RLS, audited Admin moderation, and Rider, Driver, and
 Admin UI. Production manual testing passed, including the corrected Rider layout and Driver rating
 submission experience.
+
+Capacitor Mobile App Shell V1 is implemented locally. Rider and Driver each have separate Capacitor
+configuration, Android and iOS projects, native bundle IDs, secure HTTPS hosted URLs, and App,
+Browser, Geolocation, and Push Notifications plugin registration. The shell preserves the existing
+Next.js backend and web UI; no server secrets enter the bundle. Native push credentials, store
+signing, and background-location review remain follow-up work. The Rider and Driver test suites and
+typechecks pass. Next: owner commit/deploy the shell foundation, then build debug Android/iOS apps
+using `docs/operations/mobile-app-shell-manual-test.md`.
 
 ## Temporary production settings
 
@@ -440,7 +449,7 @@ operational.
 
 ## Exact next action
 
-Continue SMS production verification after Twilio reactivates the account, then run the
+Commit/deploy the Capacitor mobile shell foundation, then run the
 production manual test.
 
 ## Required reading for recovery
@@ -454,6 +463,7 @@ production manual test.
 - `docs/architecture/automatic-driver-matching.md`
 - `docs/architecture/realtime-driver-location.md`
 - `docs/architecture/trip-reputation.md`
+- `docs/architecture/mobile-app-shell.md`
 - `docs/architecture/ledger-foundation.md`
 - `docs/operations/ledger-foundation-manual-test.md`
 - `docs/architecture/trip-pricing.md`
