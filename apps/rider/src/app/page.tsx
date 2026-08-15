@@ -119,7 +119,6 @@ type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
   subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null;
 };
-type RatingAppeal = { appealId: string; bookingId: string; status: "submitted" | "upheld" | "removed"; reason: string; resolutionNotes: string | null; submittedAt: string; resolvedAt: string | null };
 
 function formatDate(value: string, timeZone?: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -164,7 +163,6 @@ export default function RiderHome() {
   const [scheduling, setScheduling] = useState<RiderScheduling | null>(null);
   const [tripLocations, setTripLocations] = useState<RiderTripLocation[]>([]);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
-  const [ratingAppeals, setRatingAppeals] = useState<RatingAppeal[]>([]);
   const [payments, setPayments] = useState<RiderPayment[]>([]);
   const [wallet, setWallet] = useState<RiderWallet | null>(null);
   const [recurring, setRecurring] = useState<RiderSeriesSummary>({ savedPaymentMethod: null, series: [], occurrences: [] });
@@ -256,13 +254,12 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult, appealResult, refundResult, smsResult] = await Promise.all([
+      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult, refundResult, smsResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
         supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude,fare_currency_code,estimated_fare_minor,final_fare_minor").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_reputation", { target_tenant_slug: tenantSlug }),
-        supabase.rpc("my_rider_rating_appeals", { target_tenant_slug: tenantSlug }),
         supabase.from("rider_payment_refunds").select("booking_id,amount_minor,currency_code,status").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_sms_notification_settings", { target_tenant_slug: tenantSlug }),
       ]);
@@ -272,11 +269,9 @@ export default function RiderHome() {
       if (locationResult.error) throw locationResult.error;
       if (coordinateResult.error) throw coordinateResult.error;
       if (reputationResult.error) throw reputationResult.error;
-      if (appealResult.error) throw appealResult.error;
       if (refundResult.error) throw refundResult.error;
       if (!smsResult.error && smsResult.data) setSmsSettings(smsResult.data as unknown as SmsSettings);
       setReputationTrips((reputationResult.data ?? []) as unknown as ReputationTrip[]);
-      setRatingAppeals((appealResult.data ?? []) as unknown as RatingAppeal[]);
       setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
       const nextScheduling = schedulingResult.data as RiderScheduling;
@@ -306,7 +301,6 @@ export default function RiderHome() {
       setNotificationPreferences(null);
       setTripLocations([]);
       setReputationTrips([]);
-      setRatingAppeals([]);
     }
   }, [session, supabase, tenantSlug]);
 
@@ -590,21 +584,6 @@ export default function RiderHome() {
     });
     if (result.error) setError(riderErrorMessage(result.error));
     else { setMessage("Your private trip rating was submitted."); await loadPortal(); }
-    setBusy(false);
-  }
-
-  async function submitRatingAppeal(bookingId: string) {
-    if (!supabase) return;
-    const reason = window.prompt("Explain why this received rating should be reviewed (10–1,000 characters).");
-    if (!reason?.trim()) return;
-    setBusy(true); setError(""); setMessage("");
-    const result = await supabase.rpc("submit_my_rider_rating_appeal", {
-      target_tenant_slug: tenantSlug,
-      target_booking_id: bookingId,
-      reason_value: reason,
-    });
-    if (result.error) setError(riderErrorMessage(result.error));
-    else { setMessage("Your rating appeal was submitted for review."); await loadPortal(); }
     setBusy(false);
   }
 
@@ -1451,13 +1430,11 @@ export default function RiderHome() {
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
             {reputationTrips.length === 0 ? <div className="card empty"><p>Completed trips eligible for rating will appear here.</p></div> : reputationTrips.map((trip) => {
-              const appeal = ratingAppeals.find((item) => item.bookingId === trip.bookingId);
               return <article className="card trip-card" key={`rating-${trip.bookingId}`}>
                 <h3>{trip.pickupAddress}</h3><p className="destination">to {trip.destinationAddress}</p>
                 <p className="area">Driver: {trip.subjectName} · completed {formatDate(trip.completedAt)}</p>
                 {trip.submittedRating ? <p><strong>Your rating:</strong> {trip.submittedRating.overall}/5</p> : null}
                 {trip.receivedRating ? <p><strong>Driver’s rating:</strong> {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</p> : null}
-                {appeal ? <p className="area"><strong>Appeal: {appeal.status.replaceAll("_", " ")}</strong> · {appeal.reason}{appeal.resolutionNotes ? <><br />Resolution: {appeal.resolutionNotes}</> : null}</p> : trip.receivedRating ? <button className="text-button" disabled={busy} onClick={() => void submitRatingAppeal(trip.bookingId)} type="button">Appeal received rating</button> : null}
                 {trip.canSubmit ? (
                   <form className="form-grid" onSubmit={(event) => void submitRating(event, trip.bookingId)}>
                     {[["overall", "Overall"], ["safety", "Safety"], ["communication", "Communication"], ["cleanliness", "Vehicle cleanliness"]].map(([name, label]) => (

@@ -14,16 +14,4 @@ To discourage retaliation, a received rating is revealed only after both parties
 seven days after completion. Hidden ratings are never returned to the rated party; the submitter can
 still see their own submission. Ratings do not affect dispatch eligibility or matching in V1.
 
-Reputation Appeals V2 lets the rated Rider or Driver appeal only a rating that the delayed-
-disclosure contract has already revealed to them. The appeal reason is required, bounded, and
-stored separately from the immutable rating. One appeal is allowed per rating and appellant.
-Authenticated portal RPCs derive the appellant and trip ownership; clients cannot appeal ratings
-belonging to another person or tenant and cannot read raw appeal rows.
-
-Tenant dispatch managers can review appeals under tenant RLS and either uphold the rating or remove
-it with required resolution notes. Removing an appealed rating uses the existing moderation fields
-to hide it from the rated party; neither the original score/comment nor the appeal is deleted or
-rewritten. Submission and resolution emit tenant audit events. An upheld decision leaves the rating
-visible. Appeals do not affect dispatch eligibility, matching, or aggregate profiles.
-
-Notification delivery, aggregate public profiles, and rating-based matching remain deferred.
+Notification delivery, appeals, aggregate public profiles, and rating-based matching remain deferred.

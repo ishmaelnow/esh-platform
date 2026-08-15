@@ -4,8 +4,8 @@ Last updated: 2026-08-15
 
 ## Current objective
 
-Complete Reputation Appeals V2 while SMS production verification waits on Twilio billing ticket
-`#29018616`; the Stripe sandbox dispute retry issue also remains deferred.
+Continue SMS production verification when Twilio resolves billing ticket `#29018616`; the Stripe
+sandbox dispute retry issue remains deferred.
 
 ## Repository and deployment state
 
@@ -430,18 +430,6 @@ negative balance. Twilio billing ticket `#29018616` requests the transaction-lev
 production testing is deferred until Twilio reactivates the account; email and Web Push remain
 operational.
 
-Reputation Appeals V2 is implemented locally. Riders and Drivers can submit one appeal only for a
-received rating already revealed by the existing retaliation-resistant disclosure rule. The
-database derives trip ownership and appellant role, keeps the source rating and appeal history,
-and records tenant audit events. Admin Reputation loads tenant-scoped appeals and can uphold or
-remove a rating with required resolution notes; Rider and Driver portals show the appeal outcome.
-Migration `20260815000500_trip_rating_appeals_v2.sql`, shared client types, architecture, and the
-production manual test are included. Supabase, Admin, Rider, and Driver typechecks pass; Admin tests
-pass 63/63, Rider tests pass 8/8, Driver tests pass 13/13; all three production builds and
-`git diff --check` pass. The existing Supabase Realtime and missing Next ESLint-plugin warnings
-remain non-blocking. The remote migration dry run lists only the intended appeals migration. Next:
-owner apply/deploy and run the manual test.
-
 ## Cleanup still required after testing
 
 - Cancel unfinished test bookings.
@@ -452,7 +440,7 @@ owner apply/deploy and run the manual test.
 
 ## Exact next action
 
-Apply the single Reputation Appeals V2 migration, commit/deploy the validated changes, and run the
+Continue SMS production verification after Twilio reactivates the account, then run the
 production manual test.
 
 ## Required reading for recovery
@@ -466,7 +454,6 @@ production manual test.
 - `docs/architecture/automatic-driver-matching.md`
 - `docs/architecture/realtime-driver-location.md`
 - `docs/architecture/trip-reputation.md`
-- `docs/operations/trip-reputation-appeals-manual-test.md`
 - `docs/architecture/ledger-foundation.md`
 - `docs/operations/ledger-foundation-manual-test.md`
 - `docs/architecture/trip-pricing.md`

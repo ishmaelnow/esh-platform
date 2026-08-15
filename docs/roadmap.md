@@ -134,9 +134,7 @@ deferred from this milestone and were delivered under the later milestones below
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,
      audited Admin moderation, and portal experiences for both sides.
    - Production manual verification passed across Rider and Driver submission and disclosure.
-   - Current delivery in progress: Rider and Driver appeals of disclosed received ratings with
-     tenant-scoped Admin resolution, preserved source ratings, and complete audit history.
-   - Remaining: notifications, aggregate public profiles, and any deliberate rating-based
+   - Remaining: notifications, appeals, aggregate public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**
    - Current delivery: fixed tenant operating currency, integer minor-unit semantics,

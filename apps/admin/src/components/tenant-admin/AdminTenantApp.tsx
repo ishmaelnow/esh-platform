@@ -4365,34 +4365,9 @@ function ReputationPanel({ canManageTenant, onRefresh, summary }: { canManageTen
     setMessage(result.error ? result.error.message : `Rating ${status === "hidden" ? "hidden" : "restored"}.`);
     if (!result.error) onRefresh();
   }
-  async function resolveAppeal(appealId: string, resolution: "upheld" | "removed") {
-    const notes = window.prompt(
-      resolution === "removed"
-        ? "Explain why this rating should be removed."
-        : "Explain why this rating should remain visible.",
-    );
-    if (!notes?.trim()) return;
-    const result = await supabase.rpc("resolve_trip_rating_appeal", {
-      target_appeal_id: appealId,
-      resolution_value: resolution,
-      resolution_notes_value: notes,
-    });
-    setMessage(result.error ? result.error.message : `Appeal ${resolution}.`);
-    if (!result.error) onRefresh();
-  }
   return <section className="panel-stack">
     <PanelHeader title="Reputation" description={`${summary.tripRatings.length} ratings · ${average} average`} />
     {message ? <p className="feedback-message">{message}</p> : null}
-    <h4>Rating appeals</h4>
-    {summary.tripRatingAppeals.length === 0 ? <EmptyState message="No rating appeals have been submitted." /> : summary.tripRatingAppeals.map((appeal) => {
-      const rating = summary.tripRatings.find((item) => item.rating_id === appeal.rating_id);
-      const booking = summary.dispatchBookings.find((item) => item.booking_id === appeal.booking_id);
-      return <article className="data-card" key={appeal.rating_appeal_id}>
-        <div><strong>{appeal.appellant_type === "rider" ? "Rider appeal" : "Driver appeal"} · {appeal.status}</strong><p>{booking ? `${booking.pickup_address} to ${booking.destination_address}` : `Booking ${appeal.booking_id}`}</p><p>{appeal.reason}</p>{rating ? <small>Rating: {rating.overall_rating}/5 · {rating.moderation_status}</small> : null}{appeal.resolution_notes ? <p><strong>Resolution:</strong> {appeal.resolution_notes}</p> : null}<small>Submitted {formatDate(appeal.submitted_at)}</small></div>
-        {canManageTenant && appeal.status === "submitted" ? <div className="row-actions"><button className="secondary-button" type="button" onClick={() => void resolveAppeal(appeal.rating_appeal_id, "upheld")}>Uphold rating</button><button className="secondary-button" type="button" onClick={() => void resolveAppeal(appeal.rating_appeal_id, "removed")}>Remove rating</button></div> : null}
-      </article>;
-    })}
-    <h4>Ratings</h4>
     {summary.tripRatings.length === 0 ? <EmptyState message="Submitted Rider and Driver ratings will appear here." /> : summary.tripRatings.map((rating) => {
       const booking = summary.dispatchBookings.find((item) => item.booking_id === rating.booking_id);
       return <article className="data-card" key={rating.rating_id}>
