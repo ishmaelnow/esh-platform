@@ -225,6 +225,7 @@ export default function DriverHome() {
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
   const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
   const knownDispatchOfferIds = useRef<Set<string>>(new Set());
+  const processedAuthCallbacks = useRef(new Set<string>());
   const earningsStatement = useMemo(() => buildEarningsStatement(
     wallet?.trips ?? [], bankPayouts, { startDate: statementStartDate, endDate: statementEndDate },
   ), [bankPayouts, statementEndDate, statementStartDate, wallet?.trips]);
@@ -318,11 +319,29 @@ export default function DriverHome() {
     let cancelled = false;
     let listener: { remove: () => Promise<void> } | null = null;
     const handleCallback = async (url: string) => {
+      if (cancelled || processedAuthCallbacks.current.has(url)) return;
+      processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
+      const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
+      if (callbackError) {
+        setMessage(`Sign-in could not be completed: ${callbackError}`);
+        return;
+      }
       const code = callback.searchParams.get("code");
-      if (!code || cancelled) return;
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError) setMessage(`Sign-in could not be completed: ${exchangeError.message}`);
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) setMessage(`Sign-in could not be completed: ${exchangeError.message}`);
+        return;
+      }
+      const hash = new URLSearchParams(callback.hash.replace(/^#/, ""));
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+      if (!accessToken || !refreshToken) return;
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionError) setMessage(`Sign-in could not be completed: ${sessionError.message}`);
     };
     void App.addListener("appUrlOpen", ({ url }) => void handleCallback(url)).then((handle) => {
       listener = handle;
@@ -509,7 +528,7 @@ export default function DriverHome() {
       return;
     }
     const redirectUrl = Capacitor.isNativePlatform()
-      ? "com.esh.driver://auth/callback"
+      ? "https://driver.eshapp.com/auth/callback"
       : (() => {
           const url = new URL(window.location.href);
           url.hash = "";

@@ -80,9 +80,12 @@ signing, and background-location review remain follow-up work. Rider Android now
 HTTPS App Link `https://rider.eshapp.com/auth/callback?tenant=<tenantSlug>` with
 `apps/rider/public/.well-known/assetlinks.json` and retains `com.esh.rider://auth/callback` as a
 fallback. Its native callback handler accepts both PKCE codes and token fragments before restoring
-the Supabase session. Driver and iOS retain their existing callback schemes. The Rider tests and
-typecheck pass. Next: owner commit/deploy the callback-session fix, then rebuild and reinstall the
-Rider debug APK using `docs/operations/mobile-app-shell-manual-test.md`.
+the Supabase session. Driver Android now has the corresponding verified
+`https://driver.eshapp.com/auth/callback` App Link, `com.esh.driver://auth/callback` fallback,
+browser callback route, and idempotent native session restoration. Rider and Driver tests,
+typechecks, and production builds pass. Next: owner commit/deploy the Driver App Links change,
+verify the public Driver assetlinks endpoint, then build and install the Driver debug APK using
+`docs/operations/mobile-app-shell-manual-test.md`.
 
 ## Temporary production settings
 
