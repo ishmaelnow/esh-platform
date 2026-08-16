@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
@@ -312,6 +314,23 @@ export default function DriverHome() {
   }, [supabase]);
 
   useEffect(() => {
+    if (!supabase || !Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    let listener: { remove: () => Promise<void> } | null = null;
+    void App.addListener("appUrlOpen", async ({ url }) => {
+      const callback = new URL(url);
+      const code = callback.searchParams.get("code");
+      if (!code || cancelled) return;
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      if (exchangeError) setMessage(`Sign-in could not be completed: ${exchangeError.message}`);
+    }).then((handle) => { listener = handle; });
+    return () => {
+      cancelled = true;
+      if (listener) void listener.remove();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
     if (!summary?.driverProfileId) return;
     void currentPushSubscription().then((subscription) => setPushEnabled(Boolean(subscription))).catch(() => undefined);
   }, [summary?.driverProfileId]);
@@ -483,11 +502,16 @@ export default function DriverHome() {
       setMessage("Driver portal configuration is unavailable.");
       return;
     }
-    const redirectUrl = new URL(window.location.href);
-    redirectUrl.hash = "";
+    const redirectUrl = Capacitor.isNativePlatform()
+      ? "com.esh.driver://auth/callback"
+      : (() => {
+          const url = new URL(window.location.href);
+          url.hash = "";
+          return url.toString();
+        })();
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: redirectUrl.toString(), shouldCreateUser: false },
+      options: { emailRedirectTo: redirectUrl, shouldCreateUser: false },
     });
     setMessage(error ? error.message : "Check your email for the secure sign-in link.");
   }

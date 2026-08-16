@@ -76,9 +76,11 @@ Capacitor Mobile App Shell V1 is implemented locally. Rider and Driver each have
 configuration, Android and iOS projects, native bundle IDs, secure HTTPS hosted URLs, and App,
 Browser, Geolocation, and Push Notifications plugin registration. The shell preserves the existing
 Next.js backend and web UI; no server secrets enter the bundle. Native push credentials, store
-signing, and background-location review remain follow-up work. The Rider and Driver test suites and
-typechecks pass. Next: owner commit/deploy the shell foundation, then build debug Android/iOS apps
-using `docs/operations/mobile-app-shell-manual-test.md`.
+signing, and background-location review remain follow-up work. Native magic-link callbacks are
+configured as `com.esh.rider://auth/callback` and `com.esh.driver://auth/callback`; the matching
+Supabase redirect allow-list entries are required before testing. The Rider and Driver test suites
+and typechecks pass. Next: owner commit/deploy the shell foundation, then build debug Android/iOS
+apps using `docs/operations/mobile-app-shell-manual-test.md`.
 
 ## Temporary production settings
 

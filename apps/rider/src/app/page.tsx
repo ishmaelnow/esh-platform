@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
@@ -433,6 +435,23 @@ export default function RiderHome() {
   }, [supabase]);
 
   useEffect(() => {
+    if (!supabase || !Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    let listener: { remove: () => Promise<void> } | null = null;
+    void App.addListener("appUrlOpen", async ({ url }) => {
+      const callback = new URL(url);
+      const code = callback.searchParams.get("code");
+      if (!code || cancelled) return;
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      if (exchangeError) setError(`Sign-in could not be completed: ${exchangeError.message}`);
+    }).then((handle) => { listener = handle; });
+    return () => {
+      cancelled = true;
+      if (listener) void listener.remove();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const requestedView = new URLSearchParams(window.location.search).get("view");
     if (requestedView === "payments") setActivePortalTab("payments");
@@ -531,12 +550,17 @@ export default function RiderHome() {
     setError("");
     setMessage("");
     try {
-      const redirect = new URL(window.location.href);
-      redirect.hash = "";
-      redirect.searchParams.set("tenant", tenantSlug);
+      const redirect = Capacitor.isNativePlatform()
+        ? `com.esh.rider://auth/callback?tenant=${encodeURIComponent(tenantSlug)}`
+        : (() => {
+            const url = new URL(window.location.href);
+            url.hash = "";
+            url.searchParams.set("tenant", tenantSlug);
+            return url.toString();
+          })();
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: { emailRedirectTo: redirect.toString(), shouldCreateUser: true },
+        options: { emailRedirectTo: redirect, shouldCreateUser: true },
       });
       if (signInError) throw signInError;
       setMessage("Check your email and open the secure sign-in link on this device.");
