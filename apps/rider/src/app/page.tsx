@@ -200,6 +200,7 @@ export default function RiderHome() {
   const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments" | "wallet">("book");
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
+  const processedAuthCallbacks = useRef(new Set<string>());
 
   useEffect(() => {
     if (!mapboxToken || !serviceAreaContext || !pickupSearchSession || pickupSelection) {
@@ -439,11 +440,29 @@ export default function RiderHome() {
     let cancelled = false;
     let listener: { remove: () => Promise<void> } | null = null;
     const handleCallback = async (url: string) => {
+      if (cancelled || processedAuthCallbacks.current.has(url)) return;
+      processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
+      const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
+      if (callbackError) {
+        setError(`Sign-in could not be completed: ${callbackError}`);
+        return;
+      }
       const code = callback.searchParams.get("code");
-      if (!code || cancelled) return;
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError) setError(`Sign-in could not be completed: ${exchangeError.message}`);
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) setError(`Sign-in could not be completed: ${exchangeError.message}`);
+        return;
+      }
+      const hash = new URLSearchParams(callback.hash.replace(/^#/, ""));
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+      if (!accessToken || !refreshToken) return;
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionError) setError(`Sign-in could not be completed: ${sessionError.message}`);
     };
     void App.addListener("appUrlOpen", ({ url }) => void handleCallback(url)).then((handle) => {
       listener = handle;

@@ -79,10 +79,10 @@ Next.js backend and web UI; no server secrets enter the bundle. Native push cred
 signing, and background-location review remain follow-up work. Rider Android now uses the verified
 HTTPS App Link `https://rider.eshapp.com/auth/callback?tenant=<tenantSlug>` with
 `apps/rider/public/.well-known/assetlinks.json` and retains `com.esh.rider://auth/callback` as a
-fallback. Driver and iOS retain their existing callback schemes. The Rider and Driver test suites
-and typechecks pass. Next: owner commit/deploy the App Links change, verify the public assetlinks
-endpoint, then build and reinstall the Rider debug APK using
-`docs/operations/mobile-app-shell-manual-test.md`.
+fallback. Its native callback handler accepts both PKCE codes and token fragments before restoring
+the Supabase session. Driver and iOS retain their existing callback schemes. The Rider tests and
+typecheck pass. Next: owner commit/deploy the callback-session fix, then rebuild and reinstall the
+Rider debug APK using `docs/operations/mobile-app-shell-manual-test.md`.
 
 ## Temporary production settings
 

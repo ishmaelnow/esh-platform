@@ -14,9 +14,10 @@ verified `rider.eshapp.com` callback and `apps/rider/public/.well-known/assetlin
 that host to `com.esh.rider` for the debug signing certificate. The existing
 `com.esh.rider://auth/callback` filter remains as a fallback. Driver and iOS continue using their
 existing native callback schemes until their platform-specific App Link/Universal Link work is
-implemented. The callback handler exchanges the Supabase PKCE code in the native shell. The HTTPS
-callback and the custom fallback must be allowed in Supabase Authentication URL Configuration
-before mobile sign-in testing.
+implemented. The callback handler accepts either a Supabase PKCE code or an implicit-flow token
+fragment and establishes the native session without relying on the WebView URL. The HTTPS callback
+and the custom fallback must be allowed in Supabase Authentication URL Configuration before mobile
+sign-in testing.
 
 The Capacitor App, Browser, Geolocation, and Push Notifications plugins are installed to establish
 the native boundary. Native push delivery and native background location require platform-specific

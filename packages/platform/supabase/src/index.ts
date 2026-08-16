@@ -9,6 +9,9 @@ export type PlatformSupabaseClient = SupabaseClient<Database>;
 export type PublicSupabaseClientConfig = {
   url: string;
   anonKey: string;
+  auth?: {
+    detectSessionInUrl?: boolean;
+  };
 };
 
 export const tenantFoundationTables = [
@@ -116,7 +119,7 @@ export function createIsolatedBrowserSupabaseClient(
   return createClient<Database>(url, anonKey, {
     auth: {
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: config?.auth?.detectSessionInUrl ?? true,
       persistSession: true,
       storageKey,
     },
