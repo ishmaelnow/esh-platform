@@ -438,13 +438,19 @@ export default function RiderHome() {
     if (!supabase || !Capacitor.isNativePlatform()) return;
     let cancelled = false;
     let listener: { remove: () => Promise<void> } | null = null;
-    void App.addListener("appUrlOpen", async ({ url }) => {
+    const handleCallback = async (url: string) => {
       const callback = new URL(url);
       const code = callback.searchParams.get("code");
       if (!code || cancelled) return;
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
       if (exchangeError) setError(`Sign-in could not be completed: ${exchangeError.message}`);
-    }).then((handle) => { listener = handle; });
+    };
+    void App.addListener("appUrlOpen", ({ url }) => void handleCallback(url)).then((handle) => {
+      listener = handle;
+      void App.getLaunchUrl().then((launch) => {
+        if (launch?.url) void handleCallback(launch.url);
+      });
+    });
     return () => {
       cancelled = true;
       if (listener) void listener.remove();
