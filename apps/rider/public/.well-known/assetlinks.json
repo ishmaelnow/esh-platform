@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.esh.rider",
+      "sha256_cert_fingerprints": [
+        "71:F7:84:C9:6E:B7:F3:4F:DE:72:29:75:FF:66:6F:D4:C2:39:A7:78:FA:64:FF:AC:E9:1A:EF:B1:32:1A:D4:AD"
+      ]
+    }
+  }
+]

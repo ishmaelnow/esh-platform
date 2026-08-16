@@ -186,6 +186,9 @@ deferred from this milestone and were delivered under the later milestones below
 
 - Current delivery in progress: Capacitor Rider and Driver shells load the existing deployed apps
   with separate native identities and secure defaults.
+- Current delivery: Rider Android verified HTTPS App Links return authentication email links to the
+  installed `com.esh.rider` app, with a retained custom-scheme fallback and Digital Asset Links
+  verification.
 - Remaining: native platform projects, store signing, APNs/FCM push integration, and reviewed
   background location behavior.
 

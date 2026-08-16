@@ -8,10 +8,15 @@ The Rider shell uses `com.esh.rider` and loads `https://rider.eshapp.com`; the D
 `com.esh.driver` and loads `https://driver.eshapp.com`. `CAPACITOR_SERVER_URL` may override either
 URL for emulator development. Cleartext traffic and mixed content are disabled by default.
 
-Magic-link authentication uses native callbacks `com.esh.rider://auth/callback` and
-`com.esh.driver://auth/callback`. Android intent filters and iOS URL schemes return the email link
-to the correct app; the app exchanges the Supabase PKCE code in the native shell. These two callback
-URLs must be added to Supabase Authentication URL Configuration before mobile sign-in testing.
+Rider Android magic-link authentication uses the verified HTTPS App Link
+`https://rider.eshapp.com/auth/callback?tenant=<tenantSlug>`. The Rider manifest declares the
+verified `rider.eshapp.com` callback and `apps/rider/public/.well-known/assetlinks.json` delegates
+that host to `com.esh.rider` for the debug signing certificate. The existing
+`com.esh.rider://auth/callback` filter remains as a fallback. Driver and iOS continue using their
+existing native callback schemes until their platform-specific App Link/Universal Link work is
+implemented. The callback handler exchanges the Supabase PKCE code in the native shell. The HTTPS
+callback and the custom fallback must be allowed in Supabase Authentication URL Configuration
+before mobile sign-in testing.
 
 The Capacitor App, Browser, Geolocation, and Push Notifications plugins are installed to establish
 the native boundary. Native push delivery and native background location require platform-specific

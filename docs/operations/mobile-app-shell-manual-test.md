@@ -4,10 +4,15 @@
    Capacitor CLI. Open the generated project in Android Studio or Xcode and build a debug app.
 2. Confirm the Rider shell opens `https://rider.eshapp.com`, preserves the ESH title/icon area, and
    does not expose any server-only environment value in the bundle.
-3. In Supabase Authentication URL Configuration, add `com.esh.rider://auth/callback` and
-   `com.esh.driver://auth/callback` to the allowed redirect URLs.
-4. Sign in with a test Rider account. Open the email link and confirm it returns to ESH Rider rather
-   than a browser, then confirm the PKCE session completes inside the app.
+3. In Supabase Authentication URL Configuration, add these allowed redirect URLs:
+   `https://rider.eshapp.com/auth/callback`, `com.esh.rider://auth/callback`, and
+   `com.esh.driver://auth/callback`.
+4. Confirm `https://rider.eshapp.com/.well-known/assetlinks.json` returns HTTP 200 with the
+   `com.esh.rider` package and the APK's SHA-256 debug fingerprint. Install the freshly built Rider
+   APK, open a Rider sign-in email on the Android device, and confirm the HTTPS link opens ESH Rider
+   rather than the browser and completes the PKCE session. If App Link verification is unavailable,
+   test the fallback directly with `adb shell am start -W -a android.intent.action.VIEW -d
+   "com.esh.rider://auth/callback?tenant=<tenantSlug>"`.
 5. Request a clearly labeled test trip, view its map, and confirm the existing booking and payment
    flows behave as they do on the web.
 6. Repeat steps 1–5 from `apps/driver` using `com.esh.driver` and `https://driver.eshapp.com`.
