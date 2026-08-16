@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { geocodePermanentAddress, routeTripMetrics } from "@esh-platform/maps";
+import { geocodePermanentAddress, resolveTollsForRoute, routeTripMetrics } from "@esh-platform/maps";
 import { createAuthenticatedSupabaseClient, createServiceSupabaseClient } from "@esh-platform/supabase";
+import { loadTollCatalog } from "../../../../lib/toll-pricing";
 
 function requiredText(value: unknown, label: string) {
   if (typeof value !== "string" || !value.trim()) throw new Error(`${label} is required.`);
@@ -43,9 +44,17 @@ export async function POST(request: Request) {
     const route = await routeTripMetrics({
       accessToken: mapboxToken, pickup, destination,
       requestOrigin: request.headers.get("origin") ?? undefined,
+      includeTolls: true,
     });
+    const tollCollections = route.tollCollections ?? [];
     const service = createServiceSupabaseClient();
-    const { data, error } = await service.rpc("create_rider_price_quote_internal", {
+    const catalog = await loadTollCatalog(service);
+    const tolls = resolveTollsForRoute({ pickup, destination, tollCollections, catalog });
+    if (tollCollections.length > 0 && tolls.length === 0) {
+      throw new Error("This route uses a toll facility that is not yet configured for pricing.");
+    }
+    const tollAmountMinor = tolls.reduce((total, toll) => total + toll.amountMinor, 0);
+    const quoteResult = await service.rpc("create_rider_price_quote_internal", {
       target_rider_profile_id: portal.profile.riderProfileId,
       target_service_area_id: serviceAreaId,
       pickup_address_value: pickup.formattedAddress,
@@ -56,13 +65,17 @@ export async function POST(request: Request) {
       destination_longitude_value: destination.longitude,
       route_distance_meters_value: route.distanceMeters,
       route_duration_seconds_value: route.durationSeconds,
-    });
-    if (error || !data) throw error ?? new Error("Fare quote could not be created.");
+      toll_amount_minor_value: tollAmountMinor,
+      toll_snapshot_value: tolls,
+    }) as unknown as { data: unknown; error: { message: string } | null };
+    const { data, error } = quoteResult;
+    if (error || !data) throw new Error(error?.message ?? "Fare quote could not be created.");
     const quote = data as unknown as { currencyCode: string };
     const currency = await service.from("currency_codes").select("fraction_digits")
       .eq("currency_code", quote.currencyCode).single();
     if (currency.error || !currency.data) throw currency.error ?? new Error("Fare currency is unavailable.");
-    return NextResponse.json({ ...(data as object), fractionDigits: currency.data.fraction_digits });
+    const currencyData = currency.data as unknown as { fraction_digits: number };
+    return NextResponse.json({ ...(data as Record<string, unknown>), fractionDigits: currencyData.fraction_digits });
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Fare quote could not be created." },

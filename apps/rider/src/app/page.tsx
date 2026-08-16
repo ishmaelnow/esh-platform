@@ -96,7 +96,7 @@ type RiderTripLocation = {
   fresh: boolean;
 };
 type ServiceAreaContext = { latitude: number; longitude: number; radiusKm: number };
-type RiderPriceQuote = { quoteId: string; fareAmountMinor: number; currencyCode: string; fractionDigits: number; expiresAt: string; pickupAddress: string; destinationAddress: string; routeDistanceMeters: number; routeDurationSeconds: number };
+type RiderPriceQuote = { quoteId: string; fareAmountMinor: number; baseFareAmountMinor?: number; tollAmountMinor?: number; tolls?: Array<{ facility: string; amountMinor: number }>; currencyCode: string; fractionDigits: number; expiresAt: string; pickupAddress: string; destinationAddress: string; routeDistanceMeters: number; routeDurationSeconds: number };
 type PaidRiderPriceQuote = Omit<RiderPriceQuote, "fractionDigits"> & { serviceAreaId: string };
 type RiderPayment = {
   paymentAttemptId: string;
@@ -1269,6 +1269,7 @@ export default function RiderHome() {
                   <p className="kicker">Locked fare estimate</p>
                   <h2>{new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.fareAmountMinor / 10 ** priceQuote.fractionDigits)}</h2>
                   <p className="area">Road route {(priceQuote.routeDistanceMeters / 1609.344).toFixed(1)} mi · {Math.max(1, Math.round(priceQuote.routeDurationSeconds / 60))} min · valid until {formatDate(priceQuote.expiresAt)}</p>
+                  {priceQuote.tollAmountMinor ? <p className="area">Includes tolls: {new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.tollAmountMinor / 10 ** priceQuote.fractionDigits)}{priceQuote.tolls?.length ? ` · ${priceQuote.tolls.map((toll) => toll.facility).join(", ")}` : ""}</p> : null}
                   <p className="area">{bookingTiming === "recurring" && !recurringOccurrenceId ? "This verifies the recurring route. No payment is collected until you choose an individual occurrence." : paymentConfirmed ? "Payment or wallet credit is confirmed. This trip has not been requested yet. Select the button below once to create it and notify dispatch." : wallet && wallet.availableMinor > 0 ? `${new Intl.NumberFormat(undefined, { style: "currency", currency: wallet.currencyCode }).format(wallet.availableMinor / 10 ** wallet.fractionDigits)} available wallet credit will be applied automatically; Stripe securely collects any remainder.` : "Secure payment is collected by Stripe before the trip request is created."}</p>
                 </div>
               ) : null}

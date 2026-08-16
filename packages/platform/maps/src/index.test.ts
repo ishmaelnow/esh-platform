@@ -5,6 +5,7 @@ import {
   formatRouteDuration,
   geocodePermanentAddress,
   retrieveAddressSuggestion,
+  resolveTollsForRoute,
   routeTripMetrics,
   suggestRegionalAddresses,
 } from "./index";
@@ -32,6 +33,51 @@ describe("trip route formatting", () => {
       pickup: { latitude: 40.05, longitude: -75.15 },
       destination: { latitude: 39.87, longitude: -75.24 },
     })).resolves.toEqual({ distanceMeters: 24140, durationSeconds: 1680 });
+  });
+
+  it("extracts named toll collection points from the metadata route", async () => {
+    const fetchMock = vi.fn((input: URL | RequestInfo) => {
+      const url = input instanceof URL ? input : new URL(typeof input === "string" ? input : input.url);
+      if (url.pathname.includes("/driving-traffic/")) {
+        return Promise.resolve(new Response(JSON.stringify({ routes: [{ distance: 24140, duration: 1680 }] })));
+      }
+      expect(url.pathname).toContain("/directions/v5/mapbox/driving/");
+      return Promise.resolve(new Response(JSON.stringify({ routes: [{ legs: [{ steps: [{ intersections: [
+        { toll_collection: { name: "Walt Whitman Bridge", type: "toll_gantry" } },
+        { toll_collection: { name: "Walt Whitman Bridge", type: "toll_gantry" } },
+      ] }] }] }] })));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(routeTripMetrics({
+      accessToken: "public-token",
+      pickup: { latitude: 39.95, longitude: -75.05 },
+      destination: { latitude: 39.90, longitude: -75.20 },
+      includeTolls: true,
+    })).resolves.toEqual({
+      distanceMeters: 24140,
+      durationSeconds: 1680,
+      tollCollections: [{ name: "Walt Whitman Bridge", type: "toll_gantry" }],
+    });
+  });
+  it("applies the official DRPA passenger toll only westbound", () => {
+    const tollCollections = [{ name: "Walt Whitman Bridge", type: "toll_gantry" }];
+    const catalog = [{
+      authorityCode: "drpa", authorityName: "Delaware River Port Authority", facilityId: "facility-1",
+      facilityCode: "walt_whitman_bridge", facility: "Walt Whitman Bridge", facilityType: "bridge",
+      aliasText: "Walt Whitman Bridge", mapboxType: "toll_gantry", rateId: "rate-1",
+      vehicleClass: "passenger_suv", paymentMethod: "default", direction: "westbound", amountMinor: 600,
+      currencyCode: "USD", effectiveFrom: "2024-09-01", effectiveTo: null,
+      sourceUrl: "https://drpa.org/travel/toll-schedule.html", sourceReference: null,
+    }];
+    expect(resolveTollsForRoute({
+      pickup: { longitude: -75.05 }, destination: { longitude: -75.20 }, tollCollections,
+      catalog,
+    })).toEqual([expect.objectContaining({
+      authorityCode: "drpa", facility: "Walt Whitman Bridge", amountMinor: 600, currencyCode: "USD",
+    })]);
+    expect(resolveTollsForRoute({
+      pickup: { longitude: -75.20 }, destination: { longitude: -75.05 }, tollCollections, catalog,
+    })).toEqual([]);
   });
   it("measures coordinates so implausible geocoding can be rejected", () => {
     const philadelphiaToAirport = coordinateDistanceKm(

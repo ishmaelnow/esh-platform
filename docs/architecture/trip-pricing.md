@@ -24,5 +24,20 @@ Tenant owners and administrators require `pricing.management`. Pricing cannot be
 tenant ledger is initialized. Configuration changes and completed-trip fare posting are tenant
 audited. Quote and booking access remain tenant- and Rider-scoped under RLS.
 
-Deferred: actual-distance adjustments, taxes, tolls, discounts, cancellation fees, card collection,
+Toll pricing V1 adds a trusted route metadata request for named toll collection points and a
+database-backed catalog of authorities, facilities, aliases, and effective-dated rates. The initial
+Philadelphia catalog covers DRPA bridges for passenger automobiles and SUVs traveling westbound
+into Pennsylvania at the official $6.00 rate effective 2024-09-01. Mapbox names are resolved through
+catalog aliases; unknown or unnamed toll facilities are rejected rather than silently undercharged.
+The quote RPC validates every submitted rate reference and amount against the active catalog before
+creating the quote. The resolved toll lines and source references are copied into the locked quote
+snapshot, so later catalog changes cannot alter historical quotes.
+
+The catalog already carries vehicle class, payment method, direction, effective date, currency,
+source, and optional time-window fields for later authorities and rate changes. Current route
+matching uses a trusted server-side direction heuristic and the default passenger/SUV rate. The
+client cannot invoke the quote RPC or supply an unverified toll amount.
+
+Deferred: actual-distance adjustments, taxes, additional toll authorities and vehicle classes,
+discounts, cancellation fees, card collection,
 refunds, collection settlement, payouts, and reconciliation.

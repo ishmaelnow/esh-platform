@@ -57,6 +57,19 @@ deferred.
 
 ## Current test checkpoint
 
+Preset Toll Pricing V1 is implemented locally as a generic database-backed catalog with DRPA as the
+initial Philadelphia authority. The trusted quote route keeps Mapbox traffic-aware distance and
+duration, performs a metadata-only driving request for named toll collection points, resolves
+catalog aliases and effective-dated rates for westbound passenger/SUV crossings, validates rate
+references inside the service-role quote RPC, and rejects unknown toll facilities rather than
+undercharging. Toll amount, rate references, aliases, and source details are stored in the locked
+quote snapshot and shown in the Rider quote. Maps tests pass 12/12; Rider tests pass 8/8; Rider and
+Supabase typechecks pass; Rider production build passes after adding the generated relationship
+metadata for the new catalog view and rebuilding with a fresh Next ESLint cache. The migration has
+been dry-run and applied successfully after correcting ambiguous catalog seed references. It
+preserves the deployed 10-argument quote RPC during rollout and adds the required 12-argument
+toll-aware RPC. Next: owner commit/deploy and run `docs/operations/preset-tolls-manual-test.md`.
+
 Live Trip Maps, Routing, and ETA passed production manual testing across Rider, Driver, and Admin.
 The successful Philadelphia trip normalized both selected addresses and initially rendered a
 plausible 28-minute, 15-mile road route. Driver acceptance, shared-map parity, consented live Driver
@@ -456,8 +469,9 @@ operational.
 
 ## Exact next action
 
-Commit/deploy the Capacitor mobile shell foundation, then run the
-production manual test.
+Commit/deploy the applied Preset Toll Pricing V1 changes, then run
+`docs/operations/preset-tolls-manual-test.md`. Preserve the mobile-shell deployment follow-up
+below as a separate pending work item.
 
 ## Required reading for recovery
 

@@ -192,16 +192,121 @@ export function formatRouteDuration(seconds: number) {
   return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 }
 
+export type TollCollection = { name: string | null; type: string };
+
+export type TollCatalogRow = {
+  authorityCode: string;
+  authorityName: string;
+  facilityId: string;
+  facilityCode: string;
+  facility: string;
+  facilityType: string;
+  aliasText: string;
+  mapboxType: string | null;
+  rateId: string;
+  vehicleClass: string;
+  paymentMethod: string;
+  direction: string;
+  amountMinor: number;
+  currencyCode: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  sourceUrl: string;
+  sourceReference: string | null;
+};
+
+export type ResolvedToll = {
+  authorityCode: string;
+  authorityName: string;
+  facilityId: string;
+  facilityCode: string;
+  facility: string;
+  facilityType: string;
+  matchedAlias: string;
+  rateId: string;
+  vehicleClass: string;
+  paymentMethod: string;
+  direction: string;
+  amountMinor: number;
+  currencyCode: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  sourceUrl: string;
+  sourceReference: string | null;
+};
+
+const DEFAULT_TOLL_VEHICLE_CLASS = "passenger_suv";
+const DEFAULT_TOLL_PAYMENT_METHOD = "default";
+
+function normalizeTollName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+}
+
+export function resolveTollsForRoute({
+  pickup,
+  destination,
+  tollCollections,
+  catalog,
+  vehicleClass = DEFAULT_TOLL_VEHICLE_CLASS,
+  paymentMethod = DEFAULT_TOLL_PAYMENT_METHOD,
+}: {
+  pickup: Pick<MapPoint, "longitude">;
+  destination: Pick<MapPoint, "longitude">;
+  tollCollections: TollCollection[];
+  catalog: TollCatalogRow[];
+  vehicleClass?: string;
+  paymentMethod?: string;
+}) {
+  const direction = destination.longitude < pickup.longitude ? "westbound" : "eastbound";
+  const matched = new Set<string>();
+  const tolls: ResolvedToll[] = [];
+  for (const collection of tollCollections) {
+    const normalizedName = collection.name ? normalizeTollName(collection.name) : "";
+    if (!normalizedName) continue;
+    const match = catalog.find((candidate) => {
+      if (candidate.vehicleClass !== vehicleClass || candidate.paymentMethod !== paymentMethod) return false;
+      if (candidate.direction !== direction) return false;
+      if (candidate.mapboxType && candidate.mapboxType !== collection.type) return false;
+      const alias = normalizeTollName(candidate.aliasText);
+      return normalizedName === alias || normalizedName.includes(alias);
+    });
+    if (!match || matched.has(match.facilityId)) continue;
+    matched.add(match.facilityId);
+    tolls.push({
+      authorityCode: match.authorityCode,
+      authorityName: match.authorityName,
+      facilityId: match.facilityId,
+      facilityCode: match.facilityCode,
+      facility: match.facility,
+      facilityType: match.facilityType,
+      matchedAlias: match.aliasText,
+      rateId: match.rateId,
+      vehicleClass: match.vehicleClass,
+      paymentMethod: match.paymentMethod,
+      direction: match.direction,
+      amountMinor: match.amountMinor,
+      currencyCode: match.currencyCode,
+      effectiveFrom: match.effectiveFrom,
+      effectiveTo: match.effectiveTo,
+      sourceUrl: match.sourceUrl,
+      sourceReference: match.sourceReference,
+    });
+  }
+  return tolls;
+}
+
 export async function routeTripMetrics({
   accessToken,
   pickup,
   destination,
   requestOrigin,
+  includeTolls = false,
 }: {
   accessToken: string;
   pickup: Pick<MapPoint, "latitude" | "longitude">;
   destination: Pick<MapPoint, "latitude" | "longitude">;
   requestOrigin?: string | undefined;
+  includeTolls?: boolean;
 }) {
   const coordinates = `${pickup.longitude},${pickup.latitude};${destination.longitude},${destination.latitude}`;
   const url = new URL(`https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${coordinates}`);
@@ -221,5 +326,45 @@ export async function routeTripMetrics({
   const durationSeconds = Math.round(route.duration);
   if (distanceMeters <= 0 || durationSeconds <= 0)
     throw new Error("A valid road route is required for pricing.");
-  return { distanceMeters, durationSeconds };
+  if (!includeTolls) return { distanceMeters, durationSeconds };
+
+  // Mapbox exposes toll collection points on its non-traffic driving profile.
+  // Keep the traffic-aware route as the fare route and use this metadata-only
+  // request to identify preset tolls without inventing a toll amount.
+  const tollUrl = new URL(`https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}`);
+  tollUrl.searchParams.set("access_token", accessToken);
+  tollUrl.searchParams.set("overview", "false");
+  tollUrl.searchParams.set("steps", "true");
+  tollUrl.searchParams.set("alternatives", "false");
+  const tollResponse = await fetch(
+    tollUrl,
+    requestOrigin ? { headers: { Referer: requestOrigin } } : undefined,
+  );
+  if (!tollResponse.ok) throw new Error("Toll-aware road pricing is temporarily unavailable.");
+  const tollPayload = (await tollResponse.json()) as {
+    routes?: Array<{
+      legs?: Array<{
+        steps?: Array<{
+          intersections?: Array<{ toll_collection?: { name?: string; type?: string } }>;
+        }>;
+      }>;
+    }>;
+  };
+  const seen = new Set<string>();
+  const tollCollections: TollCollection[] = [];
+  for (const leg of tollPayload.routes?.[0]?.legs ?? []) {
+    for (const step of leg.steps ?? []) {
+      for (const intersection of step.intersections ?? []) {
+        const collection = intersection.toll_collection;
+        if (!collection) continue;
+        const type = collection.type?.trim() || "toll_collection";
+        const name = collection.name?.trim() || null;
+        const key = `${type}:${name ?? "unnamed"}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        tollCollections.push({ name, type });
+      }
+    }
+  }
+  return { distanceMeters, durationSeconds, tollCollections };
 }

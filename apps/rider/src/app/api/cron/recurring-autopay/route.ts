@@ -1,7 +1,8 @@
-import { routeTripMetrics } from "@esh-platform/maps";
+import { resolveTollsForRoute, routeTripMetrics } from "@esh-platform/maps";
 import { createServiceSupabaseClient } from "@esh-platform/supabase";
 import { createStripeClient } from "@esh-platform/stripe";
 import { requestNotificationDelivery } from "../../../../lib/request-notification-delivery";
+import { loadTollCatalog } from "../../../../lib/toll-pricing";
 
 type DueOccurrence = {
   occurrenceId: string; tenantId: string; riderProfileId: string; serviceAreaId: string;
@@ -21,12 +22,28 @@ export async function GET(request: Request) {
   const stripe = createStripeClient();
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   if (!mapboxToken) return Response.json({ message: "Map routing is unavailable." }, { status: 500 });
+  let tollCatalog;
+  try {
+    tollCatalog = await loadTollCatalog(service);
+  } catch (error) {
+    return Response.json({ message: error instanceof Error ? error.message : "Toll pricing catalog is unavailable." }, { status: 500 });
+  }
   const results: Array<{ occurrenceId: string; status: string }> = [];
   for (const occurrence of occurrences) {
     try {
       const route = await routeTripMetrics({ accessToken: mapboxToken,
         pickup: { latitude: occurrence.pickupLatitude, longitude: occurrence.pickupLongitude },
-        destination: { latitude: occurrence.destinationLatitude, longitude: occurrence.destinationLongitude } });
+        destination: { latitude: occurrence.destinationLatitude, longitude: occurrence.destinationLongitude },
+        includeTolls: true });
+      const tolls = resolveTollsForRoute({
+        pickup: { longitude: occurrence.pickupLongitude },
+        destination: { longitude: occurrence.destinationLongitude },
+        tollCollections: route.tollCollections ?? [],
+        catalog: tollCatalog,
+      });
+      if ((route.tollCollections ?? []).length > 0 && tolls.length === 0)
+        throw new Error("This route uses a toll facility that is not yet configured for pricing.");
+      const tollAmountMinor = tolls.reduce((total, toll) => total + toll.amountMinor, 0);
       const quote = await service.rpc("create_rider_price_quote_internal", {
         target_rider_profile_id: occurrence.riderProfileId,
         target_service_area_id: occurrence.serviceAreaId,
@@ -35,6 +52,7 @@ export async function GET(request: Request) {
         destination_latitude_value: occurrence.destinationLatitude,
         destination_longitude_value: occurrence.destinationLongitude,
         route_distance_meters_value: route.distanceMeters, route_duration_seconds_value: route.durationSeconds,
+        toll_amount_minor_value: tollAmountMinor, toll_snapshot_value: tolls,
       });
       if (quote.error || !quote.data) throw quote.error ?? new Error("Fare quote failed.");
       const priced = quote.data as unknown as { quoteId: string; fareAmountMinor: number; currencyCode: string };

@@ -177,7 +177,10 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: tenant route-based trip rates, trusted pre-booking Rider quotes,
      15-minute fare locking, shared Rider/Driver/Admin display, pricing snapshots, audit, and
      completed-trip ledger posting.
-   - Remaining: actual-distance adjustments, taxes/tolls/discounts,
+   - Current delivery: catalog-backed toll pricing with DRPA as the initial westbound passenger
+     route authority, effective-dated rates, aliases, source snapshots, and locked quote display.
+   - Remaining: actual-distance adjustments, additional catalog entries and vehicle/payment rules,
+     taxes/discounts,
      subscriptions, usage metering, and tenant billing.
 9. **Optimization**
    - Demand intelligence, performance, levels, loyalty, and incentives.

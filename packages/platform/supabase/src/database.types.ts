@@ -1459,6 +1459,30 @@ export type Database = {
         Update: { base_fare_minor?: number; created_at?: string; currency_code?: string; minimum_fare_minor?: number; per_mile_minor?: number; per_minute_minor?: number; pricing_enabled?: boolean; tenant_id?: string; updated_at?: string; updated_by_person_id?: string }
         Relationships: []
       }
+      toll_authorities: {
+        Row: { active: boolean; authority_id: string; code: string; created_at: string; default_currency_code: string; name: string; source_url: string }
+        Insert: { active?: boolean; authority_id?: string; code: string; created_at?: string; default_currency_code: string; name: string; source_url: string }
+        Update: { active?: boolean; authority_id?: string; code?: string; created_at?: string; default_currency_code?: string; name?: string; source_url?: string }
+        Relationships: []
+      }
+      toll_facilities: {
+        Row: { active: boolean; authority_id: string; created_at: string; facility_code: string; facility_id: string; facility_type: string; name: string }
+        Insert: { active?: boolean; authority_id: string; created_at?: string; facility_code: string; facility_id?: string; facility_type: string; name: string }
+        Update: { active?: boolean; authority_id?: string; created_at?: string; facility_code?: string; facility_id?: string; facility_type?: string; name?: string }
+        Relationships: []
+      }
+      toll_facility_aliases: {
+        Row: { alias_id: string; alias_text: string; created_at: string; facility_id: string; mapbox_type: string | null; normalized_alias: string }
+        Insert: { alias_id?: string; alias_text: string; created_at?: string; facility_id: string; mapbox_type?: string | null; normalized_alias: string }
+        Update: { alias_id?: string; alias_text?: string; created_at?: string; facility_id?: string; mapbox_type?: string | null; normalized_alias?: string }
+        Relationships: []
+      }
+      toll_rates: {
+        Row: { amount_minor: number; created_at: string; currency_code: string; day_of_week_mask: number | null; direction: string; effective_from: string; effective_to: string | null; facility_id: string; local_end_time: string | null; local_start_time: string | null; payment_method: string; rate_id: string; source_reference: string | null; source_url: string; timezone: string | null; vehicle_class: string }
+        Insert: { amount_minor: number; created_at?: string; currency_code: string; day_of_week_mask?: number | null; direction: string; effective_from: string; effective_to?: string | null; facility_id: string; local_end_time?: string | null; local_start_time?: string | null; payment_method: string; rate_id?: string; source_reference?: string | null; source_url: string; timezone?: string | null; vehicle_class: string }
+        Update: { amount_minor?: number; created_at?: string; currency_code?: string; day_of_week_mask?: number | null; direction?: string; effective_from?: string; effective_to?: string | null; facility_id?: string; local_end_time?: string | null; local_start_time?: string | null; payment_method?: string; rate_id?: string; source_reference?: string | null; source_url?: string; timezone?: string | null; vehicle_class?: string }
+        Relationships: []
+      }
       trip_price_quotes: {
         Row: { booking_id: string | null; created_at: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; status: string; tenant_id: string }
         Insert: { booking_id?: string | null; created_at?: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id?: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; status?: string; tenant_id: string }
@@ -2098,7 +2122,10 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      toll_pricing_catalog: {
+        Row: { alias_text: string; amount_minor: number; authority_code: string; authority_name: string; currency_code: string; effective_from: string; effective_to: string | null; facility_code: string; facility_id: string; facility_name: string; facility_type: string; mapbox_type: string | null; payment_method: string; rate_id: string; direction: string; source_reference: string | null; source_url: string; vehicle_class: string }
+        Relationships: []
+      }
     }
     Functions: {
       accept_tenant_invitation: {
@@ -2271,7 +2298,7 @@ export type Database = {
         Returns: string
       }
       create_rider_price_quote_internal: {
-        Args: { destination_address_value: string; destination_latitude_value: number; destination_longitude_value: number; pickup_address_value: string; pickup_latitude_value: number; pickup_longitude_value: number; route_distance_meters_value: number; route_duration_seconds_value: number; target_rider_profile_id: string; target_service_area_id: string }
+        Args: { destination_address_value: string; destination_latitude_value: number; destination_longitude_value: number; pickup_address_value: string; pickup_latitude_value: number; pickup_longitude_value: number; route_distance_meters_value: number; route_duration_seconds_value: number; target_rider_profile_id: string; target_service_area_id: string; toll_amount_minor_value: number; toll_snapshot_value: Json }
         Returns: Json
       }
       create_my_rider_scheduled_booking: {
