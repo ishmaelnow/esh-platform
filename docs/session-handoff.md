@@ -68,7 +68,14 @@ Supabase typechecks pass; Rider production build passes after adding the generat
 metadata for the new catalog view and rebuilding with a fresh Next ESLint cache. The migration has
 been dry-run and applied successfully after correcting ambiguous catalog seed references. It
 preserves the deployed 10-argument quote RPC during rollout and adds the required 12-argument
-toll-aware RPC. Next: owner commit/deploy and run `docs/operations/preset-tolls-manual-test.md`.
+toll-aware RPC. Commit `1851c72` is deployed. Next: run
+`docs/operations/preset-tolls-manual-test.md` in production.
+
+The first production toll test exposed a matcher false negative: Mapbox reported a detected toll
+facility, but its descriptive metadata type did not match the catalog's stored `mapbox_type`. The
+local follow-up now treats the normalized facility alias as the pricing identity and retains the
+Mapbox type only as metadata. Maps tests pass 13/13; Rider tests pass 8/8; Maps build, Rider
+typecheck, and diff checks pass. It needs owner commit/deploy before retesting the DRPA route.
 
 Live Trip Maps, Routing, and ETA passed production manual testing across Rider, Driver, and Admin.
 The successful Philadelphia trip normalized both selected addresses and initially rendered a
@@ -469,9 +476,8 @@ operational.
 
 ## Exact next action
 
-Commit/deploy the applied Preset Toll Pricing V1 changes, then run
-`docs/operations/preset-tolls-manual-test.md`. Preserve the mobile-shell deployment follow-up
-below as a separate pending work item.
+Deploy the toll matcher false-negative fix, then rerun the DRPA production test and record the
+results. Preserve the mobile-shell deployment follow-up below as a separate pending work item.
 
 ## Required reading for recovery
 

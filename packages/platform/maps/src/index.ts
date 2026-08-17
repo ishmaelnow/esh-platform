@@ -266,7 +266,9 @@ export function resolveTollsForRoute({
     const match = catalog.find((candidate) => {
       if (candidate.vehicleClass !== vehicleClass || candidate.paymentMethod !== paymentMethod) return false;
       if (candidate.direction !== direction) return false;
-      if (candidate.mapboxType && candidate.mapboxType !== collection.type) return false;
+      // Mapbox's toll metadata type is descriptive and can vary between route
+      // responses. The normalized facility alias is the pricing identity; keep
+      // the catalog type as metadata without making it a false-negative gate.
       const alias = normalizeTollName(candidate.aliasText);
       return normalizedName === alias || normalizedName.includes(alias);
     });
