@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-15
+Last updated: 2026-08-16
 
 ## Current objective
 
@@ -9,6 +9,12 @@ waits on Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry
 deferred.
 
 ## Repository and deployment state
+
+- Hybrid toll fallback commit `728ae13` is deployed and requires `GOOGLE_MAPS_API_KEY` in the Rider
+  Production environment. Migration `20260816000300_google_toll_estimates_v1.sql` must be applied
+  before a successful Google-backed quote can be persisted. A local diagnostic follow-up is
+  validated by Rider tests and typecheck; it will expose only Google's HTTP status and safe error
+  status/message in server logs. Owner must deploy it, then inspect the reported status.
 
 - Branch: `main`
 - Admin session stabilization is deployed and passed production testing. DFW Metroplex and

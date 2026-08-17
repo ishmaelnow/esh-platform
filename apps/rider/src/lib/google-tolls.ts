@@ -35,7 +35,24 @@ export async function estimateGoogleToll(apiKey: string, origin: Point, destinat
       routeModifiers: { vehicleInfo: { emissionType: "GASOLINE" } },
     }),
   });
-  if (!response.ok) throw new Error("Google toll pricing is temporarily unavailable.");
+  if (!response.ok) {
+    let googleStatus: string | undefined;
+    let googleMessage: string | undefined;
+    try {
+      const errorPayload = await response.json() as { error?: { status?: string; message?: string } };
+      googleStatus = errorPayload.error?.status;
+      googleMessage = errorPayload.error?.message;
+    } catch {
+      // Keep the client-facing error generic if Google does not return JSON.
+    }
+    console.error("Google Routes toll request failed", {
+      httpStatus: response.status,
+      googleStatus,
+      googleMessage,
+    });
+    const providerCode = googleStatus ? ` ${googleStatus}` : "";
+    throw new Error(`Google toll pricing is temporarily unavailable (${response.status}${providerCode}).`);
+  }
   const payload = await response.json() as {
     routes?: Array<{ travelAdvisory?: { tollInfo?: { estimatedPrice?: Array<{ currencyCode?: string; units?: string; nanos?: number }> } } }>;
   };
