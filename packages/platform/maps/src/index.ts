@@ -192,7 +192,12 @@ export function formatRouteDuration(seconds: number) {
   return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 }
 
-export type TollCollection = { name: string | null; type: string };
+export type TollCollection = {
+  name: string | null;
+  type: string;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+};
 
 export type TollCatalogRow = {
   authorityCode: string;
@@ -213,6 +218,8 @@ export type TollCatalogRow = {
   effectiveTo: string | null;
   sourceUrl: string;
   sourceReference: string | null;
+  mapboxLatitude?: number | null | undefined;
+  mapboxLongitude?: number | null | undefined;
 };
 
 export type ResolvedToll = {
@@ -233,6 +240,8 @@ export type ResolvedToll = {
   effectiveTo: string | null;
   sourceUrl: string;
   sourceReference: string | null;
+  mapboxLatitude?: number | null | undefined;
+  mapboxLongitude?: number | null | undefined;
 };
 
 const DEFAULT_TOLL_VEHICLE_CLASS = "passenger_suv";
@@ -262,7 +271,6 @@ export function resolveTollsForRoute({
   const tolls: ResolvedToll[] = [];
   for (const collection of tollCollections) {
     const normalizedName = collection.name ? normalizeTollName(collection.name) : "";
-    if (!normalizedName) continue;
     const match = catalog.find((candidate) => {
       if (candidate.vehicleClass !== vehicleClass || candidate.paymentMethod !== paymentMethod) return false;
       if (candidate.direction !== direction) return false;
@@ -270,7 +278,15 @@ export function resolveTollsForRoute({
       // responses. The normalized facility alias is the pricing identity; keep
       // the catalog type as metadata without making it a false-negative gate.
       const alias = normalizeTollName(candidate.aliasText);
-      return normalizedName === alias || normalizedName.includes(alias);
+      if (normalizedName && (normalizedName === alias || normalizedName.includes(alias))) return true;
+      if (!normalizedName && Number.isFinite(collection.latitude) && Number.isFinite(collection.longitude)
+        && Number.isFinite(candidate.mapboxLatitude) && Number.isFinite(candidate.mapboxLongitude)) {
+        return coordinateDistanceKm(
+          { latitude: collection.latitude as number, longitude: collection.longitude as number },
+          { latitude: candidate.mapboxLatitude as number, longitude: candidate.mapboxLongitude as number },
+        ) <= 2;
+      }
+      return false;
     });
     if (!match || matched.has(match.facilityId)) continue;
     matched.add(match.facilityId);
@@ -292,6 +308,8 @@ export function resolveTollsForRoute({
       effectiveTo: match.effectiveTo,
       sourceUrl: match.sourceUrl,
       sourceReference: match.sourceReference,
+      mapboxLatitude: match.mapboxLatitude,
+      mapboxLongitude: match.mapboxLongitude,
     });
   }
   return tolls;
@@ -347,7 +365,10 @@ export async function routeTripMetrics({
     routes?: Array<{
       legs?: Array<{
         steps?: Array<{
-          intersections?: Array<{ toll_collection?: { name?: string; type?: string } }>;
+          intersections?: Array<{
+            location?: [number, number];
+            toll_collection?: { name?: string; type?: string };
+          }>;
         }>;
       }>;
     }>;
@@ -364,7 +385,12 @@ export async function routeTripMetrics({
         const key = `${type}:${name ?? "unnamed"}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        tollCollections.push({ name, type });
+        tollCollections.push({
+          name,
+          type,
+          longitude: intersection.location?.[0],
+          latitude: intersection.location?.[1],
+        });
       }
     }
   }

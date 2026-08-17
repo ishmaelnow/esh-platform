@@ -93,6 +93,21 @@ describe("trip route formatting", () => {
       tollCollections: [{ name: "Walt Whitman Bridge Toll Plaza", type: "toll_collection" }], catalog,
     })).toEqual([expect.objectContaining({ facility: "Walt Whitman Bridge", amountMinor: 600 })]);
   });
+  it("matches an unnamed toll booth by its configured facility coordinates", () => {
+    const catalog = [{
+      authorityCode: "drpa", authorityName: "Delaware River Port Authority", facilityId: "facility-1",
+      facilityCode: "walt_whitman_bridge", facility: "Walt Whitman Bridge", facilityType: "bridge",
+      aliasText: "Walt Whitman Bridge", mapboxType: "toll_gantry", rateId: "rate-1",
+      vehicleClass: "passenger_suv", paymentMethod: "default", direction: "westbound", amountMinor: 600,
+      currencyCode: "USD", effectiveFrom: "2024-09-01", effectiveTo: null,
+      sourceUrl: "https://drpa.org/travel/toll-schedule.html", sourceReference: null,
+      mapboxLatitude: 39.906, mapboxLongitude: -75.126,
+    }];
+    expect(resolveTollsForRoute({
+      pickup: { longitude: -75.05 }, destination: { longitude: -75.20 },
+      tollCollections: [{ name: null, type: "toll_booth", latitude: 39.9065, longitude: -75.1265 }], catalog,
+    })).toEqual([expect.objectContaining({ facility: "Walt Whitman Bridge", amountMinor: 600 })]);
+  });
   it("measures coordinates so implausible geocoding can be rejected", () => {
     const philadelphiaToAirport = coordinateDistanceKm(
       { latitude: 39.9526, longitude: -75.1652 },

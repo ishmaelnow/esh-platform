@@ -22,11 +22,13 @@ type CatalogRecord = {
   effective_to: string | null;
   source_url: string;
   source_reference: string | null;
+  mapbox_latitude: number | null;
+  mapbox_longitude: number | null;
 };
 
 export async function loadTollCatalog(service: ServiceClient): Promise<TollCatalogRow[]> {
   const { data, error } = await service.from("toll_pricing_catalog").select(
-    "authority_code,authority_name,facility_id,facility_code,facility_name,facility_type,alias_text,mapbox_type,rate_id,vehicle_class,payment_method,direction,amount_minor,currency_code,effective_from,effective_to,source_url,source_reference",
+    "authority_code,authority_name,facility_id,facility_code,facility_name,facility_type,alias_text,mapbox_type,rate_id,vehicle_class,payment_method,direction,amount_minor,currency_code,effective_from,effective_to,source_url,source_reference,mapbox_latitude,mapbox_longitude",
   );
   if (error) throw new Error("Toll pricing catalog is temporarily unavailable.");
   return ((data ?? []) as CatalogRecord[]).map((row) => ({
@@ -48,5 +50,7 @@ export async function loadTollCatalog(service: ServiceClient): Promise<TollCatal
     effectiveTo: row.effective_to,
     sourceUrl: row.source_url,
     sourceReference: row.source_reference,
+    mapboxLatitude: row.mapbox_latitude,
+    mapboxLongitude: row.mapbox_longitude,
   }));
 }

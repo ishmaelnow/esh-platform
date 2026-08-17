@@ -1466,9 +1466,9 @@ export type Database = {
         Relationships: []
       }
       toll_facilities: {
-        Row: { active: boolean; authority_id: string; created_at: string; facility_code: string; facility_id: string; facility_type: string; name: string }
-        Insert: { active?: boolean; authority_id: string; created_at?: string; facility_code: string; facility_id?: string; facility_type: string; name: string }
-        Update: { active?: boolean; authority_id?: string; created_at?: string; facility_code?: string; facility_id?: string; facility_type?: string; name?: string }
+        Row: { active: boolean; authority_id: string; created_at: string; facility_code: string; facility_id: string; facility_type: string; mapbox_latitude: number | null; mapbox_longitude: number | null; name: string }
+        Insert: { active?: boolean; authority_id: string; created_at?: string; facility_code: string; facility_id?: string; facility_type: string; mapbox_latitude?: number | null; mapbox_longitude?: number | null; name: string }
+        Update: { active?: boolean; authority_id?: string; created_at?: string; facility_code?: string; facility_id?: string; facility_type?: string; mapbox_latitude?: number | null; mapbox_longitude?: number | null; name?: string }
         Relationships: []
       }
       toll_facility_aliases: {
@@ -2123,7 +2123,7 @@ export type Database = {
     }
     Views: {
       toll_pricing_catalog: {
-        Row: { alias_text: string; amount_minor: number; authority_code: string; authority_name: string; currency_code: string; effective_from: string; effective_to: string | null; facility_code: string; facility_id: string; facility_name: string; facility_type: string; mapbox_type: string | null; payment_method: string; rate_id: string; direction: string; source_reference: string | null; source_url: string; vehicle_class: string }
+        Row: { alias_text: string; amount_minor: number; authority_code: string; authority_name: string; currency_code: string; effective_from: string; effective_to: string | null; facility_code: string; facility_id: string; facility_name: string; facility_type: string; mapbox_latitude: number | null; mapbox_longitude: number | null; mapbox_type: string | null; payment_method: string; rate_id: string; direction: string; source_reference: string | null; source_url: string; vehicle_class: string }
         Relationships: []
       }
     }

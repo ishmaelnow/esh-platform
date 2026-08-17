@@ -77,6 +77,13 @@ local follow-up now treats the normalized facility alias as the pricing identity
 Mapbox type only as metadata. Maps tests pass 13/13; Rider tests pass 8/8; Maps build, Rider
 typecheck, and diff checks pass. It needs owner commit/deploy before retesting the DRPA route.
 
+The deployed diagnostic then confirmed the DRPA route returns an unnamed `toll_booth`. A local
+coordinate-matching follow-up now captures Mapbox toll intersection coordinates, stores trusted
+coordinates for the four DRPA facilities, and matches unnamed booths within a bounded radius. It
+adds migration `20260816000200_toll_facility_coordinates_v1.sql`. Maps tests pass 14/14; Rider
+tests pass 8/8; Maps/Rider/Supabase typechecks and diff checks pass. Next: dry-run and apply only
+that migration, owner commit/deploy, then rerun the DRPA production test.
+
 Live Trip Maps, Routing, and ETA passed production manual testing across Rider, Driver, and Admin.
 The successful Philadelphia trip normalized both selected addresses and initially rendered a
 plausible 28-minute, 15-mile road route. Driver acceptance, shared-map parity, consented live Driver
@@ -476,8 +483,9 @@ operational.
 
 ## Exact next action
 
-Deploy the toll matcher false-negative fix, then rerun the DRPA production test and record the
-results. Preserve the mobile-shell deployment follow-up below as a separate pending work item.
+Dry-run and apply `20260816000200_toll_facility_coordinates_v1.sql`, deploy the coordinate matcher,
+then rerun the DRPA production test and record the results. Preserve the mobile-shell deployment
+follow-up below as a separate pending work item.
 
 ## Required reading for recovery
 
