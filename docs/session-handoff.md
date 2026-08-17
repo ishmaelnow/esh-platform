@@ -15,6 +15,12 @@ deferred.
   before a successful Google-backed quote can be persisted. A local diagnostic follow-up is
   validated by Rider tests and typecheck; it will expose only Google's HTTP status and safe error
   status/message in server logs. Owner must deploy it, then inspect the reported status.
+- Actual-distance adjustment foundation is now implemented locally in migration
+  `20260817000100_actual_distance_adjustments_v1.sql`. On trip completion, Drivers may submit a
+  reported distance; ESH stores a tenant-scoped pending Admin-review candidate against the quoted
+  distance. No automatic fare, payment, refund, or Driver-earnings movement occurs yet. Driver and
+  Supabase typechecks pass. Next: dry-run only this migration, owner apply/commit/deploy, then add
+  the Admin review control and production test.
 
 - Branch: `main`
 - Admin session stabilization is deployed and passed production testing. DFW Metroplex and

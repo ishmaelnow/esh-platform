@@ -2155,6 +2155,10 @@ export type Database = {
         Args: { target_action: string; target_booking_id: string }
         Returns: Json
       }
+      submit_my_trip_distance_adjustment: {
+        Args: { target_booking_id: string; actual_distance_meters_value: number }
+        Returns: Json
+      }
       cancel_dispatch_booking: {
         Args: { target_booking_id: string }
         Returns: boolean
