@@ -38,6 +38,14 @@ source, and optional time-window fields for later authorities and rate changes. 
 matching uses a trusted server-side direction heuristic and the default passenger/SUV rate. The
 client cannot invoke the quote RPC or supply an unverified toll amount.
 
+When Mapbox reports a toll collection point that cannot be resolved to the ESH catalog, the trusted
+Rider server may request a Google Routes toll estimate using the server-only `GOOGLE_MAPS_API_KEY`.
+Mapbox remains the source for route distance and duration. Google estimates are explicitly marked
+as estimated and `google_routes` in the locked snapshot; the database validates their currency,
+positive amount, and estimate marker before accepting the quote. If Google cannot provide a known
+estimate, pricing remains blocked rather than undercharging. Catalog-matched rates remain the
+authoritative path.
+
 Deferred: actual-distance adjustments, taxes, additional toll authorities and vehicle classes,
 discounts, cancellation fees, card collection,
 refunds, collection settlement, payouts, and reconciliation.

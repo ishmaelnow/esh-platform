@@ -483,9 +483,13 @@ operational.
 
 ## Exact next action
 
-Dry-run and apply `20260816000200_toll_facility_coordinates_v1.sql`, deploy the coordinate matcher,
-then rerun the DRPA production test and record the results. Preserve the mobile-shell deployment
-follow-up below as a separate pending work item.
+Hybrid Google Routes toll fallback is now implemented locally. Mapbox remains authoritative for
+route distance and ETA; catalog-matched tolls remain authoritative; unmatched Mapbox tolls use a
+server-only Google Routes estimate only when Google returns a known USD amount, and the quote
+snapshot marks it `google_routes` and estimated. Migration `20260816000300_google_toll_estimates_v1.sql`
+is dry-run ready and lists as the only pending migration. Rider tests pass 10/10, Maps tests pass
+14/14, all relevant typechecks and diff checks pass. Next: owner apply that migration, commit/
+deploy with `GOOGLE_MAPS_API_KEY` configured in Rider Production, then retest the DRPA route.
 
 ## Required reading for recovery
 

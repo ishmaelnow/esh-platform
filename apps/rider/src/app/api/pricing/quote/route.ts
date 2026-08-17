@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { geocodePermanentAddress, resolveTollsForRoute, routeTripMetrics } from "@esh-platform/maps";
-import { createAuthenticatedSupabaseClient, createServiceSupabaseClient } from "@esh-platform/supabase";
+import { createAuthenticatedSupabaseClient, createServiceSupabaseClient, type Json } from "@esh-platform/supabase";
 import { loadTollCatalog } from "../../../../lib/toll-pricing";
+import { estimateGoogleToll } from "../../../../lib/google-tolls";
 
 function requiredText(value: unknown, label: string) {
   if (typeof value !== "string" || !value.trim()) throw new Error(`${label} is required.`);
@@ -50,13 +51,18 @@ export async function POST(request: Request) {
     const service = createServiceSupabaseClient();
     const catalog = await loadTollCatalog(service);
     const tolls = resolveTollsForRoute({ pickup, destination, tollCollections, catalog });
-    if (tollCollections.length > 0 && tolls.length === 0) {
+    let quoteTolls: Array<{ amountMinor: number; [key: string]: unknown }> = tolls.map((toll) => ({ ...toll }));
+    if (tollCollections.length > 0 && tolls.length === 0 && process.env.GOOGLE_MAPS_API_KEY) {
+      const googleToll = await estimateGoogleToll(process.env.GOOGLE_MAPS_API_KEY, pickup, destination);
+      if (googleToll) quoteTolls = [googleToll];
+    }
+    if (tollCollections.length > 0 && quoteTolls.length === 0) {
       const detectedFacilities = tollCollections
         .map((collection) => collection.name ? `${collection.name} (${collection.type})` : `unnamed (${collection.type})`)
         .join(", ");
       throw new Error(`This route uses a toll facility that is not yet configured for pricing. Detected: ${detectedFacilities}.`);
     }
-    const tollAmountMinor = tolls.reduce((total, toll) => total + toll.amountMinor, 0);
+    const tollAmountMinor = quoteTolls.reduce((total: number, toll) => total + toll.amountMinor, 0);
     const quoteResult = await service.rpc("create_rider_price_quote_internal", {
       target_rider_profile_id: portal.profile.riderProfileId,
       target_service_area_id: serviceAreaId,
@@ -69,7 +75,7 @@ export async function POST(request: Request) {
       route_distance_meters_value: route.distanceMeters,
       route_duration_seconds_value: route.durationSeconds,
       toll_amount_minor_value: tollAmountMinor,
-      toll_snapshot_value: tolls,
+      toll_snapshot_value: quoteTolls as unknown as Json,
     }) as unknown as { data: unknown; error: { message: string } | null };
     const { data, error } = quoteResult;
     if (error || !data) throw new Error(error?.message ?? "Fare quote could not be created.");

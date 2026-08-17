@@ -14,6 +14,9 @@
 7. Test the reverse eastbound direction. DRPA's westbound-only collection must not add a toll.
 8. Test a route whose toll facility is not in the preset catalog. Pricing must stop with a clear
    configuration message rather than undercharging the Rider.
+   If Google Routes toll fallback is enabled and returns a known USD estimate, the quote may instead
+   show `Google estimated toll`; verify the quote snapshot marks the source as `google_routes` and
+   `estimated: true`. If Google returns no known amount, the route must remain blocked.
 9. Add a future-dated catalog rate in a non-production test environment and confirm that existing
    quotes retain their original snapshot and total.
 
