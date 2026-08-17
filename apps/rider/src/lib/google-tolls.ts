@@ -50,9 +50,7 @@ export async function estimateGoogleToll(apiKey: string, origin: Point, destinat
       googleStatus,
       googleMessage,
     });
-    const providerCode = googleStatus ? ` ${googleStatus}` : "";
-    const detail = googleMessage ? `: ${googleMessage.slice(0, 240)}` : "";
-    throw new Error(`Google toll pricing is temporarily unavailable (${response.status}${providerCode})${detail}`);
+    throw new Error("Google toll pricing is temporarily unavailable.");
   }
   const payload = await response.json() as {
     routes?: Array<{ travelAdvisory?: { tollInfo?: { estimatedPrice?: Array<{ currencyCode?: string; units?: string; nanos?: number }> } } }>;

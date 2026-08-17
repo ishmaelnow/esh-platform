@@ -29,6 +29,6 @@ describe("Google Routes toll estimates", () => {
       error: { status: "PERMISSION_DENIED", message: "Routes API is disabled" },
     }), { status: 403 }))));
     await expect(estimateGoogleToll("google-key", { latitude: 39.89, longitude: -75.12 }, { latitude: 39.90, longitude: -75.16 }))
-      .rejects.toThrow("temporarily unavailable (403 PERMISSION_DENIED): Routes API is disabled");
+      .rejects.toThrow("Google toll pricing is temporarily unavailable.");
   });
 });
