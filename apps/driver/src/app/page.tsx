@@ -1109,19 +1109,6 @@ export default function DriverHome() {
       setDispatch(result.data as unknown as DriverDispatch);
       setDispatchMessage(action === "complete" ? "Trip completed." : "Trip updated.");
       if (action === "complete") {
-        const reportedDistance = window.prompt("Optional: enter the completed route distance in miles for Admin review. Leave blank to skip.");
-        if (reportedDistance?.trim()) {
-          const miles = Number(reportedDistance);
-          const meters = Number.isFinite(miles) && miles > 0 ? Math.round(miles * 1609.344) : 0;
-          if (meters > 0) {
-            const adjustment = await supabase.rpc("submit_my_trip_distance_adjustment", {
-              target_booking_id: bookingId,
-              actual_distance_meters_value: meters,
-            });
-            if (adjustment.error) setDispatchMessage(`Trip completed, but distance review was not submitted: ${adjustment.error.message}`);
-            else setDispatchMessage("Trip completed. Distance submitted for Admin review.");
-          }
-        }
         if (session) await fetch("/api/notifications/deliver", {
           method: "POST", headers: { Authorization: `Bearer ${session.access_token}` },
         }).catch(() => undefined);
