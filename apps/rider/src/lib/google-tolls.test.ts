@@ -5,11 +5,17 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("Google Routes toll estimates", () => {
   it("returns a USD minor-unit estimate", async () => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
+    const fetchMock = vi.fn(() => Promise.resolve(new Response(JSON.stringify({
       routes: [{ travelAdvisory: { tollInfo: { estimatedPrice: [{ currencyCode: "USD", units: "6", nanos: 0 }] } } }],
-    })) )));
-    await expect(estimateGoogleToll("google-key", { latitude: 39.89, longitude: -75.12 }, { latitude: 39.90, longitude: -75.16 }))
+    }))));
+    vi.stubGlobal("fetch", fetchMock);
+    const origin = { latitude: 39.89, longitude: -75.12, formattedAddress: "hidden" } as Parameters<typeof estimateGoogleToll>[1];
+    const destination = { latitude: 39.90, longitude: -75.16, formattedAddress: "hidden" } as Parameters<typeof estimateGoogleToll>[2];
+    await expect(estimateGoogleToll("google-key", origin, destination))
       .resolves.toEqual(expect.objectContaining({ amountMinor: 600, currencyCode: "USD", estimated: true }));
+    const request = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string) as { origin: { location: { latLng: Record<string, unknown> } }; destination: { location: { latLng: Record<string, unknown> } } };
+    expect(request.origin.location.latLng).toEqual({ latitude: 39.89, longitude: -75.12 });
+    expect(request.destination.location.latLng).toEqual({ latitude: 39.90, longitude: -75.16 });
   });
 
   it("returns no toll when Google omits toll information", async () => {

@@ -28,8 +28,8 @@ export async function estimateGoogleToll(apiKey: string, origin: Point, destinat
       "x-goog-fieldmask": "routes.travelAdvisory.tollInfo",
     },
     body: JSON.stringify({
-      origin: { location: { latLng: origin } },
-      destination: { location: { latLng: destination } },
+      origin: { location: { latLng: { latitude: origin.latitude, longitude: origin.longitude } } },
+      destination: { location: { latLng: { latitude: destination.latitude, longitude: destination.longitude } } },
       travelMode: "DRIVE",
       extraComputations: ["TOLLS"],
       routeModifiers: { vehicleInfo: { emissionType: "GASOLINE" } },
