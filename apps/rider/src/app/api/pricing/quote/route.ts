@@ -51,7 +51,10 @@ export async function POST(request: Request) {
     const catalog = await loadTollCatalog(service);
     const tolls = resolveTollsForRoute({ pickup, destination, tollCollections, catalog });
     if (tollCollections.length > 0 && tolls.length === 0) {
-      throw new Error("This route uses a toll facility that is not yet configured for pricing.");
+      const detectedFacilities = tollCollections
+        .map((collection) => collection.name ? `${collection.name} (${collection.type})` : `unnamed (${collection.type})`)
+        .join(", ");
+      throw new Error(`This route uses a toll facility that is not yet configured for pricing. Detected: ${detectedFacilities}.`);
     }
     const tollAmountMinor = tolls.reduce((total, toll) => total + toll.amountMinor, 0);
     const quoteResult = await service.rpc("create_rider_price_quote_internal", {
