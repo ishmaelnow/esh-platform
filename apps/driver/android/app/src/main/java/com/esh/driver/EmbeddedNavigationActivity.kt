@@ -25,7 +25,6 @@ import com.mapbox.navigation.base.route.RouterFailure
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
-import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
@@ -87,11 +86,12 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             routeLineApi = MapboxRouteLineApi(MapboxRouteLineApiOptions.Builder().build())
             routeLineView = MapboxRouteLineView(MapboxRouteLineViewOptions.Builder(this).build())
 
-            if (!MapboxNavigationApp.isSetup()) {
-                MapboxNavigationApp.setup(NavigationOptions.Builder(this).build())
+            val navigationOptions = NavigationOptions.Builder(this).build()
+            mapboxNavigation = if (MapboxNavigationProvider.isCreated()) {
+                MapboxNavigationProvider.retrieve()
+            } else {
+                MapboxNavigationProvider.create(navigationOptions)
             }
-            MapboxNavigationApp.attach(this)
-            mapboxNavigation = MapboxNavigationProvider.retrieve()
             mapboxNavigation?.registerRoutesObserver(routesObserver)
             mapboxNavigation?.registerLocationObserver(locationObserver)
             mapboxNavigation?.startTripSession()
@@ -146,7 +146,6 @@ class EmbeddedNavigationActivity : ComponentActivity() {
         mapboxNavigation?.unregisterRoutesObserver(routesObserver)
         mapboxNavigation?.unregisterLocationObserver(locationObserver)
         mapboxNavigation?.stopTripSession()
-        MapboxNavigationApp.detach(this)
         super.onDestroy()
     }
 
