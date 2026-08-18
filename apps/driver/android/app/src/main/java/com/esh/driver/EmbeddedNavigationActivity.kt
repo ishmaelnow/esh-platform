@@ -67,7 +67,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     private val voiceInstructionsObserver = VoiceInstructionsObserver { instructions ->
         runOnUiThread {
             if (::maneuverText.isInitialized) {
-                maneuverText.text = instructions.announcement
+                maneuverText.text = instructions.announcement()
                 maneuverText.visibility = TextView.VISIBLE
             }
         }
