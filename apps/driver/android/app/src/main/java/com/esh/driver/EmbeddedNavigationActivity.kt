@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import com.mapbox.api.directions.v5.models.RouteOptions
+import com.mapbox.bindgen.Expected
 import com.mapbox.common.location.Location
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
@@ -19,6 +20,7 @@ import com.mapbox.maps.MapView
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
+import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.base.route.NavigationRoute
 import com.mapbox.navigation.base.route.NavigationRouterCallback
@@ -28,11 +30,19 @@ import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
+import com.mapbox.navigation.core.trip.session.VoiceInstructionsObserver
+import com.mapbox.navigation.ui.base.util.MapboxNavigationConsumer
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineApi
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineView
 import com.mapbox.navigation.ui.maps.route.line.model.MapboxRouteLineApiOptions
 import com.mapbox.navigation.ui.maps.route.line.model.MapboxRouteLineViewOptions
+import com.mapbox.navigation.voice.api.MapboxSpeechApi
+import com.mapbox.navigation.voice.api.MapboxVoiceInstructionsPlayer
+import com.mapbox.navigation.voice.model.SpeechAnnouncement
+import com.mapbox.navigation.voice.model.SpeechError
+import com.mapbox.navigation.voice.model.SpeechValue
+import java.util.Locale
 
 class EmbeddedNavigationActivity : ComponentActivity() {
     private lateinit var mapView: MapView
@@ -44,6 +54,23 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     private var accessToken: String = ""
     private var currentLocation: Location? = null
     private var routeRequested = false
+    private lateinit var speechApi: MapboxSpeechApi
+    private lateinit var voiceInstructionsPlayer: MapboxVoiceInstructionsPlayer
+
+    private val voiceInstructionsObserver = VoiceInstructionsObserver { instructions ->
+        speechApi.generate(instructions, speechCallback)
+    }
+
+    private val speechCallback = MapboxNavigationConsumer<Expected<SpeechError, SpeechValue>> { expected ->
+        expected.fold(
+            { error -> voiceInstructionsPlayer.play(error.fallback, voiceInstructionsPlayerCallback) },
+            { value -> voiceInstructionsPlayer.play(value.announcement, voiceInstructionsPlayerCallback) },
+        )
+    }
+
+    private val voiceInstructionsPlayerCallback = MapboxNavigationConsumer<SpeechAnnouncement> { announcement ->
+        speechApi.clean(announcement)
+    }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -85,6 +112,8 @@ class EmbeddedNavigationActivity : ComponentActivity() {
                 finish()
                 return
             }
+            speechApi = MapboxSpeechApi(this, Locale.US.toLanguageTag())
+            voiceInstructionsPlayer = MapboxVoiceInstructionsPlayer(this, Locale.US.toLanguageTag())
             mapView = MapView(
                 this,
                 MapInitOptions(
@@ -112,6 +141,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             }
             mapboxNavigation?.registerRoutesObserver(routesObserver)
             mapboxNavigation?.registerLocationObserver(locationObserver)
+            mapboxNavigation?.registerVoiceInstructionsObserver(voiceInstructionsObserver)
             mapboxNavigation?.startTripSession()
         } catch (error: Exception) {
             Toast.makeText(this, "Navigation could not start: ${error.message ?: "unknown error"}", Toast.LENGTH_LONG).show()
@@ -146,6 +176,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
         mapboxNavigation?.requestRoutes(
             RouteOptions.builder()
                 .applyDefaultNavigationOptions()
+                .applyLanguageAndVoiceUnitOptions(this)
                 .coordinatesList(listOf(origin, destinationPoint))
                 .build(),
             object : NavigationRouterCallback {
@@ -174,7 +205,10 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     override fun onDestroy() {
         mapboxNavigation?.unregisterRoutesObserver(routesObserver)
         mapboxNavigation?.unregisterLocationObserver(locationObserver)
+        mapboxNavigation?.unregisterVoiceInstructionsObserver(voiceInstructionsObserver)
         mapboxNavigation?.stopTripSession()
+        if (::speechApi.isInitialized) speechApi.cancel()
+        if (::voiceInstructionsPlayer.isInitialized) voiceInstructionsPlayer.shutdown()
         super.onDestroy()
     }
 
