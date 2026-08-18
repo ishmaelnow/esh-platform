@@ -22,3 +22,14 @@
    or `http://10.0.2.2:3002` for Driver and use a local dev server. Do not ship an HTTP URL.
 8. Verify native push and background-location work are not reported as enabled until APNs/FCM and
    platform location review are completed. Restore test availability and cancel unfinished trips.
+
+## Embedded Driver navigation (Android)
+
+After the Driver native bridge changes are committed, rebuild and install the debug APK. Open an
+accepted trip in the Driver app and select **Navigate to pickup**. On Android, the app should remain
+inside the ESH Driver APK and show a Mapbox map, route line, current-location puck, and live route
+session. After arriving and starting the trip, **Navigate to destination** should open the same
+embedded screen for the destination. Denying location permission must show a clear message and close
+the navigation screen; an older APK or unavailable native plugin may fall back to the existing
+Google Maps handoff. Do not treat the web button opening Google Maps as proof that the embedded
+feature is installed. Restore the Driver to offline and cancel any unfinished test trip afterward.

@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-16
+Last updated: 2026-08-18
 
 ## Current objective
 
@@ -134,6 +134,15 @@ browser callback route, and idempotent native session restoration. Rider and Dri
 typechecks, and production builds pass. Next: owner commit/deploy the Driver App Links change,
 verify the public Driver assetlinks endpoint, then build and install the Driver debug APK using
 `docs/operations/mobile-app-shell-manual-test.md`.
+
+Driver embedded navigation is now implemented locally on the Android native boundary. The Driver
+dependency uses Mapbox Navigation SDK 3.26.0 with the secret Downloads:Read token remaining in the
+owner's global Gradle properties. A Capacitor `EmbeddedNavigation` plugin launches an Android
+Mapbox navigation screen with the verified pickup/destination coordinates and the public runtime
+token. Web, iOS, and older APKs retain the existing Google Maps fallback. Driver web tests pass
+16/16 and typecheck/diff checks pass. The native Android build and device test are still required;
+do not claim embedded turn-by-turn is production-ready until the APK visibly opens the Mapbox
+screen, obtains location permission, draws a route, and follows the Driver location.
 
 ## Temporary production settings
 

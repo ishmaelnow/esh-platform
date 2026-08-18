@@ -8,7 +8,7 @@ import {
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
-import { buildNavigationUrl } from "../lib/navigation";
+import { openDriverNavigation } from "../lib/embedded-navigation";
 import {
   availabilityBlockerDetails,
   availabilityErrorMessage,
@@ -1521,7 +1521,7 @@ export default function DriverHome() {
                       <div className="row-actions">
                         <button
                           className="secondary"
-                          onClick={() => window.location.assign(buildNavigationUrl(Capacitor.getPlatform() === "android" ? "android" : Capacitor.getPlatform() === "ios" ? "ios" : "web", { latitude: trip.pickupLatitude!, longitude: trip.pickupLongitude!, label: "Pickup" }))}
+                          onClick={() => void openDriverNavigation({ latitude: trip.pickupLatitude!, longitude: trip.pickupLongitude!, label: "Pickup" }, mapboxToken)}
                           type="button"
                         >
                           Navigate to pickup
@@ -1529,7 +1529,7 @@ export default function DriverHome() {
                         {trip.status === "in_progress" ? (
                           <button
                             className="secondary"
-                            onClick={() => window.location.assign(buildNavigationUrl(Capacitor.getPlatform() === "android" ? "android" : Capacitor.getPlatform() === "ios" ? "ios" : "web", { latitude: trip.destinationLatitude!, longitude: trip.destinationLongitude!, label: "Destination" }))}
+                            onClick={() => void openDriverNavigation({ latitude: trip.destinationLatitude!, longitude: trip.destinationLongitude!, label: "Destination" }, mapboxToken)}
                             type="button"
                           >
                             Navigate to destination
