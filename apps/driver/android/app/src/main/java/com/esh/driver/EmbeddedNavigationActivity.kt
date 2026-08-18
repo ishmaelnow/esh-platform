@@ -75,17 +75,32 @@ class EmbeddedNavigationActivity : ComponentActivity() {
 
     private fun startNavigation() {
         try {
+            val destinationPoint = destination ?: run {
+                Toast.makeText(this, "Trip destination is unavailable", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
             if (getString(R.string.mapbox_access_token).isBlank()) {
                 Toast.makeText(this, "Mapbox public token is not configured", Toast.LENGTH_LONG).show()
                 finish()
                 return
             }
-            mapView = MapView(this, MapInitOptions(this, cameraOptions = CameraOptions.Builder().zoom(14.0).build()))
+            mapView = MapView(
+                this,
+                MapInitOptions(
+                    this,
+                    cameraOptions = CameraOptions.Builder()
+                        .center(destinationPoint)
+                        .zoom(12.0)
+                        .build(),
+                ),
+            )
             navigationLocationProvider = NavigationLocationProvider()
             mapView.location.setLocationProvider(navigationLocationProvider)
             mapView.location.locationPuck = createDefault2DPuck()
             mapView.location.enabled = true
             setContentView(mapView)
+            mapView.mapboxMap.loadStyleUri("mapbox://styles/mapbox/streets-v12")
             routeLineApi = MapboxRouteLineApi(MapboxRouteLineApiOptions.Builder().build())
             routeLineView = MapboxRouteLineView(MapboxRouteLineViewOptions.Builder(this).build())
 
