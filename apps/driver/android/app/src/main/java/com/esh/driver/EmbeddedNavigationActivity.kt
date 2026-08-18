@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -134,6 +135,10 @@ class EmbeddedNavigationActivity : ComponentActivity() {
                 override fun onCanceled(routeOptions: RouteOptions, routerOrigin: String) = Unit
                 override fun onFailure(reasons: List<RouterFailure>, routeOptions: RouteOptions) {
                     routeRequested = false
+                    Log.e(
+                        LOG_TAG,
+                        "Mapbox route failure origin=${currentLocation?.latitude},${currentLocation?.longitude} destination=${destinationPoint.latitude()},${destinationPoint.longitude()} reasons=$reasons options=$routeOptions",
+                    )
                     runOnUiThread {
                         Toast.makeText(
                             this@EmbeddedNavigationActivity,
@@ -157,6 +162,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     }
 
     companion object {
+        private const val LOG_TAG = "EmbeddedNavigation"
         private const val EXTRA_LATITUDE = "latitude"
         private const val EXTRA_LONGITUDE = "longitude"
         private const val EXTRA_TOKEN = "accessToken"
