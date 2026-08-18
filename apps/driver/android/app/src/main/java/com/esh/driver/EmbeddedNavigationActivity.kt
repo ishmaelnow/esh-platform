@@ -33,7 +33,6 @@ import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineApi
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineView
 import com.mapbox.navigation.ui.maps.route.line.model.MapboxRouteLineApiOptions
 import com.mapbox.navigation.ui.maps.route.line.model.MapboxRouteLineViewOptions
-import com.mapbox.maps.MapboxOptions
 
 class EmbeddedNavigationActivity : ComponentActivity() {
     private lateinit var mapView: MapView
@@ -64,7 +63,6 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             intent.getDoubleExtra(EXTRA_LONGITUDE, 0.0),
             intent.getDoubleExtra(EXTRA_LATITUDE, 0.0),
         )
-        MapboxOptions.accessToken = token
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             startNavigation()
@@ -74,22 +72,33 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     }
 
     private fun startNavigation() {
-        mapView = MapView(this, MapInitOptions(this, cameraOptions = CameraOptions.Builder().zoom(14.0).build()))
-        navigationLocationProvider = NavigationLocationProvider()
-        mapView.location.setLocationProvider(navigationLocationProvider)
-        mapView.location.locationPuck = createDefault2DPuck()
-        mapView.location.enabled = true
-        setContentView(mapView)
-        routeLineApi = MapboxRouteLineApi(MapboxRouteLineApiOptions.Builder().build())
-        routeLineView = MapboxRouteLineView(MapboxRouteLineViewOptions.Builder(this).build())
+        try {
+            if (getString(R.string.mapbox_access_token).isBlank()) {
+                Toast.makeText(this, "Mapbox public token is not configured", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+            mapView = MapView(this, MapInitOptions(this, cameraOptions = CameraOptions.Builder().zoom(14.0).build()))
+            navigationLocationProvider = NavigationLocationProvider()
+            mapView.location.setLocationProvider(navigationLocationProvider)
+            mapView.location.locationPuck = createDefault2DPuck()
+            mapView.location.enabled = true
+            setContentView(mapView)
+            routeLineApi = MapboxRouteLineApi(MapboxRouteLineApiOptions.Builder().build())
+            routeLineView = MapboxRouteLineView(MapboxRouteLineViewOptions.Builder(this).build())
 
-        if (!MapboxNavigationApp.isSetup()) {
-            MapboxNavigationApp.setup(NavigationOptions.Builder(this).build())
+            if (!MapboxNavigationApp.isSetup()) {
+                MapboxNavigationApp.setup(NavigationOptions.Builder(this).build())
+            }
+            MapboxNavigationApp.attach(this)
+            mapboxNavigation = MapboxNavigationProvider.retrieve()
+            mapboxNavigation?.registerRoutesObserver(routesObserver)
+            mapboxNavigation?.registerLocationObserver(locationObserver)
+            mapboxNavigation?.startTripSession()
+        } catch (error: Exception) {
+            Toast.makeText(this, "Navigation could not start: ${error.message ?: "unknown error"}", Toast.LENGTH_LONG).show()
+            finish()
         }
-        mapboxNavigation = MapboxNavigationProvider.retrieve()
-        mapboxNavigation?.registerRoutesObserver(routesObserver)
-        mapboxNavigation?.registerLocationObserver(locationObserver)
-        mapboxNavigation?.startTripSession()
     }
 
     private val routesObserver = RoutesObserver { update ->
@@ -137,6 +146,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
         mapboxNavigation?.unregisterRoutesObserver(routesObserver)
         mapboxNavigation?.unregisterLocationObserver(locationObserver)
         mapboxNavigation?.stopTripSession()
+        MapboxNavigationApp.detach(this)
         super.onDestroy()
     }
 
@@ -145,6 +155,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
         private const val EXTRA_LONGITUDE = "longitude"
         private const val EXTRA_TOKEN = "accessToken"
 
+        @JvmStatic
         fun intent(context: Context, latitude: Double, longitude: Double, label: String, accessToken: String) =
             Intent(context, EmbeddedNavigationActivity::class.java).apply {
                 putExtra(EXTRA_LATITUDE, latitude)
