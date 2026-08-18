@@ -41,6 +41,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     private lateinit var routeLineView: MapboxRouteLineView
     private var mapboxNavigation: MapboxNavigation? = null
     private var destination: Point? = null
+    private var accessToken: String = ""
     private var currentLocation: Location? = null
     private var routeRequested = false
 
@@ -59,6 +60,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val token = intent.getStringExtra(EXTRA_TOKEN).orEmpty()
+        accessToken = token
         destination = Point.fromLngLat(
             intent.getDoubleExtra(EXTRA_LONGITUDE, 0.0),
             intent.getDoubleExtra(EXTRA_LATITUDE, 0.0),
@@ -142,7 +144,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
                     runOnUiThread {
                         Toast.makeText(
                             this@EmbeddedNavigationActivity,
-                            "Unable to calculate route: ${reasons.joinToString { it.toString() }}",
+                            "Route failed: ${reasons.joinToString { "${it.type}: ${it.message}" }}",
                             Toast.LENGTH_LONG,
                         ).show()
                     }
