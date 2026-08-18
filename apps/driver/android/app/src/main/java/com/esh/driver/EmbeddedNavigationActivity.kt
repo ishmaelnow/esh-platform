@@ -133,7 +133,14 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             object : NavigationRouterCallback {
                 override fun onCanceled(routeOptions: RouteOptions, routerOrigin: String) = Unit
                 override fun onFailure(reasons: List<RouterFailure>, routeOptions: RouteOptions) {
-                    runOnUiThread { Toast.makeText(this@EmbeddedNavigationActivity, "Unable to calculate navigation route", Toast.LENGTH_LONG).show() }
+                    routeRequested = false
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@EmbeddedNavigationActivity,
+                            "Unable to calculate route: ${reasons.joinToString { it.toString() }}",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
                 }
                 override fun onRoutesReady(routes: List<NavigationRoute>, routerOrigin: String) {
                     mapboxNavigation?.setNavigationRoutes(routes)
