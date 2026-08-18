@@ -73,5 +73,7 @@
 			<array><string>com.esh.rider</string></array>
 		</dict>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ESH uses location to show authorized live trip progress when location sharing is enabled.</string>
 </dict>
 </plist>

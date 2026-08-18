@@ -73,5 +73,7 @@
 			<array><string>com.esh.driver</string></array>
 		</dict>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ESH uses your location during an active trip to share your position and verify pickup and destination arrival.</string>
 </dict>
 </plist>
