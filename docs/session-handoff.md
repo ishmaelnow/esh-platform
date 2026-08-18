@@ -26,6 +26,10 @@ deferred.
   completion. The migration dry-run lists only this migration. It still needs owner apply, type/
   production validation, and the final fare-adjustment/payment workflow before any fare changes are
   enabled.
+- Production manual testing found a separate lifecycle hardening issue: a Driver can currently
+  complete an in-progress trip without measurable movement. Leave this behavior unchanged during
+  route-metrics validation; later add no-movement/insufficient-telemetry detection and operational
+  review rather than silently recalculating the fare to zero.
 
 - Branch: `main`
 - Admin session stabilization is deployed and passed production testing. DFW Metroplex and
