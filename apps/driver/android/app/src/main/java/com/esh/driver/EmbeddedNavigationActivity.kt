@@ -4,8 +4,14 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +52,7 @@ import java.util.Locale
 
 class EmbeddedNavigationActivity : ComponentActivity() {
     private lateinit var mapView: MapView
+    private lateinit var maneuverText: TextView
     private lateinit var navigationLocationProvider: NavigationLocationProvider
     private lateinit var routeLineApi: MapboxRouteLineApi
     private lateinit var routeLineView: MapboxRouteLineView
@@ -58,6 +65,12 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     private lateinit var voiceInstructionsPlayer: MapboxVoiceInstructionsPlayer
 
     private val voiceInstructionsObserver = VoiceInstructionsObserver { instructions ->
+        runOnUiThread {
+            if (::maneuverText.isInitialized) {
+                maneuverText.text = instructions.announcement
+                maneuverText.visibility = TextView.VISIBLE
+            }
+        }
         speechApi.generate(instructions, speechCallback)
     }
 
@@ -128,7 +141,32 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             mapView.location.setLocationProvider(navigationLocationProvider)
             mapView.location.locationPuck = createDefault2DPuck()
             mapView.location.enabled = true
-            setContentView(mapView)
+            maneuverText = TextView(this).apply {
+                setTextColor(Color.WHITE)
+                textSize = 18f
+                setPadding(dp(16), dp(12), dp(16), dp(12))
+                gravity = Gravity.CENTER_VERTICAL
+                visibility = TextView.GONE
+                background = GradientDrawable().apply {
+                    setColor(Color.argb(220, 20, 35, 55))
+                    cornerRadius = dp(12).toFloat()
+                }
+                contentDescription = "Written turn-by-turn instruction"
+            }
+            val navigationLayout = FrameLayout(this).apply {
+                addView(mapView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                addView(
+                    maneuverText,
+                    FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        gravity = Gravity.TOP
+                        setMargins(dp(16), dp(24), dp(16), 0)
+                    },
+                )
+            }
+            setContentView(navigationLayout)
             mapView.mapboxMap.loadStyleUri("mapbox://styles/mapbox/streets-v12")
             routeLineApi = MapboxRouteLineApi(MapboxRouteLineApiOptions.Builder().build())
             routeLineView = MapboxRouteLineView(MapboxRouteLineViewOptions.Builder(this).build())
@@ -201,6 +239,8 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             },
         )
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
         mapboxNavigation?.unregisterRoutesObserver(routesObserver)

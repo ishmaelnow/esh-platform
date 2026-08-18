@@ -139,10 +139,12 @@ Driver embedded navigation is now implemented locally on the Android native boun
 dependency uses Mapbox Navigation SDK 3.26.0 with the secret Downloads:Read token remaining in the
 owner's global Gradle properties. A Capacitor `EmbeddedNavigation` plugin launches an Android
 Mapbox navigation screen with the verified pickup/destination coordinates and the public runtime
-token. Web, iOS, and older APKs retain the existing Google Maps fallback. Driver web tests pass
-16/16 and typecheck/diff checks pass. The native Android build and device test are still required;
-do not claim embedded turn-by-turn is production-ready until the APK visibly opens the Mapbox
-screen, obtains location permission, draws a route, and follows the Driver location.
+token. Web, iOS, and older APKs retain the existing Google Maps fallback. The native screen now
+also renders the current written maneuver announcement in a high-contrast banner while retaining
+Mapbox voice guidance. Driver web tests pass 16/16 and typecheck/diff checks pass. The native
+Android build and device test are still required; do not claim embedded turn-by-turn is
+production-ready until the APK visibly opens the Mapbox screen, obtains location permission,
+draws a route, follows the Driver location, and displays written maneuver updates.
 
 Admin trip termination is implemented locally in migration `20260818000100_admin_end_in_progress_trip_v1.sql`.
 It adds a tenant-authorized `admin_complete_in_progress_trip` RPC, requires a 3–500 character
