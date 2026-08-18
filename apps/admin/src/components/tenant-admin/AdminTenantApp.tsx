@@ -2152,6 +2152,7 @@ function DispatchPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+  const [completionReasons, setCompletionReasons] = useState<Record<string, string>>({});
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -2651,7 +2652,15 @@ function DispatchPanel({
                   ) : null}
                 </div>
               ) : null}
-              {!["completed", "cancelled"].includes(booking.status) ? (
+              {booking.status === "in_progress" ? (
+                <div className="row-actions">
+                  <input aria-label={`Reason for ending ${booking.customer_name}`} maxLength={500} onChange={(event) => setCompletionReasons((current) => ({ ...current, [booking.booking_id]: event.target.value }))} placeholder="Reason for ending trip" value={completionReasons[booking.booking_id] ?? ""} />
+                  <button className="danger-button" disabled={!canManageTenant || busyId !== null || (completionReasons[booking.booking_id] ?? "").trim().length < 3} onClick={() => void request("PATCH", { kind: "dispatch_complete", bookingId: booking.booking_id, completionReason: completionReasons[booking.booking_id] ?? "" }, booking.booking_id, "Trip ended by Admin and recorded as completed.")} type="button">
+                    End trip as Admin
+                  </button>
+                </div>
+              ) : null}
+              {!['completed', 'cancelled'].includes(booking.status) ? (
                 <button
                   className="danger-button"
                   disabled={!canManageTenant || busyId !== null}

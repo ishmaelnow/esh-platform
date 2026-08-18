@@ -206,6 +206,16 @@ export async function PATCH(request: Request) {
           target_booking_id: bookingId,
         });
         if (error) throw error;
+      } else if (record.kind === "dispatch_complete") {
+        const completionReason = typeof record.completionReason === "string" ? record.completionReason.trim() : "";
+        if (completionReason.length < 3 || completionReason.length > 500) {
+          throw new Error("A completion reason between 3 and 500 characters is required.");
+        }
+        const { error } = await supabase.rpc("admin_complete_in_progress_trip", {
+          target_booking_id: bookingId,
+          completion_reason_value: completionReason,
+        });
+        if (error) throw error;
       } else {
         throw new Error("Unsupported dispatch action.");
       }

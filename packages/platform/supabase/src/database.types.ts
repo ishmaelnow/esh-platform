@@ -234,6 +234,8 @@ export type Database = {
           booking_notes: string | null
           cancelled_at: string | null
           completed_at: string | null
+          completed_by_person_id: string | null
+          completion_reason: string | null
           created_at: string
           created_by_person_id: string
           current_driver_profile_id: string | null
@@ -272,6 +274,8 @@ export type Database = {
           booking_notes?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
+          completed_by_person_id?: string | null
+          completion_reason?: string | null
           created_at?: string
           created_by_person_id: string
           current_driver_profile_id?: string | null
@@ -310,6 +314,8 @@ export type Database = {
           booking_notes?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
+          completed_by_person_id?: string | null
+          completion_reason?: string | null
           created_at?: string
           created_by_person_id?: string
           current_driver_profile_id?: string | null
@@ -2162,6 +2168,10 @@ export type Database = {
       cancel_dispatch_booking: {
         Args: { target_booking_id: string }
         Returns: boolean
+      }
+      admin_complete_in_progress_trip: {
+        Args: { completion_reason_value: string; target_booking_id: string }
+        Returns: Json
       }
       cancel_my_rider_booking: {
         Args: { target_booking_id: string }

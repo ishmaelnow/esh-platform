@@ -144,6 +144,14 @@ token. Web, iOS, and older APKs retain the existing Google Maps fallback. Driver
 do not claim embedded turn-by-turn is production-ready until the APK visibly opens the Mapbox
 screen, obtains location permission, draws a route, and follows the Driver location.
 
+Admin trip termination is implemented locally in migration `20260818000100_admin_end_in_progress_trip_v1.sql`.
+It adds a tenant-authorized `admin_complete_in_progress_trip` RPC, requires a 3–500 character
+reason, records the Admin person and completion reason on the booking, and writes an audit event.
+The Admin Dispatch panel now shows **End trip as Admin** only for `in_progress` bookings. Admin
+tests pass 63/63; Admin and Supabase typechecks plus diff checks pass. Next: owner dry-run/apply the
+migration, commit/deploy, and test an in-progress trip from Admin while confirming Rider/Driver
+status and financial completion behavior.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
