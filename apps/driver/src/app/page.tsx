@@ -8,6 +8,7 @@ import {
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
+import { buildNavigationUrl } from "../lib/navigation";
 import {
   availabilityBlockerDetails,
   availabilityErrorMessage,
@@ -1515,6 +1516,26 @@ export default function DriverHome() {
                         destination={{ latitude: trip.destinationLatitude, longitude: trip.destinationLongitude, label: `Destination: ${trip.destinationAddress}` }}
                         driver={locationSharing?.latitude != null && locationSharing.longitude != null ? { latitude: locationSharing.latitude, longitude: locationSharing.longitude, label: "Your live location" } : null}
                       />
+                    ) : null}
+                    {trip.pickupLatitude != null && trip.pickupLongitude != null && trip.destinationLatitude != null && trip.destinationLongitude != null ? (
+                      <div className="row-actions">
+                        <button
+                          className="secondary"
+                          onClick={() => window.location.assign(buildNavigationUrl(Capacitor.getPlatform() === "android" ? "android" : Capacitor.getPlatform() === "ios" ? "ios" : "web", { latitude: trip.pickupLatitude!, longitude: trip.pickupLongitude!, label: "Pickup" }))}
+                          type="button"
+                        >
+                          Navigate to pickup
+                        </button>
+                        {trip.status === "in_progress" ? (
+                          <button
+                            className="secondary"
+                            onClick={() => window.location.assign(buildNavigationUrl(Capacitor.getPlatform() === "android" ? "android" : Capacitor.getPlatform() === "ios" ? "ios" : "web", { latitude: trip.destinationLatitude!, longitude: trip.destinationLongitude!, label: "Destination" }))}
+                            type="button"
+                          >
+                            Navigate to destination
+                          </button>
+                        ) : null}
+                      </div>
                     ) : null}
                     <button
                       disabled={dispatchBusy}
