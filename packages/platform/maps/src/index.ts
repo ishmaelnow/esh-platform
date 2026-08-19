@@ -102,6 +102,31 @@ export async function retrieveAddressSuggestion({
   return { mapboxId, label } satisfies AddressSuggestion;
 }
 
+export async function reverseGeocodeAddress(
+  latitude: number,
+  longitude: number,
+  accessToken: string,
+) {
+  const url = new URL("https://api.mapbox.com/search/geocode/v6/reverse");
+  url.searchParams.set("latitude", String(latitude));
+  url.searchParams.set("longitude", String(longitude));
+  url.searchParams.set("types", "address");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("access_token", accessToken);
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Your current location could not be converted to an address.");
+  const payload = (await response.json()) as {
+    features?: Array<{
+      properties?: { full_address?: string; name?: string; place_formatted?: string };
+    }>;
+  };
+  const properties = payload.features?.[0]?.properties;
+  const formattedAddress = properties?.full_address?.trim() ||
+    [properties?.name, properties?.place_formatted].filter(Boolean).join(", ");
+  if (!formattedAddress) throw new Error("No street address was found at your current location.");
+  return { latitude, longitude, formattedAddress };
+}
+
 export function coordinateDistanceKm(
   first: Pick<MapPoint, "latitude" | "longitude">,
   second: Pick<MapPoint, "latitude" | "longitude">,

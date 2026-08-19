@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import {
   retrieveAddressSuggestion,
+  reverseGeocodeAddress,
   suggestRegionalAddresses,
   type AddressSuggestion,
 } from "@esh-platform/maps";
@@ -184,6 +186,7 @@ export default function RiderHome() {
   const [priceQuote, setPriceQuote] = useState<RiderPriceQuote | null>(null);
   const [pickupSearchSession, setPickupSearchSession] = useState("");
   const [destinationSearchSession, setDestinationSearchSession] = useState("");
+  const [locationBusy, setLocationBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -689,6 +692,26 @@ export default function RiderHome() {
     } catch (value) {
       setError(value instanceof Error ? value.message : "The selected address is unavailable.");
     }
+  }
+
+  async function useCurrentLocation() {
+    if (!mapboxToken) return;
+    setLocationBusy(true); setError(""); setMessage("");
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const permission = await Geolocation.requestPermissions();
+        if (permission.location === "denied") throw new Error("Location permission is required to use your current pickup location.");
+      }
+      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 12_000, maximumAge: 30_000 });
+      const resolved = await reverseGeocodeAddress(position.coords.latitude, position.coords.longitude, mapboxToken);
+      setPickupQuery(resolved.formattedAddress);
+      setPickupSelection({ mapboxId: `current-location:${resolved.latitude}:${resolved.longitude}`, label: resolved.formattedAddress });
+      setPickupSuggestions([]);
+      setPriceQuote(null);
+      setMessage(`Pickup set to your current location (accuracy ±${Math.round(position.coords.accuracy)} m). Confirm or edit it before reviewing the fare.`);
+    } catch (value) {
+      setError(value instanceof Error ? value.message : "Your current location is unavailable. Enter the pickup address manually.");
+    } finally { setLocationBusy(false); }
   }
 
   async function createBooking(event: FormEvent<HTMLFormElement>) {
@@ -1204,6 +1227,9 @@ export default function RiderHome() {
               </label>
               <div className="wide address-field">
                 <label htmlFor="rider-pickup-address">Pickup address</label>
+                <button className="button secondary compact" disabled={locationBusy || !mapboxToken || !serviceAreaContext} onClick={() => void useCurrentLocation()} type="button">
+                  {locationBusy ? "Locating…" : "Use my current location"}
+                </button>
                 <input
                   id="rider-pickup-address"
                   name="pickupAddress"

@@ -163,6 +163,12 @@ and do not require a native rebuild. The Rider booking form is also disabled whi
 requested, offered, accepted, arrived, or in progress; future scheduled bookings do not block a
 new request.
 
+Rider pickup convenience now supports a one-time current-location lookup through Capacitor
+Geolocation (with browser fallback) and Mapbox reverse geocoding. The resolved street address is
+shown for confirmation and remains editable through the normal verified-address search; raw
+coordinates are not persisted by this convenience flow. This is a hosted web change and does not
+require a native rebuild because the Geolocation plugin is already present in the Rider shell.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
