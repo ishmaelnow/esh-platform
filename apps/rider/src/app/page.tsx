@@ -1141,7 +1141,7 @@ export default function RiderHome() {
         <>
         <nav className="rider-tabs" aria-label="Rider portal sections">
           <button className={activePortalTab === "book" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("book")} type="button">Book trip</button>
-          <button className={activePortalTab === "trips" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("trips")} type="button">My trips{portal.bookings.length ? ` (${portal.bookings.length})` : ""}</button>
+          <button className={activePortalTab === "trips" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("trips")} type="button">{currentBookings.length > 0 ? "Current trip" : "My trips"}</button>
           <button className={activePortalTab === "payments" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("payments")} type="button">Payments</button>
           <button className={activePortalTab === "wallet" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("wallet")} type="button">Wallet</button>
         </nav>
@@ -1337,7 +1337,20 @@ export default function RiderHome() {
           </section>
           ) : null}
 
-          {activePortalTab === "trips" ? (
+          {activePortalTab === "trips" && currentBookings.length > 0 ? (
+          <section className="history">
+            <div className="section-heading"><div><p className="kicker">Current trip</p><h2>Your active ride</h2></div><button className="button secondary compact" onClick={() => void loadPortal()} disabled={busy}>Refresh</button></div>
+            {currentBookings.map((booking) => <article className="card trip-card" key={`current-page-${booking.bookingId}`}>
+              <div className="trip-top"><div><span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span><h3>{booking.pickupAddress}</h3><p className="destination">to {booking.destinationAddress}</p></div><time>{formatDate(booking.createdAt)}</time></div>
+              <p className="area"><strong>Fare:</strong> {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100) : "Locked fare pending"}</p>
+              <p className="area">{booking.serviceAreaName}{booking.driver ? ` · Driver: ${booking.driver.displayName}` : " · Finding an eligible driver"}</p>
+              {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? <LiveTripMap accessToken={mapboxToken} pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }} destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }} driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null} /> : null}
+              {canCancelBooking(booking.status) ? <button className="text-button danger" disabled={busy} onClick={() => void cancelBooking(booking.bookingId)}>Cancel trip</button> : null}
+            </article>)}
+          </section>
+          ) : null}
+
+          {activePortalTab === "trips" && currentBookings.length === 0 ? (
           <section className="history">
             <div className="section-heading">
               <div>
@@ -1557,7 +1570,7 @@ export default function RiderHome() {
             })}
           </section>
           ) : null}
-          {activePortalTab === "trips" ? (
+          {activePortalTab === "trips" && currentBookings.length === 0 ? (
           <section className="history reputation-history">
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>

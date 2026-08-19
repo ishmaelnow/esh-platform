@@ -274,6 +274,10 @@ textarea:focus {
   display: grid;
   gap: 14px;
 }
+.trip-history,
+.reputation-history {
+  display: none;
+}
 .reputation-history {
   grid-column: 2;
 }
