@@ -1009,7 +1009,10 @@ export default function RiderHome() {
 
   const activeBookings = portal?.bookings.filter((booking) => !["completed", "cancelled"].includes(booking.status)) ?? [];
   const blockingBookings = activeBookings.filter((booking) => ["requested", "offered", "accepted", "arrived", "in_progress"].includes(booking.status));
+  const currentBookings = activeBookings.filter((booking) => booking.status !== "scheduled");
+  const scheduledBookings = activeBookings.filter((booking) => booking.status === "scheduled");
   const historicalBookings = portal?.bookings.filter((booking) => ["completed", "cancelled"].includes(booking.status)) ?? [];
+  const visibleRecurringSeries = recurring.series.filter((series) => series.status === "active");
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return (
@@ -1377,9 +1380,19 @@ export default function RiderHome() {
               </div>}
               {smsFeedback ? <p className={smsFeedback.kind === "error" ? "error" : "notice"} role="status">{smsFeedback.message}</p> : null}
             </div>
-            {recurring.series.length > 0 ? <div className="panel-stack">
+            {currentBookings.length > 0 ? <section className="panel-stack">
+              <div className="section-heading"><div><p className="kicker">Current trip</p><h3>Track your active ride</h3></div></div>
+              {currentBookings.map((booking) => <article className="card trip-card" key={`current-${booking.bookingId}`}>
+                <div className="trip-top"><div><span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span><h3>{booking.pickupAddress}</h3><p className="destination">to {booking.destinationAddress}</p></div><time>{formatDate(booking.createdAt)}</time></div>
+                <p className="area">{booking.serviceAreaName}</p>
+                {booking.driver ? <p className="area">Driver: {booking.driver.displayName} · #{booking.driver.driverNumber}</p> : null}
+                {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? <LiveTripMap accessToken={mapboxToken} pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }} destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }} driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null} /> : null}
+                {canCancelBooking(booking.status) ? <button className="text-button danger" disabled={busy} onClick={() => void cancelBooking(booking.bookingId)}>Cancel trip</button> : null}
+              </article>)}
+            </section> : null}
+            {visibleRecurringSeries.length > 0 ? <div className="panel-stack">
               <div className="section-heading"><div><p className="kicker">Recurring schedules</p><h3>Upcoming repeat trips</h3></div></div>
-              {recurring.series.map((series) => {
+              {visibleRecurringSeries.map((series) => {
                 const occurrences = recurring.occurrences.filter((item) => item.seriesId === series.seriesId);
                 return <article className="card trip-card" key={series.seriesId}>
                   <div className="trip-top"><div><span className={`status status-${series.status}`}>{series.status}</span><h3>{series.pickupAddress}</h3><p className="destination">to {series.destinationAddress}</p></div><time>{series.startDate} through {series.endDate}</time></div>
@@ -1400,12 +1413,12 @@ export default function RiderHome() {
                 </article>;
               })}
             </div> : null}
-            {activeBookings.length === 0 ? (
+            {scheduledBookings.length === 0 ? (
               <div className="card empty">
-                <p>No active trips. Your next trip will appear here.</p>
+                <p>No scheduled trips.</p>
               </div>
             ) : (
-              activeBookings.map((booking) => (
+              scheduledBookings.map((booking) => (
                 <article className="card trip-card" key={booking.bookingId}>
                   <div className="trip-top">
                     <div>
