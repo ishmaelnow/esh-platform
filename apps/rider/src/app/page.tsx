@@ -985,6 +985,7 @@ export default function RiderHome() {
   }
 
   const activeBookings = portal?.bookings.filter((booking) => !["completed", "cancelled"].includes(booking.status)) ?? [];
+  const blockingBookings = activeBookings.filter((booking) => ["requested", "offered", "accepted", "arrived", "in_progress"].includes(booking.status));
   const historicalBookings = portal?.bookings.filter((booking) => ["completed", "cancelled"].includes(booking.status)) ?? [];
 
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -1123,7 +1124,7 @@ export default function RiderHome() {
           <section className="card booking-card">
             <p className="kicker">{portal.tenant.displayName}</p>
             <h2>Request a trip</h2>
-            {activeBookings.length > 0 ? (
+            {blockingBookings.length > 0 ? (
               <div className="card preference-card" role="status">
                 <div>
                   <strong>Booking temporarily unavailable</strong>
@@ -1133,7 +1134,7 @@ export default function RiderHome() {
               </div>
             ) : null}
             <form className="form-grid" onSubmit={(event) => void createBooking(event)}>
-              <fieldset className="booking-fields" disabled={activeBookings.length > 0}>
+              <fieldset className="booking-fields" disabled={blockingBookings.length > 0}>
               <label className="wide">
                 When do you need the ride?
                 <select
