@@ -154,6 +154,13 @@ tests pass 63/63; Admin and Supabase typechecks plus diff checks pass. Next: own
 migration, commit/deploy, and test an in-progress trip from Admin while confirming Rider/Driver
 status and financial completion behavior.
 
+Rider/Driver trip-surface cleanup is implemented locally: completed and cancelled Rider bookings
+are collapsed into a compact Trip history section while active bookings remain prominent; Driver
+pickup navigation is shown only before arrival, and destination navigation remains available after
+arrival. Driver tests/typecheck pass (16/16); Rider tests pass (11/11), but Rider typecheck still
+reports the pre-existing `google-tolls.test.ts` tuple/body typing error. These are web UI changes
+and do not require a native rebuild.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:

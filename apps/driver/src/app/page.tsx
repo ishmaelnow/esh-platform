@@ -1519,13 +1519,15 @@ export default function DriverHome() {
                     ) : null}
                     {trip.pickupLatitude != null && trip.pickupLongitude != null && trip.destinationLatitude != null && trip.destinationLongitude != null ? (
                       <div className="row-actions">
-                        <button
-                          className="secondary"
-                          onClick={() => void openDriverNavigation({ latitude: trip.pickupLatitude!, longitude: trip.pickupLongitude!, label: "Pickup" }, mapboxToken)}
-                          type="button"
-                        >
-                          Navigate to pickup
-                        </button>
+                        {trip.status === "accepted" ? (
+                          <button
+                            className="secondary"
+                            onClick={() => void openDriverNavigation({ latitude: trip.pickupLatitude!, longitude: trip.pickupLongitude!, label: "Pickup" }, mapboxToken)}
+                            type="button"
+                          >
+                            Navigate to pickup
+                          </button>
+                        ) : null}
                         {trip.status === "in_progress" ? (
                           <button
                             className="secondary"

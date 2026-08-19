@@ -198,6 +198,7 @@ export default function RiderHome() {
   const [smsFeedback, setSmsFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments" | "wallet">("book");
+  const [showTripHistory, setShowTripHistory] = useState(false);
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
   const processedAuthCallbacks = useRef(new Set<string>());
@@ -983,6 +984,9 @@ export default function RiderHome() {
     } catch (value) { setSmsFeedback({ kind: "error", message: riderErrorMessage(value) }); } finally { setSmsBusy(false); }
   }
 
+  const activeBookings = portal?.bookings.filter((booking) => !["completed", "cancelled"].includes(booking.status)) ?? [];
+  const historicalBookings = portal?.bookings.filter((booking) => ["completed", "cancelled"].includes(booking.status)) ?? [];
+
   if (!supabaseUrl || !supabaseAnonKey) {
     return (
       <main className="shell">
@@ -1358,12 +1362,12 @@ export default function RiderHome() {
                 </article>;
               })}
             </div> : null}
-            {portal.bookings.length === 0 ? (
+            {activeBookings.length === 0 ? (
               <div className="card empty">
-                <p>Your trip requests will appear here.</p>
+                <p>No active trips. Your next trip will appear here.</p>
               </div>
             ) : (
-              portal.bookings.map((booking) => (
+              activeBookings.map((booking) => (
                 <article className="card trip-card" key={booking.bookingId}>
                   <div className="trip-top">
                     <div>
@@ -1441,6 +1445,33 @@ export default function RiderHome() {
                 </article>
               ))
             )}
+            {historicalBookings.length > 0 ? (
+              <section className="trip-history">
+                <div className="section-heading">
+                  <div>
+                    <p className="kicker">Trip history</p>
+                    <h3>{historicalBookings.length} completed or cancelled</h3>
+                  </div>
+                  <button className="button secondary compact" type="button" onClick={() => setShowTripHistory((current) => !current)}>
+                    {showTripHistory ? "Hide history" : "Show history"}
+                  </button>
+                </div>
+                {showTripHistory ? historicalBookings.map((booking) => (
+                  <article className="card trip-card" key={booking.bookingId}>
+                    <div className="trip-top">
+                      <div>
+                        <span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span>
+                        <h3>{booking.pickupAddress}</h3>
+                        <p className="destination">to {booking.destinationAddress}</p>
+                      </div>
+                      <time>{formatDate(booking.createdAt)}</time>
+                    </div>
+                    <p className="area">{booking.serviceAreaName}</p>
+                    {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? <p className="area"><strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100)}</strong></p> : null}
+                  </article>
+                )) : null}
+              </section>
+            ) : null}
           </section>
           ) : null}
           {activePortalTab === "payments" ? (
