@@ -175,6 +175,7 @@ export default function RiderHome() {
   const [paymentReceiptUrls, setPaymentReceiptUrls] = useState<Record<string, string>>({});
   const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled" | "recurring">("now");
+  const [serviceType, setServiceType] = useState<"standard" | "larger" | "accessible">("standard");
   const [serviceAreaId, setServiceAreaId] = useState("");
   const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
@@ -794,6 +795,7 @@ export default function RiderHome() {
         : await supabase.rpc("create_my_rider_priced_booking", {
           target_quote_id: priceQuote.quoteId,
           booking_notes_value: formValue(form, "bookingNotes"),
+          service_type_value: serviceType,
           ...(bookingTiming === "scheduled" ? { scheduled_pickup_at_value: zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") } : {}),
         });
       const bookingError = result.error;
@@ -810,6 +812,7 @@ export default function RiderHome() {
       setPriceQuote(null);
       setPaymentConfirmed(false);
       setRecurringOccurrenceId(null);
+      setServiceType("standard");
       await loadPortal();
       await loadRecurring();
       setActivePortalTab("trips");
@@ -1227,6 +1230,15 @@ export default function RiderHome() {
                     </option>
                   ))}
                 </select>
+              </label>
+              <label className="wide">
+                Vehicle type
+                <select value={serviceType} onChange={(event) => { setServiceType(event.target.value as "standard" | "larger" | "accessible"); setPriceQuote(null); }}>
+                  <option value="standard">Standard vehicle</option>
+                  <option value="larger">Larger vehicle</option>
+                  <option value="accessible">Accessible vehicle</option>
+                </select>
+                <span className="field-hint">We’ll match you with an eligible vehicle. If none are available, choose another type.</span>
               </label>
               <div className="wide address-field">
                 <label htmlFor="rider-pickup-address">Pickup address</label>

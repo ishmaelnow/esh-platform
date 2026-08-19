@@ -3467,6 +3467,14 @@ function VehiclesPanel({
               />
             </label>
             <label>
+              Service type
+              <select disabled={busyId !== null} defaultValue="standard" name="serviceType">
+                <option value="standard">Standard</option>
+                <option value="larger">Larger</option>
+                <option value="accessible">Accessible</option>
+              </select>
+            </label>
+            <label>
               Vehicle photo
               <input
                 accept="image/jpeg,image/png"
@@ -3554,6 +3562,18 @@ function VehiclesPanel({
                     </td>
                     <td>
                       {vehicle.status}
+                      <label>
+                        Service type
+                        <select
+                          disabled={busyId !== null || !canManageTenant}
+                          value={vehicle.service_type}
+                          onChange={(event) => void updateVehicle(vehicle.vehicle_id, { kind: "service_type", serviceType: event.target.value }, "Vehicle service type updated.")}
+                        >
+                          <option value="standard">Standard</option>
+                          <option value="larger">Larger</option>
+                          <option value="accessible">Accessible</option>
+                        </select>
+                      </label>
                       <span>Compliance: {compliant ? "satisfied" : "action required"}</span>
                     </td>
                     <td>

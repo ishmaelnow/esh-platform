@@ -70,6 +70,8 @@ export async function POST(request: Request) {
     const color = text("color");
     const licensePlate = text("licensePlate");
     const vin = text("vin");
+    const serviceType = text("serviceType") || "standard";
+    if (!["standard", "larger", "accessible"].includes(serviceType)) throw new Error("Unsupported vehicle service type.");
     const photo = form.get("photo");
     if (!vehicleNumber || !make || !model || !color || !licensePlate || vin.length !== 17) {
       throw new Error("Complete all vehicle fields; VIN must contain exactly 17 characters.");
@@ -104,6 +106,7 @@ export async function POST(request: Request) {
       color,
       license_plate: licensePlate,
       vin,
+      service_type: serviceType,
       photo_storage_bucket: hasPhoto ? "driver-application-files" : null,
       photo_storage_path: uploadedPath,
       photo_original_file_name: hasPhoto ? photo.name : null,
@@ -200,6 +203,11 @@ export async function PATCH(request: Request) {
         .update({ status, status_reason: reason, updated_by_person_id: personId })
         .eq("tenant_id", tenantId)
         .eq("vehicle_id", vehicleId);
+      if (error) throw error;
+    } else if (body.kind === "service_type") {
+      const serviceType = String(body.serviceType ?? "");
+      if (!["standard", "larger", "accessible"].includes(serviceType)) throw new Error("Unsupported vehicle service type.");
+      const { error } = await supabase.from("vehicles").update({ service_type: serviceType, updated_by_person_id: personId }).eq("tenant_id", tenantId).eq("vehicle_id", vehicleId);
       if (error) throw error;
     } else if (body.kind === "assign") {
       const driverProfileId = validateTenantId(body.driverProfileId);

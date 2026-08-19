@@ -263,6 +263,7 @@ export type Database = {
           rider_profile_id: string | null
           route_distance_meters: number | null
           route_duration_seconds: number | null
+          requested_service_type: string
           scheduled_pickup_at: string | null
           service_area_id: string
           status: string
@@ -303,6 +304,7 @@ export type Database = {
           rider_profile_id?: string | null
           route_distance_meters?: number | null
           route_duration_seconds?: number | null
+          requested_service_type?: string
           scheduled_pickup_at?: string | null
           service_area_id: string
           status?: string
@@ -343,6 +345,7 @@ export type Database = {
           rider_profile_id?: string | null
           route_distance_meters?: number | null
           route_duration_seconds?: number | null
+          requested_service_type?: string
           scheduled_pickup_at?: string | null
           service_area_id?: string
           status?: string
@@ -877,6 +880,7 @@ export type Database = {
           phone: string | null
           status: string
           status_reason: string | null
+          service_type: string
           tenant_id: string
           updated_at: string
           updated_by_person_id: string
@@ -893,6 +897,7 @@ export type Database = {
           phone?: string | null
           status?: string
           status_reason?: string | null
+          service_type?: string
           tenant_id: string
           updated_at?: string
           updated_by_person_id: string
@@ -909,6 +914,7 @@ export type Database = {
           phone?: string | null
           status?: string
           status_reason?: string | null
+          service_type?: string
           tenant_id?: string
           updated_at?: string
           updated_by_person_id?: string
@@ -1125,6 +1131,7 @@ export type Database = {
           photo_storage_path: string | null
           status: string
           status_reason: string | null
+          service_type: string
           tenant_id: string
           updated_at: string
           updated_by_person_id: string
@@ -1147,6 +1154,7 @@ export type Database = {
           photo_storage_path?: string | null
           status?: string
           status_reason?: string | null
+          service_type?: string
           tenant_id: string
           updated_at?: string
           updated_by_person_id: string
@@ -1169,6 +1177,7 @@ export type Database = {
           photo_storage_path?: string | null
           status?: string
           status_reason?: string | null
+          service_type?: string
           tenant_id?: string
           updated_at?: string
           updated_by_person_id?: string
@@ -2308,7 +2317,7 @@ export type Database = {
         Returns: string
       }
       create_my_rider_priced_booking: {
-        Args: { booking_notes_value?: string; scheduled_pickup_at_value?: string; target_quote_id: string }
+        Args: { booking_notes_value?: string; scheduled_pickup_at_value?: string; service_type_value?: string; target_quote_id: string }
         Returns: string
       }
       create_rider_price_quote_internal: {

@@ -169,6 +169,12 @@ shown for confirmation and remains editable through the normal verified-address 
 coordinates are not persisted by this convenience flow. This is a hosted web change and does not
 require a native rebuild because the Geolocation plugin is already present in the Rider shell.
 
+Vehicle service choices are now implemented locally. Vehicles default to `standard` and Admin can
+classify each fleet vehicle as `standard`, `larger`, or `accessible`; Rider booking passes the
+selected type through the priced-booking RPC, and automatic matching requires an active assigned
+vehicle of that type. Migration `20260819000100_vehicle_service_types_v1.sql` still needs the
+owner dry-run/apply, commit, deployment, and production matching validation.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
