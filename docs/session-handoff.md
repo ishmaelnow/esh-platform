@@ -159,7 +159,8 @@ are collapsed into a compact Trip history section while active bookings remain p
 pickup navigation is shown only before arrival, and destination navigation remains available after
 arrival. Driver tests/typecheck pass (16/16); Rider tests pass (11/11), but Rider typecheck still
 reports the pre-existing `google-tolls.test.ts` tuple/body typing error. These are web UI changes
-and do not require a native rebuild.
+and do not require a native rebuild. The Rider booking form is also disabled whenever an active
+booking exists, with a direct link to the current trip.
 
 ## Temporary production settings
 

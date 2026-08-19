@@ -1123,7 +1123,17 @@ export default function RiderHome() {
           <section className="card booking-card">
             <p className="kicker">{portal.tenant.displayName}</p>
             <h2>Request a trip</h2>
+            {activeBookings.length > 0 ? (
+              <div className="card preference-card" role="status">
+                <div>
+                  <strong>Booking temporarily unavailable</strong>
+                  <p>Finish or cancel your current trip before requesting another ride.</p>
+                </div>
+                <button className="button secondary compact" type="button" onClick={() => setActivePortalTab("trips")}>View current trip</button>
+              </div>
+            ) : null}
             <form className="form-grid" onSubmit={(event) => void createBooking(event)}>
+              <fieldset className="booking-fields" disabled={activeBookings.length > 0}>
               <label className="wide">
                 When do you need the ride?
                 <select
@@ -1283,6 +1293,7 @@ export default function RiderHome() {
               >
                 {busy ? "Working…" : priceQuote ? bookingTiming === "recurring" && !recurringOccurrenceId ? "Create recurring schedule" : paymentConfirmed ? "Request this trip" : "Apply wallet and continue" : bookingTiming === "recurring" ? "Review recurring route" : "Review fare"}
               </button>
+              </fieldset>
             </form>
           </section>
           ) : null}

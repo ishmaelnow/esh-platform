@@ -264,6 +264,12 @@ textarea:focus {
   position: sticky;
   top: 24px;
 }
+.booking-fields {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
 .history {
   display: grid;
   gap: 14px;
