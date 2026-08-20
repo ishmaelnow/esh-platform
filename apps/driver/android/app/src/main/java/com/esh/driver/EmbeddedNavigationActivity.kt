@@ -102,9 +102,9 @@ class EmbeddedNavigationActivity : ComponentActivity() {
         runOnUiThread {
             if (::maneuverView.isInitialized) {
                 maneuverView.renderManeuvers(maneuvers)
-                maneuverView.visibility = View.VISIBLE
+                (maneuverView as View).visibility = View.VISIBLE
                 tripProgressView.render(tripProgress)
-                tripProgressView.visibility = View.VISIBLE
+                (tripProgressView as View).visibility = View.VISIBLE
             }
         }
     }
@@ -176,12 +176,14 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             mapView.location.setLocationProvider(navigationLocationProvider)
             mapView.location.locationPuck = createDefault2DPuck()
             mapView.location.enabled = true
-            maneuverView = MapboxManeuverView(this).apply { visibility = View.GONE }
-            tripProgressView = MapboxTripProgressView(this).apply { visibility = View.GONE }
+            maneuverView = MapboxManeuverView(this)
+            tripProgressView = MapboxTripProgressView(this)
+            (maneuverView as View).visibility = View.GONE
+            (tripProgressView as View).visibility = View.GONE
             val navigationLayout = FrameLayout(this).apply {
                 addView(mapView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 addView(
-                    maneuverView,
+                    maneuverView as View,
                     FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -191,7 +193,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
                     },
                 )
                 addView(
-                    tripProgressView,
+                    tripProgressView as View,
                     FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT,
