@@ -209,6 +209,12 @@ The payment return UX now polls payment/booking status for up to 15 seconds and 
 state instead of immediately exposing the webhook race. It only reports a timeout when booking
 finalization does not appear during that window.
 
+Production testing then exposed that the service-role Stripe webhook was invoking a Rider-authenticated
+booking function without a Rider JWT. Migration `20260820000100_finalize_paid_booking_service_role_v1.sql`
+rehydrates the paid quote's active Rider identity only inside the security-definer finalizer so the
+webhook can complete the same authorization checks safely. It needs owner dry-run/apply, commit,
+deployment, and a retry of the affected payment webhook.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
