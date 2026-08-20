@@ -39,10 +39,11 @@ import com.mapbox.navigation.core.trip.session.VoiceInstructionsObserver
 import com.mapbox.navigation.base.formatter.DistanceFormatterOptions
 import com.mapbox.navigation.core.formatter.MapboxDistanceFormatter
 import com.mapbox.navigation.tripdata.maneuver.api.MapboxManeuverApi
-import com.mapbox.navigation.tripdata.tripprogress.api.MapboxTripProgressApi
-import com.mapbox.navigation.tripdata.tripprogress.formatter.EstimatedTimeToArrivalFormatter
-import com.mapbox.navigation.tripdata.tripprogress.formatter.TimeRemainingFormatter
-import com.mapbox.navigation.tripdata.tripprogress.formatter.TripProgressUpdateFormatter
+import com.mapbox.navigation.tripdata.progress.api.MapboxTripProgressApi
+import com.mapbox.navigation.tripdata.progress.model.DistanceRemainingFormatter
+import com.mapbox.navigation.tripdata.progress.model.EstimatedTimeToArrivalFormatter
+import com.mapbox.navigation.tripdata.progress.model.TimeRemainingFormatter
+import com.mapbox.navigation.tripdata.progress.model.TripProgressUpdateFormatter
 import com.mapbox.navigation.ui.components.maneuver.view.MapboxManeuverView
 import com.mapbox.navigation.ui.components.tripprogress.view.MapboxTripProgressView
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
@@ -83,7 +84,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
 
     private val tripProgressApi by lazy {
         val formatter = TripProgressUpdateFormatter.Builder(this)
-            .distanceRemainingFormatter(com.mapbox.navigation.tripdata.tripprogress.formatter.DistanceRemainingFormatter(DistanceFormatterOptions.Builder(this).build()))
+            .distanceRemainingFormatter(DistanceRemainingFormatter(DistanceFormatterOptions.Builder(this).build()))
             .timeRemainingFormatter(TimeRemainingFormatter(this))
             .estimatedTimeToArrivalFormatter(EstimatedTimeToArrivalFormatter(this))
             .build()
