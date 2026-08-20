@@ -205,6 +205,10 @@ payload omitted its required nullable `scheduled_pickup_at_value`; both are corr
 the Rider production build now passes. Owner must commit/deploy the correction, confirm migration
 006 is applied, and then run the Stripe sandbox validation.
 
+The payment return UX now polls payment/booking status for up to 15 seconds and shows a confirming
+state instead of immediately exposing the webhook race. It only reports a timeout when booking
+finalization does not appear during that window.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:

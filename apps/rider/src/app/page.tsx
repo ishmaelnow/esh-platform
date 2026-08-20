@@ -385,12 +385,22 @@ export default function RiderHome() {
     recoveredUrl.searchParams.delete("occurrence");
     window.history.replaceState({}, "", recoveredUrl);
     setBusy(true);
-    void fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    }).then(async (response) => {
-      const result = await response.json() as { paymentStatus?: string; bookingId?: string | null; quote?: PaidRiderPriceQuote; message?: string };
-      if (!response.ok || result.paymentStatus !== "paid" || !result.quote)
-        throw new Error(result.message ?? "Payment confirmation is still processing. Refresh in a moment.");
+    setMessage("Payment received. Confirming your trip…");
+    void (async () => {
+      type PaymentReturn = { paymentStatus?: string; bookingId?: string | null; quote?: PaidRiderPriceQuote; message?: string };
+      let result: PaymentReturn | null = null;
+      for (let attempt = 0; attempt < 15; attempt += 1) {
+        const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const next = await response.json() as PaymentReturn;
+        if (response.ok && next?.paymentStatus === "paid" && next.quote && (returnedOccurrenceId || next.bookingId)) {
+          result = next;
+          break;
+        }
+        if (attempt < 14) await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      }
+      if (!result?.quote) throw new Error("Payment confirmation is taking longer than expected. Please refresh shortly.");
       if (result.bookingId && !returnedOccurrenceId) {
         await loadPortal();
         setActivePortalTab("trips");
@@ -414,7 +424,7 @@ export default function RiderHome() {
       setRecurringOccurrenceId(returnedOccurrenceId);
       setActivePortalTab("book");
       setMessage("Payment received. This recurring occurrence is ready to request.");
-    }).catch((value) => setError(value instanceof Error ? value.message : "We could not refresh the payment details."))
+    })().catch((value) => setError(value instanceof Error ? value.message : "We could not confirm the payment."))
       .finally(() => setBusy(false));
   }, [session, supabase, tenantSlug]);
 
