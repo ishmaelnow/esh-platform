@@ -199,8 +199,11 @@ metadata/webhook processing.
 Local payment-flow follow-up `20260819000600_auto_finalize_paid_rider_booking_v1.sql` now
 finalizes normal paid quotes idempotently from verified Stripe success, carries booking intent in
 checkout metadata, and sends the Rider directly to Current trip. Wallet-only normal bookings also
-finalize immediately; recurring occurrence checkout remains separate. It needs owner dry-run/apply,
-commit/deployment, and Stripe sandbox validation.
+finalize immediately; recurring occurrence checkout remains separate. The first Vercel deployment
+failed because the Rider checkout response type omitted the new `booked` field and the fallback RPC
+payload omitted its required nullable `scheduled_pickup_at_value`; both are corrected locally and
+the Rider production build now passes. Owner must commit/deploy the correction, confirm migration
+006 is applied, and then run the Stripe sandbox validation.
 
 ## Temporary production settings
 

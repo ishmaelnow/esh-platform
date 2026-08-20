@@ -788,7 +788,7 @@ export default function RiderHome() {
           headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
           body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug, occurrenceId: recurringOccurrenceId, bookingNotes: formValue(form, "bookingNotes"), serviceType, scheduledPickupAt: bookingTiming === "scheduled" ? zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") : undefined }),
         });
-        const result = await response.json() as { url?: string; walletOnly?: boolean; walletAmountMinor?: number; message?: string };
+        const result = await response.json() as { url?: string; walletOnly?: boolean; booked?: boolean; bookingId?: string; walletAmountMinor?: number; message?: string };
         if (!response.ok) throw new Error(result.message ?? "Payment checkout could not be opened.");
         if (result.walletOnly) {
           if (result.booked) {
@@ -813,7 +813,9 @@ export default function RiderHome() {
           target_quote_id: priceQuote.quoteId,
           booking_notes_value: formValue(form, "bookingNotes"),
           service_type_value: serviceType,
-          ...(bookingTiming === "scheduled" ? { scheduled_pickup_at_value: zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") } : {}),
+          scheduled_pickup_at_value: bookingTiming === "scheduled"
+            ? zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC")
+            : null,
         });
       const bookingError = result.error;
       if (bookingError) throw bookingError;
