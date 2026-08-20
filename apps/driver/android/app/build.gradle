@@ -48,6 +48,7 @@ dependencies {
     implementation 'com.mapbox.navigationcore:android-ndk27:3.26.0'
     implementation 'com.mapbox.navigationcore:navigation-ndk27:3.26.0'
     implementation 'com.mapbox.navigationcore:ui-maps-ndk27:3.26.0'
+    implementation 'com.mapbox.navigationcore:ui-components-ndk27:3.26.0'
     implementation 'com.mapbox.navigationcore:tripdata-ndk27:3.26.0'
     implementation 'com.mapbox.navigationcore:voice-ndk27:3.26.0'
 }

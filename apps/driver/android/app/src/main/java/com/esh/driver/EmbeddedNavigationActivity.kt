@@ -4,14 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.Log
-import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +35,17 @@ import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.core.trip.session.VoiceInstructionsObserver
+import com.mapbox.navigation.base.formatter.DistanceFormatterOptions
+import com.mapbox.navigation.core.formatter.MapboxDistanceFormatter
+import com.mapbox.navigation.tripdata.maneuver.api.MapboxManeuverApi
+import com.mapbox.navigation.tripdata.tripprogress.api.MapboxTripProgressApi
+import com.mapbox.navigation.tripdata.tripprogress.formatter.EstimatedTimeToArrivalFormatter
+import com.mapbox.navigation.tripdata.tripprogress.formatter.TimeRemainingFormatter
+import com.mapbox.navigation.tripdata.tripprogress.formatter.TripProgressUpdateFormatter
+import com.mapbox.navigation.ui.components.maneuver.view.MapboxManeuverView
+import com.mapbox.navigation.ui.components.tripprogress.view.MapboxTripProgressView
+import com.mapbox.navigation.ui.maps.camera.NavigationCamera
+import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
 import com.mapbox.navigation.ui.base.util.MapboxNavigationConsumer
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineApi
@@ -53,7 +61,8 @@ import java.util.Locale
 
 class EmbeddedNavigationActivity : ComponentActivity() {
     private lateinit var mapView: MapView
-    private lateinit var maneuverText: TextView
+    private lateinit var maneuverView: MapboxManeuverView
+    private lateinit var tripProgressView: MapboxTripProgressView
     private lateinit var navigationLocationProvider: NavigationLocationProvider
     private lateinit var routeLineApi: MapboxRouteLineApi
     private lateinit var routeLineView: MapboxRouteLineView
@@ -62,22 +71,39 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     private var accessToken: String = ""
     private var currentLocation: Location? = null
     private var routeRequested = false
+    private lateinit var viewportDataSource: MapboxNavigationViewportDataSource
+    private lateinit var navigationCamera: NavigationCamera
     private lateinit var speechApi: MapboxSpeechApi
     private lateinit var voiceInstructionsPlayer: MapboxVoiceInstructionsPlayer
+
+    private val maneuverApi by lazy {
+        MapboxManeuverApi(MapboxDistanceFormatter(DistanceFormatterOptions.Builder(this).build()))
+    }
+
+    private val tripProgressApi by lazy {
+        val formatter = TripProgressUpdateFormatter.Builder(this)
+            .distanceRemainingFormatter(com.mapbox.navigation.tripdata.tripprogress.formatter.DistanceRemainingFormatter(DistanceFormatterOptions.Builder(this).build()))
+            .timeRemainingFormatter(TimeRemainingFormatter(this))
+            .estimatedTimeToArrivalFormatter(EstimatedTimeToArrivalFormatter(this))
+            .build()
+        MapboxTripProgressApi(formatter)
+    }
 
     private val voiceInstructionsObserver = VoiceInstructionsObserver { instructions ->
         speechApi.generate(instructions, speechCallback)
     }
 
     private val routeProgressObserver = RouteProgressObserver { progress ->
-        val primaryInstruction = progress.bannerInstructions?.primary()?.text()
-        val stepDistance = progress.currentLegProgress?.currentStepProgress?.distanceRemaining
-        if (!primaryInstruction.isNullOrBlank() && stepDistance != null) {
-            runOnUiThread {
-                if (::maneuverText.isInitialized) {
-                    maneuverText.text = "${formatDistance(stepDistance)}\n$primaryInstruction"
-                    maneuverText.visibility = TextView.VISIBLE
-                }
+        viewportDataSource.onRouteProgressChanged(progress)
+        viewportDataSource.evaluate()
+        val maneuvers = maneuverApi.getManeuvers(progress)
+        val tripProgress = tripProgressApi.getTripProgress(progress)
+        runOnUiThread {
+            if (::maneuverView.isInitialized) {
+                maneuverView.renderManeuvers(maneuvers)
+                maneuverView.visibility = View.VISIBLE
+                tripProgressView.render(tripProgress)
+                tripProgressView.visibility = View.VISIBLE
             }
         }
     }
@@ -149,28 +175,28 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             mapView.location.setLocationProvider(navigationLocationProvider)
             mapView.location.locationPuck = createDefault2DPuck()
             mapView.location.enabled = true
-            maneuverText = TextView(this).apply {
-                setTextColor(Color.WHITE)
-                textSize = 18f
-                setPadding(dp(16), dp(12), dp(16), dp(12))
-                gravity = Gravity.CENTER_VERTICAL
-                visibility = TextView.GONE
-                background = GradientDrawable().apply {
-                    setColor(Color.argb(220, 20, 35, 55))
-                    cornerRadius = dp(12).toFloat()
-                }
-                contentDescription = "Written turn-by-turn instruction"
-            }
+            maneuverView = MapboxManeuverView(this).apply { visibility = View.GONE }
+            tripProgressView = MapboxTripProgressView(this).apply { visibility = View.GONE }
             val navigationLayout = FrameLayout(this).apply {
                 addView(mapView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 addView(
-                    maneuverText,
+                    maneuverView,
                     FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                     ).apply {
-                        gravity = Gravity.TOP
+                        gravity = android.view.Gravity.TOP
                         setMargins(dp(16), dp(24), dp(16), 0)
+                    },
+                )
+                addView(
+                    tripProgressView,
+                    FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        gravity = android.view.Gravity.BOTTOM
+                        setMargins(dp(16), 0, dp(16), dp(24))
                     },
                 )
             }
@@ -178,6 +204,11 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             mapView.mapboxMap.loadStyleUri("mapbox://styles/mapbox/streets-v12")
             routeLineApi = MapboxRouteLineApi(MapboxRouteLineApiOptions.Builder().build())
             routeLineView = MapboxRouteLineView(MapboxRouteLineViewOptions.Builder(this).build())
+            viewportDataSource = MapboxNavigationViewportDataSource(mapView.mapboxMap).apply {
+                followingPadding = com.mapbox.maps.EdgeInsets(dp(180).toDouble(), dp(40).toDouble(), dp(150).toDouble(), dp(40).toDouble())
+                overviewPadding = com.mapbox.maps.EdgeInsets(dp(140).toDouble(), dp(40).toDouble(), dp(120).toDouble(), dp(40).toDouble())
+            }
+            navigationCamera = NavigationCamera(mapView.mapboxMap, mapView.camera, viewportDataSource)
 
             val navigationOptions = NavigationOptions.Builder(this).build()
             mapboxNavigation = if (MapboxNavigationProvider.isCreated()) {
@@ -198,10 +229,16 @@ class EmbeddedNavigationActivity : ComponentActivity() {
 
     private val routesObserver = RoutesObserver { update ->
         if (update.navigationRoutes.isNotEmpty()) {
+            viewportDataSource.onRouteChanged(update.navigationRoutes.first())
+            viewportDataSource.evaluate()
             routeLineApi.setNavigationRoutes(update.navigationRoutes) { drawData ->
                 mapView.mapboxMap.getStyle { style -> routeLineView.renderRouteDrawData(style, drawData) }
             }
             mapboxNavigation?.setNavigationRoutes(update.navigationRoutes)
+            navigationCamera.requestNavigationCameraToFollowing()
+        } else if (::viewportDataSource.isInitialized) {
+            viewportDataSource.clearRouteData()
+            viewportDataSource.evaluate()
         }
     }
 
@@ -210,6 +247,10 @@ class EmbeddedNavigationActivity : ComponentActivity() {
         override fun onNewLocationMatcherResult(result: LocationMatcherResult) {
             currentLocation = result.enhancedLocation
             navigationLocationProvider.changePosition(result.enhancedLocation, result.keyPoints)
+            if (::viewportDataSource.isInitialized) {
+                viewportDataSource.onLocationChanged(result.enhancedLocation)
+                viewportDataSource.evaluate()
+            }
             requestRouteIfReady()
         }
     }
@@ -251,21 +292,14 @@ class EmbeddedNavigationActivity : ComponentActivity() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
-    private fun formatDistance(meters: Float): String {
-        val miles = meters / 1609.344f
-        return if (miles < 0.1f) {
-            "${kotlin.math.max(50, (meters / 10f).toInt() * 10)} ft"
-        } else {
-            String.format(Locale.US, "%.1f mi", miles)
-        }
-    }
-
     override fun onDestroy() {
+        if (::navigationCamera.isInitialized) navigationCamera.requestNavigationCameraToIdle()
         mapboxNavigation?.unregisterRoutesObserver(routesObserver)
         mapboxNavigation?.unregisterLocationObserver(locationObserver)
         mapboxNavigation?.unregisterRouteProgressObserver(routeProgressObserver)
         mapboxNavigation?.unregisterVoiceInstructionsObserver(voiceInstructionsObserver)
         mapboxNavigation?.stopTripSession()
+        maneuverApi.cancel()
         if (::speechApi.isInitialized) speechApi.cancel()
         if (::voiceInstructionsPlayer.isInitialized) voiceInstructionsPlayer.shutdown()
         super.onDestroy()
