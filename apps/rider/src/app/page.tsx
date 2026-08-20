@@ -123,6 +123,12 @@ type ReputationTrip = {
   bookingId: string; completedAt: string; pickupAddress: string; destinationAddress: string;
   subjectName: string; canSubmit: boolean; submittedRating: TripRating | null; receivedRating: TripRating | null;
 };
+const riderServiceTypes = [
+  { id: "standard", label: "Standard", vehicle: "2024 Toyota Camry", capacity: "4 passengers", positioning: "Everyday affordable rides", image: "/images/camry.png.png" },
+  { id: "larger", label: "XL", vehicle: "2024 Toyota Sienna", capacity: "6 passengers", positioning: "Groups, families, and luggage", image: "/images/sienna.png.png" },
+  { id: "premium", label: "Premium SUV", vehicle: "2024 Chevrolet Tahoe", capacity: "6 passengers", positioning: "Premium airport, business, and group travel", image: "/images/tahoe.png.png" },
+  { id: "accessible", label: "Accessible", vehicle: "2024 Chrysler Pacifica WAV", capacity: "WAV configuration", positioning: "Wheelchair-accessible transportation", image: "/images/chrysler.png.png" },
+] as const;
 
 function formatDate(value: string, timeZone?: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -175,7 +181,7 @@ export default function RiderHome() {
   const [paymentReceiptUrls, setPaymentReceiptUrls] = useState<Record<string, string>>({});
   const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled" | "recurring">("now");
-  const [serviceType, setServiceType] = useState<"standard" | "larger" | "accessible">("standard");
+  const [serviceType, setServiceType] = useState<"standard" | "larger" | "premium" | "accessible">("standard");
   const [serviceAreaId, setServiceAreaId] = useState("");
   const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
@@ -1233,11 +1239,17 @@ export default function RiderHome() {
               </label>
               <label className="wide">
                 Vehicle type
-                <select value={serviceType} onChange={(event) => { setServiceType(event.target.value as "standard" | "larger" | "accessible"); setPriceQuote(null); }}>
-                  <option value="standard">Standard vehicle</option>
-                  <option value="larger">Larger vehicle</option>
-                  <option value="accessible">Accessible vehicle</option>
-                </select>
+                <div className="service-type-grid">
+                  {riderServiceTypes.map((type) => (
+                    <button className={`service-type-card${serviceType === type.id ? " selected" : ""}`} key={type.id} onClick={() => { setServiceType(type.id); setPriceQuote(null); }} type="button">
+                      <img alt="" src={type.image} />
+                      <strong>{type.label}</strong>
+                      <span>{type.vehicle}</span>
+                      <span>{type.capacity}</span>
+                      <small>{type.positioning}</small>
+                    </button>
+                  ))}
+                </div>
                 <span className="field-hint">We’ll match you with an eligible vehicle. If none are available, choose another type.</span>
               </label>
               <div className="wide address-field">

@@ -270,6 +270,38 @@ textarea:focus {
   min-width: 0;
   padding: 0;
 }
+.service-type-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.service-type-card {
+  align-items: flex-start;
+  background: var(--surface, #fff);
+  border: 2px solid var(--line, #d7dde5);
+  border-radius: 14px;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  text-align: left;
+}
+.service-type-card.selected {
+  border-color: var(--accent, #1c6bff);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #1c6bff) 18%, transparent);
+}
+.service-type-card img {
+  border-radius: 10px;
+  height: 88px;
+  object-fit: cover;
+  width: 100%;
+}
+.service-type-card span,
+.service-type-card small {
+  color: var(--muted, #5d6878);
+  font-size: .82rem;
+}
 .history {
   display: grid;
   gap: 14px;

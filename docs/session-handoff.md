@@ -170,10 +170,12 @@ coordinates are not persisted by this convenience flow. This is a hosted web cha
 require a native rebuild because the Geolocation plugin is already present in the Rider shell.
 
 Vehicle service choices are now implemented locally. Vehicles default to `standard` and Admin can
-classify each fleet vehicle as `standard`, `larger`, or `accessible`; Rider booking passes the
-selected type through the priced-booking RPC, and automatic matching requires an active assigned
-vehicle of that type. Migration `20260819000100_vehicle_service_types_v1.sql` still needs the
-owner dry-run/apply, commit, deployment, and production matching validation.
+classify each fleet vehicle as `standard`, `larger`, `premium`, or `accessible`; Rider booking
+passes the selected type through the priced-booking RPC, and automatic matching requires an active
+assigned vehicle of that type. Rider cards use the provided Camry, Sienna, Tahoe, and Chrysler WAV
+images. Migrations `20260819000100_vehicle_service_types_v1.sql` and
+`20260819000200_premium_vehicle_service_type_v1.sql` still need owner dry-run/apply, commit,
+deployment, and production matching validation.
 
 ## Temporary production settings
 

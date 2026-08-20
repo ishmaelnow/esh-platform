@@ -3471,6 +3471,7 @@ function VehiclesPanel({
               <select disabled={busyId !== null} defaultValue="standard" name="serviceType">
                 <option value="standard">Standard</option>
                 <option value="larger">Larger</option>
+                <option value="premium">Premium SUV</option>
                 <option value="accessible">Accessible</option>
               </select>
             </label>
@@ -3571,6 +3572,7 @@ function VehiclesPanel({
                         >
                           <option value="standard">Standard</option>
                           <option value="larger">Larger</option>
+                          <option value="premium">Premium SUV</option>
                           <option value="accessible">Accessible</option>
                         </select>
                       </label>
