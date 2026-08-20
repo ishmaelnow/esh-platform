@@ -215,6 +215,12 @@ rehydrates the paid quote's active Rider identity only inside the security-defin
 webhook can complete the same authorization checks safely. It needs owner dry-run/apply, commit,
 deployment, and a retry of the affected payment webhook.
 
+The payment-status endpoint now also attempts idempotent finalization for a paid, unbooked quote,
+so a Rider refresh can recover a missed webhook without another charge. Scheduled checkout returns
+carry the scheduled pickup timestamp for this recovery path.
+The payment-return query is now retained until confirmation succeeds, so a timeout followed by a
+refresh retries the same paid quote instead of losing the recovery context.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:

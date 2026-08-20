@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       customer_creation: "always",
       line_items: [{ price_data: { currency: quote.currency_code.toLowerCase(), unit_amount: split.cardAmountMinor,
         product_data: { name: "ESH trip", description: `${quote.pickup_address} to ${quote.destination_address}` } }, quantity: 1 }],
-      success_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=success&quote=${quote.quote_id}${occurrenceId ? `&occurrence=${encodeURIComponent(occurrenceId)}` : ""}`,
+      success_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=success&quote=${quote.quote_id}${occurrenceId ? `&occurrence=${encodeURIComponent(occurrenceId)}` : ""}${scheduledPickupAt ? `&scheduledPickupAt=${encodeURIComponent(scheduledPickupAt)}` : ""}`,
       cancel_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=cancelled`,
       metadata: { quote_id: quote.quote_id, tenant_id: quote.tenant_id,
         wallet_amount_minor: String(split.walletAmountMinor), booking_notes: typeof bookingNotes === "string" ? bookingNotes.slice(0, 500) : "",
@@ -91,11 +91,13 @@ export async function GET(request: Request) {
   try {
     const authorization = request.headers.get("authorization");
     if (!authorization?.startsWith("Bearer ")) throw new Error("Authentication is required.");
-    const quoteId = new URL(request.url).searchParams.get("quote");
+    const searchParams = new URL(request.url).searchParams;
+    const quoteId = searchParams.get("quote");
+    const scheduledPickupAt = searchParams.get("scheduledPickupAt");
     if (!quoteId) throw new Error("Price quote is required.");
     const authenticated = createAuthenticatedSupabaseClient(authorization.slice(7));
     const [quoteResult, paymentResult, walletResult] = await Promise.all([
-      authenticated.from("trip_price_quotes").select("quote_id,service_area_id,fare_amount_minor,currency_code,pickup_address,destination_address,route_distance_meters,route_duration_seconds,expires_at,status,booking_id").eq("quote_id", quoteId).single(),
+      authenticated.from("trip_price_quotes").select("quote_id,service_area_id,fare_amount_minor,currency_code,pickup_address,destination_address,route_distance_meters,route_duration_seconds,expires_at,status,booking_id,service_type").eq("quote_id", quoteId).single(),
       authenticated.from("rider_payment_attempts").select("status").eq("quote_id", quoteId).single(),
       authenticated.from("rider_wallet_quote_allocations").select("amount_minor,status").eq("quote_id", quoteId).maybeSingle(),
     ]);
@@ -103,6 +105,17 @@ export async function GET(request: Request) {
     const walletCoversFare = walletResult.data?.status === "reserved"
       && walletResult.data.amount_minor === quoteResult.data.fare_amount_minor;
     if ((paymentResult.error || !paymentResult.data) && !walletCoversFare) throw new Error("Payment status is unavailable.");
+    let bookingId = quoteResult.data.booking_id;
+    if (!bookingId && !walletCoversFare && paymentResult.data?.status === "paid") {
+      const finalized = await createServiceSupabaseClient().rpc("finalize_paid_rider_booking_internal", {
+        target_quote_id: quoteResult.data.quote_id,
+        booking_notes_value: "",
+        scheduled_pickup_at_value: scheduledPickupAt || null,
+        service_type_value: quoteResult.data.service_type ?? "standard",
+      });
+      if (finalized.error) throw finalized.error;
+      bookingId = finalized.data;
+    }
     return NextResponse.json({
       paymentStatus: walletCoversFare ? "paid" : paymentResult.data?.status,
       quote: {
@@ -112,7 +125,7 @@ export async function GET(request: Request) {
         destinationAddress: quoteResult.data.destination_address,
         routeDistanceMeters: quoteResult.data.route_distance_meters,
         routeDurationSeconds: quoteResult.data.route_duration_seconds,
-        expiresAt: quoteResult.data.expires_at, bookingId: quoteResult.data.booking_id,
+        expiresAt: quoteResult.data.expires_at, bookingId,
       },
     });
   } catch (error) {

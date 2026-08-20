@@ -378,19 +378,23 @@ export default function RiderHome() {
     const params = new URLSearchParams(window.location.search);
     const returnedQuoteId = params.get("quote");
     const returnedOccurrenceId = params.get("occurrence");
+    const returnedScheduledPickupAt = params.get("scheduledPickupAt");
     if (params.get("payment") !== "success" || !returnedQuoteId) return;
-    const recoveredUrl = new URL(window.location.href);
-    recoveredUrl.searchParams.delete("payment");
-    recoveredUrl.searchParams.delete("quote");
-    recoveredUrl.searchParams.delete("occurrence");
-    window.history.replaceState({}, "", recoveredUrl);
+    const clearPaymentReturnParams = () => {
+      const recoveredUrl = new URL(window.location.href);
+      recoveredUrl.searchParams.delete("payment");
+      recoveredUrl.searchParams.delete("quote");
+      recoveredUrl.searchParams.delete("occurrence");
+      recoveredUrl.searchParams.delete("scheduledPickupAt");
+      window.history.replaceState({}, "", recoveredUrl);
+    };
     setBusy(true);
     setMessage("Payment received. Confirming your trip…");
     void (async () => {
       type PaymentReturn = { paymentStatus?: string; bookingId?: string | null; quote?: PaidRiderPriceQuote; message?: string };
       let result: PaymentReturn | null = null;
       for (let attempt = 0; attempt < 15; attempt += 1) {
-        const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
+        const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}${returnedScheduledPickupAt ? `&scheduledPickupAt=${encodeURIComponent(returnedScheduledPickupAt)}` : ""}`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         const next = await response.json() as PaymentReturn;
@@ -402,6 +406,7 @@ export default function RiderHome() {
       }
       if (!result?.quote) throw new Error("Payment confirmation is taking longer than expected. Please refresh shortly.");
       if (result.bookingId && !returnedOccurrenceId) {
+        clearPaymentReturnParams();
         await loadPortal();
         setActivePortalTab("trips");
         setMessage("Payment received and trip requested. Dispatch can now find an eligible driver.");
@@ -423,6 +428,7 @@ export default function RiderHome() {
       setPaymentConfirmed(true);
       setRecurringOccurrenceId(returnedOccurrenceId);
       setActivePortalTab("book");
+      clearPaymentReturnParams();
       setMessage("Payment received. This recurring occurrence is ready to request.");
     })().catch((value) => setError(value instanceof Error ? value.message : "We could not confirm the payment."))
       .finally(() => setBusy(false));
