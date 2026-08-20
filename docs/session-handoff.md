@@ -141,7 +141,9 @@ owner's global Gradle properties. A Capacitor `EmbeddedNavigation` plugin launch
 Mapbox navigation screen with the verified pickup/destination coordinates and the public runtime
 token. Web, iOS, and older APKs retain the existing Google Maps fallback. The native screen now
 also renders the current written maneuver announcement in a high-contrast banner while retaining
-Mapbox voice guidance. Driver web tests pass 16/16 and typecheck/diff checks pass. The native
+Mapbox voice guidance. The latest native follow-up replaces the sentence-only banner with
+route-progress maneuver text and distance-to-next-turn formatting (for example, `0.5 mi` and
+`Turn left onto Market Street`). Driver web tests pass 16/16 and typecheck/diff checks pass. The native
 Android build and device test are still required; do not claim embedded turn-by-turn is
 production-ready until the APK visibly opens the Mapbox screen, obtains location permission,
 draws a route, follows the Driver location, and displays written maneuver updates.

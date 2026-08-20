@@ -36,6 +36,7 @@ import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
+import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.core.trip.session.VoiceInstructionsObserver
 import com.mapbox.navigation.ui.base.util.MapboxNavigationConsumer
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
@@ -65,13 +66,20 @@ class EmbeddedNavigationActivity : ComponentActivity() {
     private lateinit var voiceInstructionsPlayer: MapboxVoiceInstructionsPlayer
 
     private val voiceInstructionsObserver = VoiceInstructionsObserver { instructions ->
-        runOnUiThread {
-            if (::maneuverText.isInitialized) {
-                maneuverText.text = instructions.announcement()
-                maneuverText.visibility = TextView.VISIBLE
+        speechApi.generate(instructions, speechCallback)
+    }
+
+    private val routeProgressObserver = RouteProgressObserver { progress ->
+        val primaryInstruction = progress.bannerInstructions?.primary()?.text()
+        val stepDistance = progress.currentLegProgress?.currentStepProgress?.distanceRemaining
+        if (!primaryInstruction.isNullOrBlank() && stepDistance != null) {
+            runOnUiThread {
+                if (::maneuverText.isInitialized) {
+                    maneuverText.text = "${formatDistance(stepDistance)}\n$primaryInstruction"
+                    maneuverText.visibility = TextView.VISIBLE
+                }
             }
         }
-        speechApi.generate(instructions, speechCallback)
     }
 
     private val speechCallback = MapboxNavigationConsumer<Expected<SpeechError, SpeechValue>> { expected ->
@@ -179,6 +187,7 @@ class EmbeddedNavigationActivity : ComponentActivity() {
             }
             mapboxNavigation?.registerRoutesObserver(routesObserver)
             mapboxNavigation?.registerLocationObserver(locationObserver)
+            mapboxNavigation?.registerRouteProgressObserver(routeProgressObserver)
             mapboxNavigation?.registerVoiceInstructionsObserver(voiceInstructionsObserver)
             mapboxNavigation?.startTripSession()
         } catch (error: Exception) {
@@ -242,9 +251,19 @@ class EmbeddedNavigationActivity : ComponentActivity() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
+    private fun formatDistance(meters: Float): String {
+        val miles = meters / 1609.344f
+        return if (miles < 0.1f) {
+            "${kotlin.math.max(50, (meters / 10f).toInt() * 10)} ft"
+        } else {
+            String.format(Locale.US, "%.1f mi", miles)
+        }
+    }
+
     override fun onDestroy() {
         mapboxNavigation?.unregisterRoutesObserver(routesObserver)
         mapboxNavigation?.unregisterLocationObserver(locationObserver)
+        mapboxNavigation?.unregisterRouteProgressObserver(routeProgressObserver)
         mapboxNavigation?.unregisterVoiceInstructionsObserver(voiceInstructionsObserver)
         mapboxNavigation?.stopTripSession()
         if (::speechApi.isInitialized) speechApi.cancel()
