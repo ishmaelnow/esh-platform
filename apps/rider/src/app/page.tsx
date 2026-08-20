@@ -1239,17 +1239,16 @@ export default function RiderHome() {
               </label>
               <label className="wide">
                 Vehicle type
-                <div className="service-type-grid">
-                  {riderServiceTypes.map((type) => (
-                    <button className={`service-type-card${serviceType === type.id ? " selected" : ""}`} key={type.id} onClick={() => { setServiceType(type.id); setPriceQuote(null); }} type="button">
-                      <img alt="" src={type.image} />
-                      <strong>{type.label}</strong>
-                      <span>{type.vehicle}</span>
-                      <span>{type.capacity}</span>
-                      <small>{type.positioning}</small>
-                    </button>
-                  ))}
-                </div>
+                <select value={serviceType} onChange={(event) => { setServiceType(event.target.value as "standard" | "larger" | "premium" | "accessible"); setPriceQuote(null); }}>
+                  {riderServiceTypes.map((type) => <option key={type.id} value={type.id}>{type.label}</option>)}
+                </select>
+                {(() => {
+                  const selected = riderServiceTypes.find((type) => type.id === serviceType) ?? riderServiceTypes[0];
+                  return <div className="selected-service-type">
+                    <img alt={`${selected.label} ride type`} src={selected.image} />
+                    <div><strong>{selected.label}</strong><span>{selected.capacity} · {selected.positioning}</span></div>
+                  </div>;
+                })()}
                 <span className="field-hint">We’ll match you with an eligible vehicle. If none are available, choose another type.</span>
               </label>
               <div className="wide address-field">

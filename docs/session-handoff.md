@@ -172,8 +172,8 @@ require a native rebuild because the Geolocation plugin is already present in th
 Vehicle service choices are now implemented locally. Vehicles default to `standard` and Admin can
 classify each fleet vehicle as `standard`, `larger`, `premium`, or `accessible`; Rider booking
 passes the selected type through the priced-booking RPC, and automatic matching requires an active
-assigned vehicle of that type. Rider cards use the provided Camry, Sienna, Tahoe, and Chrysler WAV
-images. Migrations `20260819000100_vehicle_service_types_v1.sql` and
+assigned vehicle of that type. Rider uses a collapsed vehicle-type dropdown with the selected ride
+image; vehicle model names and years are not shown to Riders. Migrations `20260819000100_vehicle_service_types_v1.sql` and
 `20260819000200_premium_vehicle_service_type_v1.sql` still need owner dry-run/apply, commit,
 deployment, and production matching validation.
 

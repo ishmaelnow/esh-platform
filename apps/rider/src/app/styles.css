@@ -302,6 +302,26 @@ textarea:focus {
   color: var(--muted, #5d6878);
   font-size: .82rem;
 }
+.selected-service-type {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.selected-service-type img {
+  border-radius: 10px;
+  height: 72px;
+  object-fit: cover;
+  width: 120px;
+}
+.selected-service-type div {
+  display: grid;
+  gap: 3px;
+}
+.selected-service-type span {
+  color: var(--muted, #5d6878);
+  font-size: .85rem;
+}
 .history {
   display: grid;
   gap: 14px;
