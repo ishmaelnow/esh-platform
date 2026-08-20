@@ -2324,6 +2324,10 @@ export type Database = {
         Args: { destination_address_value: string; destination_latitude_value: number; destination_longitude_value: number; pickup_address_value: string; pickup_latitude_value: number; pickup_longitude_value: number; route_distance_meters_value: number; route_duration_seconds_value: number; target_rider_profile_id: string; target_service_area_id: string; toll_amount_minor_value: number; toll_snapshot_value: Json }
         Returns: Json
       }
+      create_rider_price_quote_with_service_type: {
+        Args: { destination_address_value: string; destination_latitude_value: number; destination_longitude_value: number; pickup_address_value: string; pickup_latitude_value: number; pickup_longitude_value: number; route_distance_meters_value: number; route_duration_seconds_value: number; service_type_value: string; target_rider_profile_id: string; target_service_area_id: string; toll_amount_minor_value: number; toll_snapshot_value: Json }
+        Returns: Json
+      }
       create_my_rider_scheduled_booking: {
         Args: {
           booking_notes_value?: string

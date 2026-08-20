@@ -183,6 +183,12 @@ the trusted quote RPC snapshots the selected service type and surcharge before p
 `20260819000300_service_type_fare_adjustments_v1.sql` still needs owner dry-run/apply, commit,
 deployment, and quote/payment validation.
 
+The first production quote attempt exposed an RPC overload ambiguity between the legacy quote
+function and the service-type extension. Local follow-up migration
+`20260819000400_fix_service_type_quote_rpc_v1.sql` drops the ambiguous overload and uses the
+distinct `create_rider_price_quote_with_service_type` RPC. It needs owner dry-run/apply and a
+fresh Rider quote test.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:

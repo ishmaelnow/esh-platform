@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       throw new Error(`This route uses a toll facility that is not yet configured for pricing. Detected: ${detectedFacilities}.`);
     }
     const tollAmountMinor = quoteTolls.reduce((total: number, toll) => total + toll.amountMinor, 0);
-    const quoteResult = await service.rpc("create_rider_price_quote_internal", {
+    const quoteResult = await service.rpc("create_rider_price_quote_with_service_type", {
       target_rider_profile_id: portal.profile.riderProfileId,
       target_service_area_id: serviceAreaId,
       pickup_address_value: pickup.formattedAddress,
