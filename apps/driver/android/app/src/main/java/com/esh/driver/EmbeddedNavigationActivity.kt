@@ -20,6 +20,7 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapView
+import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
