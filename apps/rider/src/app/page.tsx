@@ -798,7 +798,7 @@ export default function RiderHome() {
           target_quote_id: priceQuote.quoteId, target_occurrence_id: recurringOccurrenceId,
           ...(formValue(form, "bookingNotes") ? { booking_notes_value: formValue(form, "bookingNotes") } : {}),
         })
-        : await supabase.rpc("create_my_rider_priced_booking", {
+        : await supabase.rpc("create_my_rider_priced_booking_with_service_type", {
           target_quote_id: priceQuote.quoteId,
           booking_notes_value: formValue(form, "bookingNotes"),
           service_type_value: serviceType,

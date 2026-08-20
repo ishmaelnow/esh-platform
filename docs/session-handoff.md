@@ -189,6 +189,13 @@ function and the service-type extension. Local follow-up migration
 distinct `create_rider_price_quote_with_service_type` RPC. It needs owner dry-run/apply and a
 fresh Rider quote test.
 
+The follow-up booking test then exposed the same default-argument overload pattern on
+`create_my_rider_priced_booking`. Local migration
+`20260819000500_fix_service_type_booking_rpc_v1.sql` removes that overload and exposes
+`create_my_rider_priced_booking_with_service_type`. Payment-success auto-finalization remains a
+separate follow-up because it requires an idempotent booking intent carried through Stripe
+metadata/webhook processing.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
