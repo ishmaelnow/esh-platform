@@ -177,6 +177,12 @@ image; vehicle model names and years are not shown to Riders. Migrations `202608
 `20260819000200_premium_vehicle_service_type_v1.sql` still need owner dry-run/apply, commit,
 deployment, and production matching validation.
 
+Tenant ride-type fare adjustments are implemented locally as tenant-configurable fixed surcharges
+for Standard, XL, Premium SUV, and Accessible. Admin pricing now edits those four adjustments;
+the trusted quote RPC snapshots the selected service type and surcharge before payment. Migration
+`20260819000300_service_type_fare_adjustments_v1.sql` still needs owner dry-run/apply, commit,
+deployment, and quote/payment validation.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:

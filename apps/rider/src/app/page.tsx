@@ -740,7 +740,7 @@ export default function RiderHome() {
         const response = await fetch("/api/pricing/quote", {
           method: "POST",
           headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ tenantSlug, serviceAreaId, pickupAddress: pickupSelection.label, destinationAddress: destinationSelection.label }),
+          body: JSON.stringify({ tenantSlug, serviceAreaId, pickupAddress: pickupSelection.label, destinationAddress: destinationSelection.label, serviceType }),
         });
         const result = (await response.json().catch(() => null)) as (RiderPriceQuote & { message?: string }) | null;
         if (!response.ok || !result) throw new Error(result?.message ?? "Fare quote could not be created.");

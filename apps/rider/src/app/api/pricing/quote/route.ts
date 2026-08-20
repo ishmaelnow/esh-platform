@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     const serviceAreaId = requiredText(body.serviceAreaId, "Service area");
     const pickupAddress = requiredText(body.pickupAddress, "Pickup address");
     const destinationAddress = requiredText(body.destinationAddress, "Destination address");
+    const serviceType = ["standard", "larger", "premium", "accessible"].includes(String(body.serviceType)) ? String(body.serviceType) : "standard";
     const authenticated = createAuthenticatedSupabaseClient(authorization.slice(7));
     const [portalResult, areaResult] = await Promise.all([
       authenticated.rpc("my_rider_portal", { target_tenant_slug: tenantSlug }),
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
       route_duration_seconds_value: route.durationSeconds,
       toll_amount_minor_value: tollAmountMinor,
       toll_snapshot_value: quoteTolls as unknown as Json,
+      service_type_value: serviceType,
     }) as unknown as { data: unknown; error: { message: string } | null };
     const { data, error } = quoteResult;
     if (error || !data) throw new Error(error?.message ?? "Fare quote could not be created.");

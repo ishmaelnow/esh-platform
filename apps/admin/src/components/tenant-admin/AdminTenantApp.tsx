@@ -4198,11 +4198,18 @@ function PricingPanel({ canManageTenant, onRefresh, summary }: { canManageTenant
     try {
       const result = await supabase.rpc("set_tenant_pricing_settings", {
         target_tenant_id: summary.tenant.tenant_id,
+        operating_currency_value: currency,
         pricing_enabled_value: form.get("pricingEnabled") === "on",
         base_fare_minor_value: parseMoneyToMinorUnits(value("baseFare"), 2, true),
         per_mile_minor_value: parseMoneyToMinorUnits(value("perMile"), 2, true),
         per_minute_minor_value: parseMoneyToMinorUnits(value("perMinute"), 2, true),
         minimum_fare_minor_value: parseMoneyToMinorUnits(value("minimumFare"), 2, true),
+        service_type_surcharges_value: {
+          standard: parseMoneyToMinorUnits(value("standardSurcharge"), 2, true),
+          larger: parseMoneyToMinorUnits(value("largerSurcharge"), 2, true),
+          premium: parseMoneyToMinorUnits(value("premiumSurcharge"), 2, true),
+          accessible: parseMoneyToMinorUnits(value("accessibleSurcharge"), 2, true),
+        },
       });
       if (result.error) throw result.error;
       setMessage("Trip pricing settings saved."); onRefresh();
@@ -4230,6 +4237,12 @@ function PricingPanel({ canManageTenant, onRefresh, summary }: { canManageTenant
       <label>Per mile ({currency})<input defaultValue={display(settings?.per_mile_minor, "1.50")} name="perMile" inputMode="decimal" required /></label>
       <label>Per minute ({currency})<input defaultValue={display(settings?.per_minute_minor, "0.25")} name="perMinute" inputMode="decimal" required /></label>
       <label>Minimum fare ({currency})<input defaultValue={display(settings?.minimum_fare_minor, "10.00")} name="minimumFare" inputMode="decimal" required /></label>
+      <h4>Ride type fare adjustments ({currency})</h4>
+      <p className="empty-state">These fixed adjustments are added to the route fare. Use negative values for discounts.</p>
+      <label>Standard adjustment<input defaultValue={display((settings?.service_type_surcharges as Record<string, number> | undefined)?.standard, "0.00")} name="standardSurcharge" inputMode="decimal" required /></label>
+      <label>XL adjustment<input defaultValue={display((settings?.service_type_surcharges as Record<string, number> | undefined)?.larger, "0.00")} name="largerSurcharge" inputMode="decimal" required /></label>
+      <label>Premium SUV adjustment<input defaultValue={display((settings?.service_type_surcharges as Record<string, number> | undefined)?.premium, "0.00")} name="premiumSurcharge" inputMode="decimal" required /></label>
+      <label>Accessible adjustment<input defaultValue={display((settings?.service_type_surcharges as Record<string, number> | undefined)?.accessible, "0.00")} name="accessibleSurcharge" inputMode="decimal" required /></label>
       <p className="empty-state">Fare = base + road miles × per-mile rate + route minutes × per-minute rate, subject to the minimum fare. The quoted fare is locked for 15 minutes.</p>
       <button disabled={!canManageTenant || busy} type="submit">Save pricing settings</button>
     </form>

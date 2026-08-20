@@ -1469,9 +1469,9 @@ export type Database = {
         Relationships: []
       }
       tenant_pricing_settings: {
-        Row: { base_fare_minor: number; created_at: string; currency_code: string; minimum_fare_minor: number; per_mile_minor: number; per_minute_minor: number; pricing_enabled: boolean; tenant_id: string; updated_at: string; updated_by_person_id: string }
-        Insert: { base_fare_minor?: number; created_at?: string; currency_code: string; minimum_fare_minor?: number; per_mile_minor?: number; per_minute_minor?: number; pricing_enabled?: boolean; tenant_id: string; updated_at?: string; updated_by_person_id: string }
-        Update: { base_fare_minor?: number; created_at?: string; currency_code?: string; minimum_fare_minor?: number; per_mile_minor?: number; per_minute_minor?: number; pricing_enabled?: boolean; tenant_id?: string; updated_at?: string; updated_by_person_id?: string }
+        Row: { base_fare_minor: number; created_at: string; currency_code: string; minimum_fare_minor: number; per_mile_minor: number; per_minute_minor: number; pricing_enabled: boolean; service_type_surcharges: Json; tenant_id: string; updated_at: string; updated_by_person_id: string }
+        Insert: { base_fare_minor?: number; created_at?: string; currency_code: string; minimum_fare_minor?: number; per_mile_minor?: number; per_minute_minor?: number; pricing_enabled?: boolean; service_type_surcharges?: Json; tenant_id: string; updated_at?: string; updated_by_person_id: string }
+        Update: { base_fare_minor?: number; created_at?: string; currency_code?: string; minimum_fare_minor?: number; per_mile_minor?: number; per_minute_minor?: number; pricing_enabled?: boolean; service_type_surcharges?: Json; tenant_id?: string; updated_at?: string; updated_by_person_id?: string }
         Relationships: []
       }
       toll_authorities: {
@@ -1499,9 +1499,9 @@ export type Database = {
         Relationships: []
       }
       trip_price_quotes: {
-        Row: { booking_id: string | null; created_at: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; status: string; tenant_id: string }
-        Insert: { booking_id?: string | null; created_at?: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id?: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; status?: string; tenant_id: string }
-        Update: { booking_id?: string | null; created_at?: string; currency_code?: string; destination_address?: string; destination_latitude?: number; destination_longitude?: number; expires_at?: string; fare_amount_minor?: number; pickup_address?: string; pickup_latitude?: number; pickup_longitude?: number; pricing_snapshot?: Json; quote_id?: string; rider_profile_id?: string; route_distance_meters?: number; route_duration_seconds?: number; service_area_id?: string; status?: string; tenant_id?: string }
+        Row: { booking_id: string | null; created_at: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; service_type: string; status: string; tenant_id: string }
+        Insert: { booking_id?: string | null; created_at?: string; currency_code: string; destination_address: string; destination_latitude: number; destination_longitude: number; expires_at: string; fare_amount_minor: number; pickup_address: string; pickup_latitude: number; pickup_longitude: number; pricing_snapshot: Json; quote_id?: string; rider_profile_id: string; route_distance_meters: number; route_duration_seconds: number; service_area_id: string; service_type?: string; status?: string; tenant_id: string }
+        Update: { booking_id?: string | null; created_at?: string; currency_code?: string; destination_address?: string; destination_latitude?: number; destination_longitude?: number; expires_at?: string; fare_amount_minor?: number; pickup_address?: string; pickup_latitude?: number; pickup_longitude?: number; pricing_snapshot?: Json; quote_id?: string; rider_profile_id?: string; route_distance_meters?: number; route_duration_seconds?: number; service_area_id?: string; service_type?: string; status?: string; tenant_id?: string }
         Relationships: []
       }
       tenant_scheduling_settings: {
@@ -2633,7 +2633,7 @@ export type Database = {
         Returns: boolean
       }
       set_tenant_pricing_settings: {
-        Args: { base_fare_minor_value: number; minimum_fare_minor_value: number; per_mile_minor_value: number; per_minute_minor_value: number; pricing_enabled_value: boolean; target_tenant_id: string }
+        Args: { base_fare_minor_value: number; minimum_fare_minor_value: number; operating_currency_value?: string; per_mile_minor_value: number; per_minute_minor_value: number; pricing_enabled_value: boolean; service_type_surcharges_value?: Json; target_tenant_id: string }
         Returns: boolean
       }
       set_tenant_driver_earnings_settings: {
