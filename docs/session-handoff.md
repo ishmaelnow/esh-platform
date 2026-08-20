@@ -221,6 +221,10 @@ carry the scheduled pickup timestamp for this recovery path.
 The payment-return query is now retained until confirmation succeeds, so a timeout followed by a
 refresh retries the same paid quote instead of losing the recovery context.
 
+The product flow was intentionally returned to two-step confirmation: payment records the paid
+quote, and the Rider explicitly selects **Request this trip**. Normal Stripe webhooks no longer
+auto-create a booking, and wallet-only checkout likewise returns to the paid-but-unrequested state.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:

@@ -93,15 +93,6 @@ export async function POST(request: Request) {
         if (saved.error && !saved.error.message.includes("record_rider_saved_payment_method_internal")) throw saved.error;
       }
     }
-    if (status === "paid" && !session.metadata?.occurrence_id && session.metadata?.quote_id) {
-      const finalized = await service.rpc("finalize_paid_rider_booking_internal", {
-        target_quote_id: session.metadata.quote_id,
-        booking_notes_value: session.metadata.booking_notes ?? "",
-        scheduled_pickup_at_value: session.metadata.scheduled_pickup_at || null,
-        service_type_value: session.metadata.service_type ?? "standard",
-      });
-      if (finalized.error) throw finalized.error;
-    }
     const attempt = await service.from("rider_payment_attempts").select("tenant_id")
       .eq("provider_checkout_session_id", session.id).single();
     if (!attempt.error && attempt.data) await requestNotificationDelivery(attempt.data.tenant_id);

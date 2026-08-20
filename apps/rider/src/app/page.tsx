@@ -378,14 +378,12 @@ export default function RiderHome() {
     const params = new URLSearchParams(window.location.search);
     const returnedQuoteId = params.get("quote");
     const returnedOccurrenceId = params.get("occurrence");
-    const returnedScheduledPickupAt = params.get("scheduledPickupAt");
     if (params.get("payment") !== "success" || !returnedQuoteId) return;
     const clearPaymentReturnParams = () => {
       const recoveredUrl = new URL(window.location.href);
       recoveredUrl.searchParams.delete("payment");
       recoveredUrl.searchParams.delete("quote");
       recoveredUrl.searchParams.delete("occurrence");
-      recoveredUrl.searchParams.delete("scheduledPickupAt");
       window.history.replaceState({}, "", recoveredUrl);
     };
     setBusy(true);
@@ -394,11 +392,11 @@ export default function RiderHome() {
       type PaymentReturn = { paymentStatus?: string; bookingId?: string | null; quote?: PaidRiderPriceQuote; message?: string };
       let result: PaymentReturn | null = null;
       for (let attempt = 0; attempt < 15; attempt += 1) {
-        const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}${returnedScheduledPickupAt ? `&scheduledPickupAt=${encodeURIComponent(returnedScheduledPickupAt)}` : ""}`, {
+        const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         const next = await response.json() as PaymentReturn;
-        if (response.ok && next?.paymentStatus === "paid" && next.quote && (returnedOccurrenceId || next.bookingId)) {
+        if (response.ok && next?.paymentStatus === "paid" && next.quote) {
           result = next;
           break;
         }
@@ -412,7 +410,6 @@ export default function RiderHome() {
         setMessage("Payment received and trip requested. Dispatch can now find an eligible driver.");
         return;
       }
-      if (!returnedOccurrenceId && !result.bookingId) throw new Error("Payment received; trip request is still processing. Refresh in a moment.");
       setPriceQuote({ ...result.quote, fractionDigits: 2 });
       setServiceAreaId(result.quote.serviceAreaId);
       const area = await supabase.rpc("my_rider_service_area_context", {
@@ -429,7 +426,7 @@ export default function RiderHome() {
       setRecurringOccurrenceId(returnedOccurrenceId);
       setActivePortalTab("book");
       clearPaymentReturnParams();
-      setMessage("Payment received. This recurring occurrence is ready to request.");
+      setMessage(returnedOccurrenceId ? "Payment received. This recurring occurrence is ready to request." : "Payment received. Review the trip, then request it once.");
     })().catch((value) => setError(value instanceof Error ? value.message : "We could not confirm the payment."))
       .finally(() => setBusy(false));
   }, [session, supabase, tenantSlug]);
