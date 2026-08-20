@@ -2206,6 +2206,7 @@ export type Database = {
       claim_due_recurring_autopay_internal: { Args: { target_limit?: number }; Returns: Json }
       register_rider_offsession_attempt_internal: { Args: { target_quote_id: string; provider_payment_intent_id_value: string }; Returns: string }
       finalize_recurring_autopay_internal: { Args: { target_occurrence_id: string; target_quote_id: string }; Returns: string }
+      finalize_paid_rider_booking_internal: { Args: { booking_notes_value: string; scheduled_pickup_at_value: string | null; service_type_value: string; target_quote_id: string }; Returns: string }
       fail_recurring_autopay_internal: { Args: { target_occurrence_id: string; failure_message_value: string; retryable_value: boolean }; Returns: boolean }
       cancel_my_rider_series_occurrence: { Args: { target_occurrence_id: string }; Returns: boolean }
       cancel_my_rider_booking_series: { Args: { target_series_id: string }; Returns: number }

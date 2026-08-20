@@ -388,9 +388,16 @@ export default function RiderHome() {
     void fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     }).then(async (response) => {
-      const result = await response.json() as { paymentStatus?: string; quote?: PaidRiderPriceQuote; message?: string };
+      const result = await response.json() as { paymentStatus?: string; bookingId?: string | null; quote?: PaidRiderPriceQuote; message?: string };
       if (!response.ok || result.paymentStatus !== "paid" || !result.quote)
         throw new Error(result.message ?? "Payment confirmation is still processing. Refresh in a moment.");
+      if (result.bookingId && !returnedOccurrenceId) {
+        await loadPortal();
+        setActivePortalTab("trips");
+        setMessage("Payment received and trip requested. Dispatch can now find an eligible driver.");
+        return;
+      }
+      if (!returnedOccurrenceId && !result.bookingId) throw new Error("Payment received; trip request is still processing. Refresh in a moment.");
       setPriceQuote({ ...result.quote, fractionDigits: 2 });
       setServiceAreaId(result.quote.serviceAreaId);
       const area = await supabase.rpc("my_rider_service_area_context", {
@@ -406,8 +413,8 @@ export default function RiderHome() {
       setPaymentConfirmed(true);
       setRecurringOccurrenceId(returnedOccurrenceId);
       setActivePortalTab("book");
-      setMessage("Payment received. No trip has been requested yet. Review this paid trip, then request it once.");
-    }).catch(() => setError("We could not refresh the payment details. Your payment history is unchanged; check Payments or My trips before trying again."))
+      setMessage("Payment received. This recurring occurrence is ready to request.");
+    }).catch((value) => setError(value instanceof Error ? value.message : "We could not refresh the payment details."))
       .finally(() => setBusy(false));
   }, [session, supabase, tenantSlug]);
 
@@ -779,11 +786,15 @@ export default function RiderHome() {
         const response = await fetch("/api/payments/checkout", {
           method: "POST",
           headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug, occurrenceId: recurringOccurrenceId }),
+          body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug, occurrenceId: recurringOccurrenceId, bookingNotes: formValue(form, "bookingNotes"), serviceType, scheduledPickupAt: bookingTiming === "scheduled" ? zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") : undefined }),
         });
         const result = await response.json() as { url?: string; walletOnly?: boolean; walletAmountMinor?: number; message?: string };
         if (!response.ok) throw new Error(result.message ?? "Payment checkout could not be opened.");
         if (result.walletOnly) {
+          if (result.booked) {
+            formElement.reset(); setPriceQuote(null); setPaymentConfirmed(false); setServiceType("standard");
+            await loadPortal(); setActivePortalTab("trips"); setMessage("Payment received and trip requested. Dispatch can now find an eligible driver."); return;
+          }
           setPaymentConfirmed(true);
           await loadWallet();
           setMessage("Your wallet covers this fare. Review the trip, then request it once.");

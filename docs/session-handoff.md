@@ -196,6 +196,12 @@ The follow-up booking test then exposed the same default-argument overload patte
 separate follow-up because it requires an idempotent booking intent carried through Stripe
 metadata/webhook processing.
 
+Local payment-flow follow-up `20260819000600_auto_finalize_paid_rider_booking_v1.sql` now
+finalizes normal paid quotes idempotently from verified Stripe success, carries booking intent in
+checkout metadata, and sends the Rider directly to Current trip. Wallet-only normal bookings also
+finalize immediately; recurring occurrence checkout remains separate. It needs owner dry-run/apply,
+commit/deployment, and Stripe sandbox validation.
+
 ## Temporary production settings
 
 The test plan recommends temporarily using:
