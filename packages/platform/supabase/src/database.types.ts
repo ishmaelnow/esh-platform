@@ -1504,6 +1504,12 @@ export type Database = {
         Update: { booking_id?: string | null; created_at?: string; currency_code?: string; destination_address?: string; destination_latitude?: number; destination_longitude?: number; expires_at?: string; fare_amount_minor?: number; pickup_address?: string; pickup_latitude?: number; pickup_longitude?: number; pricing_snapshot?: Json; quote_id?: string; rider_profile_id?: string; route_distance_meters?: number; route_duration_seconds?: number; service_area_id?: string; service_type?: string; status?: string; tenant_id?: string }
         Relationships: []
       }
+      trip_fare_reconciliations: {
+        Row: { adjustment_minor: number; actual_distance_meters: number; actual_duration_seconds: number; booking_id: string; calculated_fare_minor: number; created_at: string; currency_code: string; quoted_distance_meters: number; quoted_duration_seconds: number; quoted_fare_minor: number; reconciliation_id: string; review_note: string | null; reviewed_at: string | null; reviewed_by_person_id: string | null; source: string; status: string; tenant_id: string }
+        Insert: { adjustment_minor: number; actual_distance_meters: number; actual_duration_seconds: number; booking_id: string; calculated_fare_minor: number; created_at?: string; currency_code: string; quoted_distance_meters: number; quoted_duration_seconds: number; quoted_fare_minor: number; reconciliation_id?: string; review_note?: string | null; reviewed_at?: string | null; reviewed_by_person_id?: string | null; source: string; status?: string; tenant_id: string }
+        Update: { adjustment_minor?: number; actual_distance_meters?: number; actual_duration_seconds?: number; booking_id?: string; calculated_fare_minor?: number; created_at?: string; currency_code?: string; quoted_distance_meters?: number; quoted_duration_seconds?: number; quoted_fare_minor?: number; reconciliation_id?: string; review_note?: string | null; reviewed_at?: string | null; reviewed_by_person_id?: string | null; source?: string; status?: string; tenant_id?: string }
+        Relationships: []
+      }
       tenant_scheduling_settings: {
         Row: {
           created_at: string

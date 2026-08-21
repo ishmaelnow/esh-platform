@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-18
+Last updated: 2026-08-20
 
 ## Current objective
 
@@ -26,6 +26,13 @@ deferred.
   completion. The migration dry-run lists only this migration. It still needs owner apply, type/
   production validation, and the final fare-adjustment/payment workflow before any fare changes are
   enabled.
+- Route metrics are now consumed by local migration
+  `20260820000200_trip_fare_reconciliation_v1.sql`. On completion, when trusted aggregate metrics
+  are available, it calculates a comparison fare from the immutable quote pricing snapshot and
+  records one idempotent `trip_fare_reconciliations` row plus an audit event. The locked fare,
+  Stripe payment, Driver earnings, and ledger remain unchanged until a separately authorized
+  reconciliation action is implemented. The migration still needs owner dry-run/apply, generated
+  type validation, and production testing.
 - Production manual testing found a separate lifecycle hardening issue: a Driver can currently
   complete an in-progress trip without measurable movement. Leave this behavior unchanged during
   route-metrics validation; later add no-movement/insufficient-telemetry detection and operational
