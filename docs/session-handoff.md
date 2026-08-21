@@ -622,6 +622,10 @@ operational.
   metrics completion trigger. Migration `20260821000100_order_trip_completion_metrics_v1.sql`
   recreates the triggers in deterministic route-metrics-then-reconciliation order. Owner must
   dry-run/apply it, deploy, and complete one new trip with live Driver location updates.
+- Admin Fare reconciliation now lists every completed booking, including those without trusted
+  telemetry. Those rows show the locked fare and `No trusted route metrics`/`Not captured` rather
+  than disappearing; audited calculated fares and adjustments remain limited to reconciliation
+  records created from trusted metrics. Owner must deploy this Admin-only UI change.
 
 - Cancel unfinished test bookings.
 - Return test Drivers to Offline.
