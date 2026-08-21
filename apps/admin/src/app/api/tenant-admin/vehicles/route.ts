@@ -205,7 +205,7 @@ export async function PATCH(request: Request) {
         .eq("vehicle_id", vehicleId);
       if (error) throw error;
     } else if (body.kind === "service_type") {
-      const serviceType = String(body.serviceType ?? "");
+      const serviceType = typeof body.serviceType === "string" ? body.serviceType.trim() : "";
       if (!["standard", "larger", "premium", "accessible"].includes(serviceType)) throw new Error("Unsupported vehicle service type.");
       const { error } = await supabase.from("vehicles").update({ service_type: serviceType, updated_by_person_id: personId }).eq("tenant_id", tenantId).eq("vehicle_id", vehicleId);
       if (error) throw error;

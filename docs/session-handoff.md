@@ -613,6 +613,12 @@ operational.
 
 ## Cleanup still required after testing
 
+- Admin production deployments for the fare-reconciliation and trip-ending commits were failing
+  during the Next build. The blocking lint error was `String(body.serviceType ?? "")` in
+  `apps/admin/src/app/api/tenant-admin/vehicles/route.ts`; it is now type-safe and the local Admin
+  production build passes. Owner must commit/push this correction and verify the Admin deployment
+  reaches Ready before testing the Fare reconciliation workspace.
+
 - Cancel unfinished test bookings.
 - Return test Drivers to Offline.
 - Restore the tenant's intended scheduling settings.
