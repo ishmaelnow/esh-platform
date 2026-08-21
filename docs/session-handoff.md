@@ -34,6 +34,9 @@ deferred.
   reconciliation action is implemented. Admin Ledger now exposes a tenant-scoped Fare reconciliation
   workspace for inspection. The migration still needs owner dry-run/apply, generated type
   validation, and production testing.
+- Local migration `20260820000300_trip_fare_reconciliation_review_v1.sql` adds an explicit,
+  reasoned Admin approve/reject decision with audit evidence. It intentionally does not move money;
+  Stripe refund or additional-collection settlement remains the next financial workflow.
 - Production manual testing found a separate lifecycle hardening issue: a Driver can currently
   complete an in-progress trip without measurable movement. Leave this behavior unchanged during
   route-metrics validation; later add no-movement/insufficient-telemetry detection and operational

@@ -2188,6 +2188,10 @@ export type Database = {
         Args: { completion_reason_value: string; target_booking_id: string }
         Returns: Json
       }
+      review_trip_fare_reconciliation: {
+        Args: { decision_value: string; review_note_value: string; target_reconciliation_id: string }
+        Returns: Json
+      }
       cancel_my_rider_booking: {
         Args: { target_booking_id: string }
         Returns: boolean

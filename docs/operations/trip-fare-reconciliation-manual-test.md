@@ -17,11 +17,14 @@ change the locked fare, Stripe payment, Driver earnings, or ledger.
 5. If the calculated fare differs from the locked fare, confirm status is `pending_review` and the
    adjustment is recorded as a signed minor-unit value. If it matches, confirm status is
    `no_change`.
-6. Repeat the completion/read path or refresh Admin. Confirm the row is not duplicated and no
+6. For a `pending_review` row, select **Approve** or **Reject** in Admin and provide a reason of at
+   least three characters. Confirm the status, reviewer, timestamp, note, and audit event update.
+   Confirm the UI states that settlement is still pending.
+7. Repeat the completion/read path or refresh Admin. Confirm the row is not duplicated and no
    second audit event is created.
-7. Confirm the Rider fare, payment amount, Driver earnings, transfer state, and ledger totals still
+8. Confirm the Rider fare, payment amount, Driver earnings, transfer state, and ledger totals still
    equal the original locked fare. No refund or extra charge should occur in this slice.
-8. Complete a test trip without location updates. Confirm no reconciliation row is created and the
+9. Complete a test trip without location updates. Confirm no reconciliation row is created and the
    existing no-movement behavior remains unchanged for this validation milestone.
 
 Pass requires one idempotent, tenant-isolated reconciliation record for trusted metrics, accurate
