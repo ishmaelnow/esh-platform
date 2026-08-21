@@ -45,6 +45,10 @@ deferred.
   invokes the settlement route. If an extra charge cannot use the saved payment method, the result
   is `balance_due` for later Rider collection. It still needs owner dry-run/apply, deployment, and
   production Stripe sandbox validation.
+- A dispatch usability fix is local in migration `20260820000500_guard_admin_in_progress_cancellation_v1.sql`:
+  Admin no longer sees or can invoke pre-trip cancellation for an in-progress trip. The only path
+  is the audited **End trip as Admin** action with a required reason. It still needs owner
+  dry-run/apply, deployment, and an in-progress Admin completion retest.
 - Production manual testing found a separate lifecycle hardening issue: a Driver can currently
   complete an in-progress trip without measurable movement. Leave this behavior unchanged during
   route-metrics validation; later add no-movement/insufficient-telemetry detection and operational

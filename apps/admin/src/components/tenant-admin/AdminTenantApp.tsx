@@ -2660,7 +2660,7 @@ function DispatchPanel({
                   </button>
                 </div>
               ) : null}
-              {!['completed', 'cancelled'].includes(booking.status) ? (
+              {!['completed', 'cancelled', 'in_progress'].includes(booking.status) ? (
                 <button
                   className="danger-button"
                   disabled={!canManageTenant || busyId !== null}
