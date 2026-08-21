@@ -65,6 +65,7 @@ export async function loadTenantSummary(
     riderWalletEntriesResult,
     riderBookingSeriesResult,
     riderBookingSeriesOccurrencesResult,
+    tripFareReconciliationsResult,
   ] = await Promise.all([
     supabase.from("tenants").select("*").eq("tenant_id", tenantId).single(),
     supabase.from("tenant_configurations").select("*").eq("tenant_id", tenantId).maybeSingle(),
@@ -171,6 +172,7 @@ export async function loadTenantSummary(
     supabase.from("rider_wallet_entries").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("rider_booking_series").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     supabase.from("rider_booking_series_occurrences").select("*").eq("tenant_id", tenantId).order("scheduled_pickup_at"),
+    supabase.from("trip_fare_reconciliations").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
   ]);
 
   if (tenantResult.error) {
@@ -303,6 +305,8 @@ export async function loadTenantSummary(
     throw riderBookingSeriesResult.error;
   if (riderBookingSeriesOccurrencesResult.error && !riderBookingSeriesOccurrencesResult.error.message.includes("rider_booking_series_occurrences"))
     throw riderBookingSeriesOccurrencesResult.error;
+  if (tripFareReconciliationsResult.error && !tripFareReconciliationsResult.error.message.includes("trip_fare_reconciliations"))
+    throw tripFareReconciliationsResult.error;
 
   const roleAssignments = roleAssignmentsResult.data ?? [];
   const memberships = await attachMembershipDetails(
@@ -351,6 +355,7 @@ export async function loadTenantSummary(
     riderWalletEntries: riderWalletEntriesResult.data ?? [],
     riderBookingSeries: riderBookingSeriesResult.data ?? [],
     riderBookingSeriesOccurrences: riderBookingSeriesOccurrencesResult.data ?? [],
+    tripFareReconciliations: tripFareReconciliationsResult.data ?? [],
   };
 }
 

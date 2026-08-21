@@ -40,6 +40,7 @@ import type {
   RiderWalletEntryRow,
   RiderBookingSeriesRow,
   RiderBookingSeriesOccurrenceRow,
+  TripFareReconciliationRow,
 } from "@esh-platform/supabase";
 
 export const foundationTenantRoles = ["tenant_owner", "tenant_admin", "tenant_member"] as const;
@@ -105,6 +106,7 @@ export type TenantSummary = {
   riderWalletEntries: RiderWalletEntryRow[];
   riderBookingSeries: RiderBookingSeriesRow[];
   riderBookingSeriesOccurrences: RiderBookingSeriesOccurrenceRow[];
+  tripFareReconciliations: TripFareReconciliationRow[];
 };
 
 export type ActiveTenantOption = {

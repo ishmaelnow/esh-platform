@@ -10,7 +10,7 @@ change the locked fare, Stripe payment, Driver earnings, or ledger.
    locked fare, quoted distance, and quoted duration.
 3. Have the assigned Driver enable live location, start the trip, and send several location
    updates while moving. Complete the trip normally.
-4. In the Admin database/inspection view, confirm exactly one
+4. In Admin Ledger → **Fare reconciliation**, confirm exactly one
    `trip_fare_reconciliations` row exists for the booking. Its actual distance and duration must
    come from the completed booking's `driver_location_aggregate` metrics, and its calculated fare
    must use the quote's pricing snapshot plus the preserved toll and service-type components.

@@ -31,8 +31,9 @@ deferred.
   are available, it calculates a comparison fare from the immutable quote pricing snapshot and
   records one idempotent `trip_fare_reconciliations` row plus an audit event. The locked fare,
   Stripe payment, Driver earnings, and ledger remain unchanged until a separately authorized
-  reconciliation action is implemented. The migration still needs owner dry-run/apply, generated
-  type validation, and production testing.
+  reconciliation action is implemented. Admin Ledger now exposes a tenant-scoped Fare reconciliation
+  workspace for inspection. The migration still needs owner dry-run/apply, generated type
+  validation, and production testing.
 - Production manual testing found a separate lifecycle hardening issue: a Driver can currently
   complete an in-progress trip without measurable movement. Leave this behavior unchanged during
   route-metrics validation; later add no-movement/insufficient-telemetry detection and operational
