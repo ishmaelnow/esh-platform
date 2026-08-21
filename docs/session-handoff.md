@@ -618,6 +618,10 @@ operational.
   `apps/admin/src/app/api/tenant-admin/vehicles/route.ts`; it is now type-safe and the local Admin
   production build passes. Owner must commit/push this correction and verify the Admin deployment
   reaches Ready before testing the Fare reconciliation workspace.
+- Fare reconciliation initially remained empty because its completion trigger ran before the route-
+  metrics completion trigger. Migration `20260821000100_order_trip_completion_metrics_v1.sql`
+  recreates the triggers in deterministic route-metrics-then-reconciliation order. Owner must
+  dry-run/apply it, deploy, and complete one new trip with live Driver location updates.
 
 - Cancel unfinished test bookings.
 - Return test Drivers to Offline.
