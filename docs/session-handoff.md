@@ -626,6 +626,10 @@ operational.
   telemetry. Those rows show the locked fare and `No trusted route metrics`/`Not captured` rather
   than disappearing; audited calculated fares and adjustments remain limited to reconciliation
   records created from trusted metrics. Owner must deploy this Admin-only UI change.
+- Route metrics now also initialize when a booking enters `in_progress` from the Driver's currently
+  shared coordinate, so location sharing enabled before dispatch cannot miss the first trip point.
+  Migration `20260821000200_initialize_trip_route_metrics_v1.sql` requires owner dry-run/apply and
+  deployment before the next telemetry test.
 
 - Cancel unfinished test bookings.
 - Return test Drivers to Offline.
