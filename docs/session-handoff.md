@@ -630,6 +630,40 @@ operational.
   shared coordinate, so location sharing enabled before dispatch cannot miss the first trip point.
   Migration `20260821000200_initialize_trip_route_metrics_v1.sql` requires owner dry-run/apply and
   deployment before the next telemetry test.
+- Production validation then produced the first audited reconciliation row (`e53513ab`): a quoted
+  2.1-mile/$12.88 trip had 27.4 miles of simulated telemetry and a calculated $85.54 fare, held at
+  `pending_review` with a +$72.66 adjustment. The Admin rejected it as simulated GPS telemetry;
+  no money moved. This confirms the end-to-end metrics → reconciliation → review gate, while
+  implausible GPS-speed/jump validation remains a follow-up hardening item.
+
+### Fare reconciliation production checkpoint (2026-08-21)
+
+This is the verified production path and should be used as the starting point for future work:
+
+1. Admin deployment failures initially hid the feature. The blocking error was the Admin vehicle
+   PATCH handler using `String(body.serviceType ?? "")`, which violated the Admin ESLint
+   `no-base-to-string` rule. Commit `b689824` corrected the validation and made the Admin build
+   pass.
+2. Commit `534abcf` deployed the trigger-order migration
+   `20260821000100_order_trip_completion_metrics_v1.sql`. It recreates completion triggers so
+   route metrics are materialized before fare reconciliation reads the booking.
+3. Commit `ff062b0` changed Admin Ledger → Fare reconciliation to list every completed booking.
+   Missing telemetry is shown as `No trusted route metrics`/`Not captured`, rather than hiding the
+   completed trip. This is a web/Admin change; no mobile rebuild is needed.
+4. Commit `347cc84` deployed
+   `20260821000200_initialize_trip_route_metrics_v1.sql`. When a booking changes to `in_progress`,
+   it seeds aggregate metrics from the Driver's currently shared coordinate. Later Driver location
+   updates add bounded segments; no point history is retained.
+5. Test booking `e53513ab` completed with simulated DevTools GPS. Admin displayed: quoted 2.1 mi,
+   actual 27.4 mi, locked fare $12.88, calculated fare $85.54, adjustment +$72.66, status
+   `pending_review`. This was intentionally rejected because the simulated GPS jumped
+   unrealistically. The rejection created no refund or extra charge.
+
+For a clean retest, apply the pending migration before booking, wait for the Admin deployment to
+be Ready, enable Driver location before accepting, ensure the trip reaches `in_progress`, send
+several realistic location updates, complete it, then refresh Admin → Ledger → Fare reconciliation.
+Never approve a large adjustment produced by DevTools teleportation. Existing completed trips do
+not get reconstructed if they had no stored telemetry.
 
 - Cancel unfinished test bookings.
 - Return test Drivers to Offline.
