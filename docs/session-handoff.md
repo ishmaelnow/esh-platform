@@ -635,6 +635,12 @@ operational.
   `pending_review` with a +$72.66 adjustment. The Admin rejected it as simulated GPS telemetry;
   no money moved. This confirms the end-to-end metrics → reconciliation → review gate, while
   implausible GPS-speed/jump validation remains a follow-up hardening item.
+- Telemetry hardening is now implemented locally in migration
+  `20260821000300_validate_route_metric_segments_v1.sql`. It records suspect segments when a GPS
+  jump exceeds a generous 60 m/s bound plus accuracy, preserves the aggregate record for audit,
+  and prevents suspect telemetry from populating actual route fare inputs. Supabase/Admin
+  typechecks and diff checks pass; owner must dry-run/apply, commit/deploy, then retest with
+  realistic movement.
 
 ### Fare reconciliation production checkpoint (2026-08-21)
 
