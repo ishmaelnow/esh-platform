@@ -23,7 +23,9 @@ change the locked fare, Stripe payment, Driver earnings, or ledger.
 7. Repeat the completion/read path or refresh Admin. Confirm the row is not duplicated and no
    second audit event is created.
 8. Confirm the Rider fare, payment amount, Driver earnings, transfer state, and ledger totals still
-   equal the original locked fare. No refund or extra charge should occur in this slice.
+   equal the original locked fare. No refund or extra charge should occur in this review-only slice.
+   Final settlement policy does not require Rider approval: lower fares will be eligible for an
+   automatic partial refund, while higher fares will create a separate Stripe Checkout balance due.
 9. Complete a test trip without location updates. Confirm no reconciliation row is created and the
    existing no-movement behavior remains unchanged for this validation milestone.
 

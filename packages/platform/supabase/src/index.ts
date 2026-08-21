@@ -69,6 +69,7 @@ export type TenantMatchingSettingsRow = Tables<"tenant_matching_settings">;
 export type TenantPricingSettingsRow = Tables<"tenant_pricing_settings">;
 export type TripPriceQuoteRow = Tables<"trip_price_quotes">;
 export type TripFareReconciliationRow = Tables<"trip_fare_reconciliations">;
+export type TripFareSettlementRow = Tables<"trip_fare_settlements">;
 export type TenantDriverEarningsSettingsRow = Tables<"tenant_driver_earnings_settings">;
 export type RiderPaymentAttemptRow = Tables<"rider_payment_attempts">;
 export type RiderPaymentRefundRow = Tables<"rider_payment_refunds">;

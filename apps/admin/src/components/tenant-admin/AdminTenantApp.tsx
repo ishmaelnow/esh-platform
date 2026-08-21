@@ -4364,11 +4364,29 @@ function LedgerPanel({ canManageTenant, onRefresh, summary }: { canManageTenant:
     const note = window.prompt(`${decision === "approved" ? "Approve" : "Reject"} this fare adjustment. Add a review note (at least 3 characters).`)?.trim();
     if (!note) return;
     setBusy(true); setMessage(null);
-    const result = await supabase.rpc("review_trip_fare_reconciliation", {
-      target_reconciliation_id: reconciliationId, decision_value: decision, review_note_value: note,
-    });
-    setMessage(result.error ? result.error.message : `Fare reconciliation ${decision}. Settlement remains pending.`);
-    if (!result.error) onRefresh();
+    try {
+      const result = await supabase.rpc("review_trip_fare_reconciliation", {
+        target_reconciliation_id: reconciliationId, decision_value: decision, review_note_value: note,
+      });
+      if (result.error) throw result.error;
+      if (decision === "approved") {
+        const sessionResult = await supabase.auth.getSession();
+        const accessToken = sessionResult.data.session?.access_token;
+        if (!accessToken) throw new Error("Authentication is required.");
+        const response = await fetch("/api/tenant-admin/fare-reconciliation/settle", {
+          method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ reconciliationId }),
+        });
+        const settlement = await response.json() as { settled?: boolean; balanceDue?: boolean; message?: string };
+        if (!response.ok || !settlement.settled) throw new Error(settlement.message ?? (settlement.balanceDue ? "Fare difference is due." : "Fare settlement failed."));
+        setMessage("Fare difference settled automatically through Stripe.");
+      } else {
+        setMessage("Fare reconciliation rejected. No financial movement occurred.");
+      }
+      onRefresh();
+    } catch (value) {
+      setMessage(value instanceof Error ? value.message : "Fare reconciliation failed.");
+    }
     setBusy(false);
   }
 

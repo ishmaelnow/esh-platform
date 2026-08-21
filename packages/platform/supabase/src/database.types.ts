@@ -1510,6 +1510,12 @@ export type Database = {
         Update: { adjustment_minor?: number; actual_distance_meters?: number; actual_duration_seconds?: number; booking_id?: string; calculated_fare_minor?: number; created_at?: string; currency_code?: string; quoted_distance_meters?: number; quoted_duration_seconds?: number; quoted_fare_minor?: number; reconciliation_id?: string; review_note?: string | null; reviewed_at?: string | null; reviewed_by_person_id?: string | null; source?: string; status?: string; tenant_id?: string }
         Relationships: []
       }
+      trip_fare_settlements: {
+        Row: { amount_minor: number; booking_id: string; created_at: string; currency_code: string; direction: string; failure_message: string | null; provider_reference: string | null; reconciliation_id: string; settled_at: string | null; settlement_id: string; status: string; tenant_id: string }
+        Insert: { amount_minor: number; booking_id: string; created_at?: string; currency_code: string; direction: string; failure_message?: string | null; provider_reference?: string | null; reconciliation_id: string; settled_at?: string | null; settlement_id?: string; status?: string; tenant_id: string }
+        Update: { amount_minor?: number; booking_id?: string; created_at?: string; currency_code?: string; direction?: string; failure_message?: string | null; provider_reference?: string | null; reconciliation_id?: string; settled_at?: string | null; settlement_id?: string; status?: string; tenant_id?: string }
+        Relationships: []
+      }
       tenant_scheduling_settings: {
         Row: {
           created_at: string
@@ -2191,6 +2197,18 @@ export type Database = {
       review_trip_fare_reconciliation: {
         Args: { decision_value: string; review_note_value: string; target_reconciliation_id: string }
         Returns: Json
+      }
+      prepare_trip_fare_settlement_internal: {
+        Args: { target_reconciliation_id: string }
+        Returns: Json
+      }
+      complete_trip_fare_settlement_internal: {
+        Args: { provider_reference_value: string; target_settlement_id: string }
+        Returns: boolean
+      }
+      fail_trip_fare_settlement_internal: {
+        Args: { balance_due_value?: boolean; failure_message_value: string; target_settlement_id: string }
+        Returns: boolean
       }
       cancel_my_rider_booking: {
         Args: { target_booking_id: string }

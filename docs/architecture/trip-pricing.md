@@ -46,6 +46,8 @@ positive amount, and estimate marker before accepting the quote. If Google canno
 estimate, pricing remains blocked rather than undercharging. Catalog-matched rates remain the
 authoritative path.
 
-Deferred: actual-distance adjustments, taxes, additional toll authorities and vehicle classes,
+Deferred: taxes, additional toll authorities and vehicle classes,
 discounts, cancellation fees, card collection,
-refunds, collection settlement, payouts, and reconciliation.
+  payouts, and reconciliation settlement. Post-trip route reconciliation may notify the Rider
+  without requiring approval: a lower calculated fare is eligible for an automatic partial refund,
+  while a higher calculated fare creates a separate balance due for Stripe Checkout collection.

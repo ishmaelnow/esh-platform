@@ -36,7 +36,15 @@ deferred.
   validation, and production testing.
 - Local migration `20260820000300_trip_fare_reconciliation_review_v1.sql` adds an explicit,
   reasoned Admin approve/reject decision with audit evidence. It intentionally does not move money;
-  Stripe refund or additional-collection settlement remains the next financial workflow.
+  Stripe settlement remains the next financial workflow. Product policy is now: Rider approval is
+  not required after completion; Riders receive a fare-difference notice, lower actual fares may be
+  partially refunded automatically, and higher actual fares create a separate balance due for
+  Stripe Checkout collection rather than a silent charge.
+- Local migration `20260820000400_trip_fare_settlement_v1.sql` adds idempotent settlement records,
+  Stripe refund/off-session charge preparation, and balanced ledger settlement. Admin approval now
+  invokes the settlement route. If an extra charge cannot use the saved payment method, the result
+  is `balance_due` for later Rider collection. It still needs owner dry-run/apply, deployment, and
+  production Stripe sandbox validation.
 - Production manual testing found a separate lifecycle hardening issue: a Driver can currently
   complete an in-progress trip without measurable movement. Leave this behavior unchanged during
   route-metrics validation; later add no-movement/insufficient-telemetry detection and operational
