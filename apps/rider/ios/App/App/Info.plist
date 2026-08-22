@@ -75,5 +75,7 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ESH uses location to show authorized live trip progress when location sharing is enabled.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>ESH uses location during an active trip when you choose to share live trip progress.</string>
 </dict>
 </plist>

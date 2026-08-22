@@ -75,5 +75,7 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ESH uses your location during an active trip to share your position and verify pickup and destination arrival.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>ESH uses your location during an active trip when you choose to share live trip progress and verify pickup and destination arrival.</string>
 </dict>
 </plist>
