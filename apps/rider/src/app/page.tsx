@@ -607,7 +607,7 @@ export default function RiderHome() {
     setMessage("");
     try {
       const redirect = Capacitor.isNativePlatform()
-        ? `com.esh.rider://auth/callback?tenant=${encodeURIComponent(tenantSlug)}`
+        ? `https://rider.eshapp.com/auth/callback?tenant=${encodeURIComponent(tenantSlug)}`
         : (() => {
             const url = new URL(window.location.href);
             url.hash = "";
