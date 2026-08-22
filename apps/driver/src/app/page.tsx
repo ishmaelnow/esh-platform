@@ -529,7 +529,7 @@ export default function DriverHome() {
       return;
     }
     const redirectUrl = Capacitor.isNativePlatform()
-      ? "com.esh.driver://auth/callback"
+      ? "https://driver.eshapp.com/auth/callback"
       : (() => {
           const url = new URL(window.location.href);
           url.hash = "";
