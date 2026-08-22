@@ -8,6 +8,15 @@ Complete the Capacitor mobile app shell foundation for Rider and Driver; SMS pro
 waits on Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry issue remains
 deferred.
 
+## Current checkpoint (2026-08-22)
+
+Apple Universal Link support is prepared locally using Team ID `5BJ7VXSZ3R`: Rider and Driver now
+have `apple-app-site-association` files, iOS Associated Domains entitlements, and Xcode build
+settings referencing those entitlements. These changes are not committed or deployed. Owner must
+enable Associated Domains for `com.esh.rider` and `com.esh.driver` in Apple Developer, regenerate
+the App Store provisioning profiles, then commit/deploy and build new TestFlight versions. Verify
+the public AASA URLs before testing fresh sign-in links.
+
 ## Repository and deployment state
 
 - Hybrid toll fallback commit `728ae13` is deployed and requires `GOOGLE_MAPS_API_KEY` in the Rider

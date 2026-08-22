@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["5BJ7VXSZ3R.com.esh.rider"],
+        "components": [
+          { "/": "/auth/callback*" }
+        ]
+      }
+    ]
+  }
+}
