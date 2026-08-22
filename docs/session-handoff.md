@@ -17,6 +17,10 @@ enable Associated Domains for `com.esh.rider` and `com.esh.driver` in Apple Deve
 the App Store provisioning profiles, then commit/deploy and build new TestFlight versions. Verify
 the public AASA URLs before testing fresh sign-in links.
 
+The repeatable Apple Developer → Codemagic → App Store Connect → TestFlight procedure, including
+Universal Link, signing, export-compliance, and internal-testing checks, is documented in
+`docs/operations/ios-codemagic-testflight-release.md`.
+
 ## Repository and deployment state
 
 - Hybrid toll fallback commit `728ae13` is deployed and requires `GOOGLE_MAPS_API_KEY` in the Rider
