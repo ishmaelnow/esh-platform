@@ -1,0 +1,54 @@
+workflows:
+  rider-ios:
+    name: ESH Rider iOS
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: esh-app-store-connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.esh.rider
+    scripts:
+      - name: Install workspace dependencies
+        script: pnpm install --frozen-lockfile
+      - name: Sync Capacitor Rider project
+        script: pnpm --filter @esh-platform/rider mobile:sync
+      - name: Install Rider CocoaPods
+        script: cd apps/rider/ios/App && pod install
+      - name: Apply iOS signing profiles
+        script: xcode-project use-profiles
+      - name: Build Rider IPA
+        script: |
+          cd apps/rider/ios/App
+          xcode-project build-ipa --workspace "App.xcworkspace" --scheme "App"
+    artifacts:
+      - apps/rider/ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+  driver-ios:
+    name: ESH Driver iOS
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: esh-app-store-connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.esh.driver
+    scripts:
+      - name: Install workspace dependencies
+        script: pnpm install --frozen-lockfile
+      - name: Sync Capacitor Driver project
+        script: pnpm --filter @esh-platform/driver mobile:sync
+      - name: Install Driver CocoaPods
+        script: cd apps/driver/ios/App && pod install
+      - name: Apply iOS signing profiles
+        script: xcode-project use-profiles
+      - name: Build Driver IPA
+        script: |
+          cd apps/driver/ios/App
+          xcode-project build-ipa --workspace "App.xcworkspace" --scheme "App"
+    artifacts:
+      - apps/driver/ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
