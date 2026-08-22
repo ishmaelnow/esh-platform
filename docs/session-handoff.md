@@ -630,6 +630,12 @@ operational.
   shared coordinate, so location sharing enabled before dispatch cannot miss the first trip point.
   Migration `20260821000200_initialize_trip_route_metrics_v1.sql` requires owner dry-run/apply and
   deployment before the next telemetry test.
+- iOS TestFlight authentication testing exposed that native sign-in still requested the HTTPS
+  callback even though iOS Universal Links are not configured. The hosted Rider and Driver sign-in
+  flows now use the existing native schemes `com.esh.rider://auth/callback` and
+  `com.esh.driver://auth/callback`; Rider and Driver tests pass 11/11 and 16/16. This is a hosted
+  web change, so the installed shells do not need rebuilding, but both custom callback URLs must
+  be present in Supabase Auth redirect allow-list before retesting.
 - Production validation then produced the first audited reconciliation row (`e53513ab`): a quoted
   2.1-mile/$12.88 trip had 27.4 miles of simulated telemetry and a calculated $85.54 fare, held at
   `pending_review` with a +$72.66 adjustment. The Admin rejected it as simulated GPS telemetry;
