@@ -16,6 +16,10 @@ workflows:
         script: pnpm --filter @esh-platform/rider mobile:sync
       - name: Apply iOS signing profiles
         script: xcode-project use-profiles
+      - name: Set unique Rider build number
+        script: |
+          cd apps/rider/ios/App
+          agvtool new-version -all "$(date +%s)"
       - name: Build Rider IPA
         script: |
           cd apps/rider/ios/App
@@ -45,6 +49,10 @@ workflows:
         script: pnpm --filter @esh-platform/driver mobile:sync
       - name: Apply iOS signing profiles
         script: xcode-project use-profiles
+      - name: Set unique Driver build number
+        script: |
+          cd apps/driver/ios/App
+          agvtool new-version -all "$(date +%s)"
       - name: Build Driver IPA
         script: |
           cd apps/driver/ios/App
