@@ -1927,7 +1927,7 @@ export default function DriverHome() {
               <p>Opt in to privacy-safe texts for new trip offers and urgent payout issues. Message and data rates may apply. No marketing messages.</p>
               {smsSettings.enabled ? <><strong>On · verified {smsSettings.maskedPhone}</strong><button className="secondary" disabled={smsBusy} onClick={() => void updateDriverSms("disable")} type="button">Turn off texts</button></> : <>
                 <label>Mobile number<input value={smsPhone} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" inputMode="tel" /></label>
-                {!smsPending ? <button className="secondary" disabled={smsBusy || !smsPhone} onClick={() => void updateDriverSms("start")} type="button">Send verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="secondary" disabled={smsBusy || !smsCode} onClick={() => void updateDriverSms("check")} type="button">Verify and enable texts</button></>}
+                {!smsPending ? <button className="secondary" disabled={smsBusy || !smsPhone} onClick={() => void updateDriverSms("start")} type="button">Text me a verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="secondary" disabled={smsBusy || !smsCode} onClick={() => void updateDriverSms("check")} type="button">Verify and enable texts</button></>}
               </>}
               {smsFeedback ? <p className={smsFeedback.kind === "error" ? "form-error" : "upload-message"} role="status">{smsFeedback.message}</p> : null}
             </section>
