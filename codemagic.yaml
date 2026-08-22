@@ -23,6 +23,10 @@ workflows:
     artifacts:
       - apps/rider/ios/App/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
 
   driver-ios:
     name: ESH Driver iOS
@@ -48,3 +52,7 @@ workflows:
     artifacts:
       - apps/driver/ios/App/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
