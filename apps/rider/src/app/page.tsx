@@ -474,6 +474,10 @@ export default function RiderHome() {
       if (cancelled || processedAuthCallbacks.current.has(url)) return;
       processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
+      if (callback.searchParams.get("payment")) {
+        window.location.assign(callback.toString());
+        return;
+      }
       const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
       if (callbackError) {
         setError(`Sign-in could not be completed: ${callbackError}`);
