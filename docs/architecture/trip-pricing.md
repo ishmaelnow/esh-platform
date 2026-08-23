@@ -1,6 +1,6 @@
 # Trip Pricing V1
 
-Trip Pricing V1 calculates a locked Rider fare from a trusted Mapbox road route before booking.
+Trip Pricing V1 calculates a Rider fare contract from a trusted Mapbox road route before booking.
 Tenants configure a base fare, per-mile rate, per-minute rate, and minimum fare in their permanent
 ledger currency. All configuration and calculated amounts use integer minor units.
 
@@ -9,9 +9,10 @@ from Mapbox. A service-only database RPC applies the current tenant formula and 
 quote with normalized addresses, coordinates, route metrics, currency, and a pricing snapshot.
 Browser callers cannot supply their own fare or directly invoke the internal quote function.
 
-The Rider reviews the estimate before confirming. Confirmation atomically creates the geocoded
-booking and links the quote. The quoted fare is locked as both estimated and final fare in V1;
-changing tenant rates cannot alter an existing booking. Rider, Driver, and Admin show the same fare.
+The Rider reviews the estimate and policy before confirming. Guaranteed fares remain final through
+normal traffic and rerouting. Metered fares reconcile trusted actual time and mileage. Protected
+flexible fares allow decreases while capping increases at the disclosed maximum. Changing tenant
+rates or policy cannot alter an existing quote or booking.
 
 When a priced trip becomes completed, a database trigger posts an immutable balanced transaction:
 debit Rider receivables and credit platform fee revenue. Driver Earnings and Wallet V1 then posts a
@@ -48,6 +49,6 @@ authoritative path.
 
 Deferred: taxes, additional toll authorities and vehicle classes,
 discounts, cancellation fees, card collection,
-  payouts, and reconciliation settlement. Post-trip route reconciliation may notify the Rider
-  without requiring approval: a lower calculated fare is eligible for an automatic partial refund,
-  while a higher calculated fare creates a separate balance due for Stripe Checkout collection.
+  payouts, and reconciliation settlement. Post-trip settlement remains review-gated: an eligible
+  lower contract fare may be refunded, while an eligible higher contract fare creates a separate
+  balance due rather than a silent charge.

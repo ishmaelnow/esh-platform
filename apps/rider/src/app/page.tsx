@@ -54,6 +54,12 @@ type RiderBooking = {
   fareCurrencyCode?: string | null;
   estimatedFareMinor?: number | null;
   finalFareMinor?: number | null;
+  farePolicy?: "guaranteed_upfront" | "metered_actual" | "protected_flexible" | null;
+  maximumFareMinor?: number | null;
+  reconciliationStatus?: string | null;
+  contractFareMinor?: number | null;
+  rawMeterFareMinor?: number | null;
+  fareAdjustmentMinor?: number | null;
   refundAmountMinor?: number | null;
   refundCurrencyCode?: string | null;
   refundStatus?: string | null;
@@ -98,7 +104,7 @@ type RiderTripLocation = {
   fresh: boolean;
 };
 type ServiceAreaContext = { latitude: number; longitude: number; radiusKm: number };
-type RiderPriceQuote = { quoteId: string; fareAmountMinor: number; baseFareAmountMinor?: number; tollAmountMinor?: number; tolls?: Array<{ facility: string; amountMinor: number }>; currencyCode: string; fractionDigits: number; expiresAt: string; pickupAddress: string; destinationAddress: string; routeDistanceMeters: number; routeDurationSeconds: number };
+type RiderPriceQuote = { quoteId: string; fareAmountMinor: number; baseFareAmountMinor?: number; tollAmountMinor?: number; tolls?: Array<{ facility: string; amountMinor: number }>; currencyCode: string; fractionDigits: number; expiresAt: string; pickupAddress: string; destinationAddress: string; routeDistanceMeters: number; routeDurationSeconds: number; farePolicy: "guaranteed_upfront" | "metered_actual" | "protected_flexible"; maximumFareMinor: number | null };
 type PaidRiderPriceQuote = Omit<RiderPriceQuote, "fractionDigits"> & { serviceAreaId: string };
 type RiderPayment = {
   paymentAttemptId: string;
@@ -268,11 +274,13 @@ export default function RiderHome() {
     const nextPortal = data as RiderPortal;
     setPortal(nextPortal);
     if (nextPortal.profile) {
-      const [preferenceResult, schedulingResult, locationResult, coordinateResult, reputationResult, refundResult, smsResult] = await Promise.all([
+      const [preferenceResult, schedulingResult, locationResult, coordinateResult, quoteResult, reconciliationResult, reputationResult, refundResult, smsResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_scheduling", { target_tenant_slug: tenantSlug }),
         supabase.rpc("my_rider_trip_locations", { target_tenant_slug: tenantSlug }),
         supabase.from("dispatch_bookings").select("booking_id,pickup_latitude,pickup_longitude,destination_latitude,destination_longitude,fare_currency_code,estimated_fare_minor,final_fare_minor").eq("tenant_id", nextPortal.tenant.tenantId),
+        supabase.from("trip_price_quotes").select("booking_id,fare_policy,maximum_fare_minor").eq("tenant_id", nextPortal.tenant.tenantId).not("booking_id", "is", null),
+        supabase.from("trip_fare_reconciliations").select("booking_id,status,calculated_fare_minor,raw_calculated_fare_minor,adjustment_minor").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_reputation", { target_tenant_slug: tenantSlug }),
         supabase.from("rider_payment_refunds").select("booking_id,amount_minor,currency_code,status").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_sms_notification_settings", { target_tenant_slug: tenantSlug }),
@@ -282,6 +290,8 @@ export default function RiderHome() {
       if (schedulingResult.error) throw schedulingResult.error;
       if (locationResult.error) throw locationResult.error;
       if (coordinateResult.error) throw coordinateResult.error;
+      if (quoteResult.error) throw quoteResult.error;
+      if (reconciliationResult.error && !reconciliationResult.error.message.includes("trip_fare_reconciliations")) throw reconciliationResult.error;
       if (reputationResult.error) throw reputationResult.error;
       if (refundResult.error) throw refundResult.error;
       if (!smsResult.error && smsResult.data) setSmsSettings(smsResult.data as unknown as SmsSettings);
@@ -292,6 +302,8 @@ export default function RiderHome() {
       setScheduling(nextScheduling);
       const schedules = new Map(nextScheduling.bookings.map((item) => [item.bookingId, item]));
       const coordinates = new Map((coordinateResult.data ?? []).map((item) => [item.booking_id, item]));
+      const quoteContracts = new Map((quoteResult.data ?? []).map((item) => [item.booking_id, item]));
+      const reconciliations = new Map((reconciliationResult.data ?? []).map((item) => [item.booking_id, item]));
       const refunds = new Map((refundResult.data ?? []).map((item) => [item.booking_id, item]));
       setPortal({
         ...nextPortal,
@@ -306,6 +318,12 @@ export default function RiderHome() {
           fareCurrencyCode: coordinates.get(booking.bookingId)?.fare_currency_code ?? null,
           estimatedFareMinor: coordinates.get(booking.bookingId)?.estimated_fare_minor ?? null,
           finalFareMinor: coordinates.get(booking.bookingId)?.final_fare_minor ?? null,
+          farePolicy: quoteContracts.get(booking.bookingId)?.fare_policy as RiderBooking["farePolicy"] ?? null,
+          maximumFareMinor: quoteContracts.get(booking.bookingId)?.maximum_fare_minor ?? null,
+          reconciliationStatus: reconciliations.get(booking.bookingId)?.status ?? null,
+          contractFareMinor: reconciliations.get(booking.bookingId)?.calculated_fare_minor ?? null,
+          rawMeterFareMinor: reconciliations.get(booking.bookingId)?.raw_calculated_fare_minor ?? null,
+          fareAdjustmentMinor: reconciliations.get(booking.bookingId)?.adjustment_minor ?? null,
           refundAmountMinor: refunds.get(booking.bookingId)?.amount_minor ?? null,
           refundCurrencyCode: refunds.get(booking.bookingId)?.currency_code ?? null,
           refundStatus: refunds.get(booking.bookingId)?.status ?? null,
@@ -1363,10 +1381,15 @@ export default function RiderHome() {
               </label>
               {priceQuote ? (
                 <div className="wide card">
-                  <p className="kicker">Locked fare estimate</p>
+                  <p className="kicker">{priceQuote.farePolicy === "guaranteed_upfront" ? "Guaranteed upfront fare" : priceQuote.farePolicy === "metered_actual" ? "Metered fare estimate" : "Protected flexible estimate"}</p>
                   <h2>{new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.fareAmountMinor / 10 ** priceQuote.fractionDigits)}</h2>
                   <p className="area">Road route {(priceQuote.routeDistanceMeters / 1609.344).toFixed(1)} mi · {Math.max(1, Math.round(priceQuote.routeDurationSeconds / 60))} min · valid until {formatDate(priceQuote.expiresAt)}</p>
                   {priceQuote.tollAmountMinor ? <p className="area">Includes tolls: {new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format(priceQuote.tollAmountMinor / 10 ** priceQuote.fractionDigits)}{priceQuote.tolls?.length ? ` · ${priceQuote.tolls.map((toll) => toll.facility).join(", ")}` : ""}</p> : null}
+                  <p className="area"><strong>{priceQuote.farePolicy === "guaranteed_upfront"
+                    ? "This is your final fare. Ordinary traffic and Driver rerouting will not increase it."
+                    : priceQuote.farePolicy === "metered_actual"
+                      ? "Your final fare is based on trusted actual trip time, mileage, and tolls. It may be higher or lower than this estimate."
+                      : `Your final fare uses trusted actual time and mileage. It may be lower, but will not exceed ${new Intl.NumberFormat(undefined, { style: "currency", currency: priceQuote.currencyCode, minimumFractionDigits: priceQuote.fractionDigits }).format((priceQuote.maximumFareMinor ?? priceQuote.fareAmountMinor) / 10 ** priceQuote.fractionDigits)} without a separately accepted trip change.`}</strong></p>
                   <p className="area">{bookingTiming === "recurring" && !recurringOccurrenceId ? "This verifies the recurring route. No payment is collected until you choose an individual occurrence." : paymentConfirmed ? "Payment or wallet credit is confirmed. This trip has not been requested yet. Select the button below once to create it and notify dispatch." : wallet && wallet.availableMinor > 0 ? `${new Intl.NumberFormat(undefined, { style: "currency", currency: wallet.currencyCode }).format(wallet.availableMinor / 10 ** wallet.fractionDigits)} available wallet credit will be applied automatically; Stripe securely collects any remainder.` : "Secure payment is collected by Stripe before the trip request is created."}</p>
                 </div>
               ) : null}
@@ -1395,7 +1418,7 @@ export default function RiderHome() {
             <div className="section-heading"><div><p className="kicker">Current trip</p><h2>Your active ride</h2></div><button className="button secondary compact" onClick={() => void loadPortal()} disabled={busy}>Refresh</button></div>
             {currentBookings.map((booking) => <article className="card trip-card" key={`current-page-${booking.bookingId}`}>
               <div className="trip-top"><div><span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span><h3>{booking.pickupAddress}</h3><p className="destination">to {booking.destinationAddress}</p></div><time>{formatDate(booking.createdAt)}</time></div>
-              <p className="area"><strong>Fare:</strong> {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100) : "Locked fare pending"}</p>
+              <p className="area"><strong>{booking.farePolicy === "guaranteed_upfront" ? "Guaranteed fare" : booking.farePolicy === "metered_actual" ? "Fare estimate" : booking.farePolicy === "protected_flexible" ? "Protected fare estimate" : "Fare"}:</strong> {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100) : "Pending"}{booking.farePolicy === "protected_flexible" && booking.maximumFareMinor != null && booking.fareCurrencyCode ? ` · maximum ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.maximumFareMinor / 100)}` : ""}</p>
               <p className="area">{booking.serviceAreaName}{booking.driver ? ` · Driver: ${booking.driver.displayName}` : " · Finding an eligible driver"}</p>
               {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? <LiveTripMap accessToken={mapboxToken} pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }} destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }} driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null} /> : null}
               {canCancelBooking(booking.status) ? <button className="text-button danger" disabled={busy} onClick={() => void cancelBooking(booking.bookingId)}>Cancel trip</button> : null}
@@ -1585,6 +1608,7 @@ export default function RiderHome() {
                     </div>
                     <p className="area">{booking.serviceAreaName}</p>
                     {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? <p className="area"><strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100)}</strong></p> : null}
+                    {booking.reconciliationStatus && booking.fareCurrencyCode ? <p className="area">Fare contract review: {booking.reconciliationStatus.replaceAll("_", " ")}{booking.contractFareMinor != null ? ` · contract fare ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.contractFareMinor / 100)}` : ""}{booking.rawMeterFareMinor != null && booking.rawMeterFareMinor !== booking.contractFareMinor ? ` · raw meter ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.rawMeterFareMinor / 100)}` : ""}</p> : null}
                   </article>
                 )) : null}
               </section>

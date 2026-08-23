@@ -114,6 +114,9 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery: region-aware pickup/destination autocomplete, permanent geocoding with atomic
      Rider booking persistence, embedded Admin/Driver/Rider maps, traffic-aware road routes, live
      Driver markers, distance/ETA, privacy enforcement, and graceful mapping-provider fallback.
+   - Current delivery in progress: tenant-selectable guaranteed, metered, or protected-flexible fare
+     contracts; immutable Rider disclosure; trusted actual-route reconciliation; capped increases;
+     and a separate 250-foot arrival/completion proximity contract.
    - Current delivery in progress: Stripe-hosted Rider checkout, verified payment state, paid-only
      booking finalization, and immutable collection settlement.
    - Current delivery in progress: tenant-local recurring Rider schedules with verified routes,

@@ -1,14 +1,23 @@
 # Session Handoff
 
-Last updated: 2026-08-20
+Last updated: 2026-08-22
 
 ## Current objective
 
-Complete the Capacitor mobile app shell foundation for Rider and Driver; SMS production verification
-waits on Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry issue remains
-deferred.
+Deploy and manually verify Tenant Fare Policy and Rider Fare Contract V1. Mobile shell follow-ups,
+Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
 ## Current checkpoint (2026-08-22)
+
+Tenant Fare Policy and Rider Fare Contract V1 is implemented locally in migration
+`20260822000100_tenant_fare_policy_contract_v1.sql`. Admin selects guaranteed upfront, metered
+actual, or protected flexible (percentage/fixed cap); every new quote snapshots the policy and
+maximum; Rider receives explicit pre-payment disclosure; and completion reconciliation preserves
+the raw meter while applying the accepted contract. Guaranteed fares cannot create traffic
+surcharges, protected increases stop at the disclosed maximum, and metered fares use trusted actual
+time/mileage. The same migration corrects the lifecycle proximity baseline from the mistakenly
+implemented 250 meters to the required 250 feet, with bounded GPS-accuracy accommodation. Code
+validation and the owner migration dry-run are the next checkpoint.
 
 Apple Universal Link support is prepared locally using Team ID `5BJ7VXSZ3R`: Rider and Driver now
 have `apple-app-site-association` files, iOS Associated Domains entitlements, and Xcode build
@@ -698,13 +707,10 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Hybrid Google Routes toll fallback is now implemented locally. Mapbox remains authoritative for
-route distance and ETA; catalog-matched tolls remain authoritative; unmatched Mapbox tolls use a
-server-only Google Routes estimate only when Google returns a known USD amount, and the quote
-snapshot marks it `google_routes` and estimated. Migration `20260816000300_google_toll_estimates_v1.sql`
-is dry-run ready and lists as the only pending migration. Rider tests pass 10/10, Maps tests pass
-14/14, all relevant typechecks and diff checks pass. Next: owner apply that migration, commit/
-deploy with `GOOGLE_MAPS_API_KEY` configured in Rider Production, then retest the DRPA route.
+Finish validation, then have the owner dry-run migration state. It must be reconciled against the
+remote database before applying because the repository contains a longer financial/mobile migration
+history. Deploy Admin and Rider together and run
+`docs/operations/tenant-fare-policy-contract-manual-test.md` with new quotes for each policy.
 
 ## Required reading for recovery
 
@@ -722,6 +728,8 @@ deploy with `GOOGLE_MAPS_API_KEY` configured in Rider Production, then retest th
 - `docs/operations/ledger-foundation-manual-test.md`
 - `docs/architecture/trip-pricing.md`
 - `docs/operations/trip-pricing-manual-test.md`
+- `docs/architecture/tenant-fare-policy-contract.md`
+- `docs/operations/tenant-fare-policy-contract-manual-test.md`
 - `docs/architecture/driver-earnings-wallet.md`
 - `docs/operations/driver-earnings-wallet-manual-test.md`
 - `docs/architecture/rider-payments-collection.md`

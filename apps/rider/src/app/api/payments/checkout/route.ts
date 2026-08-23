@@ -91,7 +91,7 @@ export async function GET(request: Request) {
     if (!quoteId) throw new Error("Price quote is required.");
     const authenticated = createAuthenticatedSupabaseClient(authorization.slice(7));
     const [quoteResult, paymentResult, walletResult] = await Promise.all([
-      authenticated.from("trip_price_quotes").select("quote_id,service_area_id,fare_amount_minor,currency_code,pickup_address,destination_address,route_distance_meters,route_duration_seconds,expires_at,status,booking_id").eq("quote_id", quoteId).single(),
+      authenticated.from("trip_price_quotes").select("quote_id,service_area_id,fare_amount_minor,fare_policy,maximum_fare_minor,currency_code,pickup_address,destination_address,route_distance_meters,route_duration_seconds,expires_at,status,booking_id").eq("quote_id", quoteId).single(),
       authenticated.from("rider_payment_attempts").select("status").eq("quote_id", quoteId).single(),
       authenticated.from("rider_wallet_quote_allocations").select("amount_minor,status").eq("quote_id", quoteId).maybeSingle(),
     ]);
@@ -104,6 +104,7 @@ export async function GET(request: Request) {
       quote: {
         quoteId: quoteResult.data.quote_id, serviceAreaId: quoteResult.data.service_area_id,
         fareAmountMinor: quoteResult.data.fare_amount_minor,
+        farePolicy: quoteResult.data.fare_policy, maximumFareMinor: quoteResult.data.maximum_fare_minor,
         currencyCode: quoteResult.data.currency_code, pickupAddress: quoteResult.data.pickup_address,
         destinationAddress: quoteResult.data.destination_address,
         routeDistanceMeters: quoteResult.data.route_distance_meters,
