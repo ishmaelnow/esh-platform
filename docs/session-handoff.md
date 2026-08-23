@@ -1,11 +1,31 @@
 # Session Handoff
 
-Last updated: 2026-08-22
+Last updated: 2026-08-23
 
 ## Current objective
 
-Deploy and manually verify Tenant Fare Policy and Rider Fare Contract V1. Mobile shell follow-ups,
+Begin the Community Platform as ESH's second tenant-enabled product domain. The immediate
+documentation-only architecture and migration-planning slice is complete locally; database and
+application implementation has not started. Transportation operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
+
+## Community Platform checkpoint (2026-08-23)
+
+The approved product direction is documented in `docs/architecture/community-platform.md`, and the
+ordered database/RLS rollout is documented in
+`docs/architecture/community-platform-migration-plan.md`. Community will reuse neutral ESH identity,
+tenant membership, capabilities, audit, storage, maps, and notification delivery while remaining
+independent of Rider/Driver business identities. The design uses a shared content envelope plus
+typed records, a separate Services directory, Community-specific areas, explicit verification and
+moderation history, announcement promotion rather than privilege elevation, and publication
+authority separated from broadcast authority.
+
+V1 targets tenant/community, Community area, and group audiences; delivers an in-app notification
+foundation first; and defers poll voting, selected-user targeting UI, polygon/residency verification,
+native push, Community mass SMS/email, monetization, provider ratings, booking, advanced ranking,
+external search, and AI moderation. Existing tenants receive Community capabilities disabled by
+default. No migration, application code, environment change, deployment, or production mutation is
+part of this checkpoint.
 
 ## Current checkpoint (2026-08-22)
 
@@ -707,33 +727,23 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Native release `1.0.1` is operationally validated. Codemagic produced signed APK and AAB artifacts
-for Rider and Driver using Android version code `2`, Java 21, keystore reference
-`esh_android_upload`, and the Driver-only `mapbox_credentials` application group. The local and
-Codemagic Mapbox download credentials authenticated successfully, and both Android release builds
-completed. Keep the `.jks` file and passwords outside Git with an encrypted independent backup;
-keep Rider and Driver artifacts in separate release folders.
+Review and owner-commit the Community architecture checkpoint. After approval, implement Migration
+1 from `docs/architecture/community-platform-migration-plan.md`: capability/permission catalog,
+Community tenant settings, authorization helpers, disabled-by-default capability seeding, generated
+types, and the full RLS actor matrix. Do not create member content tables or UI until that security
+foundation passes cross-tenant tests.
 
-Codemagic also built and uploaded new Rider and Driver iOS `1.0.1` IPAs from commits newer than the
-native AppIcon change `b202465`. Both builds reached TestFlight. Apple export-compliance prompts were
-resolved manually with the project's standard-system-HTTPS answer, and the apparent Codemagic
-post-processing failures did not invalidate the uploaded IPAs. TestFlight invitations arrived and
-the blue ESH road branding is verified externally and inside the apps.
-
-The only pending repository work is a non-secret Driver Mapbox preflight in `codemagic.yaml` plus
-its operations/handoff documentation. It logs only a 12-character SHA-256 fingerprint and validates
-one pinned Mapbox POM before Gradle, preventing another expensive opaque 401 build. Owner must stage,
-commit, and push those three existing files. No database migration or native rebuild is required.
-After that checkpoint, return to `docs/roadmap.md` to choose the next product feature.
-
-Open operational constraints remain unchanged: native APNs/FCM push delivery is not implemented,
-installed shells truthfully show that limitation, and production SMS verification must not be
-retried until Twilio resolves suspended-account ticket `#29018616`.
+Native release `1.0.1` remains operationally validated for Rider and Driver. Keep Android signing
+credentials outside Git and independently backed up. Native APNs/FCM push remains unimplemented,
+and production SMS verification must not be retried until Twilio resolves suspended-account ticket
+`#29018616`.
 
 ## Required reading for recovery
 
 - `AGENTS.md`
 - `docs/roadmap.md`
+- `docs/architecture/community-platform.md`
+- `docs/architecture/community-platform-migration-plan.md`
 - `docs/architecture/scheduled-rider-bookings.md`
 - `docs/architecture/rider-trip-notifications.md`
 - `docs/architecture/verified-rider-booking.md`

@@ -13,6 +13,41 @@ remain independent of transportation-specific workflows.
 - Driver Management V1 with tenant lifecycle, authorization, and audit.
 - Driver applications, file submission, draft-profile creation, and onboarding checklists.
 
+## Next Product Domain: Community Platform
+
+Status: **architecture and migration planning complete; implementation not started**.
+
+Community is the second product domain built on ESH Platform. It will be a tenant-enabled module
+that reuses platform identity, tenant membership, capabilities, RLS, audit, maps, storage, and
+notification delivery without depending on Rider or Driver business identities.
+
+Approved direction:
+
+- a separate Community member application and a separately owned Community Admin module;
+- a shared content envelope with typed post, announcement, event, alert, help, opportunity,
+  resource, and later poll records;
+- a dedicated provider/service directory, with promotional feed items linked to listings;
+- normal member publishing separated from official publication and mass broadcast authority;
+- tenant, Community-area, and group targeting in V1;
+- explicit moderation, reporting, verification, announcement submission, and append-only audit;
+- chronological/relevance ordering rather than engagement-maximizing ranking; and
+- in-app notifications first, with external Community broadcast channels deferred until their
+  delivery and operational controls are production-verified.
+
+Implementation order:
+
+1. Community capability, settings, authorization helpers, roles/permissions, and RLS tests.
+2. Community areas, groups, organizations, providers, and verification foundation.
+3. Core content, typed records, targets, actions, lifecycle, and search indexes.
+4. Comments, reactions, private media, blocks, mutes, and reports.
+5. Service directory and provider-owned listings.
+6. Moderation and submit-for-announcement workflow.
+7. Person-based in-app notifications and compatible delivery generalization.
+8. Lifecycle automation, read models, discovery UI, and production pilot gates.
+
+Architecture: `docs/architecture/community-platform.md`.
+Migration plan: `docs/architecture/community-platform-migration-plan.md`.
+
 ## Current Milestone: Driver Evidence and Compliance MVP
 
 Status: **implemented and rolled out to production**.
