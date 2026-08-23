@@ -6,6 +6,7 @@ workflows:
     environment:
       android_signing:
         - esh_android_upload
+      java: 21
     scripts:
       - name: Install workspace dependencies
         script: pnpm install --frozen-lockfile
@@ -26,6 +27,7 @@ workflows:
     environment:
       android_signing:
         - esh_android_upload
+      java: 21
     scripts:
       - name: Install workspace dependencies
         script: pnpm install --frozen-lockfile

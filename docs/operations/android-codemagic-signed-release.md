@@ -33,6 +33,10 @@ The workflows invoke each Gradle wrapper with `bash ./gradlew`. Git records the 
 files on the Windows-mounted repository, so direct `./gradlew` execution can fail in Codemagic with
 exit code 126 even when WSL displays a local executable permission.
 
+Both Android workflows pin Java 21. Capacitor Android compiles with Java source release 21, while
+Codemagic's default JDK may be older and fail during `compileReleaseJavaWithJavac` with `invalid
+source release: 21`.
+
 ## Device verification
 
 Install the internal-test update from Google Play. Confirm the launcher uses the blue ESH road icon,

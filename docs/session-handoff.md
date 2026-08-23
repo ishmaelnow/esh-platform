@@ -722,7 +722,9 @@ Codemagic under reference `esh_android_upload`, run all four native workflows fr
 install the internal-test/TestFlight builds and confirm the launcher shows the blue ESH road icon.
 The first Rider Android attempt reached the signed build step but failed with exit code 126 because
 Git records `gradlew` as mode `100644`; both Android workflows now invoke it through Bash. Owner must
-commit/push this correction and rerun Rider before starting Driver.
+commit/push this correction and rerun Rider before starting Driver. The next attempt passed wrapper
+startup but Codemagic used an older JDK and failed Capacitor compilation with `invalid source
+release: 21`; both Android workflows now explicitly pin Java 21.
 
 ## Required reading for recovery
 
