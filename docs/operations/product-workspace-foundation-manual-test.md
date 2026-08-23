@@ -41,7 +41,10 @@ Expected: `0`.
 
 ## 3. No Rider/Driver coupling
 
-```sql
+
+"'
+/'
+;[P;[P/]]```sql
 select count(*) as rider_or_driver_without_explicit_community_enrollment
 from public.tenant_memberships membership
 where exists (
@@ -65,3 +68,22 @@ and capability are disabled. Rider and Driver portals must remain unchanged.
 
 Record SQL output and UI observations. Do not enable Community or create an enrollment during this
 dark-rollout test.
+
+## Production Result — 2026-08-23
+
+**PASS.** Migration 3 commit `8e5ae18` passed its production validation:
+
+- `transportation / enabled`: 17 tenant workspaces;
+- `community / disabled`: 17 tenant workspaces;
+- active `transportation_admin` assignments: 4;
+- Community workspace enrollments: 0;
+- Rider/Driver-related tenant memberships used as the independence comparison population: 2;
+- existing Yahooemail Tenant Administration remained operational; and
+- Community navigation, content, and administration remained absent.
+
+The combination of two Rider/Driver-related memberships and zero Community enrollments confirms
+that Transportation identities did not receive Community access automatically.
+
+No Community-related browser error was observed. The Admin favicon 404 and Supabase auth Navigator
+LockManager contention message remain separate stabilization issues and did not invalidate the
+workspace test.

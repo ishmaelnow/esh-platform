@@ -15,7 +15,7 @@ remain independent of transportation-specific workflows.
 
 ## Next Product Domain: Community Platform
 
-Status: **Migrations 1–2 deployed; independent Product Workspace foundation implemented locally**.
+Status: **Migrations 1–3 deployed and production-validated**.
 
 Community is the second product domain built on ESH Platform. It will be a tenant-enabled module
 that reuses platform identity, tenant membership, capabilities, RLS, audit, maps, storage, and
@@ -38,12 +38,14 @@ Implementation order:
 
 1. Community capability/permission catalogs and conservative settings are deployed and passed the
    production authorization-foundation test.
-2. Community places, groups, organizations, providers, and private trust evidence are deployed;
-   their production dark-rollout test remains the immediate checkpoint.
+2. Community places, groups, organizations, providers, and private trust evidence are deployed and
+   passed the production dark-rollout SQL and UI regression test.
 3. Product Workspace separation is implemented locally in
    `20260823000300_product_workspace_foundation.sql`: shared identity, separate product enrollment,
    separate operational roles, no Rider/Driver coupling, and a one-time Transportation admin
-   compatibility backfill. Apply only after Migration 2 passes its production test.
+   compatibility backfill. Production validation passed with all 17 Transportation workspaces
+   enabled, all 17 Community workspaces disabled, four Transportation admin assignments, and zero
+   Community enrollments.
 4. Core content, typed records, targets, actions, lifecycle, and search indexes.
 5. Comments, reactions, private media, blocks, mutes, and reports.
 6. Service directory and provider-owned listings.

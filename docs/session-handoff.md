@@ -4,9 +4,9 @@ Last updated: 2026-08-23
 
 ## Current objective
 
-Establish explicit Product Workspace boundaries before Community content. Migrations 1–2 are
-deployed; Migration 1 passed production validation, Migration 2 still needs its dark-rollout test,
-and Migration 3 workspace separation is implemented locally but unapplied. Transportation
+Establish explicit Product Workspace boundaries before Community content. Migrations 1–3 are
+deployed and passed production validation. Shared identity, tenant membership, and product access
+are now separate foundations. Transportation
 operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
@@ -60,10 +60,14 @@ verification decisions. Public reads are limited to active public areas/groups/o
 enabled active tenant; membership and verification evidence remain self/representative or moderator
 only. Community remains disabled and no UI is introduced.
 
-Community Migration 2 was committed as `7aedf3d`, applied, and pushed. Its production SQL/UI
-dark-rollout test has not yet been reported and must pass before Migration 3 is applied.
+Community Migration 2 was committed as `7aedf3d`, applied, pushed, and passed its production
+dark-rollout test on 2026-08-23. All eight tables had RLS and zero rows; all three expected member
+permissions were non-privileged; enabled Community capabilities, active Community roles, and
+Community notifications were all zero. Admin, Rider, and Driver remained operational with no
+Community UI or Community-related errors. Admin separately exposed the Supabase auth Navigator
+LockManager contention message while remaining usable; this is a non-Community stabilization item.
 
-Product Workspace Migration 3 is implemented locally in
+Product Workspace Migration 3 is deployed from
 `supabase/migrations/20260823000300_product_workspace_foundation.sql`. It formalizes the approved
 rule: active identity + active tenant relationship + enabled workspace + explicit enrollment +
 explicit workspace role + enabled capability. It adds Transportation and Community workspace
@@ -77,14 +81,22 @@ existing tenant owners/admins into the enabled Transportation workspace with
 `transportation_admin`. This is migration-only behavior; future tenant role changes do not create
 product access. The legacy Community role-assignment table remains for deployment compatibility but
 is no longer an authorization source. Static contract tests and manual client workspace types are
-included. Next: finish local validation, then have the owner run the Migration 2 manual test. Only
-after it passes should the owner dry-run/apply Migration 3 and run its manual test.
+included. Migration 3 was committed as `8e5ae18`.
+
+Migration 3 was subsequently applied and passed the complete production test on 2026-08-23:
+17 Transportation workspaces enabled, 17 Community workspaces disabled, four active
+`transportation_admin` assignments, and zero Community enrollments. The comparison population
+contained two Rider/Driver-related tenant memberships, proving those business identities did not
+create Community enrollment. Yahooemail Tenant Administration remained operational and Community
+UI remained absent. The Admin favicon 404 and Supabase auth Navigator LockManager contention error
+remain unrelated stabilization follow-ups. Next product step: add the workspace-selection Admin
+boundary and explicit Community enrollment administration before building core Community content.
 
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase
 typecheck, Supabase lint, and `git diff --check`. The Supabase database linter could not connect
-because no local Postgres/Supabase instance is running; the owner dry run is therefore the SQL
-parser/application checkpoint.
+because no local Postgres/Supabase instance was running; the production dry run and successful
+application subsequently provided the SQL parser/application checkpoint.
 
 ## Current checkpoint (2026-08-22)
 

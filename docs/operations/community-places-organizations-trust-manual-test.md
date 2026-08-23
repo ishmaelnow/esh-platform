@@ -95,3 +95,19 @@ All eight tables exist with RLS, all are empty, three new member permissions exi
 remains disabled, no role/notification side effects occurred, and existing applications are
 unaffected. Do not create production organizations or providers until a deliberate pilot and UI are
 available.
+
+## Production Result — 2026-08-23
+
+**PASS.** Migration 2 commit `7aedf3d` passed the complete production dark-rollout validation:
+
+- all eight domain tables existed and had RLS enabled;
+- all eight tables contained zero records;
+- all three new member permissions existed, required `community.content`, and were non-privileged;
+- enabled Community capabilities: `0`;
+- active Community role assignments: `0`;
+- Community notifications: `0`; and
+- Admin, Rider, and Driver remained operational with no Community UI or Community-related errors.
+
+Admin separately reported the Supabase auth `Navigator LockManager` contention message. The Admin
+application remained usable, and the error referenced neither Community schema nor Migration 2.
+It is recorded as a non-Community stabilization follow-up and did not change this PASS.
