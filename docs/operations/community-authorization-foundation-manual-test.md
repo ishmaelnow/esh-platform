@@ -105,3 +105,14 @@ Expected: permission disappears immediately, the assignment remains as revoked h
 
 Disabled defaults, membership lifecycle, tenant isolation, role separation, RLS, audit, and cleanup
 must all pass. Do not begin Community content rollout if any negative authorization case fails.
+
+## Production Result — 2026-08-23
+
+**PASS — Community Authorization Foundation verified in production.** All 17 configured tenants
+had exactly six disabled Community capability rows (102 total), all 17 settings rows matched the
+conservative defaults, all 20 permission classifications were correct, emergency permissions
+belonged only to `emergency_publisher`, automatic role assignments and Community notifications
+were both zero, and Admin/Rider/Driver remained operational without Community UI or Community-
+related console errors. Rider/Driver favicon 404s and an Admin Supabase Navigator LockManager error
+were observed separately and did not affect this result. The test Driver must remain Offline after
+testing unless actively providing service.

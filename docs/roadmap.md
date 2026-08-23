@@ -40,7 +40,11 @@ Implementation order:
    bundles, disabled-by-default seeding, audit, and RLS tests are implemented locally in
    `20260823000100_community_authorization_foundation.sql`. Production dry-run/apply and manual
    verification remain.
-2. Community areas, groups, organizations, providers, and verification foundation.
+2. Community areas, groups, tenant-aware memberships, organizations, providers, private
+   verification evidence, controlled creation/review RPCs, public/member RLS, audit, and client
+   contracts are implemented locally in
+   `20260823000200_community_places_organizations_trust.sql`. Production dry-run/apply and dark-
+   rollout verification remain.
 3. Core content, typed records, targets, actions, lifecycle, and search indexes.
 4. Comments, reactions, private media, blocks, mutes, and reports.
 5. Service directory and provider-owned listings.

@@ -5,7 +5,7 @@ Last updated: 2026-08-23
 ## Current objective
 
 Begin the Community Platform as ESH's second tenant-enabled product domain. Architecture planning
-and Migration 1 authorization foundation are complete locally; content schema and application
+and Migrations 1–2 foundations are complete locally; content schema and application
 implementation have not started. Transportation operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
@@ -43,6 +43,21 @@ publisher, suspended membership, and cross-tenant denial. Local Docker was unava
 executable database test remains pending. The static contract test, Auth and Supabase typechecks,
 package lint/tests, formatting, and diff validation pass. No migration, environment change,
 deployment, or production mutation occurred during implementation.
+
+Migration 1 was subsequently committed as `3b5dd87`, applied, pushed, and manually verified in
+production. All 17 configured tenants had six disabled Community capabilities (102 total), all
+settings matched conservative defaults, all 20 privilege classifications and emergency separation
+passed, automatic role assignments and notifications were zero, and existing applications exposed
+no Community UI or Community-related errors. This is memorialized in the Migration 1 manual test.
+
+Community Migration 2 is implemented locally in
+`supabase/migrations/20260823000200_community_places_organizations_trust.sql`. It adds tenant-aware
+areas, groups/memberships, organizations/representatives, personal or organization-owned provider
+profiles, and separate private organization/provider verification records. Controlled RPCs create
+areas, groups, organizations and personal providers, submit verification, and make reasoned audited
+verification decisions. Public reads are limited to active public areas/groups/organizations of an
+enabled active tenant; membership and verification evidence remain self/representative or moderator
+only. Community remains disabled and no UI is introduced.
 
 ## Current checkpoint (2026-08-22)
 
@@ -744,10 +759,11 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Owner dry-run only `20260823000100_community_authorization_foundation.sql`, apply it after reviewing
-the intended catalog and authorization changes, deploy the code/types, and execute
-`docs/operations/community-authorization-foundation-manual-test.md`. Do not begin Community content
-tables or UI until the executable RLS matrix and production negative authorization cases pass.
+Owner dry-run only `20260823000200_community_places_organizations_trust.sql`, apply it after review,
+push the implementation, and run
+`docs/operations/community-places-organizations-trust-manual-test.md`. Keep all Community
+capabilities disabled and do not create production Community records until the dark-rollout check
+passes.
 
 Native release `1.0.1` remains operationally validated for Rider and Driver. Keep Android signing
 credentials outside Git and independently backed up. Native APNs/FCM push remains unimplemented,
@@ -761,6 +777,7 @@ and production SMS verification must not be retried until Twilio resolves suspen
 - `docs/architecture/community-platform.md`
 - `docs/architecture/community-platform-migration-plan.md`
 - `docs/operations/community-authorization-foundation-manual-test.md`
+- `docs/operations/community-places-organizations-trust-manual-test.md`
 - `docs/architecture/scheduled-rider-bookings.md`
 - `docs/architecture/rider-trip-notifications.md`
 - `docs/architecture/verified-rider-booking.md`

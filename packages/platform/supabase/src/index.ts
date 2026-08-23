@@ -4,6 +4,17 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables, TablesInsert, TablesUpdate } from "./database.types";
 
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./database.types";
+export type {
+  CommunityArea,
+  CommunityGroup,
+  CommunityGroupMembership,
+  CommunityOrganization,
+  CommunityOrganizationMembership,
+  CommunityOrganizationVerification,
+  CommunityProviderProfile,
+  CommunityProviderVerification,
+  CommunityVerificationStatus,
+} from "./community.types";
 export type SupabaseAuthSession = Session;
 export type PlatformSupabaseClient = SupabaseClient<Database>;
 export type PublicSupabaseClientConfig = {
