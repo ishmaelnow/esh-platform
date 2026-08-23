@@ -35,6 +35,21 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor Driver project
         script: pnpm --filter @esh-platform/driver mobile:sync
+      - name: Verify Driver Mapbox credentials
+        script: |
+          set -eu
+          if [ -z "${MAPBOX_DOWNLOADS_TOKEN:-}" ]; then
+            echo "MAPBOX_DOWNLOADS_TOKEN is missing from mapbox_credentials."
+            exit 1
+          fi
+          fingerprint="$(printf %s "$MAPBOX_DOWNLOADS_TOKEN" | sha256sum | cut -c1-12)"
+          echo "Mapbox downloads token fingerprint: $fingerprint"
+          status="$(curl --silent --output /dev/null --write-out '%{http_code}' --user "mapbox:$MAPBOX_DOWNLOADS_TOKEN" "https://api.mapbox.com/downloads/v2/releases/maven/com/mapbox/navigationcore/android-ndk27/3.26.0/android-ndk27-3.26.0.pom")"
+          if [ "$status" != "200" ]; then
+            echo "Mapbox downloads authentication failed with HTTP $status."
+            exit 1
+          fi
+          echo "Mapbox downloads authentication passed."
       - name: Build signed Driver APK and app bundle
         script: |
           cd apps/driver/android

@@ -707,30 +707,28 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Deploy the Rider and Driver hosted applications, then check Notifications in both a supported mobile
-browser and each installed shell. Browser Web Push must retain its working switch; installed shells
-must show the native APNs/FCM limitation instead of a dead checkbox. Exercise the SMS phone and code
-states, but do not send a production verification request until Twilio confirms account ticket
-`#29018616` is resolved. Confirm each mobile header also displays the same ESH launcher artwork as
-the installed Android app, aligned beside its portal title at both phone and desktop widths. No
-database migration is required. The hosted header is already deployed, but the device still shows
-the older generic launcher icon because that artwork is native-package content. Rider and Driver
-Android releases are now bumped to `1.0.1`/version code `2`, use Codemagic CI-only signing, and have
-separate signed-AAB workflows. Rider and Driver iOS `1.0.1` now contain a 1024×1024 ESH AppIcon and
-retain their signed TestFlight workflows. Owner must upload the existing Android upload keystore to
-Codemagic under reference `esh_android_upload`, run all four native workflows from `main`, then
-install the internal-test/TestFlight builds and confirm the launcher shows the blue ESH road icon.
-The first Rider Android attempt reached the signed build step but failed with exit code 126 because
-Git records `gradlew` as mode `100644`; both Android workflows now invoke it through Bash. Owner must
-commit/push this correction and rerun Rider before starting Driver. The next attempt passed wrapper
-startup but Codemagic used an older JDK and failed Capacitor compilation with `invalid source
-release: 21`; both Android workflows now explicitly pin Java 21.
-Rider Android then built successfully. Driver reached dependency resolution but Mapbox's private
-Maven repository returned HTTP 401 because Codemagic did not have the native credentials previously
-kept only in the owner's Gradle environment. The Driver workflow now imports a protected
-`mapbox_credentials` group containing `MAPBOX_DOWNLOADS_TOKEN` (`sk.`, `Downloads:Read`) and
-`MAPBOX_ACCESS_TOKEN` (native runtime `pk.`). Owner must create that Codemagic group, commit/push the
-workflow correction, and rerun Driver.
+Native release `1.0.1` is operationally validated. Codemagic produced signed APK and AAB artifacts
+for Rider and Driver using Android version code `2`, Java 21, keystore reference
+`esh_android_upload`, and the Driver-only `mapbox_credentials` application group. The local and
+Codemagic Mapbox download credentials authenticated successfully, and both Android release builds
+completed. Keep the `.jks` file and passwords outside Git with an encrypted independent backup;
+keep Rider and Driver artifacts in separate release folders.
+
+Codemagic also built and uploaded new Rider and Driver iOS `1.0.1` IPAs from commits newer than the
+native AppIcon change `b202465`. Both builds reached TestFlight. Apple export-compliance prompts were
+resolved manually with the project's standard-system-HTTPS answer, and the apparent Codemagic
+post-processing failures did not invalidate the uploaded IPAs. TestFlight invitations arrived and
+the blue ESH road branding is verified externally and inside the apps.
+
+The only pending repository work is a non-secret Driver Mapbox preflight in `codemagic.yaml` plus
+its operations/handoff documentation. It logs only a 12-character SHA-256 fingerprint and validates
+one pinned Mapbox POM before Gradle, preventing another expensive opaque 401 build. Owner must stage,
+commit, and push those three existing files. No database migration or native rebuild is required.
+After that checkpoint, return to `docs/roadmap.md` to choose the next product feature.
+
+Open operational constraints remain unchanged: native APNs/FCM push delivery is not implemented,
+installed shells truthfully show that limitation, and production SMS verification must not be
+retried until Twilio resolves suspended-account ticket `#29018616`.
 
 ## Required reading for recovery
 

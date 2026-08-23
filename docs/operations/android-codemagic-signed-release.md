@@ -55,6 +55,12 @@ If Driver dependency resolution returns HTTP 401 from
 available to the application and `MAPBOX_DOWNLOADS_TOKEN` is the current `sk.` token with
 `Downloads:Read`.
 
+Before Gradle, Driver computes and logs only the first 12 hexadecimal characters of the token's
+SHA-256 digest, then authenticates a request for one pinned Mapbox POM. Operators can compare that
+non-secret fingerprint with a local calculation to prove Codemagic received the intended value.
+The raw token is never printed. A missing value or non-200 response stops before the expensive
+Android compilation.
+
 ## Device verification
 
 Install the internal-test update from Google Play. Confirm the launcher uses the blue ESH road icon,
