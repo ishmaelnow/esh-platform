@@ -2412,6 +2412,13 @@ export type Database = {
       }
     }
     Functions: {
+      workspace_admin_snapshot: { Args: { target_tenant_id: string }; Returns: Json }
+      my_workspace_access: { Args: never; Returns: { tenant_id: string; membership_id: string; workspace_key: string; workspace_name: string; role_keys: string[] }[] }
+      has_workspace_role: { Args: { target_tenant_id: string; target_workspace_key: string; required_roles: string[] }; Returns: boolean }
+      set_tenant_workspace_status: { Args: { target_tenant_id: string; target_workspace_key: string; target_status: string; reason_value: string }; Returns: boolean }
+      enroll_tenant_workspace_member: { Args: { target_tenant_id: string; target_membership_id: string; target_workspace_key: string; initial_role_key: string; reason_value: string; expires_at_value?: string | null }; Returns: string }
+      assign_workspace_role: { Args: { target_enrollment_id: string; target_role_key: string; reason_value: string; expires_at_value?: string | null }; Returns: string }
+      remove_tenant_workspace_enrollment: { Args: { target_enrollment_id: string; reason_value: string }; Returns: boolean }
       assign_community_role: {
         Args: {
           expires_at_value?: string | null

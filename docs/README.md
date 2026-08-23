@@ -11,6 +11,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Community Places, Organizations, and Trust Manual Test](./operations/community-places-organizations-trust-manual-test.md)
 - [Product Workspace Foundation](./architecture/product-workspace-foundation.md)
 - [Product Workspace Foundation Manual Test](./operations/product-workspace-foundation-manual-test.md)
+- [Admin Workspace Selector Manual Test](./operations/admin-workspace-selector-manual-test.md)
 - [Service Area Management](./architecture/service-area-management.md)
 - [Manual Dispatch and Trip Core](./architecture/manual-dispatch-trip-core.md)
 - [Verified Rider Booking](./architecture/verified-rider-booking.md)

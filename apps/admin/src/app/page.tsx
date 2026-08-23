@@ -1,5 +1,5 @@
-import { AdminTenantApp } from "@/components/tenant-admin/AdminTenantApp";
+import { WorkspaceAdminApp } from "@/components/workspace-admin/WorkspaceAdminApp";
 
 export default function AdminHome() {
-  return <AdminTenantApp />;
+  return <WorkspaceAdminApp />;
 }

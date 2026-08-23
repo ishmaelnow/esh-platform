@@ -32,3 +32,12 @@ workspace enrollment and role records exclusively.
 Application navigation will use `my_workspace_access()` to show only authorized product workspaces.
 The physical Transportation and Community admin surfaces can then evolve independently without
 turning one tenant dashboard into a mixed operational menu.
+
+The Admin implementation uses `/` as the tenant-aware workspace launcher, `/transportation` for the
+existing Transportation application, and `/community` for the isolated Community administration
+foundation. Direct routes recheck workspace role authorization. Tenant owners receive a governance
+panel that calls reason-required audited RPCs; the UI never inserts enrollment or role rows.
+
+`workspace_admin_snapshot()` is a narrow read model. Tenant owners/platform administrators receive
+active membership and enrollment details needed to govern access. Other callers receive only their
+own active workspace access and never the tenant member directory.

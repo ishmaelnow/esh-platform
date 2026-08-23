@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
 import { adminPublicConfig } from "@/lib/config";
+import { AdminSignIn } from "@/components/auth/AdminSignIn";
 import {
   adminAuthRefreshMode,
   loadPrincipalTenantContext,
@@ -90,6 +92,7 @@ export function AdminTenantApp() {
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
   const [activeViewRestored, setActiveViewRestored] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasTransportationAccess, setHasTransportationAccess] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const activeAuthUserId = useRef<string | null>(null);
   const refreshRequestId = useRef(0);
@@ -114,6 +117,7 @@ export function AdminTenantApp() {
       if (!activeSession?.user) {
         setResolution(null);
         setSummary(null);
+        setHasTransportationAccess(null);
         setLoading(false);
         return;
       }
@@ -123,13 +127,23 @@ export function AdminTenantApp() {
 
       try {
         const nextResolution = await loadPrincipalTenantContext(supabase, activeSession.user);
-        const nextSummary =
-          nextResolution.status === "ready"
-            ? await loadTenantSummary(supabase, nextResolution.selectedTenant.tenant.tenant_id)
-            : null;
+        let nextSummary: TenantSummary | null = null;
+        let nextTransportationAccess: boolean | null = null;
+        if (nextResolution.status === "ready") {
+          const tenantId = nextResolution.selectedTenant.tenant.tenant_id;
+          const { data: access, error: accessError } = await supabase.rpc("has_workspace_role", {
+            target_tenant_id: tenantId,
+            target_workspace_key: "transportation",
+            required_roles: ["transportation_admin"],
+          });
+          if (accessError) throw accessError;
+          nextTransportationAccess = access;
+          if (access) nextSummary = await loadTenantSummary(supabase, tenantId);
+        }
         if (requestId !== refreshRequestId.current) return;
         setResolution(nextResolution);
         setSummary(nextSummary);
+        setHasTransportationAccess(nextTransportationAccess);
       } catch (cause) {
         if (requestId !== refreshRequestId.current) return;
         setError(cause instanceof Error ? cause.message : "Unable to load tenant administration.");
@@ -215,15 +229,15 @@ export function AdminTenantApp() {
   }
 
   if (!session) {
-    return <SignedOutState />;
+    return <AdminSignIn />;
   }
 
   return (
     <main className="admin-shell">
       <aside className="sidebar">
         <div>
-          <p className="eyebrow">Admin</p>
-          <h1>Tenant Administration</h1>
+          <p className="eyebrow">Transportation</p>
+          <h1>Transportation Administration</h1>
         </div>
 
         {selectedTenant ? (
@@ -261,6 +275,7 @@ export function AdminTenantApp() {
       </aside>
 
       <section className="workspace">
+        <Link className="secondary-button workspace-back-link" href="/">All workspaces</Link>
         {loading && !hasResolvedTenantContext ? (
           <StateBlock
             title="Loading tenant context"
@@ -268,7 +283,10 @@ export function AdminTenantApp() {
           />
         ) : null}
         {error ? <StateBlock tone="danger" title="Unable to load" message={error} /> : null}
-        {shouldRenderResolvedTenantWorkspace(loading, hasResolvedTenantContext, error !== null) ? (
+        {!loading && selectedTenant && hasTransportationAccess === false ? (
+          <StateBlock title="Transportation workspace access required" message="Your tenant relationship does not include an active Transportation administrator enrollment." tone="danger" />
+        ) : null}
+        {hasTransportationAccess !== false && shouldRenderResolvedTenantWorkspace(loading, hasResolvedTenantContext, error !== null) ? (
           <ResolvedWorkspace
             activeView={activeView}
             canManageTenant={canManageTenant}
@@ -279,73 +297,6 @@ export function AdminTenantApp() {
             summary={summary}
           />
         ) : null}
-      </section>
-    </main>
-  );
-}
-
-function SignedOutState() {
-  const supabase = useMemo(
-    () =>
-      typeof window === "undefined"
-        ? null
-        : createBrowserSupabaseClient(adminPublicConfig.supabase),
-    [],
-  );
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage(null);
-
-    if (!supabase) {
-      setMessage("Supabase client is not ready.");
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      setMessage(error.message);
-    }
-  }
-
-  return (
-    <main className="signed-out-shell">
-      <section className="sign-in-panel">
-        <p className="eyebrow">Admin</p>
-        <h1>Sign in</h1>
-        <p className="muted">
-          Use an existing Supabase Auth account with an active tenant membership.
-        </p>
-        <form className="form-grid" onSubmit={(event) => void handleSubmit(event)}>
-          <label>
-            Email
-            <input
-              autoComplete="email"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-          </label>
-          <label>
-            Password
-            <input
-              autoComplete="current-password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </label>
-          {message ? <p className="form-error">{message}</p> : null}
-          <button className="primary-button" type="submit">
-            Sign in
-          </button>
-        </form>
       </section>
     </main>
   );

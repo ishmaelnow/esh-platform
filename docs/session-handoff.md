@@ -6,7 +6,8 @@ Last updated: 2026-08-23
 
 Establish explicit Product Workspace boundaries before Community content. Migrations 1–3 are
 deployed and passed production validation. Shared identity, tenant membership, and product access
-are now separate foundations. Transportation
+are now separate foundations. The Admin workspace selector and explicit access-governance feature
+is implemented locally and pending deployment. Transportation
 operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
@@ -89,8 +90,23 @@ Migration 3 was subsequently applied and passed the complete production test on 
 contained two Rider/Driver-related tenant memberships, proving those business identities did not
 create Community enrollment. Yahooemail Tenant Administration remained operational and Community
 UI remained absent. The Admin favicon 404 and Supabase auth Navigator LockManager contention error
-remain unrelated stabilization follow-ups. Next product step: add the workspace-selection Admin
-boundary and explicit Community enrollment administration before building core Community content.
+remain unrelated stabilization follow-ups.
+
+That Admin feature is now implemented locally. `/` is a tenant-aware workspace launcher;
+`/transportation` hosts the existing application behind an explicit `transportation_admin` gate;
+and `/community` is a separate Community Admin foundation behind Community workspace roles. Tenant
+owners receive a governance panel to enable/suspend workspaces and deliberately enroll/remove active
+tenant members with workspace-specific roles. Every mutation uses the deployed reason-required,
+audited RPCs. Disabled Community cannot be opened, and no automatic enrollment was introduced.
+
+Migration `20260823000400_workspace_admin_read_model.sql` adds only
+`workspace_admin_snapshot()`: owners/platform admins receive the governance member/enrollment view;
+other callers receive only their own workspace access. Admin UI parsing has unit coverage and the
+migration has a static authorization contract test. Admin tests pass 68/68, Admin and Supabase
+typechecks pass without incremental caches, lint passes, and the production build passes with only
+the existing Supabase Realtime dynamic-import and Next ESLint-plugin warnings. Next: owner dry-runs
+and applies only Migration 4, then commits/pushes for deployment and runs the workspace-selector
+manual test without enabling Community or changing production enrollment.
 
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase

@@ -46,12 +46,16 @@ Implementation order:
    compatibility backfill. Production validation passed with all 17 Transportation workspaces
    enabled, all 17 Community workspaces disabled, four Transportation admin assignments, and zero
    Community enrollments.
-4. Core content, typed records, targets, actions, lifecycle, and search indexes.
-5. Comments, reactions, private media, blocks, mutes, and reports.
-6. Service directory and provider-owned listings.
-7. Moderation and submit-for-announcement workflow.
-8. Person-based in-app notifications and compatible delivery generalization.
-9. Lifecycle automation, read models, discovery UI, and production pilot gates.
+4. Admin workspace selection, isolated Transportation/Community routes, direct-route role gates,
+   and owner-controlled workspace enrollment are implemented locally. Migration
+   `20260823000400_workspace_admin_read_model.sql` provides a narrow governance read model and is
+   pending owner dry-run/apply and production UI validation.
+5. Core content, typed records, targets, actions, lifecycle, and search indexes.
+6. Comments, reactions, private media, blocks, mutes, and reports.
+7. Service directory and provider-owned listings.
+8. Moderation and submit-for-announcement workflow.
+9. Person-based in-app notifications and compatible delivery generalization.
+10. Lifecycle automation, read models, discovery UI, and production pilot gates.
 
 Architecture: `docs/architecture/community-platform.md`.
 Migration plan: `docs/architecture/community-platform-migration-plan.md`.

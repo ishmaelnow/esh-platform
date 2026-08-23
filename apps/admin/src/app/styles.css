@@ -522,6 +522,117 @@ td span {
   padding: 24px;
 }
 
+.workspace-portal {
+  display: grid;
+  gap: 24px;
+  margin: 0 auto;
+  max-width: 1180px;
+  min-height: 100vh;
+  padding: 36px;
+}
+
+.workspace-portal-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.workspace-portal-header h1,
+.workspace-card h2,
+.workspace-governance h2 {
+  margin: 0 0 8px;
+}
+
+.workspace-card-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace-card {
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 12px;
+  display: grid;
+  gap: 20px;
+  min-height: 240px;
+  padding: 24px;
+}
+
+.workspace-card p,
+.workspace-role-summary {
+  color: #5d6878;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.workspace-role-summary {
+  align-self: end;
+  font-size: 0.9rem;
+}
+
+.workspace-tenant-select {
+  display: grid;
+  gap: 6px;
+  max-width: 380px;
+}
+
+.workspace-tenant-select select,
+.workspace-governance select,
+.workspace-governance input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.workspace-notice {
+  background: #e8f5f1;
+  border: 1px solid #a9d8ca;
+  border-radius: 8px;
+  color: #145648;
+  margin: 0;
+  padding: 14px;
+}
+
+.workspace-governance,
+.workspace-status-controls,
+.workspace-enrollment-list {
+  display: grid;
+  gap: 16px;
+}
+
+.workspace-status-controls {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace-status-controls article,
+.workspace-enrollment-list article {
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.workspace-status-controls article > div,
+.workspace-enrollment-list article > div {
+  display: grid;
+  gap: 5px;
+}
+
+.workspace-enrollment-list span {
+  color: #687487;
+  font-size: 0.86rem;
+}
+
+.workspace-back-link {
+  justify-self: start;
+  text-decoration: none;
+}
+
 .sign-in-panel {
   margin: 0 auto;
   max-width: 420px;
@@ -703,6 +814,21 @@ td span {
 }
 
 @media (max-width: 640px) {
+  .workspace-portal {
+    padding: 20px;
+  }
+
+  .workspace-portal-header,
+  .workspace-status-controls article,
+  .workspace-enrollment-list article {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .workspace-card-grid,
+  .workspace-status-controls {
+    grid-template-columns: 1fr;
+  }
   .workspace,
   .sidebar {
     padding: 18px;
