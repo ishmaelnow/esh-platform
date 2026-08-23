@@ -4,9 +4,10 @@ Last updated: 2026-08-23
 
 ## Current objective
 
-Begin the Community Platform as ESH's second tenant-enabled product domain. Architecture planning
-and Migrations 1–2 foundations are complete locally; content schema and application
-implementation have not started. Transportation operational follow-ups, native push,
+Establish explicit Product Workspace boundaries before Community content. Migrations 1–2 are
+deployed; Migration 1 passed production validation, Migration 2 still needs its dark-rollout test,
+and Migration 3 workspace separation is implemented locally but unapplied. Transportation
+operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
 ## Community Platform checkpoint (2026-08-23)
@@ -58,6 +59,32 @@ areas, groups, organizations and personal providers, submit verification, and ma
 verification decisions. Public reads are limited to active public areas/groups/organizations of an
 enabled active tenant; membership and verification evidence remain self/representative or moderator
 only. Community remains disabled and no UI is introduced.
+
+Community Migration 2 was committed as `7aedf3d`, applied, and pushed. Its production SQL/UI
+dark-rollout test has not yet been reported and must pass before Migration 3 is applied.
+
+Product Workspace Migration 3 is implemented locally in
+`supabase/migrations/20260823000300_product_workspace_foundation.sql`. It formalizes the approved
+rule: active identity + active tenant relationship + enabled workspace + explicit enrollment +
+explicit workspace role + enabled capability. It adds Transportation and Community workspace
+catalogs, tenant workspace state, tenant-aware enrollment and role records, RLS, controlled audited
+management RPCs, and `my_workspace_access()`. Community authorization no longer derives baseline
+member access from tenant membership or Community Admin from tenant owner/admin. Rider and Driver
+profiles are not consulted and no Community enrollment is seeded.
+
+To prevent a production regression, the migration performs a one-time backfill that enrolls active
+existing tenant owners/admins into the enabled Transportation workspace with
+`transportation_admin`. This is migration-only behavior; future tenant role changes do not create
+product access. The legacy Community role-assignment table remains for deployment compatibility but
+is no longer an authorization source. Static contract tests and manual client workspace types are
+included. Next: finish local validation, then have the owner run the Migration 2 manual test. Only
+after it passes should the owner dry-run/apply Migration 3 and run its manual test.
+
+Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
+3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase
+typecheck, Supabase lint, and `git diff --check`. The Supabase database linter could not connect
+because no local Postgres/Supabase instance is running; the owner dry run is therefore the SQL
+parser/application checkpoint.
 
 ## Current checkpoint (2026-08-22)
 

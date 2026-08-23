@@ -15,6 +15,13 @@ export type {
   CommunityProviderVerification,
   CommunityVerificationStatus,
 } from "./community.types";
+export type {
+  MyWorkspaceAccess,
+  ProductWorkspaceKey,
+  TenantWorkspaceStatus,
+  WorkspaceEnrollmentStatus,
+  WorkspaceRoleKey,
+} from "./workspace.types";
 export type SupabaseAuthSession = Session;
 export type PlatformSupabaseClient = SupabaseClient<Database>;
 export type PublicSupabaseClientConfig = {

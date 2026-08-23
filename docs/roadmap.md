@@ -15,7 +15,7 @@ remain independent of transportation-specific workflows.
 
 ## Next Product Domain: Community Platform
 
-Status: **Migration 1 authorization foundation implemented locally; production rollout pending**.
+Status: **Migrations 1–2 deployed; independent Product Workspace foundation implemented locally**.
 
 Community is the second product domain built on ESH Platform. It will be a tenant-enabled module
 that reuses platform identity, tenant membership, capabilities, RLS, audit, maps, storage, and
@@ -36,21 +36,20 @@ Approved direction:
 
 Implementation order:
 
-1. Community capability and permission catalogs, settings, authorization helpers, controlled role
-   bundles, disabled-by-default seeding, audit, and RLS tests are implemented locally in
-   `20260823000100_community_authorization_foundation.sql`. Production dry-run/apply and manual
-   verification remain.
-2. Community areas, groups, tenant-aware memberships, organizations, providers, private
-   verification evidence, controlled creation/review RPCs, public/member RLS, audit, and client
-   contracts are implemented locally in
-   `20260823000200_community_places_organizations_trust.sql`. Production dry-run/apply and dark-
-   rollout verification remain.
-3. Core content, typed records, targets, actions, lifecycle, and search indexes.
-4. Comments, reactions, private media, blocks, mutes, and reports.
-5. Service directory and provider-owned listings.
-6. Moderation and submit-for-announcement workflow.
-7. Person-based in-app notifications and compatible delivery generalization.
-8. Lifecycle automation, read models, discovery UI, and production pilot gates.
+1. Community capability/permission catalogs and conservative settings are deployed and passed the
+   production authorization-foundation test.
+2. Community places, groups, organizations, providers, and private trust evidence are deployed;
+   their production dark-rollout test remains the immediate checkpoint.
+3. Product Workspace separation is implemented locally in
+   `20260823000300_product_workspace_foundation.sql`: shared identity, separate product enrollment,
+   separate operational roles, no Rider/Driver coupling, and a one-time Transportation admin
+   compatibility backfill. Apply only after Migration 2 passes its production test.
+4. Core content, typed records, targets, actions, lifecycle, and search indexes.
+5. Comments, reactions, private media, blocks, mutes, and reports.
+6. Service directory and provider-owned listings.
+7. Moderation and submit-for-announcement workflow.
+8. Person-based in-app notifications and compatible delivery generalization.
+9. Lifecycle automation, read models, discovery UI, and production pilot gates.
 
 Architecture: `docs/architecture/community-platform.md`.
 Migration plan: `docs/architecture/community-platform-migration-plan.md`.

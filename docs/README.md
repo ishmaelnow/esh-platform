@@ -9,6 +9,8 @@ This directory contains project documentation that should evolve with the codeba
 - [Community Platform Migration Plan](./architecture/community-platform-migration-plan.md)
 - [Community Authorization Foundation Manual Test](./operations/community-authorization-foundation-manual-test.md)
 - [Community Places, Organizations, and Trust Manual Test](./operations/community-places-organizations-trust-manual-test.md)
+- [Product Workspace Foundation](./architecture/product-workspace-foundation.md)
+- [Product Workspace Foundation Manual Test](./operations/product-workspace-foundation-manual-test.md)
 - [Service Area Management](./architecture/service-area-management.md)
 - [Manual Dispatch and Trip Core](./architecture/manual-dispatch-trip-core.md)
 - [Verified Rider Booking](./architecture/verified-rider-booking.md)
