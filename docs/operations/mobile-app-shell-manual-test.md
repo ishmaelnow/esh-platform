@@ -4,6 +4,9 @@
    Capacitor CLI. Open the generated project in Android Studio or Xcode and build a debug app.
 2. Confirm the Rider shell opens `https://rider.eshapp.com`, preserves the ESH title/icon area, and
    does not expose any server-only environment value in the bundle.
+   Before testing the hosted interface, confirm the device launcher uses the blue ESH road icon—not
+   the generic Capacitor/Android icon. Launcher artwork is packaged in the APK/AAB and therefore
+   requires a newly built native release; a Vercel redeploy cannot update an installed app icon.
 3. In Supabase Authentication URL Configuration, add these allowed redirect URLs:
    `https://rider.eshapp.com/auth/callback`, `com.esh.rider://auth/callback`,
    `https://driver.eshapp.com/auth/callback`, and `com.esh.driver://auth/callback`.
@@ -22,6 +25,9 @@
    or `http://10.0.2.2:3002` for Driver and use a local dev server. Do not ship an HTTP URL.
 8. Verify native push and background-location work are not reported as enabled until APNs/FCM and
    platform location review are completed. Restore test availability and cancel unfinished trips.
+
+Android release `1.0.1` uses `versionCode 2` for both `com.esh.rider` and `com.esh.driver`, allowing
+the branded native package to replace the original version-code-1 installation or Play release.
 
 ## Embedded Driver navigation (Android)
 

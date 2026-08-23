@@ -36,5 +36,10 @@ The hosted Rider and Driver headers import the same high-resolution launcher art
 their Android projects. This keeps the in-app identity aligned with the installed store icon without
 maintaining a second brand asset; responsive sizing preserves the lockup on narrow screens.
 
+Hosted header artwork and device launcher artwork have separate release paths. The header changes
+with the hosted deployment, while Android launcher resources change only after a higher-version APK
+or AAB is built and installed through the device or store. Android release `1.0.1`/version code `2`
+is the first native refresh explicitly carrying the aligned ESH launcher artwork.
+
 No secrets, Supabase service-role keys, Stripe secret keys, or Twilio credentials enter the mobile
 bundle.

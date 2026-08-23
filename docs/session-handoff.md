@@ -713,7 +713,10 @@ must show the native APNs/FCM limitation instead of a dead checkbox. Exercise th
 states, but do not send a production verification request until Twilio confirms account ticket
 `#29018616` is resolved. Confirm each mobile header also displays the same ESH launcher artwork as
 the installed Android app, aligned beside its portal title at both phone and desktop widths. No
-database migration or native rebuild is required for this stabilization.
+database migration is required. The hosted header is already deployed, but the device still shows
+the older generic launcher icon because that artwork is native-package content. Rider and Driver
+Android releases are now bumped to `1.0.1`/version code `2`; owner must build signed AABs (or fresh
+debug APKs), install/upload them, and confirm the launcher shows the blue ESH road icon.
 
 ## Required reading for recovery
 
