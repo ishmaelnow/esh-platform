@@ -725,6 +725,12 @@ Git records `gradlew` as mode `100644`; both Android workflows now invoke it thr
 commit/push this correction and rerun Rider before starting Driver. The next attempt passed wrapper
 startup but Codemagic used an older JDK and failed Capacitor compilation with `invalid source
 release: 21`; both Android workflows now explicitly pin Java 21.
+Rider Android then built successfully. Driver reached dependency resolution but Mapbox's private
+Maven repository returned HTTP 401 because Codemagic did not have the native credentials previously
+kept only in the owner's Gradle environment. The Driver workflow now imports a protected
+`mapbox_credentials` group containing `MAPBOX_DOWNLOADS_TOKEN` (`sk.`, `Downloads:Read`) and
+`MAPBOX_ACCESS_TOKEN` (native runtime `pk.`). Owner must create that Codemagic group, commit/push the
+workflow correction, and rerun Driver.
 
 ## Required reading for recovery
 

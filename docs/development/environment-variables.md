@@ -11,6 +11,8 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `NEXT_PUBLIC_SUPABASE_URL`      | All apps            | each app's `.env.local` | Admin, Rider, Driver | Supabase project URL exposed to the browser.                                 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All apps            | each app's `.env.local` | Admin, Rider, Driver | Publishable/anonymous Supabase key; authorization remains enforced by RLS.   |
 | `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Live trip maps     | each app's `.env.local` | Admin, Rider, Driver | Public, URL-restricted Mapbox token for permanent geocoding, road routes, maps, and ETA. |
+| `MAPBOX_DOWNLOADS_TOKEN` | Native Mapbox SDK download | Codemagic `mapbox_credentials` | Driver Android only | Secret `sk.` token with `Downloads:Read`; never expose or commit. |
+| `MAPBOX_ACCESS_TOKEN` | Native Mapbox runtime | Codemagic `mapbox_credentials` | Driver Android only | Public `pk.` token without web-only URL restrictions, injected into the native resource at build time. |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Privileged server routes | app-specific `.env.local` | Admin, Rider | Privileged server-side Supabase access. Never expose to client code.         |
 | `STRIPE_SECRET_KEY`            | Rider payment and Admin refund routes | app-specific `.env.local` | Rider, Admin | Creates Stripe Checkout Sessions and authorized pre-trip refunds. Server-only. |
 | `STRIPE_WEBHOOK_SECRET`        | Rider Stripe webhook | `apps/rider/.env.local` | Rider only | Verifies Stripe webhook signatures. Server-only. |

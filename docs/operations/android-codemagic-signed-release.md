@@ -14,6 +14,19 @@ Driver (`com.esh.driver`) without placing the upload key or its passwords in Git
    backup; Codemagic does not provide keystore downloads.
 5. Never add the keystore, passwords, `key.properties`, or populated signing variables to Git.
 
+## One-time Driver Mapbox setup
+
+Driver's embedded native navigation downloads private Mapbox Navigation SDK artifacts and also
+needs a public token at runtime. In Codemagic, create a protected variable group named exactly
+`mapbox_credentials` containing:
+
+- `MAPBOX_DOWNLOADS_TOKEN`: a secret Mapbox token with the `Downloads:Read` scope. Mark it Secret.
+- `MAPBOX_ACCESS_TOKEN`: a public `pk.` token suitable for the Android native SDK. It must not use
+  web-only URL restrictions. Marking it Secret in Codemagic is still preferred to reduce log output.
+
+Only the Driver Android workflow imports this group. Never use the secret `sk.` downloads token as
+the runtime access token, expose either value in build logs, or commit either value.
+
 ## Build the signed bundles
 
 1. Confirm the intended native release commit is on `main` and its hosted Rider/Driver deployments
@@ -36,6 +49,11 @@ exit code 126 even when WSL displays a local executable permission.
 Both Android workflows pin Java 21. Capacitor Android compiles with Java source release 21, while
 Codemagic's default JDK may be older and fail during `compileReleaseJavaWithJavac` with `invalid
 source release: 21`.
+
+If Driver dependency resolution returns HTTP 401 from
+`https://api.mapbox.com/downloads/v2/releases/maven`, confirm the `mapbox_credentials` group is
+available to the application and `MAPBOX_DOWNLOADS_TOKEN` is the current `sk.` token with
+`Downloads:Read`.
 
 ## Device verification
 
