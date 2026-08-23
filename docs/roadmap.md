@@ -15,7 +15,7 @@ remain independent of transportation-specific workflows.
 
 ## Next Product Domain: Community Platform
 
-Status: **architecture and migration planning complete; implementation not started**.
+Status: **Migration 1 authorization foundation implemented locally; production rollout pending**.
 
 Community is the second product domain built on ESH Platform. It will be a tenant-enabled module
 that reuses platform identity, tenant membership, capabilities, RLS, audit, maps, storage, and
@@ -36,7 +36,10 @@ Approved direction:
 
 Implementation order:
 
-1. Community capability, settings, authorization helpers, roles/permissions, and RLS tests.
+1. Community capability and permission catalogs, settings, authorization helpers, controlled role
+   bundles, disabled-by-default seeding, audit, and RLS tests are implemented locally in
+   `20260823000100_community_authorization_foundation.sql`. Production dry-run/apply and manual
+   verification remain.
 2. Community areas, groups, organizations, providers, and verification foundation.
 3. Core content, typed records, targets, actions, lifecycle, and search indexes.
 4. Comments, reactions, private media, blocks, mutes, and reports.

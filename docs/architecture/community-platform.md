@@ -108,6 +108,7 @@ Planned permission keys include:
 - `community.verifications.manage`
 - `community.announcements.publish`
 - `community.alerts.urgent`
+- `community.broadcasts.urgent`
 - `community.alerts.emergency`
 - `community.broadcasts.important`
 - `community.broadcasts.emergency`

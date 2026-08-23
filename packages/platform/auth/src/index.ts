@@ -75,6 +75,12 @@ export const tenantCapabilityKeys = [
   "app.admin",
   "app.rider",
   "app.driver",
+  "app.community",
+  "community.content",
+  "community.groups",
+  "community.services",
+  "community.moderation",
+  "community.broadcasts",
 ] as const;
 
 export type TenantCapabilityKey = (typeof tenantCapabilityKeys)[number];
@@ -285,4 +291,44 @@ export const defaultV1TenantCapabilities = [
   { key: "app.admin", enabled: true },
   { key: "app.rider", enabled: false },
   { key: "app.driver", enabled: false },
+  { key: "app.community", enabled: false },
+  { key: "community.content", enabled: false },
+  { key: "community.groups", enabled: false },
+  { key: "community.services", enabled: false },
+  { key: "community.moderation", enabled: false },
+  { key: "community.broadcasts", enabled: false },
 ] as const satisfies readonly TenantCapability[];
+
+export const communityRoleKeys = [
+  "community_member",
+  "community_moderator",
+  "community_admin",
+  "emergency_publisher",
+] as const;
+
+export type CommunityRoleKey = (typeof communityRoleKeys)[number];
+
+export const communityPermissionKeys = [
+  "community.content.create",
+  "community.content.comment",
+  "community.content.react",
+  "community.events.submit",
+  "community.submissions.create",
+  "community.groups.participate",
+  "community.services.manage_own",
+  "community.content.moderate",
+  "community.submissions.review",
+  "community.events.approve",
+  "community.services.moderate",
+  "community.content.pin",
+  "community.verifications.manage",
+  "community.announcements.publish",
+  "community.groups.manage",
+  "community.alerts.urgent",
+  "community.broadcasts.urgent",
+  "community.broadcasts.important",
+  "community.alerts.emergency",
+  "community.broadcasts.emergency",
+] as const;
+
+export type CommunityPermissionKey = (typeof communityPermissionKeys)[number];

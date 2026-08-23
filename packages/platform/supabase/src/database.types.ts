@@ -78,6 +78,113 @@ export type Database = {
           },
         ]
       }
+      capability_catalog: {
+        Row: {
+          capability_key: string
+          created_at: string
+          default_enabled: boolean
+          description: string
+          display_name: string
+          product_domain: string
+        }
+        Insert: {
+          capability_key: string
+          created_at?: string
+          default_enabled?: boolean
+          description: string
+          display_name: string
+          product_domain: string
+        }
+        Update: {
+          capability_key?: string
+          created_at?: string
+          default_enabled?: boolean
+          description?: string
+          display_name?: string
+          product_domain?: string
+        }
+        Relationships: []
+      }
+      community_permission_catalog: {
+        Row: {
+          created_at: string
+          description: string
+          display_name: string
+          permission_key: string
+          privileged: boolean
+          required_capability_key: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          display_name: string
+          permission_key: string
+          privileged?: boolean
+          required_capability_key: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          display_name?: string
+          permission_key?: string
+          privileged?: boolean
+          required_capability_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_permission_catalog_required_capability_key_fkey"
+            columns: ["required_capability_key"]
+            isOneToOne: false
+            referencedRelation: "capability_catalog"
+            referencedColumns: ["capability_key"]
+          },
+        ]
+      }
+      community_role_catalog: {
+        Row: {
+          assignable: boolean
+          created_at: string
+          description: string
+          display_name: string
+          role_key: string
+        }
+        Insert: {
+          assignable?: boolean
+          created_at?: string
+          description: string
+          display_name: string
+          role_key: string
+        }
+        Update: {
+          assignable?: boolean
+          created_at?: string
+          description?: string
+          display_name?: string
+          role_key?: string
+        }
+        Relationships: []
+      }
+      community_role_permissions: {
+        Row: { created_at: string; permission_key: string; role_key: string }
+        Insert: { created_at?: string; permission_key: string; role_key: string }
+        Update: { created_at?: string; permission_key?: string; role_key?: string }
+        Relationships: [
+          {
+            foreignKeyName: "community_role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "community_permission_catalog"
+            referencedColumns: ["permission_key"]
+          },
+          {
+            foreignKeyName: "community_role_permissions_role_key_fkey"
+            columns: ["role_key"]
+            isOneToOne: false
+            referencedRelation: "community_role_catalog"
+            referencedColumns: ["role_key"]
+          },
+        ]
+      }
       driver_applications: {
         Row: {
           applicant_auth_user_id: string | null
@@ -1793,6 +1900,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tenant_capabilities_catalog_fk"
+            columns: ["capability_key"]
+            isOneToOne: false
+            referencedRelation: "capability_catalog"
+            referencedColumns: ["capability_key"]
+          },
+          {
             foreignKeyName: "tenant_capabilities_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -1868,6 +1982,143 @@ export type Database = {
           },
           {
             foreignKeyName: "tenant_configurations_updated_by_person_id_fkey"
+            columns: ["updated_by_person_id"]
+            isOneToOne: false
+            referencedRelation: "person_profiles"
+            referencedColumns: ["person_id"]
+          },
+        ]
+      }
+      tenant_community_role_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by_person_id: string
+          assignment_id: string
+          created_at: string
+          expires_at: string | null
+          membership_id: string
+          reason: string
+          revoked_at: string | null
+          revoked_by_person_id: string | null
+          role_key: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by_person_id: string
+          assignment_id?: string
+          created_at?: string
+          expires_at?: string | null
+          membership_id: string
+          reason: string
+          revoked_at?: string | null
+          revoked_by_person_id?: string | null
+          role_key: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by_person_id?: string
+          assignment_id?: string
+          created_at?: string
+          expires_at?: string | null
+          membership_id?: string
+          reason?: string
+          revoked_at?: string | null
+          revoked_by_person_id?: string | null
+          role_key?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_community_role_assignments_assigned_by_person_id_fkey"
+            columns: ["assigned_by_person_id"]
+            isOneToOne: false
+            referencedRelation: "person_profiles"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "tenant_community_role_assignments_membership_id_tenant_id_fkey"
+            columns: ["membership_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_memberships"
+            referencedColumns: ["membership_id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_community_role_assignments_revoked_by_person_id_fkey"
+            columns: ["revoked_by_person_id"]
+            isOneToOne: false
+            referencedRelation: "person_profiles"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "tenant_community_role_assignments_role_key_fkey"
+            columns: ["role_key"]
+            isOneToOne: false
+            referencedRelation: "community_role_catalog"
+            referencedColumns: ["role_key"]
+          },
+        ]
+      }
+      tenant_community_settings: {
+        Row: {
+          created_at: string
+          emergency_broadcast_enabled: boolean
+          event_submission_requires_review: boolean
+          important_broadcast_enabled: boolean
+          member_posting_enabled: boolean
+          membership_mode: string
+          post_moderation_mode: string
+          service_provider_posting_enabled: boolean
+          tenant_id: string
+          updated_at: string
+          updated_by_person_id: string | null
+          urgent_broadcast_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          emergency_broadcast_enabled?: boolean
+          event_submission_requires_review?: boolean
+          important_broadcast_enabled?: boolean
+          member_posting_enabled?: boolean
+          membership_mode?: string
+          post_moderation_mode?: string
+          service_provider_posting_enabled?: boolean
+          tenant_id: string
+          updated_at?: string
+          updated_by_person_id?: string | null
+          urgent_broadcast_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          emergency_broadcast_enabled?: boolean
+          event_submission_requires_review?: boolean
+          important_broadcast_enabled?: boolean
+          member_posting_enabled?: boolean
+          membership_mode?: string
+          post_moderation_mode?: string
+          service_provider_posting_enabled?: boolean
+          tenant_id?: string
+          updated_at?: string
+          updated_by_person_id?: string | null
+          urgent_broadcast_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_community_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_community_settings_updated_by_person_id_fkey"
             columns: ["updated_by_person_id"]
             isOneToOne: false
             referencedRelation: "person_profiles"
@@ -2161,6 +2412,16 @@ export type Database = {
       }
     }
     Functions: {
+      assign_community_role: {
+        Args: {
+          expires_at_value?: string | null
+          reason_value: string
+          target_membership_id: string
+          target_role_key: string
+          target_tenant_id: string
+        }
+        Returns: string
+      }
       accept_tenant_invitation: {
         Args: { token_hash: string }
         Returns: {
@@ -2221,6 +2482,26 @@ export type Database = {
         Returns: boolean
       }
       can_manage_dispatch: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      can_broadcast_community: {
+        Args: { target_severity: string; target_tenant_id: string }
+        Returns: boolean
+      }
+      can_create_community_content: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      can_manage_community_settings: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      can_moderate_community: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      can_read_community: {
         Args: { target_tenant_id: string }
         Returns: boolean
       }
@@ -2298,6 +2579,14 @@ export type Database = {
       current_person_id: { Args: never; Returns: string }
       current_person_is_active: { Args: never; Returns: boolean }
       current_person_normalized_email: { Args: never; Returns: string }
+      has_community_permission: {
+        Args: { required_permission_key: string; target_tenant_id: string }
+        Returns: boolean
+      }
+      revoke_community_role: {
+        Args: { reason_value: string; target_assignment_id: string }
+        Returns: boolean
+      }
       create_dispatch_booking: {
         Args: {
           booking_notes_value?: string

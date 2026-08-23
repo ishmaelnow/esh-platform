@@ -4,9 +4,9 @@ Last updated: 2026-08-23
 
 ## Current objective
 
-Begin the Community Platform as ESH's second tenant-enabled product domain. The immediate
-documentation-only architecture and migration-planning slice is complete locally; database and
-application implementation has not started. Transportation operational follow-ups, native push,
+Begin the Community Platform as ESH's second tenant-enabled product domain. Architecture planning
+and Migration 1 authorization foundation are complete locally; content schema and application
+implementation have not started. Transportation operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
 ## Community Platform checkpoint (2026-08-23)
@@ -24,8 +24,25 @@ V1 targets tenant/community, Community area, and group audiences; delivers an in
 foundation first; and defers poll voting, selected-user targeting UI, polygon/residency verification,
 native push, Community mass SMS/email, monetization, provider ratings, booking, advanced ranking,
 external search, and AI moderation. Existing tenants receive Community capabilities disabled by
-default. No migration, application code, environment change, deployment, or production mutation is
-part of this checkpoint.
+default.
+
+Community Migration 1 is implemented locally in
+`supabase/migrations/20260823000100_community_authorization_foundation.sql`. It replaces the growing
+capability-key check constraint with a catalog while preserving existing keys, adds six disabled
+Community capabilities, introduces permission and controlled role-bundle catalogs, seeds
+conservative tenant settings, and adds membership-derived authorization helpers. Active members
+receive baseline permissions, tenant owners/admins derive the Community Admin bundle, moderators
+are explicitly assigned, and emergency publishers receive a separately assigned emergency-only
+bundle. Admin and moderator authority do not imply Emergency authority.
+
+The migration includes tenant-aware assignments, immutable identity/history guards, narrow
+assign/revoke RPCs, settings attribution and audit, RLS, and audit events. Platform auth constants
+and manual Supabase client types are updated. Tests include a static migration contract plus an
+opt-in local Supabase RLS matrix for disabled defaults, member, owner/admin, moderator, emergency
+publisher, suspended membership, and cross-tenant denial. Local Docker was unavailable, so the
+executable database test remains pending. The static contract test, Auth and Supabase typechecks,
+package lint/tests, formatting, and diff validation pass. No migration, environment change,
+deployment, or production mutation occurred during implementation.
 
 ## Current checkpoint (2026-08-22)
 
@@ -727,11 +744,10 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Review and owner-commit the Community architecture checkpoint. After approval, implement Migration
-1 from `docs/architecture/community-platform-migration-plan.md`: capability/permission catalog,
-Community tenant settings, authorization helpers, disabled-by-default capability seeding, generated
-types, and the full RLS actor matrix. Do not create member content tables or UI until that security
-foundation passes cross-tenant tests.
+Owner dry-run only `20260823000100_community_authorization_foundation.sql`, apply it after reviewing
+the intended catalog and authorization changes, deploy the code/types, and execute
+`docs/operations/community-authorization-foundation-manual-test.md`. Do not begin Community content
+tables or UI until the executable RLS matrix and production negative authorization cases pass.
 
 Native release `1.0.1` remains operationally validated for Rider and Driver. Keep Android signing
 credentials outside Git and independently backed up. Native APNs/FCM push remains unimplemented,
@@ -744,6 +760,7 @@ and production SMS verification must not be retried until Twilio resolves suspen
 - `docs/roadmap.md`
 - `docs/architecture/community-platform.md`
 - `docs/architecture/community-platform-migration-plan.md`
+- `docs/operations/community-authorization-foundation-manual-test.md`
 - `docs/architecture/scheduled-rider-bookings.md`
 - `docs/architecture/rider-trip-notifications.md`
 - `docs/architecture/verified-rider-booking.md`
