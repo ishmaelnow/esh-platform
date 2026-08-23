@@ -3,6 +3,10 @@
 This is the repeatable release process for ESH Rider (`com.esh.rider`) and ESH Driver
 (`com.esh.driver`). The Apple Developer Team ID is `5BJ7VXSZ3R`.
 
+Release `1.0.1` replaces the generic Capacitor AppIcon with the blue ESH road artwork. Both iOS
+workflows already generate a unique build number, sign the IPA, and submit it to TestFlight. Run both
+workflows from the release commit; a hosted deployment alone cannot update the device icon.
+
 ## 1. Apple Developer setup
 
 For each App ID in Apple Developer → Certificates, Identifiers & Profiles → Identifiers:

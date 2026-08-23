@@ -20,6 +20,8 @@ This directory contains project documentation that should evolve with the codeba
 - [Ledger Foundation Manual Test](./operations/ledger-foundation-manual-test.md)
 - [Trip Pricing V1](./architecture/trip-pricing.md)
 - [Trip Pricing Manual Test](./operations/trip-pricing-manual-test.md)
+- [Android Codemagic Signed Release](./operations/android-codemagic-signed-release.md)
+- [iOS Codemagic and TestFlight Release](./operations/ios-codemagic-testflight-release.md)
 - `architecture/` describes system structure, boundaries, and platform principles.
 - `adr/` records architectural decisions and their tradeoffs.
 - `development/` documents local development workflows and engineering standards.

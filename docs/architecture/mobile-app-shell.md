@@ -41,5 +41,9 @@ with the hosted deployment, while Android launcher resources change only after a
 or AAB is built and installed through the device or store. Android release `1.0.1`/version code `2`
 is the first native refresh explicitly carrying the aligned ESH launcher artwork.
 
+iOS release `1.0.1` likewise replaces the original generic Capacitor AppIcon with a 1024×1024,
+fully opaque ESH AppIcon. Codemagic assigns a unique build number during each signed TestFlight
+build; the marketing version remains explicit in each Xcode project.
+
 No secrets, Supabase service-role keys, Stripe secret keys, or Twilio credentials enter the mobile
 bundle.

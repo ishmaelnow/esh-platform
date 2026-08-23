@@ -1,4 +1,42 @@
 workflows:
+  rider-android:
+    name: ESH Rider Android
+    max_build_duration: 120
+    instance_type: linux_x2
+    environment:
+      android_signing:
+        - esh_android_upload
+    scripts:
+      - name: Install workspace dependencies
+        script: pnpm install --frozen-lockfile
+      - name: Sync Capacitor Rider project
+        script: pnpm --filter @esh-platform/rider mobile:sync
+      - name: Build signed Rider app bundle
+        script: |
+          cd apps/rider/android
+          ./gradlew bundleRelease
+    artifacts:
+      - apps/rider/android/app/build/outputs/bundle/release/*.aab
+
+  driver-android:
+    name: ESH Driver Android
+    max_build_duration: 120
+    instance_type: linux_x2
+    environment:
+      android_signing:
+        - esh_android_upload
+    scripts:
+      - name: Install workspace dependencies
+        script: pnpm install --frozen-lockfile
+      - name: Sync Capacitor Driver project
+        script: pnpm --filter @esh-platform/driver mobile:sync
+      - name: Build signed Driver app bundle
+        script: |
+          cd apps/driver/android
+          ./gradlew bundleRelease
+    artifacts:
+      - apps/driver/android/app/build/outputs/bundle/release/*.aab
+
   rider-ios:
     name: ESH Rider iOS
     max_build_duration: 120

@@ -715,8 +715,11 @@ states, but do not send a production verification request until Twilio confirms 
 the installed Android app, aligned beside its portal title at both phone and desktop widths. No
 database migration is required. The hosted header is already deployed, but the device still shows
 the older generic launcher icon because that artwork is native-package content. Rider and Driver
-Android releases are now bumped to `1.0.1`/version code `2`; owner must build signed AABs (or fresh
-debug APKs), install/upload them, and confirm the launcher shows the blue ESH road icon.
+Android releases are now bumped to `1.0.1`/version code `2`, use Codemagic CI-only signing, and have
+separate signed-AAB workflows. Rider and Driver iOS `1.0.1` now contain a 1024×1024 ESH AppIcon and
+retain their signed TestFlight workflows. Owner must upload the existing Android upload keystore to
+Codemagic under reference `esh_android_upload`, run all four native workflows from `main`, then
+install the internal-test/TestFlight builds and confirm the launcher shows the blue ESH road icon.
 
 ## Required reading for recovery
 
