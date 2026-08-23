@@ -10,6 +10,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Community Authorization Foundation Manual Test](./operations/community-authorization-foundation-manual-test.md)
 - [Community Places, Organizations, and Trust Manual Test](./operations/community-places-organizations-trust-manual-test.md)
 - [Product Workspace Foundation](./architecture/product-workspace-foundation.md)
+- [ADR 0002: Separate Product Applications on Shared Platform Infrastructure](./adr/0002-separate-product-applications-shared-platform.md)
 - [Product Workspace Foundation Manual Test](./operations/product-workspace-foundation-manual-test.md)
 - [Admin Workspace Selector Manual Test](./operations/admin-workspace-selector-manual-test.md)
 - [Service Area Management](./architecture/service-area-management.md)

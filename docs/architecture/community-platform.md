@@ -73,10 +73,11 @@ Recommended routes:
 - `/notifications`
 - `/settings/notifications`
 
-Admin receives one top-level **Community** module entry. Community administration must be split
-into separately owned components or routes for overview, moderation, announcements/alerts, events,
-organizations, services, reports, and settings. It must not enlarge the existing monolithic Tenant
-Admin component with another collection of tightly coupled panels.
+Community administration belongs in a separately deployed Community Admin application, not a
+module inside Tenant or Transportation Admin. Its routes cover overview, moderation,
+announcements/alerts, events, organizations, services, reports, and settings. The shared control
+plane manages tenant/product enrollment but performs no Community operations. This follows ADR
+0002 and prevents simultaneous Transportation/Community operation.
 
 ## Authorization Model
 

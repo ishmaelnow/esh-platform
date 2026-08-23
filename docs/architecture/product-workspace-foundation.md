@@ -41,3 +41,18 @@ panel that calls reason-required audited RPCs; the UI never inserts enrollment o
 `workspace_admin_snapshot()` is a narrow read model. Tenant owners/platform administrators receive
 active membership and enrollment details needed to govern access. Other callers receive only their
 own active workspace access and never the tenant member directory.
+
+## Control Plane And Product Applications
+
+The visible workspace launcher is transitional. The accepted target architecture is recorded in
+`docs/adr/0002-separate-product-applications-shared-platform.md`:
+
+- `admin.eshapp.com` becomes governance-only;
+- Transportation Admin and Community Admin become independently deployed applications;
+- shared identity establishes eligibility, not simultaneous operation; and
+- one person may operate at most one product session at a time.
+
+Product-session exclusivity is an additional authorization factor to be implemented before
+Community activation. A stale product tab must be denied by the server/database even when its UI
+has not refreshed. Product applications must use distinct storage/draft namespaces, visual identity,
+notification copy, environment configuration, release gates, and observability.

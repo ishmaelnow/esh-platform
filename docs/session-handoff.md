@@ -4,10 +4,10 @@ Last updated: 2026-08-23
 
 ## Current objective
 
-Establish explicit Product Workspace boundaries before Community content. Migrations 1–3 are
-deployed and passed production validation. Shared identity, tenant membership, and product access
-are now separate foundations. The Admin workspace selector and explicit access-governance feature
-is implemented locally and pending deployment. Transportation
+Separate ESH products operationally while retaining shared platform infrastructure. Migrations
+1–4 and Admin workspace commit `22fcafe` are deployed; shared identity, tenant membership, product
+enrollment, and roles are separate foundations. The selector is now explicitly transitional while
+the governance control plane and independent product applications are established. Transportation
 operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
@@ -92,7 +92,7 @@ create Community enrollment. Yahooemail Tenant Administration remained operation
 UI remained absent. The Admin favicon 404 and Supabase auth Navigator LockManager contention error
 remain unrelated stabilization follow-ups.
 
-That Admin feature is now implemented locally. `/` is a tenant-aware workspace launcher;
+That Admin feature is deployed. `/` is a tenant-aware workspace launcher;
 `/transportation` hosts the existing application behind an explicit `transportation_admin` gate;
 and `/community` is a separate Community Admin foundation behind Community workspace roles. Tenant
 owners receive a governance panel to enable/suspend workspaces and deliberately enroll/remove active
@@ -104,9 +104,16 @@ Migration `20260823000400_workspace_admin_read_model.sql` adds only
 other callers receive only their own workspace access. Admin UI parsing has unit coverage and the
 migration has a static authorization contract test. Admin tests pass 68/68, Admin and Supabase
 typechecks pass without incremental caches, lint passes, and the production build passes with only
-the existing Supabase Realtime dynamic-import and Next ESLint-plugin warnings. Next: owner dry-runs
-and applies only Migration 4, then commits/pushes for deployment and runs the workspace-selector
-manual test without enabling Community or changing production enrollment.
+the existing Supabase Realtime dynamic-import and Next ESLint-plugin warnings. Migration 4 was
+applied and commit `22fcafe` pushed. Production displayed separate enabled Transportation and
+disabled Community cards plus governance controls; the full manual test record remains open.
+
+ADR `docs/adr/0002-separate-product-applications-shared-platform.md` is now accepted locally. The
+target is governance-only `admin.eshapp.com` plus separately deployed Transportation Admin,
+Community Admin, Community member, Rider, and Driver products. One identity may be eligible for
+several products but may operate only one product at a time. The next implementation milestone is a
+server-authoritative exclusive product-session lease with stale-tab denial; after that, extract the
+two Admin products from the transitional routes. No product/domain/DNS change has been made yet.
 
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase

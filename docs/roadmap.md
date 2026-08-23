@@ -23,7 +23,10 @@ notification delivery without depending on Rider or Driver business identities.
 
 Approved direction:
 
-- a separate Community member application and a separately owned Community Admin module;
+- operationally independent product applications on shared ESH infrastructure, with
+  `admin.eshapp.com` reserved for neutral tenant/product governance;
+- a separate Community member application and separately deployed Community Admin application;
+- one active operational product session per person, enforced server-side rather than by display;
 - a shared content envelope with typed post, announcement, event, alert, help, opportunity,
   resource, and later poll records;
 - a dedicated provider/service directory, with promotional feed items linked to listings;
@@ -46,19 +49,23 @@ Implementation order:
    compatibility backfill. Production validation passed with all 17 Transportation workspaces
    enabled, all 17 Community workspaces disabled, four Transportation admin assignments, and zero
    Community enrollments.
-4. Admin workspace selection, isolated Transportation/Community routes, direct-route role gates,
-   and owner-controlled workspace enrollment are implemented locally. Migration
-   `20260823000400_workspace_admin_read_model.sql` provides a narrow governance read model and is
-   pending owner dry-run/apply and production UI validation.
-5. Core content, typed records, targets, actions, lifecycle, and search indexes.
-6. Comments, reactions, private media, blocks, mutes, and reports.
-7. Service directory and provider-owned listings.
-8. Moderation and submit-for-announcement workflow.
-9. Person-based in-app notifications and compatible delivery generalization.
-10. Lifecycle automation, read models, discovery UI, and production pilot gates.
+4. The transitional Admin workspace selector, isolated routes, direct-route role gates, and
+   owner-controlled enrollment are deployed in commit `22fcafe`; Migration 4 is applied. It proved
+   the access boundary but is not the final combined operating experience.
+5. ADR 0002 establishes governance-only Admin plus independently deployed product applications.
+   Next: implement exclusive server-authoritative product sessions and stale-tab denial.
+6. Extract Community Admin and Transportation Admin into separately deployed applications, with
+   independent domains, environment contracts, releases, and product-specific navigation.
+7. Core content, typed records, targets, actions, lifecycle, and search indexes.
+8. Comments, reactions, private media, blocks, mutes, and reports.
+9. Service directory and provider-owned listings.
+10. Moderation and submit-for-announcement workflow.
+11. Person-based in-app notifications and compatible delivery generalization.
+12. Lifecycle automation, read models, discovery UI, and production pilot gates.
 
 Architecture: `docs/architecture/community-platform.md`.
 Migration plan: `docs/architecture/community-platform-migration-plan.md`.
+Product boundary decision: `docs/adr/0002-separate-product-applications-shared-platform.md`.
 
 ## Current Milestone: Driver Evidence and Compliance MVP
 

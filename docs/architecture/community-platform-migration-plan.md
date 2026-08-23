@@ -321,6 +321,16 @@ mapping. No endpoint accepts a caller-selected role or trusted actor ID.
 
 ## Application And Test Sequence
 
+Before the first Community operational UI is enabled:
+
+1. define the governance control-plane boundary and separate Community application deployments;
+2. implement server-authoritative exclusive product-session leases;
+3. extract Community Admin from the transitional Admin route into its own deployable application;
+4. prove that entering Community invalidates an active Transportation product session and that
+   stale tabs cannot read privileged state or mutate; and
+5. retain shared identity, tenant, enrollment, audit, and infrastructure packages without importing
+   Transportation operational components into Community.
+
 For each migration increment:
 
 1. implement database constraints, RLS, grants, and RPCs;
