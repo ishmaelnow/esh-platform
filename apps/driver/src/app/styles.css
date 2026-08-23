@@ -66,6 +66,25 @@ h1 {
   width: 100%;
 }
 
+.brand-lockup {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  min-width: 0;
+}
+
+.brand-lockup .eyebrow {
+  margin-bottom: 8px;
+}
+
+.app-logo {
+  border-radius: 22%;
+  box-shadow: 0 10px 24px rgb(5 24 54 / 18%);
+  flex: 0 0 auto;
+  height: 76px;
+  width: 76px;
+}
+
 form,
 .status-grid {
   display: grid;
@@ -439,6 +458,15 @@ h3 {
 
   .portal-card {
     padding: 22px;
+  }
+
+  .brand-lockup {
+    gap: 14px;
+  }
+
+  .app-logo {
+    height: 58px;
+    width: 58px;
   }
 
   .driver-tabs {

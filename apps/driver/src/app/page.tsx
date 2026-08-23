@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import Image from "next/image";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
@@ -18,7 +19,8 @@ import {
 import { offerCountdownLabel, offerSecondsRemaining } from "../lib/dispatch";
 import { buildEarningsStatement, earningsStatementCsv } from "../lib/earnings-statement";
 import { locationErrorMessage } from "../lib/location";
-import { currentPushSubscription, pushSupported, vapidApplicationKey } from "../lib/push";
+import { currentPushSubscription, pushSupported, pushUnavailableMessage, vapidApplicationKey } from "../lib/push";
+import appIcon from "../../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png";
 
 type DriverSummary = {
   driverProfileId: string;
@@ -365,7 +367,7 @@ export default function DriverHome() {
     if (!supabase || !summary) return;
     setPushBusy(true); setPreferenceMessage(null);
     try {
-      if (!pushSupported()) throw new Error("This browser does not support push notifications.");
+      if (!pushSupported()) throw new Error(pushUnavailableMessage());
       const existing = await currentPushSubscription();
       if (!enabled) {
         if (existing) {
@@ -1136,8 +1138,13 @@ export default function DriverHome() {
   return (
     <main className="shell">
       <section className="portal-card">
-        <p className="eyebrow">Driver portal</p>
-        <h1>ESH Platform</h1>
+        <div className="brand-lockup">
+          <Image className="app-logo" src={appIcon} alt="ESH Driver" priority />
+          <div>
+            <p className="eyebrow">Driver portal</p>
+            <h1>ESH Platform</h1>
+          </div>
+        </div>
         {!session ? (
           <form onSubmit={(event) => void signIn(event)}>
             <label>
@@ -1918,16 +1925,17 @@ export default function DriverHome() {
             ) : null}
             <section className="notification-preferences">
               <div><p className="eyebrow">Device alerts</p><h3>Browser push notifications</h3></div>
-              <label><input checked={pushEnabled} disabled={pushBusy || !pushSupported()} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label>
+              {pushSupported() ? <label><input checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label> : <strong>Unavailable on this device</strong>}
               <p>Lock-screen alerts use privacy-safe summaries and never include Rider addresses or financial account details.</p>
+              {!pushSupported() ? <p className="upload-message" role="status">{pushUnavailableMessage()}</p> : null}
               {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
             </section>
             <section className="notification-preferences">
               <div><p className="eyebrow">Text alerts</p><h3>Transactional SMS</h3></div>
               <p>Opt in to privacy-safe texts for new trip offers and urgent payout issues. Message and data rates may apply. No marketing messages.</p>
               {smsSettings.enabled ? <><strong>On · verified {smsSettings.maskedPhone}</strong><button className="secondary" disabled={smsBusy} onClick={() => void updateDriverSms("disable")} type="button">Turn off texts</button></> : <>
-                <label>Mobile number<input value={smsPhone} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" inputMode="tel" /></label>
-                {!smsPending ? <button className="secondary" disabled={smsBusy || !smsPhone} onClick={() => void updateDriverSms("start")} type="button">Text me a verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="secondary" disabled={smsBusy || !smsCode} onClick={() => void updateDriverSms("check")} type="button">Verify and enable texts</button></>}
+                <label>Mobile number<input value={smsPhone} disabled={smsPending} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" autoComplete="tel" inputMode="tel" /></label>
+                {!smsPending ? <button className="secondary" disabled={smsBusy || !/^\+[1-9][0-9]{7,14}$/.test(smsPhone.replace(/[\s().-]/g, ""))} onClick={() => void updateDriverSms("start")} type="button">Text me a verification code</button> : <><p className="upload-message">Code sent to {smsPhone}. Enter the 4–10 digit code below.</p><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value.replace(/\D/g, "").slice(0, 10))} autoComplete="one-time-code" inputMode="numeric" /></label><button className="secondary" disabled={smsBusy || !/^\d{4,10}$/.test(smsCode)} onClick={() => void updateDriverSms("check")} type="button">Verify and enable texts</button><button className="secondary" disabled={smsBusy} onClick={() => { setSmsPending(false); setSmsCode(""); setSmsFeedback(null); }} type="button">Change number</button></>}
               </>}
               {smsFeedback ? <p className={smsFeedback.kind === "error" ? "form-error" : "upload-message"} role="status">{smsFeedback.message}</p> : null}
             </section>

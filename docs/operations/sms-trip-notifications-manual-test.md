@@ -22,6 +22,11 @@
    no Rider text is attempted.
 10. Restore the test Driver to Offline and cancel unfinished test trips.
 
+On both mobile shells, the send button must remain disabled until a valid E.164 number is present.
+After sending, the phone field is locked, the numeric code supports OS one-time-code autofill, and
+**Change number** returns safely to the phone-entry state. A Twilio rejection must appear inside the
+Text alerts card; it must never look like an ignored tap.
+
 Pass requires verified ownership, explicit consent, role/tenant-derived subscription mutation,
 masked browser display, privacy-safe copy, idempotent attempts, independent channels, audit events,
 and immediate opt-out.

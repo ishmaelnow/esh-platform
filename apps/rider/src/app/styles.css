@@ -48,6 +48,21 @@ button {
   gap: 24px;
 }
 
+.brand-lockup {
+  align-items: flex-start;
+  display: flex;
+  gap: 20px;
+  min-width: 0;
+}
+
+.app-logo {
+  border-radius: 22%;
+  box-shadow: 0 10px 24px rgba(5, 24, 54, 0.18);
+  flex: 0 0 auto;
+  height: 76px;
+  width: 76px;
+}
+
 .eyebrow,
 .kicker {
   color: #16714a;
@@ -449,6 +464,14 @@ textarea:focus {
   .trip-top {
     align-items: stretch;
     flex-direction: column;
+  }
+  .brand-lockup {
+    align-items: center;
+    gap: 14px;
+  }
+  .app-logo {
+    height: 58px;
+    width: 58px;
   }
   .auth-card,
   .portal-grid {

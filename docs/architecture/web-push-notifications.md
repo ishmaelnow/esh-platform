@@ -23,5 +23,10 @@ preferences. It does not create a second lifecycle trigger system. Deferred: nat
 push-only event preferences independent of email, localization, notification actions, and
 tenant-customizable lock-screen content.
 
+Web Push is intentionally browser-only. Rider and Driver detect the Capacitor native shell and do
+not show a dead browser-subscription checkbox there; they explain that native APNs/FCM delivery is a
+separate deferred channel. This prevents an installed app from implying that its bundled
+Push Notifications plugin is already connected to the server delivery pipeline.
+
 SMS Trip Notifications V1 now provides a separate verified, explicitly consented urgent-text
 channel with its own delivery attempts.

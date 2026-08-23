@@ -8,6 +8,9 @@
    and Driver.
 4. In Rider, enable **Device alerts**, grant browser permission, refresh, and confirm it remains on.
 5. In Driver, enable **Browser push notifications** and grant permission.
+   Run these checks in the hosted HTTPS portals, not inside the installed Capacitor shells. In an
+   installed shell, confirm the checkbox is replaced by an explanation that native alerts require
+   APNs/FCM integration; email and verified SMS controls must remain usable.
 6. Create a test trip. Confirm the Driver receives a generic new-offer alert with no Rider name or
    address on the lock screen. Click it and confirm Driver authentication still protects details.
 7. Accept and arrive. Confirm Rider receives generic accepted/arrived alerts and clicking opens the

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Geolocation } from "@capacitor/geolocation";
+import Image from "next/image";
 import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
@@ -24,7 +25,8 @@ import {
   zonedDateTimeToIso,
   generateRecurringPickupTimes,
 } from "./booking";
-import { currentPushSubscription, pushSupported, vapidApplicationKey } from "../lib/push";
+import { currentPushSubscription, pushSupported, pushUnavailableMessage, vapidApplicationKey } from "../lib/push";
+import appIcon from "../../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png";
 
 type BookingTenant = { tenant_slug: string; display_name: string };
 type ServiceArea = { serviceAreaId: string; name: string; description: string | null };
@@ -574,7 +576,7 @@ export default function RiderHome() {
     if (!supabase || !portal?.profile || !tenantSlug) return;
     setPushBusy(true); setError(""); setMessage("");
     try {
-      if (!pushSupported()) throw new Error("This browser does not support push notifications.");
+      if (!pushSupported()) throw new Error(pushUnavailableMessage());
       const existing = await currentPushSubscription();
       if (!enabled) {
         if (existing) {
@@ -1085,12 +1087,15 @@ export default function RiderHome() {
   return (
     <main className="shell">
       <header className="hero">
-        <div>
-          <p className="eyebrow">ESH Rider</p>
-          <h1>Where are you going?</h1>
-          <p className="summary">
-            Request a trip and follow your assigned Driver when they share live location.
-          </p>
+        <div className="brand-lockup">
+          <Image className="app-logo" src={appIcon} alt="ESH Rider" priority />
+          <div>
+            <p className="eyebrow">ESH Rider</p>
+            <h1>Where are you going?</h1>
+            <p className="summary">
+              Request a trip and follow your assigned Driver when they share live location.
+            </p>
+          </div>
         </div>
         {session ? (
           <button className="button secondary" onClick={() => void supabase?.auth.signOut()}>
@@ -1458,14 +1463,15 @@ export default function RiderHome() {
             </div>
             <div className="card preference-card">
               <div><strong>Device alerts</strong><p>Receive privacy-safe browser alerts for urgent trip and payment updates. Permission applies only to this browser.</p></div>
-              <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy || !pushSupported()} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label>
+              {pushSupported() ? <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}
             </div>
+            {!pushSupported() ? <p className="notice" role="status">{pushUnavailableMessage()}</p> : null}
             <div className="card">
               <strong>Text alerts</strong>
               <p>Opt in to privacy-safe transactional texts for urgent trip and payment updates. Message and data rates may apply. No marketing messages.</p>
               {smsSettings.enabled ? <div className="preference-card"><span>On · verified {smsSettings.maskedPhone}</span><button className="button secondary compact" disabled={smsBusy} onClick={() => void updateRiderSms("disable")} type="button">Turn off texts</button></div> : <div className="panel-stack">
-                <label>Mobile number<input value={smsPhone} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" inputMode="tel" /></label>
-                {!smsPending ? <button className="button secondary compact" disabled={smsBusy || !smsPhone} onClick={() => void updateRiderSms("start")} type="button">Text me a verification code</button> : <><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value)} inputMode="numeric" /></label><button className="button secondary compact" disabled={smsBusy || !smsCode} onClick={() => void updateRiderSms("check")} type="button">Verify and enable texts</button></>}
+                <label>Mobile number<input value={smsPhone} disabled={smsPending} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" autoComplete="tel" inputMode="tel" /></label>
+                {!smsPending ? <button className="button secondary compact" disabled={smsBusy || !/^\+[1-9][0-9]{7,14}$/.test(smsPhone.replace(/[\s().-]/g, ""))} onClick={() => void updateRiderSms("start")} type="button">Text me a verification code</button> : <><p className="notice">Code sent to {smsPhone}. Enter the 4–10 digit code below.</p><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value.replace(/\D/g, "").slice(0, 10))} autoComplete="one-time-code" inputMode="numeric" /></label><div className="button-row"><button className="button secondary compact" disabled={smsBusy || !/^\d{4,10}$/.test(smsCode)} onClick={() => void updateRiderSms("check")} type="button">Verify and enable texts</button><button className="button secondary compact" disabled={smsBusy} onClick={() => { setSmsPending(false); setSmsCode(""); setSmsFeedback(null); }} type="button">Change number</button></div></>}
               </div>}
               {smsFeedback ? <p className={smsFeedback.kind === "error" ? "error" : "notice"} role="status">{smsFeedback.message}</p> : null}
             </div>

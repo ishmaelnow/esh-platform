@@ -131,6 +131,9 @@ deferred from this milestone and were delivered under the later milestones below
      SMS for urgent events with privacy-safe copy and independent delivery attempts.
    - Operational blocker: SMS code is deployed, but production verification is waiting for Twilio
      to explain and reactivate a suspended account under billing ticket `#29018616`.
+   - Current stabilization: installed Rider and Driver shells now distinguish unavailable native
+     push from browser Web Push, and SMS verification provides validated mobile inputs, one-time-code
+     autofill, an explicit pending state, and inline provider errors.
    - Remaining: native mobile push delivery and carrier delivery-status/STOP reconciliation.
 6. **Reputation**
    - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-

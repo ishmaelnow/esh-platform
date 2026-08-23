@@ -25,5 +25,16 @@ the native boundary. Native push delivery and native background location require
 APNs/FCM credentials and consent work; the current web push and foreground location contracts remain
 the source of truth until that follow-up is implemented. Admin remains web-only.
 
+The installed Rider and Driver shells must not present the Web Push subscription switch as a native
+notification control. A Capacitor WebView does not provide the browser service-worker subscription
+contract used by Web Push. Until APNs/FCM registration, token storage, and delivery are implemented,
+the apps show an explicit native-push-unavailable status and keep email and verified transactional
+SMS available. The Web Push switch remains available when the hosted portals are opened in a
+supported secure browser.
+
+The hosted Rider and Driver headers import the same high-resolution launcher artwork bundled in
+their Android projects. This keeps the in-app identity aligned with the installed store icon without
+maintaining a second brand asset; responsive sizing preserves the lockup on narrow screens.
+
 No secrets, Supabase service-role keys, Stripe secret keys, or Twilio credentials enter the mobile
 bundle.

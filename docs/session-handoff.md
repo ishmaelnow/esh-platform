@@ -707,10 +707,13 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Finish validation, then have the owner dry-run migration state. It must be reconciled against the
-remote database before applying because the repository contains a longer financial/mobile migration
-history. Deploy Admin and Rider together and run
-`docs/operations/tenant-fare-policy-contract-manual-test.md` with new quotes for each policy.
+Deploy the Rider and Driver hosted applications, then check Notifications in both a supported mobile
+browser and each installed shell. Browser Web Push must retain its working switch; installed shells
+must show the native APNs/FCM limitation instead of a dead checkbox. Exercise the SMS phone and code
+states, but do not send a production verification request until Twilio confirms account ticket
+`#29018616` is resolved. Confirm each mobile header also displays the same ESH launcher artwork as
+the installed Android app, aligned beside its portal title at both phone and desktop widths. No
+database migration or native rebuild is required for this stabilization.
 
 ## Required reading for recovery
 
