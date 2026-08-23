@@ -11,11 +11,12 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor Rider project
         script: pnpm --filter @esh-platform/rider mobile:sync
-      - name: Build signed Rider app bundle
+      - name: Build signed Rider APK and app bundle
         script: |
           cd apps/rider/android
-          ./gradlew bundleRelease
+          ./gradlew assembleRelease bundleRelease
     artifacts:
+      - apps/rider/android/app/build/outputs/apk/release/*.apk
       - apps/rider/android/app/build/outputs/bundle/release/*.aab
 
   driver-android:
@@ -30,11 +31,12 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor Driver project
         script: pnpm --filter @esh-platform/driver mobile:sync
-      - name: Build signed Driver app bundle
+      - name: Build signed Driver APK and app bundle
         script: |
           cd apps/driver/android
-          ./gradlew bundleRelease
+          ./gradlew assembleRelease bundleRelease
     artifacts:
+      - apps/driver/android/app/build/outputs/apk/release/*.apk
       - apps/driver/android/app/build/outputs/bundle/release/*.aab
 
   rider-ios:

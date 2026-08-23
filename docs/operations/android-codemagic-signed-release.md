@@ -19,9 +19,9 @@ Driver (`com.esh.driver`) without placing the upload key or its passwords in Git
 1. Confirm the intended native release commit is on `main` and its hosted Rider/Driver deployments
    are Ready.
 2. In Codemagic, open the `esh-platform` application and start **ESH Rider Android** from `main`.
-3. Confirm **Build signed Rider app bundle** passes and download
-   `app-release.aab` from Artifacts.
-4. Repeat with **ESH Driver Android** and download its separate `app-release.aab`.
+3. Confirm **Build signed Rider APK and app bundle** passes. Download `app-release.apk` for direct
+   device installation and `app-release.aab` for a future Google Play release.
+4. Repeat with **ESH Driver Android** and download its separate APK and AAB artifacts.
 5. Keep the files clearly separated by application. Verify Rider is `com.esh.rider`, Driver is
    `com.esh.driver`, and both report version `1.0.1` / version code `2` before upload.
 
