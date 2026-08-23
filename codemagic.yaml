@@ -14,7 +14,7 @@ workflows:
       - name: Build signed Rider APK and app bundle
         script: |
           cd apps/rider/android
-          ./gradlew assembleRelease bundleRelease
+          bash ./gradlew assembleRelease bundleRelease
     artifacts:
       - apps/rider/android/app/build/outputs/apk/release/*.apk
       - apps/rider/android/app/build/outputs/bundle/release/*.aab
@@ -34,7 +34,7 @@ workflows:
       - name: Build signed Driver APK and app bundle
         script: |
           cd apps/driver/android
-          ./gradlew assembleRelease bundleRelease
+          bash ./gradlew assembleRelease bundleRelease
     artifacts:
       - apps/driver/android/app/build/outputs/apk/release/*.apk
       - apps/driver/android/app/build/outputs/bundle/release/*.aab

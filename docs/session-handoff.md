@@ -720,6 +720,9 @@ separate signed-AAB workflows. Rider and Driver iOS `1.0.1` now contain a 1024×
 retain their signed TestFlight workflows. Owner must upload the existing Android upload keystore to
 Codemagic under reference `esh_android_upload`, run all four native workflows from `main`, then
 install the internal-test/TestFlight builds and confirm the launcher shows the blue ESH road icon.
+The first Rider Android attempt reached the signed build step but failed with exit code 126 because
+Git records `gradlew` as mode `100644`; both Android workflows now invoke it through Bash. Owner must
+commit/push this correction and rerun Rider before starting Driver.
 
 ## Required reading for recovery
 

@@ -29,6 +29,10 @@ The workflows produce signed artifacts but deliberately do not upload them to Go
 each bundle to its matching internal-testing release in Play Console, review the release summary,
 then explicitly roll it out. This preserves an owner-controlled production boundary.
 
+The workflows invoke each Gradle wrapper with `bash ./gradlew`. Git records the wrappers as regular
+files on the Windows-mounted repository, so direct `./gradlew` execution can fail in Codemagic with
+exit code 126 even when WSL displays a local executable permission.
+
 ## Device verification
 
 Install the internal-test update from Google Play. Confirm the launcher uses the blue ESH road icon,
