@@ -60,22 +60,22 @@ type ViewKey =
   | "applications";
 
 const views: { key: ViewKey; label: string }[] = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "settings", label: "Settings" },
-  { key: "memberships", label: "Memberships" },
-  { key: "invitations", label: "Invitations" },
-  { key: "roles", label: "Roles" },
-  { key: "capabilities", label: "Capabilities" },
-  { key: "audit", label: "Audit" },
-  { key: "drivers", label: "Drivers" },
-  { key: "vehicles", label: "Vehicles" },
-  { key: "serviceAreas", label: "Service Areas" },
-  { key: "dispatch", label: "Dispatch" },
-  { key: "reputation", label: "Reputation" },
-  { key: "ledger", label: "Ledger" },
-  { key: "pricing", label: "Pricing" },
-  { key: "notifications", label: "Notifications" },
   { key: "applications", label: "Applications" },
+  { key: "audit", label: "Audit" },
+  { key: "capabilities", label: "Capabilities" },
+  { key: "dashboard", label: "Dashboard" },
+  { key: "dispatch", label: "Dispatch" },
+  { key: "drivers", label: "Drivers" },
+  { key: "invitations", label: "Invitations" },
+  { key: "ledger", label: "Ledger" },
+  { key: "memberships", label: "Memberships" },
+  { key: "notifications", label: "Notifications" },
+  { key: "pricing", label: "Pricing" },
+  { key: "reputation", label: "Reputation" },
+  { key: "roles", label: "Roles" },
+  { key: "serviceAreas", label: "Service Areas" },
+  { key: "settings", label: "Settings" },
+  { key: "vehicles", label: "Vehicles" },
 ];
 
 export function AdminTenantApp() {

@@ -5,10 +5,13 @@ Last updated: 2026-08-23
 ## Current objective
 
 Separate ESH products operationally while retaining shared platform infrastructure. Migrations
-1–4 and Admin workspace commit `22fcafe` are deployed; shared identity, tenant membership, product
-enrollment, and roles are separate foundations. The selector is now explicitly transitional while
-the governance control plane and independent product applications are established. Exclusive
-product sessions are implemented locally and pending deployment. Transportation
+1–5 and Admin product-session commit `0d7aef0` are deployed; shared identity, tenant membership,
+product enrollment, roles, and exclusive operational leases are separate foundations. Production
+confirmed that direct `/transportation` access is denied without an active lease while the neutral
+`/` control plane remains accessible. The owner rated the transitional experience B-minus because
+the denied deep link is a dead end and governance still visually combines unrelated products.
+Transportation navigation is alphabetized locally as a small UX stabilization; graceful product
+entry and independent product application extraction remain next. Transportation
 operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
@@ -132,8 +135,10 @@ clears operational data and denies access within 60 seconds. Community remains d
 Community enrollment/session is introduced. Local validation passes: 68 Admin tests, seven static
 product-session/workspace contracts, uncached Admin and Supabase typechecks, Admin lint, formatting,
 diff validation, and the Admin production build. Only the existing Supabase Realtime dynamic-import
-and Next ESLint-plugin warnings remain. Next: owner dry-runs and applies only Migration 5, deploys
-the paired UI, and runs the two-tab production test before product application extraction.
+and Next ESLint-plugin warnings remain. Migration 5 and commit `0d7aef0` are deployed. Production
+confirmed that a direct product route is denied without a lease while governance remains
+accessible; the full two-tab and database-evidence record remains open. Next: stabilize product
+entry UX, then extract the product applications.
 
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase
