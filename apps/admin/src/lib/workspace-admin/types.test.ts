@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { parseWorkspaceAdminSnapshot, rolesForWorkspace } from "./types";
+import {
+  availableOperationalWorkspaces,
+  parseWorkspaceAdminSnapshot,
+  rolesForWorkspace,
+} from "./types";
 
 describe("workspace administration contracts", () => {
   test("parses the read model and ignores unknown roles", () => {
@@ -9,5 +13,34 @@ describe("workspace administration contracts", () => {
   test("keeps Transportation and Community role choices separate", () => {
     expect(rolesForWorkspace("transportation")).toEqual(["transportation_admin"]);
     expect(rolesForWorkspace("community")).not.toContain("transportation_admin");
+  });
+
+  test("shows only enabled products with an assigned role in operational entry", () => {
+    expect(
+      availableOperationalWorkspaces([
+        {
+          workspaceKey: "transportation",
+          displayName: "Transportation",
+          description: "Dispatch",
+          status: "enabled",
+          roles: ["transportation_admin"],
+        },
+        {
+          workspaceKey: "community",
+          displayName: "Community",
+          description: "Community",
+          status: "disabled",
+          roles: [],
+        },
+      ]),
+    ).toEqual([
+      {
+        workspaceKey: "transportation",
+        displayName: "Transportation",
+        description: "Dispatch",
+        status: "enabled",
+        roles: ["transportation_admin"],
+      },
+    ]);
   });
 });

@@ -595,6 +595,33 @@ td span {
   padding: 14px;
 }
 
+.workspace-entry-guidance {
+  background: #fff8e7;
+  border: 1px solid #ead29a;
+  border-radius: 8px;
+  color: #684d0d;
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 14px;
+}
+
+.governance-entry {
+  align-items: center;
+  background: #f7f9fc;
+  border: 1px solid #dde3ea;
+  border-radius: 12px;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 20px 24px;
+}
+
+.governance-entry h2,
+.governance-entry p {
+  margin: 0;
+}
+
 .workspace-governance,
 .workspace-status-controls,
 .workspace-enrollment-list {
@@ -819,6 +846,7 @@ td span {
   }
 
   .workspace-portal-header,
+  .governance-entry,
   .workspace-status-controls article,
   .workspace-enrollment-list article {
     align-items: stretch;

@@ -9,9 +9,12 @@ Separate ESH products operationally while retaining shared platform infrastructu
 product enrollment, roles, and exclusive operational leases are separate foundations. Production
 confirmed that direct `/transportation` access is denied without an active lease while the neutral
 `/` control plane remains accessible. The owner rated the transitional experience B-minus because
-the denied deep link is a dead end and governance still visually combines unrelated products.
-Transportation navigation is alphabetized locally as a small UX stabilization; graceful product
-entry and independent product application extraction remain next. Transportation
+the denied deep link was a dead end and governance still visually combined unrelated products.
+Transportation navigation is deployed alphabetically in commit `a8e7f4c`. Product-entry UX
+stabilization is now implemented locally: operational entry lists only enabled products with an
+assigned role, disabled/unassigned products appear only inside deliberately opened tenant
+governance, and inactive direct links return to `/` with guidance but never create a lease.
+Independent product application extraction remains next. Transportation
 operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
@@ -137,8 +140,11 @@ product-session/workspace contracts, uncached Admin and Supabase typechecks, Adm
 diff validation, and the Admin production build. Only the existing Supabase Realtime dynamic-import
 and Next ESLint-plugin warnings remain. Migration 5 and commit `0d7aef0` are deployed. Production
 confirmed that a direct product route is denied without a lease while governance remains
-accessible; the full two-tab and database-evidence record remains open. Next: stabilize product
-entry UX, then extract the product applications.
+accessible; the full two-tab and database-evidence record remains open. Product-entry UX
+stabilization is implemented locally with all 69 Admin tests passing, plus typecheck, lint, diff
+validation, documentation formatting, and a successful production build (existing Realtime and
+Next ESLint warnings only). Next: deploy and production-test the stabilized entry flow, then
+extract the product applications.
 
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase

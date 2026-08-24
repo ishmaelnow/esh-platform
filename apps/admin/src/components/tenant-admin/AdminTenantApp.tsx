@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
@@ -79,6 +80,7 @@ const views: { key: ViewKey; label: string }[] = [
 ];
 
 export function AdminTenantApp() {
+  const router = useRouter();
   const supabase = useMemo(
     () =>
       typeof window === "undefined"
@@ -212,6 +214,12 @@ export function AdminTenantApp() {
   const hasResolvedTenantContext = resolution !== null;
 
   useEffect(() => {
+    if (!loading && selectedTenant && hasTransportationAccess === false) {
+      router.replace("/?entry=transportation");
+    }
+  }, [hasTransportationAccess, loading, router, selectedTenant]);
+
+  useEffect(() => {
     if (!supabase || !selectedTenant || !hasTransportationAccess) return;
     const tenantId = selectedTenant.tenant.tenant_id;
     const refreshLease = async () => {
@@ -309,7 +317,10 @@ export function AdminTenantApp() {
         ) : null}
         {error ? <StateBlock tone="danger" title="Unable to load" message={error} /> : null}
         {!loading && selectedTenant && hasTransportationAccess === false ? (
-          <StateBlock title="Transportation session is not active" message="Return to the ESH control plane and explicitly enter Transportation. Another product or governance tab may have ended this session." tone="danger" />
+          <StateBlock
+            title="Returning to product entry"
+            message="Transportation requires an explicit operational session. Redirecting you to the ESH control plane."
+          />
         ) : null}
         {hasTransportationAccess !== false && shouldRenderResolvedTenantWorkspace(loading, hasResolvedTenantContext, error !== null) ? (
           <ResolvedWorkspace

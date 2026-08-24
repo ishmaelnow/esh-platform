@@ -33,6 +33,12 @@ export function rolesForWorkspace(workspaceKey: ProductWorkspaceKey) {
   return workspaceKey === "transportation" ? (["transportation_admin"] as const) : (["community_member", "community_admin", "community_moderator", "emergency_publisher"] as const);
 }
 
+export function availableOperationalWorkspaces(workspaces: WorkspaceSummary[]) {
+  return workspaces.filter(
+    (workspace) => workspace.status === "enabled" && workspace.roles.length > 0,
+  );
+}
+
 function parseRoles(value: unknown) { return asArray(value).map(asString).filter((role): role is WorkspaceRoleKey => roleKeys.has(role)); }
 function parseStatus(value: unknown): WorkspaceSummary["status"] { return value === "enabled" || value === "suspended" ? value : "disabled"; }
 function asRecord(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}; }

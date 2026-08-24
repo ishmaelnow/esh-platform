@@ -12,17 +12,23 @@ Admin commit immediately after applying it. Do not manually insert a product-ses
 ## Baseline
 
 1. Sign in as the Yahooemail tenant owner at `https://admin.eshapp.com`.
-2. Confirm Community remains disabled. Do not enable it for this test.
-3. Click **Open Transportation**. Confirm `/transportation` loads normally.
+2. Confirm only enabled, assigned operational products appear under **Your products**.
+3. Confirm disabled Community is absent from the operational product cards. Do not enable it for
+   this test.
+4. If the account is a tenant owner, select **Manage tenant governance** and confirm Community is
+   visible there as disabled, then close governance.
+5. Click **Open Transportation**. Confirm `/transportation` loads normally.
 
 ## Governance invalidates Transportation
 
 1. Leave Transportation open in Tab A.
 2. Open `https://admin.eshapp.com` in Tab B.
 3. Return to Tab A and wait up to 60 seconds.
-4. Expect **Transportation session is not active** and no tenant operational data.
-5. Refreshing or directly reopening `/transportation` must remain denied.
-6. Return to the selector and explicitly click **Open Transportation** to restore access.
+4. Expect Tab A to return to `/` with guidance that Transportation was not opened; no tenant
+   operational data may remain visible.
+5. Directly reopening `/transportation` must return to the product-entry page and must not create a
+   session automatically.
+6. Explicitly click **Open Transportation** to restore access.
 
 This scenario proves the old tab cannot remain operational. Community-to-Transportation switching
 is deferred until an isolated pilot Community enrollment is authorized; do not enable Community

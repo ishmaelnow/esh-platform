@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@esh-platform/supabase";
 import { adminPublicConfig } from "@/lib/config";
@@ -8,6 +9,7 @@ import { loadPrincipalTenantContext } from "@/lib/tenant-admin/context";
 import { AdminSignIn } from "@/components/auth/AdminSignIn";
 
 export function CommunityWorkspaceApp() {
+  const router = useRouter();
   const supabase = useMemo(() => typeof window === "undefined" ? null : createBrowserSupabaseClient(adminPublicConfig.supabase), []);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [tenantName, setTenantName] = useState("");
@@ -55,9 +57,15 @@ export function CommunityWorkspaceApp() {
     return () => window.clearInterval(interval);
   }, [allowed, supabase, tenantId]);
 
+  useEffect(() => {
+    if (signedIn && !checking && (error || !allowed)) {
+      router.replace("/?entry=community");
+    }
+  }, [allowed, checking, error, router, signedIn]);
+
   if (signedIn === false) return <AdminSignIn />;
   if (signedIn === null || checking) return <main className="workspace-portal"><section className="state-block"><h2>Loading Community workspace</h2><p>Verifying explicit workspace enrollment, role, and product session.</p></section></main>;
-  if (error || !allowed) return <main className="workspace-portal"><section className="state-block danger"><h2>Community session is not active</h2><p>{error ?? "Return to the ESH control plane and explicitly enter Community."}</p><Link className="secondary-button" href="/">Return to governance</Link></section></main>;
+  if (error || !allowed) return <main className="workspace-portal"><section className="state-block"><h2>Returning to product entry</h2><p>Community requires an explicit operational session. Redirecting you to the ESH control plane.</p></section></main>;
 
   return <main className="workspace-portal">
     <header className="workspace-portal-header"><div><p className="eyebrow">Community</p><h1>{tenantName} Community Administration</h1><p className="muted">A separate operational workspace for publishing, services, groups, trust, and moderation.</p></div><Link className="secondary-button" href="/">All workspaces</Link></header>

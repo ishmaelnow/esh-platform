@@ -6,7 +6,7 @@ import { createBrowserSupabaseClient, type ProductWorkspaceKey, type SupabaseAut
 import { adminPublicConfig } from "@/lib/config";
 import { loadPrincipalTenantContext, persistActiveTenantPreference } from "@/lib/tenant-admin/context";
 import type { ActiveTenantOption, TenantContextResolution } from "@/lib/tenant-admin/types";
-import { parseWorkspaceAdminSnapshot, rolesForWorkspace, type WorkspaceAdminSnapshot } from "@/lib/workspace-admin/types";
+import { availableOperationalWorkspaces, parseWorkspaceAdminSnapshot, rolesForWorkspace, type WorkspaceAdminSnapshot } from "@/lib/workspace-admin/types";
 import { AdminSignIn } from "@/components/auth/AdminSignIn";
 
 const roleLabels: Record<WorkspaceRoleKey, string> = {
@@ -25,8 +25,17 @@ export function WorkspaceAdminApp() {
   const [snapshot, setSnapshot] = useState<WorkspaceAdminSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [governanceVisible, setGovernanceVisible] = useState(false);
+  const [entryWorkspace, setEntryWorkspace] = useState<ProductWorkspaceKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    const requestedWorkspace = new URLSearchParams(window.location.search).get("entry");
+    if (requestedWorkspace === "transportation" || requestedWorkspace === "community") {
+      setEntryWorkspace(requestedWorkspace);
+    }
+  }, []);
 
   const load = useCallback(async (activeSession: SupabaseAuthSession | null) => {
     if (!supabase || !activeSession?.user) { setResolution(null); setSnapshot(null); setLoading(false); return; }
@@ -58,6 +67,7 @@ export function WorkspaceAdminApp() {
 
   const selectedTenant = resolution?.status === "ready" ? resolution.selectedTenant : null;
   const tenantOptions = resolution && "context" in resolution ? resolution.context.memberships : [];
+  const operationalWorkspaces = snapshot ? availableOperationalWorkspaces(snapshot.workspaces) : [];
 
   async function chooseTenant(tenant: ActiveTenantOption) {
     if (!supabase || !resolution || !("context" in resolution)) return;
@@ -85,7 +95,7 @@ export function WorkspaceAdminApp() {
   return (
     <main className="workspace-portal">
       <header className="workspace-portal-header">
-        <div><p className="eyebrow">ESH Platform</p><h1>Choose a workspace</h1><p className="muted">One tenant, separate operational products and permissions.</p></div>
+        <div><p className="eyebrow">ESH Platform</p><h1>Your products</h1><p className="muted">Choose one operational product. Opening it creates an exclusive product session.</p></div>
         <button className="secondary-button" onClick={() => { if (supabase) void supabase.auth.signOut(); }} type="button">Sign out</button>
       </header>
 
@@ -93,19 +103,19 @@ export function WorkspaceAdminApp() {
       {loading ? <State title="Loading workspaces" message="Resolving explicit product access." /> : null}
       {error ? <State title="Unable to load workspaces" message={error} danger /> : null}
       {notice ? <p className="workspace-notice">{notice}</p> : null}
+      {entryWorkspace ? <p className="workspace-entry-guidance"><strong>{entryWorkspace === "transportation" ? "Transportation" : "Community"} was not opened.</strong> Product links cannot start an operational session. Use an available product below to enter it explicitly.</p> : null}
       {!loading && selectedTenant && snapshot ? <>
-        <section className="workspace-card-grid">
-          {snapshot.workspaces.map((workspace) => {
-            const hasRole = workspace.roles.length > 0;
-            const available = workspace.status === "enabled" && hasRole;
+        {operationalWorkspaces.length > 0 ? <section className="workspace-card-grid">
+          {operationalWorkspaces.map((workspace) => {
             return <article className="workspace-card" key={workspace.workspaceKey}>
               <div><span className={`status-pill ${workspace.status}`}>{workspace.status}</span><h2>{workspace.displayName}</h2><p>{workspace.description || (workspace.workspaceKey === "community" ? "Community publishing, services, groups, and moderation." : "Dispatch, drivers, vehicles, fares, and operations.")}</p></div>
-              <p className="workspace-role-summary">{hasRole ? workspace.roles.map((role) => roleLabels[role]).join(", ") : "No workspace role assigned"}</p>
-              {available ? <button className="primary-button" disabled={busy} onClick={() => void openWorkspace(selectedTenant.tenant.tenant_id, workspace.workspaceKey)} type="button">Open {workspace.displayName}</button> : <button className="secondary-button" disabled type="button">{workspace.status !== "enabled" ? "Workspace not enabled" : "Enrollment required"}</button>}
+              <p className="workspace-role-summary">{workspace.roles.map((role) => roleLabels[role]).join(", ")}</p>
+              <button className="primary-button" disabled={busy} onClick={() => void openWorkspace(selectedTenant.tenant.tenant_id, workspace.workspaceKey)} type="button">Open {workspace.displayName}</button>
             </article>;
           })}
-        </section>
-        {snapshot.canManage ? <WorkspaceGovernance busy={busy} snapshot={snapshot} onMutate={mutate} tenantId={selectedTenant.tenant.tenant_id} /> : null}
+        </section> : <State title="No operational products available" message="You do not currently have an enabled product and assigned operational role for this tenant." />}
+        {snapshot.canManage ? <section className="governance-entry"><div><p className="eyebrow">Tenant control plane</p><h2>Tenant governance</h2><p className="muted">Manage product availability and member access separately from daily operations.</p></div><button className="secondary-button" onClick={() => setGovernanceVisible((current) => !current)} type="button">{governanceVisible ? "Close tenant governance" : "Manage tenant governance"}</button></section> : null}
+        {snapshot.canManage && governanceVisible ? <WorkspaceGovernance busy={busy} snapshot={snapshot} onMutate={mutate} tenantId={selectedTenant.tenant.tenant_id} /> : null}
       </> : null}
     </main>
   );
