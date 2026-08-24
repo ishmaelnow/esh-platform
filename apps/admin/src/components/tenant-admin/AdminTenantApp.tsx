@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
 import { adminPublicConfig } from "@/lib/config";
-import { AdminSignIn } from "@/components/auth/AdminSignIn";
 import {
   adminAuthRefreshMode,
   loadPrincipalTenantContext,
@@ -87,6 +86,7 @@ export function AdminTenantApp() {
     [],
   );
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
   const [resolution, setResolution] = useState<TenantContextResolution | null>(null);
   const [summary, setSummary] = useState<TenantSummary | null>(null);
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
@@ -176,10 +176,12 @@ export function AdminTenantApp() {
         }
 
         setSession(data.session);
+        setAuthResolved(true);
         activeAuthUserId.current = data.session?.user.id ?? null;
         void refresh(data.session);
       })
       .catch((cause: unknown) => {
+        setAuthResolved(true);
         setError(cause instanceof Error ? cause.message : "Unable to load your ESH session.");
         setLoading(false);
       });
@@ -190,6 +192,7 @@ export function AdminTenantApp() {
       const identityChanged = activeAuthUserId.current !== nextUserId;
       activeAuthUserId.current = nextUserId;
       setSession(nextSession);
+      setAuthResolved(true);
       if (refreshMode === "blocking" && identityChanged) {
         setResolution(null);
         setSummary(null);
@@ -210,6 +213,12 @@ export function AdminTenantApp() {
     selectedTenant?.roles.includes("tenant_admin") ||
     false;
   const hasResolvedTenantContext = resolution !== null;
+
+  useEffect(() => {
+    if (authResolved && !session) {
+      window.location.replace(new URL("/", window.location.origin).href);
+    }
+  }, [authResolved, session]);
 
   useEffect(() => {
     if (!loading && selectedTenant && hasTransportationAccess === false) {
@@ -259,8 +268,15 @@ export function AdminTenantApp() {
     }
   }
 
-  if (!session) {
-    return <AdminSignIn />;
+  if (!authResolved || !session) {
+    return (
+      <main className="workspace-portal">
+        <section className="state-block">
+          <h2>Returning to ESH Admin</h2>
+          <p>Sign in from the ESH Admin entry page before opening Transportation.</p>
+        </section>
+      </main>
+    );
   }
 
   return (

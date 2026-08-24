@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@esh-platform/supabase";
 import { adminPublicConfig } from "@/lib/config";
 import { loadPrincipalTenantContext } from "@/lib/tenant-admin/context";
-import { AdminSignIn } from "@/components/auth/AdminSignIn";
 
 export function CommunityWorkspaceApp() {
   const supabase = useMemo(() => typeof window === "undefined" ? null : createBrowserSupabaseClient(adminPublicConfig.supabase), []);
@@ -56,12 +55,18 @@ export function CommunityWorkspaceApp() {
   }, [allowed, supabase, tenantId]);
 
   useEffect(() => {
+    if (signedIn === false && !checking) {
+      window.location.replace(new URL("/", window.location.origin).href);
+    }
+  }, [checking, signedIn]);
+
+  useEffect(() => {
     if (signedIn && !checking && (error || !allowed)) {
       window.location.replace(new URL("/?entry=community", window.location.origin).href);
     }
   }, [allowed, checking, error, signedIn]);
 
-  if (signedIn === false) return <AdminSignIn />;
+  if (signedIn === false) return <main className="workspace-portal"><section className="state-block"><h2>Returning to ESH Admin</h2><p>Sign in from the ESH Admin entry page before opening Community.</p></section></main>;
   if (signedIn === null || checking) return <main className="workspace-portal"><section className="state-block"><h2>Loading Community workspace</h2><p>Verifying explicit workspace enrollment, role, and product session.</p></section></main>;
   if (error || !allowed) return <main className="workspace-portal"><section className="state-block"><h2>Returning to product entry</h2><p>Community requires an explicit operational session. Redirecting you to the ESH control plane.</p></section></main>;
 

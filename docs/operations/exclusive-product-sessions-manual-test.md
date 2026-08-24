@@ -19,6 +19,13 @@ Admin commit immediately after applying it. Do not manually insert a product-ses
    governance** control on this page.
 5. Click **Open Transportation**. Confirm `/transportation` loads normally.
 
+## Signed-out product links
+
+1. Sign out, then directly open `https://admin.eshapp.com/transportation`.
+2. Confirm the browser redirects to `https://admin.eshapp.com/`.
+3. Confirm the ESH Admin sign-in form appears only at the root URL, never under `/transportation`.
+4. Repeat with `/community`; it must also return to the root sign-in entry.
+
 Tenant governance is tested separately at `https://admin.eshapp.com/governance`. Opening it ends an
 active operational session. It must show governance controls only to an active tenant owner or
 platform administrator and must not display product-operation entry cards.

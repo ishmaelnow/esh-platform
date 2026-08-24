@@ -153,6 +153,11 @@ verify the latest Vercel deployment and hard-refresh during the next test. The s
 user-facing Admin authentication copy that named Supabase. Admin sign-in, password reset,
 invitation, Platform Admin, and Transportation fallback messages are now ESH-neutral locally.
 
+Production then exposed a remaining route-boundary gap: signed-out direct navigation rendered the
+shared sign-in form inside `/transportation`. Product routes now resolve authentication and redirect
+signed-out users to `/`; their temporary state only says they are returning to ESH Admin. The same
+boundary is applied to `/community`. Product routes no longer host authentication UI.
+
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase
 typecheck, Supabase lint, and `git diff --check`. The Supabase database linter could not connect
