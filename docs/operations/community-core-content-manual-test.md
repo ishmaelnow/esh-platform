@@ -13,9 +13,11 @@ tenants still have `app.community = false` before authorizing a pilot.
 
 ## Application dark state
 
-Deploy `apps/community` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. A signed-in
-person without an enabled Community enrollment must see **No Community access yet**. They must not
-see tenant data or create a product session.
+Deploy `apps/community` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. A person
+without an enabled Community enrollment must be denied with **This account does not have access to
+ESH Community.** The app must clear its Community-local authentication session and must not expose
+tenant choices, feed, navigation, or post access. Refreshing must return to the Community sign-in
+screen rather than retaining an admitted Community session.
 
 ## Authorized pilot
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   createIsolatedBrowserSupabaseClient,
   type CommunityFeedItem,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
+import { eligibleCommunityRows } from "@/lib/admission";
 import { parseCommunityFeed } from "@/lib/feed";
 
 type CommunityAccess = { tenantId: string; tenantName: string; roles: string[] };
@@ -27,12 +28,13 @@ export default function CommunityHome() {
   const [feed, setFeed] = useState<CommunityFeedItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const admissionAttempt = useRef(0);
 
   const loadAccess = useCallback(async () => {
-    if (!client) return;
+    if (!client) return [];
     const { data, error } = await client.rpc("my_workspace_access");
     if (error) throw error;
-    const communityRows = (data ?? []).filter((row) => row.workspace_key === "community");
+    const communityRows = eligibleCommunityRows(data ?? []);
     const tenantIds = communityRows.map((row) => row.tenant_id);
     const configurationResult = tenantIds.length
       ? await client
@@ -44,14 +46,53 @@ export default function CommunityHome() {
     const tenantNames = new Map(
       (configurationResult.data ?? []).map((row) => [row.tenant_id, row.display_name]),
     );
-    setAccess(
-      communityRows.map((row) => ({
-        tenantId: row.tenant_id,
-        tenantName: tenantNames.get(row.tenant_id) ?? "ESH Community",
-        roles: row.role_keys,
-      })),
-    );
+    return communityRows.map((row) => ({
+      tenantId: row.tenant_id,
+      tenantName: tenantNames.get(row.tenant_id) ?? "ESH Community",
+      roles: row.role_keys,
+    }));
   }, [client]);
+
+  const resolveCommunityAdmission = useCallback(
+    async (nextSession: SupabaseAuthSession | null) => {
+      const attempt = ++admissionAttempt.current;
+      if (!client || !nextSession?.user) {
+        setSession(null);
+        setAccess([]);
+        setActiveTenantId(null);
+        setFeed([]);
+        setAuthResolved(true);
+        return;
+      }
+
+      setAuthResolved(false);
+      try {
+        const nextAccess = await loadAccess();
+        if (attempt !== admissionAttempt.current) return;
+        if (!nextAccess.length) {
+          setSession(null);
+          setAccess([]);
+          setActiveTenantId(null);
+          setFeed([]);
+          setMessage("This account does not have access to ESH Community.");
+          await client.auth.signOut({ scope: "local" });
+          return;
+        }
+        setAccess(nextAccess);
+        setSession(nextSession);
+        setMessage(null);
+      } catch {
+        if (attempt !== admissionAttempt.current) return;
+        setSession(null);
+        setAccess([]);
+        setMessage("ESH Community could not verify access. Please try again.");
+        await client.auth.signOut({ scope: "local" });
+      } finally {
+        if (attempt === admissionAttempt.current) setAuthResolved(true);
+      }
+    },
+    [client, loadAccess],
+  );
 
   const loadFeed = useCallback(
     async (tenantId: string) => {
@@ -71,29 +112,12 @@ export default function CommunityHome() {
       setAuthResolved(true);
       return;
     }
-    void client.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthResolved(true);
-      if (data.session)
-        void loadAccess().catch((error: unknown) =>
-          setMessage(error instanceof Error ? error.message : "Unable to load Community access."),
-        );
-    });
+    void client.auth.getSession().then(({ data }) => void resolveCommunityAdmission(data.session));
     const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setAuthResolved(true);
-      if (nextSession)
-        void loadAccess().catch((error: unknown) =>
-          setMessage(error instanceof Error ? error.message : "Unable to load Community access."),
-        );
-      else {
-        setAccess([]);
-        setActiveTenantId(null);
-        setFeed([]);
-      }
+      void resolveCommunityAdmission(nextSession);
     });
     return () => data.subscription.unsubscribe();
-  }, [client, loadAccess]);
+  }, [client, resolveCommunityAdmission]);
 
   useEffect(() => {
     if (!client || !activeTenantId) return;
@@ -124,15 +148,20 @@ export default function CommunityHome() {
     if (!client) return;
     const form = new FormData(event.currentTarget);
     setBusy(true);
+    setAuthResolved(false);
     setMessage(null);
     try {
       const { error } = await client.auth.signInWithPassword({
         email: formText(form, "email").trim(),
         password: formText(form, "password"),
       });
-      if (error) setMessage(error.message);
+      if (error) {
+        setMessage(error.message);
+        setAuthResolved(true);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to sign in.");
+      setAuthResolved(true);
     } finally {
       setBusy(false);
     }
@@ -214,7 +243,7 @@ export default function CommunityHome() {
           <div>
             <p className="eyebrow">ESH Community</p>
             <h1>Neighbors. Information. Local help.</h1>
-            <p>Sign in with your ESH account to enter an enabled Community.</p>
+            <p>Sign in to your ESH Community account.</p>
           </div>
         </header>
         <form className="community-card form-grid" onSubmit={(event) => void signIn(event)}>
@@ -256,12 +285,7 @@ export default function CommunityHome() {
                 </article>
               ))}
             </div>
-          ) : (
-            <State
-              title="No Community access yet"
-              message="Community must be enabled for your tenant and your membership must be enrolled before it appears here."
-            />
-          )}
+          ) : null}
         </section>
         {message ? <p className="error">{message}</p> : null}
       </main>

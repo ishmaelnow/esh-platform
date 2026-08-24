@@ -33,6 +33,13 @@ production builds, formatting, and diff validation pass. Next: owner dry-run/app
 deploy the Community Vercel project, then authorize and test a narrowly scoped Yahooemail pilot
 separately.
 
+The Community product entrance now enforces the clean product-admission contract locally: shared
+credential infrastructure is not shared product admission. After credential verification, the app
+retains its isolated session only when `my_workspace_access()` returns an enabled Community
+enrollment with an active Community role. Any unrelated Rider, Driver, Transportation, governance,
+or other tenant account is signed out locally, receives a neutral Community denial, and sees no
+Community tenant, navigation, or content. This UX correction requires no additional migration.
+
 The approved product direction is documented in `docs/architecture/community-platform.md`, and the
 ordered database/RLS rollout is documented in
 `docs/architecture/community-platform-migration-plan.md`. Community will reuse neutral ESH identity,

@@ -87,6 +87,18 @@ plane manages tenant/product enrollment but performs no Community operations. Th
 
 ## Authorization Model
 
+### Product-specific admission
+
+Community uses shared ESH identity infrastructure internally, but it is an independent product
+entrance. Successful credential verification alone never establishes a Community application
+session. The Community app must immediately verify an enabled Community workspace, active
+Community enrollment, and active Community role. If no eligible Community access exists, it clears
+its isolated local auth session and returns a neutral product-specific denial. It must not expose
+Community navigation, tenant choices, content, or the person's access to any other ESH product.
+
+Rider, Driver, Transportation, Tenant Governance, and Community admission remain independent even
+when the same person record underlies more than one deliberately enrolled product relationship.
+
 Foundation tenant roles remain `tenant_owner`, `tenant_admin`, and `tenant_member`. Community uses
 domain permissions and profiles rather than introducing a parallel authentication system.
 
