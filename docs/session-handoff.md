@@ -21,6 +21,14 @@ then provision a new Community-only pilot tenant and grant only Community. Trans
 operational follow-ups, native push, Twilio billing ticket `#29018616`, and the Stripe sandbox
 dispute retry remain separate work.
 
+Migration 7 and commit `9bed499` are now deployed. During the new tenant-owner invitation test, an
+existing Rider identity successfully reset its password but `accept_tenant_invitation` failed with
+`column reference "auth_user_id" is ambiguous`. Corrective migration
+`20260824000200_fix_invitation_auth_identity_ambiguity.sql` recompiles the existing acceptance
+function with an explicit PL/pgSQL variable-resolution rule while preserving its email match,
+membership, role, tenant activation, preference, and audit behavior. The invitation remains pending;
+after this corrective migration is applied, reopen the original invitation and accept it.
+
 ## Community Platform checkpoint (2026-08-23)
 
 The first visible Community slice is deployed. `apps/community` uses an
