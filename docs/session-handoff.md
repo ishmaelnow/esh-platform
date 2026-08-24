@@ -4,20 +4,25 @@ Last updated: 2026-08-24
 
 ## Current objective
 
-The independent Transportation Admin application is implemented locally in `apps/transportation`.
-It is a separate deployable with its own route set, metadata, environment template, and isolated
+The independent Transportation Admin application was committed as `c67f3a1` in
+`apps/transportation`. The rollout is now explicitly a parallel interface over the existing proven
+Transportation backend, followed by cutover only after production validation. It is a separate
+deployable with its own route set, metadata, environment template, and isolated
 `esh-transportation-admin-auth` browser session. Authentication alone is rejected unless
 `my_workspace_access()` returns an enabled Transportation enrollment with the explicit
 `transportation_admin` role. Product entry persists the selected tenant and creates the existing
 server-authoritative Transportation lease before loading the proven operations UI. The Admin
 control plane now launches `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` and does not create the product
-lease itself. The standalone app exposes only `/`, `/transportation`, and required
-`/api/tenant-admin/*` handlers; Platform, governance, Community, invitation, reset, and cron routes
-are absent/redirected. No migration is required. Local Admin typecheck, 70 tests, and lint pass;
-Transportation typecheck and production build pass with only the existing Supabase Realtime and
-Next ESLint-plugin warnings. Next: owner commit/push, create the Vercel project rooted at
-`apps/transportation`, configure the documented environment and `transportation.eshapp.com`, deploy
-Admin plus Transportation, then run the dedicated manual test. Keep the legacy Admin
+lease itself. The standalone app exposes only `/` and `/transportation`; its authenticated
+`/api/tenant-admin/*` requests are rewritten to the stable existing Admin backend. Duplicated
+privileged handlers and secret requirements have been removed. Platform, governance, Community,
+invitation, reset, and cron routes are absent/redirected. No migration is required. The rewrite
+correction is currently uncommitted. Transportation typecheck, lint, production build, all 70 Admin
+tests, and diff validation pass; the production route manifest contains only `/` and
+`/transportation`. Next: owner commit/push,
+finish the Vercel project rooted at `apps/transportation`, configure the six documented values and
+`transportation.eshapp.com`, deploy Admin plus Transportation, then run the dedicated manual test.
+Keep the legacy Admin
 `/transportation` route until that production test passes.
 
 Separate ESH products operationally while retaining shared platform infrastructure. Community
@@ -918,9 +923,10 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Owner stages and commits the independent Transportation Admin files, pushes `main`, then creates a
-Vercel project with Root Directory `apps/transportation`. Configure it from
-`apps/transportation/.env.example`, set `NEXT_PUBLIC_ADMIN_SURFACE=transportation`, attach
+Owner stages and commits the parallel-interface correction, pushes `main`, then finishes the Vercel
+project with Root Directory `apps/transportation`. Configure only the six entries in
+`apps/transportation/.env.example`, set `NEXT_PUBLIC_ADMIN_SURFACE=transportation`, set
+`TRANSPORTATION_BACKEND_URL` to the stable existing Admin project origin, attach
 `transportation.eshapp.com`, add that origin to the Mapbox token restrictions, and add
 `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL=https://transportation.eshapp.com` to the existing Admin
 project. Deploy both applications and run

@@ -61,8 +61,9 @@ Implementation order:
 6. Independent `apps/community` member application is deployed with isolated auth, explicit
    product-session entry, chronological feed, and ordinary member posting. Independent
    `apps/transportation` Transportation Admin is implemented with a dedicated deployment/domain,
-   isolated product admission, explicit tenant entry, restricted routes, and reuse of proven
-   operations. Production deployment/testing remains; Community Admin extraction follows.
+   isolated product admission, explicit tenant entry, restricted routes, and a same-origin rewrite
+   to the existing proven Transportation backend. It duplicates neither privileged handlers nor
+   backend secrets. Production deployment/testing remains; Community Admin extraction follows.
 7. Core content, typed records, targets, actions, lifecycle, and search indexes are implemented
    and deployed in `20260823000600_community_core_content.sql`; the independent Community app is
    deployed at `community.eshapp.com` with strict product-specific admission.

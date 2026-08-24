@@ -28,6 +28,7 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `NEXT_PUBLIC_COMMUNITY_APP_URL`   | Community entry                       | `apps/admin/.env.local`        | Admin browser        | Independent Community application origin.                                                                       |
 | `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` | Transportation entry             | Admin and Transportation `.env.local` | Admin, Transportation Admin | Independent Transportation Administration origin. |
 | `NEXT_PUBLIC_ADMIN_SURFACE`       | Admin application boundary            | Admin or Transportation `.env.local` | Admin, Transportation Admin | Use `control-plane` for Admin and `transportation` for the dedicated Transportation deployment. |
+| `TRANSPORTATION_BACKEND_URL`      | Transportation API rewrite            | `apps/transportation/.env.local` | Transportation Admin | Stable origin of the existing proven Admin/Transportation backend; server routing configuration, not a browser secret. |
 | `CRON_SECRET`                     | Scheduled jobs                        | app-specific `.env.local`      | Admin, Rider         | Authenticates Vercel's daily notification and recurring-autopay requests. Use a server-only high-entropy value. |
 | `NOTIFICATION_DELIVERY_URL`       | Transactional notification request    | app-specific `.env.local`      | Rider, Driver        | Exact Admin internal delivery endpoint; server-only despite being a URL.                                        |
 | `NOTIFICATION_DELIVERY_SECRET`    | Transactional notification request    | app-specific `.env.local`      | Admin, Rider, Driver | Shared high-entropy server credential authorizing event-driven outbox delivery. Never expose publicly.          |
@@ -64,9 +65,10 @@ These variables are not production deployment settings:
 
 ## Local setup
 
-Copy `apps/admin/.env.example` to `apps/admin/.env.local`. The independent Transportation Admin
-deployment uses `apps/transportation/.env.example`; its server routes require the corresponding
-Admin production secrets, while its browser session remains isolated. Create equivalent
+Copy `apps/admin/.env.example` to `apps/admin/.env.local`. The parallel Transportation Admin
+interface uses `apps/transportation/.env.example`; it receives only public browser configuration
+and the backend rewrite origin. Privileged Transportation secrets remain exclusively in the
+existing Admin backend while its browser session is isolated. Create equivalent
 `.env.local` files in the other applications using their templates. Values printed by
 `pnpm supabase:status` can be used with the local Supabase stack.
 

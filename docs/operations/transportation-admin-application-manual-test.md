@@ -4,9 +4,11 @@
 
 1. Confirm `git status --short --branch` is clean after the owner commit/push.
 2. Create or select the Vercel project whose Root Directory is `apps/transportation`.
-3. Add every variable from `apps/transportation/.env.example`, using the corresponding production
-   Admin values. Set `NEXT_PUBLIC_ADMIN_SURFACE` exactly to `transportation` and
-   `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` to `https://transportation.eshapp.com`.
+3. Add only the six variables from `apps/transportation/.env.example`. Set
+   `NEXT_PUBLIC_ADMIN_SURFACE` exactly to `transportation`, set
+   `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` to `https://transportation.eshapp.com`, and set
+   `TRANSPORTATION_BACKEND_URL` to the existing Admin Vercel project's stable production origin.
+   Do not copy service-role, Stripe, Resend, notification, VAPID-private, or Twilio secrets.
 4. Add the same `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` to the existing Admin Vercel project.
 5. Add `https://transportation.eshapp.com` to the Mapbox public-token URL restrictions.
 6. Deploy both projects and attach `transportation.eshapp.com` to Transportation Admin. There is no
@@ -30,6 +32,10 @@
 Using clearly identified production test data, verify read access to Dashboard, Dispatch, Drivers,
 Service Areas, Vehicles, and Notifications. Perform one safe reversible update, refresh, and verify
 it persisted. Restore the original value. Do not leave a Driver online or a booking unfinished.
+
+In browser Network tools, inspect one `/api/tenant-admin/*` operation. The browser-facing request
+must remain same-origin on `transportation.eshapp.com`, return successfully through the rewrite, and
+contain the ESH bearer credential. No privileged backend secret may appear in the browser.
 
 Confirm these paths redirect to the Transportation entry page and expose no corresponding UI:
 
@@ -64,3 +70,4 @@ Confirm these paths redirect to the Transportation entry page and expose no corr
 - Opening Transportation creates its exclusive product lease on its own origin.
 - A superseding product/governance context invalidates the stale Transportation tab.
 - Existing Transportation operations and Admin governance remain functional and visually separate.
+- The parallel interface uses the existing backend and contains no duplicated privileged handlers or secrets.
