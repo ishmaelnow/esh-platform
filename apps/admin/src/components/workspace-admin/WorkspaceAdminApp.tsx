@@ -17,7 +17,7 @@ const roleLabels: Record<WorkspaceRoleKey, string> = {
   emergency_publisher: "Emergency publisher",
 };
 
-export function WorkspaceAdminApp() {
+export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "governance" }) {
   const router = useRouter();
   const supabase = useMemo(() => typeof window === "undefined" ? null : createBrowserSupabaseClient(adminPublicConfig.supabase), []);
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
@@ -25,7 +25,6 @@ export function WorkspaceAdminApp() {
   const [snapshot, setSnapshot] = useState<WorkspaceAdminSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [governanceVisible, setGovernanceVisible] = useState(false);
   const [entryWorkspace, setEntryWorkspace] = useState<ProductWorkspaceKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -95,7 +94,7 @@ export function WorkspaceAdminApp() {
   return (
     <main className="workspace-portal">
       <header className="workspace-portal-header">
-        <div><p className="eyebrow">ESH Platform</p><h1>Your products</h1><p className="muted">Choose one operational product. Opening it creates an exclusive product session.</p></div>
+        {mode === "entry" ? <div><p className="eyebrow">ESH Platform</p><h1>Your products</h1><p className="muted">Choose one operational product. Opening it creates an exclusive product session.</p></div> : <div><p className="eyebrow">ESH Control Plane</p><h1>Tenant governance</h1><p className="muted">Manage product availability and member access outside daily operations.</p></div>}
         <button className="secondary-button" onClick={() => { if (supabase) void supabase.auth.signOut(); }} type="button">Sign out</button>
       </header>
 
@@ -103,9 +102,9 @@ export function WorkspaceAdminApp() {
       {loading ? <State title="Loading workspaces" message="Resolving explicit product access." /> : null}
       {error ? <State title="Unable to load workspaces" message={error} danger /> : null}
       {notice ? <p className="workspace-notice">{notice}</p> : null}
-      {entryWorkspace ? <p className="workspace-entry-guidance"><strong>{entryWorkspace === "transportation" ? "Transportation" : "Community"} was not opened.</strong> Product links cannot start an operational session. Use an available product below to enter it explicitly.</p> : null}
+      {mode === "entry" && entryWorkspace ? <p className="workspace-entry-guidance"><strong>Your {entryWorkspace === "transportation" ? "Transportation" : "Community"} session is not active.</strong> Returning you to product entry. Select an available product below to start a new session.</p> : null}
       {!loading && selectedTenant && snapshot ? <>
-        {operationalWorkspaces.length > 0 ? <section className="workspace-card-grid">
+        {mode === "entry" && operationalWorkspaces.length > 0 ? <section className="workspace-card-grid">
           {operationalWorkspaces.map((workspace) => {
             return <article className="workspace-card" key={workspace.workspaceKey}>
               <div><span className={`status-pill ${workspace.status}`}>{workspace.status}</span><h2>{workspace.displayName}</h2><p>{workspace.description || (workspace.workspaceKey === "community" ? "Community publishing, services, groups, and moderation." : "Dispatch, drivers, vehicles, fares, and operations.")}</p></div>
@@ -113,9 +112,10 @@ export function WorkspaceAdminApp() {
               <button className="primary-button" disabled={busy} onClick={() => void openWorkspace(selectedTenant.tenant.tenant_id, workspace.workspaceKey)} type="button">Open {workspace.displayName}</button>
             </article>;
           })}
-        </section> : <State title="No operational products available" message="You do not currently have an enabled product and assigned operational role for this tenant." />}
-        {snapshot.canManage ? <section className="governance-entry"><div><p className="eyebrow">Tenant control plane</p><h2>Tenant governance</h2><p className="muted">Manage product availability and member access separately from daily operations.</p></div><button className="secondary-button" onClick={() => setGovernanceVisible((current) => !current)} type="button">{governanceVisible ? "Close tenant governance" : "Manage tenant governance"}</button></section> : null}
-        {snapshot.canManage && governanceVisible ? <WorkspaceGovernance busy={busy} snapshot={snapshot} onMutate={mutate} tenantId={selectedTenant.tenant.tenant_id} /> : null}
+        </section> : null}
+        {mode === "entry" && operationalWorkspaces.length === 0 ? <State title="No operational products available" message="You do not currently have an enabled product and assigned operational role for this tenant." /> : null}
+        {mode === "governance" && snapshot.canManage ? <WorkspaceGovernance busy={busy} snapshot={snapshot} onMutate={mutate} tenantId={selectedTenant.tenant.tenant_id} /> : null}
+        {mode === "governance" && !snapshot.canManage ? <State title="Tenant governance unavailable" message="An active tenant owner or platform administrator role is required." danger /> : null}
       </> : null}
     </main>
   );

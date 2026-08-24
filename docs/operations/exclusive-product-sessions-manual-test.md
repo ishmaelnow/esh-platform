@@ -15,9 +15,13 @@ Admin commit immediately after applying it. Do not manually insert a product-ses
 2. Confirm only enabled, assigned operational products appear under **Your products**.
 3. Confirm disabled Community is absent from the operational product cards. Do not enable it for
    this test.
-4. If the account is a tenant owner, select **Manage tenant governance** and confirm Community is
-   visible there as disabled, then close governance.
+4. Confirm there is no product enablement, enrollment, role-management, or **Manage tenant
+   governance** control on this page.
 5. Click **Open Transportation**. Confirm `/transportation` loads normally.
+
+Tenant governance is tested separately at `https://admin.eshapp.com/governance`. Opening it ends an
+active operational session. It must show governance controls only to an active tenant owner or
+platform administrator and must not display product-operation entry cards.
 
 ## Governance invalidates Transportation
 

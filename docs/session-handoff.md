@@ -12,8 +12,9 @@ confirmed that direct `/transportation` access is denied without an active lease
 the denied deep link was a dead end and governance still visually combined unrelated products.
 Transportation navigation is deployed alphabetically in commit `a8e7f4c`. Product-entry UX
 stabilization is now implemented locally: operational entry lists only enabled products with an
-assigned role, disabled/unassigned products appear only inside deliberately opened tenant
-governance, and inactive direct links return to `/` with guidance but never create a lease.
+assigned role and contains no governance controls; tenant governance is isolated at `/governance`;
+inactive direct links perform a real redirect to `/` with guidance but never create a lease; and
+the product/control-plane layouts use the available viewport width without oversized side gutters.
 Independent product application extraction remains next. Transportation
 operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.

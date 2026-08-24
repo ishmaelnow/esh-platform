@@ -36,11 +36,12 @@ The current Admin selector explicitly enters a product before navigating. Loadin
 enters governance and ends any operational lease. Transportation and Community routes never create
 a lease automatically, preventing old bookmarks or stale tabs from stealing product context.
 
-The selector exposes only enabled products for which the current person has an operational role.
-Disabled or unassigned products remain available only inside the deliberately opened tenant
-governance panel. Direct or stale product links return to the control plane with an explanation;
-the user must still select **Open** to create a new lease. This makes denial recoverable without
-weakening explicit entry or silently changing product context.
+The product-entry route exposes only enabled products for which the current person has an
+operational role. It contains no product enablement, enrollment, or governance controls. Those
+controls live on the separate `/governance` control-plane route, which is restricted to tenant
+owners and platform administrators. Direct or stale product links return to product entry with an
+explanation; the user must still select **Open** to create a new lease. This makes denial
+recoverable without weakening explicit entry or silently changing product context.
 
 The final independent product applications will retain these RPC contracts and heartbeat behavior.
 They may use different domains and deployments, but exclusivity remains person-wide and

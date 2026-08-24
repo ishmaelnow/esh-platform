@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
@@ -80,7 +79,6 @@ const views: { key: ViewKey; label: string }[] = [
 ];
 
 export function AdminTenantApp() {
-  const router = useRouter();
   const supabase = useMemo(
     () =>
       typeof window === "undefined"
@@ -215,9 +213,9 @@ export function AdminTenantApp() {
 
   useEffect(() => {
     if (!loading && selectedTenant && hasTransportationAccess === false) {
-      router.replace("/?entry=transportation");
+      window.location.replace(new URL("/?entry=transportation", window.location.origin).href);
     }
-  }, [hasTransportationAccess, loading, router, selectedTenant]);
+  }, [hasTransportationAccess, loading, selectedTenant]);
 
   useEffect(() => {
     if (!supabase || !selectedTenant || !hasTransportationAccess) return;
@@ -308,7 +306,7 @@ export function AdminTenantApp() {
       </aside>
 
       <section className="workspace">
-        <Link className="secondary-button workspace-back-link" href="/">All workspaces</Link>
+        <Link className="secondary-button workspace-back-link" href="/">Exit Transportation</Link>
         {loading && !hasResolvedTenantContext ? (
           <StateBlock
             title="Loading tenant context"
