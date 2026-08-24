@@ -12,14 +12,14 @@ export function AdminSignIn() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setMessage(null);
-    if (!supabase) { setMessage("Supabase client is not ready."); return; }
+    if (!supabase) { setMessage("Sign-in service is not ready. Please try again."); return; }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setMessage(error.message);
   }
 
   return <main className="signed-out-shell"><section className="sign-in-panel">
     <p className="eyebrow">Admin</p><h1>Sign in</h1>
-    <p className="muted">Use an existing Supabase Auth account with an active tenant membership.</p>
+    <p className="muted">Use your ESH account with access to this tenant.</p>
     <form className="form-grid" onSubmit={(event) => void handleSubmit(event)}>
       <label>Email<input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></label>
       <label>Password<input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /></label>

@@ -237,7 +237,7 @@ function InvitationAuthForm({
     setMessage(null);
 
     if (!supabase) {
-      setMessage("Supabase client is not ready.");
+      setMessage("Account service is not ready. Please try again.");
       return;
     }
 
@@ -336,7 +336,7 @@ function InvitationAuthForm({
       </label>
       {message ? <p className="form-error">{message}</p> : null}
       {resetRequested ? (
-        <p className="notice">Password reset email sent by Supabase Auth.</p>
+        <p className="notice">Password reset email sent. Check your inbox to continue.</p>
       ) : null}
       <button className="primary-button" type="submit">
         Sign in and continue

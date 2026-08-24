@@ -180,7 +180,7 @@ export function AdminTenantApp() {
         void refresh(data.session);
       })
       .catch((cause: unknown) => {
-        setError(cause instanceof Error ? cause.message : "Unable to load the Supabase session.");
+        setError(cause instanceof Error ? cause.message : "Unable to load your ESH session.");
         setLoading(false);
       });
 

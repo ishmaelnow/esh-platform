@@ -102,7 +102,7 @@ export function PlatformAdminApp() {
         void refresh(data.session);
       })
       .catch((cause: unknown) => {
-        setError(cause instanceof Error ? cause.message : "Unable to load the Supabase session.");
+        setError(cause instanceof Error ? cause.message : "Unable to load your ESH session.");
         setLoading(false);
       });
 
@@ -194,7 +194,7 @@ function PlatformSignedOutState() {
     setMessage(null);
 
     if (!supabase) {
-      setMessage("Supabase client is not ready.");
+      setMessage("Sign-in service is not ready. Please try again.");
       return;
     }
 
@@ -211,7 +211,7 @@ function PlatformSignedOutState() {
         <p className="eyebrow">Platform</p>
         <h1>Sign in</h1>
         <p className="muted">
-          Use a Supabase Auth account with platform_owner or platform_admin access.
+          Use an ESH account with Platform Owner or Platform Administrator access.
         </p>
         <form className="form-grid" onSubmit={(event) => void handleSubmit(event)}>
           <label>

@@ -26,7 +26,7 @@ export function PasswordResetApp() {
     setMessage(null);
 
     if (!supabase) {
-      setMessage("Supabase client is not ready.");
+      setMessage("Account service is not ready. Please try again.");
       return;
     }
 
@@ -60,8 +60,7 @@ export function PasswordResetApp() {
         <p className="eyebrow">Password Reset</p>
         <h1>Set New Password</h1>
         <p className="muted">
-          Supabase Auth verifies the reset link. After setting a new password, continue to the
-          invitation.
+          After setting a new password, continue to your ESH invitation.
         </p>
 
         {complete ? (

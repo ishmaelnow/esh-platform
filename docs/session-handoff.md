@@ -147,6 +147,12 @@ validation, documentation formatting, and a successful production build (existin
 Next ESLint warnings only). Next: deploy and production-test the stabilized entry flow, then
 extract the product applications.
 
+Product-entry separation is deployed in commits `fe2fe75` and `0a6f0a0`. A production review still
+displayed the obsolete inactive-session copy, although that text no longer exists in current source;
+verify the latest Vercel deployment and hard-refresh during the next test. The same review found
+user-facing Admin authentication copy that named Supabase. Admin sign-in, password reset,
+invitation, Platform Admin, and Transportation fallback messages are now ESH-neutral locally.
+
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase
 typecheck, Supabase lint, and `git diff --check`. The Supabase database linter could not connect
