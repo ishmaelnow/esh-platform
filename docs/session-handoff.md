@@ -29,6 +29,16 @@ function with an explicit PL/pgSQL variable-resolution rule while preserving its
 membership, role, tenant activation, preference, and audit behavior. The invitation remains pending;
 after this corrective migration is applied, reopen the original invitation and accept it.
 
+Migration 8 applied successfully and invitation acceptance advanced to the preference update, where
+the legacy `active_tenant_preferences_prevent_tenant_id_change` trigger rejected switching the
+existing Rider identity from its previous tenant preference to the newly accepted tenant. This is a
+foundation guard defect: `active_tenant_preferences` is intentionally one mutable pointer per person,
+while the person owner must remain immutable. Corrective migration
+`20260824000300_fix_active_tenant_preference_switch.sql` removes only the invalid tenant immutability
+trigger and replaces it with a person-identity guard. The composite membership/tenant foreign key and
+existing RLS continue enforcing a valid active membership. Invitation acceptance was transactional,
+so the invitation remains pending for retry after Migration 9.
+
 ## Community Platform checkpoint (2026-08-23)
 
 The first visible Community slice is deployed. `apps/community` uses an
