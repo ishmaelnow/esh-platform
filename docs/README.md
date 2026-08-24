@@ -9,6 +9,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Community Platform Migration Plan](./architecture/community-platform-migration-plan.md)
 - [Community Authorization Foundation Manual Test](./operations/community-authorization-foundation-manual-test.md)
 - [Community Places, Organizations, and Trust Manual Test](./operations/community-places-organizations-trust-manual-test.md)
+- [Community Core Content Manual Test](./operations/community-core-content-manual-test.md)
 - [Product Workspace Foundation](./architecture/product-workspace-foundation.md)
 - [Exclusive Operational Product Sessions](./architecture/exclusive-product-sessions.md)
 - [ADR 0002: Separate Product Applications on Shared Platform Infrastructure](./adr/0002-separate-product-applications-shared-platform.md)

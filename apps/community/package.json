@@ -1,0 +1,18 @@
+{
+  "name": "@esh-platform/community",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3003",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@esh-platform/supabase": "workspace:*",
+    "next": "15.5.20",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  }
+}

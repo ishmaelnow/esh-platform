@@ -2412,6 +2412,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_operate_community: { Args: { target_tenant_id: string }; Returns: boolean }
+      can_read_community_content: { Args: { target_tenant_id: string; target_content_id: string }; Returns: boolean }
+      community_feed_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      create_my_community_post: { Args: { target_tenant_id: string; title_value: string; body_value: string; visibility_value?: string }; Returns: string }
       enter_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: Json }
       refresh_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: boolean }
       leave_my_product_session: { Args: { reason_value?: string }; Returns: boolean }

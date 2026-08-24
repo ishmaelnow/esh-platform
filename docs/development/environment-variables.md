@@ -6,32 +6,33 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 
 ## Application runtime
 
-| Variable                        | Required by         | Local file              | Vercel project(s)    | Purpose                                                                      |
-| ------------------------------- | ------------------- | ----------------------- | -------------------- | ---------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | All apps            | each app's `.env.local` | Admin, Rider, Driver | Supabase project URL exposed to the browser.                                 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All apps            | each app's `.env.local` | Admin, Rider, Driver | Publishable/anonymous Supabase key; authorization remains enforced by RLS.   |
-| `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Live trip maps     | each app's `.env.local` | Admin, Rider, Driver | Public, URL-restricted Mapbox token for permanent geocoding, road routes, maps, and ETA. |
-| `MAPBOX_DOWNLOADS_TOKEN` | Native Mapbox SDK download | Codemagic `mapbox_credentials` | Driver Android only | Secret `sk.` token with `Downloads:Read`; never expose or commit. |
-| `MAPBOX_ACCESS_TOKEN` | Native Mapbox runtime | Codemagic `mapbox_credentials` | Driver Android only | Public `pk.` token without web-only URL restrictions, injected into the native resource at build time. |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Privileged server routes | app-specific `.env.local` | Admin, Rider | Privileged server-side Supabase access. Never expose to client code.         |
-| `STRIPE_SECRET_KEY`            | Rider payment and Admin refund routes | app-specific `.env.local` | Rider, Admin | Creates Stripe Checkout Sessions and authorized pre-trip refunds. Server-only. |
-| `STRIPE_WEBHOOK_SECRET`        | Rider Stripe webhook | `apps/rider/.env.local` | Rider only | Verifies Stripe webhook signatures. Server-only. |
-| `STRIPE_SECRET_KEY`            | Driver payout routes | `apps/driver/.env.local` | Driver only | Creates Stripe Express accounts and hosted links. Server-only. |
-| `STRIPE_CONNECT_WEBHOOK_SECRET` | Driver Connect webhook | `apps/driver/.env.local` | Driver only | Verifies connected-account events. Distinct from the Rider webhook secret. |
-| `RESEND_API_KEY`                | Admin server routes | `apps/admin/.env.local` | Admin only           | Sends invitation and password-reset email.                                   |
-| `RESEND_WEBHOOK_SECRET`         | Admin webhook route | `apps/admin/.env.local` | Admin only           | Verifies Resend webhook signatures.                                          |
-| `INVITATION_FROM_EMAIL`         | Admin server routes | `apps/admin/.env.local` | Admin only           | Verified Resend sender, for example `ESH Platform <onboarding@example.com>`. |
-| `INVITATION_BASE_URL`           | Admin server routes | `apps/admin/.env.local` | Admin only           | Public Admin origin used in invitation links; no trailing path.              |
-| `TENANT_ADMIN_BASE_URL`         | Admin server routes | `apps/admin/.env.local` | Admin only           | Public tenant/Rider origin used after invitation acceptance.                 |
-| `NEXT_PUBLIC_DRIVER_APP_URL`    | Admin notifications | `apps/admin/.env.local` | Admin only           | Driver portal origin used in driver notification links.                      |
-| `NEXT_PUBLIC_RIDER_APP_URL`     | Admin notifications | `apps/admin/.env.local` | Admin only           | Rider portal origin used in Rider trip notification links.                   |
-| `CRON_SECRET`                   | Scheduled jobs | app-specific `.env.local` | Admin, Rider | Authenticates Vercel's daily notification and recurring-autopay requests. Use a server-only high-entropy value. |
-| `NOTIFICATION_DELIVERY_URL`     | Transactional notification request | app-specific `.env.local` | Rider, Driver | Exact Admin internal delivery endpoint; server-only despite being a URL. |
-| `NOTIFICATION_DELIVERY_SECRET`  | Transactional notification request | app-specific `.env.local` | Admin, Rider, Driver | Shared high-entropy server credential authorizing event-driven outbox delivery. Never expose publicly. |
-| `VAPID_SUBJECT` | Web Push identity | `apps/admin/.env.local` | Admin only | Contact URI such as `mailto:support@eshapp.com` used to identify the push sender. |
-| `VAPID_PUBLIC_KEY` | Web Push sender | `apps/admin/.env.local` | Admin only | Public half of the Web Push VAPID pair used by the sender. |
-| `VAPID_PRIVATE_KEY` | Web Push sender | `apps/admin/.env.local` | Admin only | Private VAPID signing key. Never expose to browsers or other apps. |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Browser push subscription | app-specific `.env.local` | Rider, Driver | Public VAPID key used only to create browser subscriptions. |
+| Variable                          | Required by                           | Local file                     | Vercel project(s)    | Purpose                                                                                                         |
+| --------------------------------- | ------------------------------------- | ------------------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`        | All apps                              | each app's `.env.local`        | Admin, Rider, Driver | Supabase project URL exposed to the browser.                                                                    |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | All apps                              | each app's `.env.local`        | Admin, Rider, Driver | Publishable/anonymous Supabase key; authorization remains enforced by RLS.                                      |
+| `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Live trip maps                        | each app's `.env.local`        | Admin, Rider, Driver | Public, URL-restricted Mapbox token for permanent geocoding, road routes, maps, and ETA.                        |
+| `MAPBOX_DOWNLOADS_TOKEN`          | Native Mapbox SDK download            | Codemagic `mapbox_credentials` | Driver Android only  | Secret `sk.` token with `Downloads:Read`; never expose or commit.                                               |
+| `MAPBOX_ACCESS_TOKEN`             | Native Mapbox runtime                 | Codemagic `mapbox_credentials` | Driver Android only  | Public `pk.` token without web-only URL restrictions, injected into the native resource at build time.          |
+| `SUPABASE_SERVICE_ROLE_KEY`       | Privileged server routes              | app-specific `.env.local`      | Admin, Rider         | Privileged server-side Supabase access. Never expose to client code.                                            |
+| `STRIPE_SECRET_KEY`               | Rider payment and Admin refund routes | app-specific `.env.local`      | Rider, Admin         | Creates Stripe Checkout Sessions and authorized pre-trip refunds. Server-only.                                  |
+| `STRIPE_WEBHOOK_SECRET`           | Rider Stripe webhook                  | `apps/rider/.env.local`        | Rider only           | Verifies Stripe webhook signatures. Server-only.                                                                |
+| `STRIPE_SECRET_KEY`               | Driver payout routes                  | `apps/driver/.env.local`       | Driver only          | Creates Stripe Express accounts and hosted links. Server-only.                                                  |
+| `STRIPE_CONNECT_WEBHOOK_SECRET`   | Driver Connect webhook                | `apps/driver/.env.local`       | Driver only          | Verifies connected-account events. Distinct from the Rider webhook secret.                                      |
+| `RESEND_API_KEY`                  | Admin server routes                   | `apps/admin/.env.local`        | Admin only           | Sends invitation and password-reset email.                                                                      |
+| `RESEND_WEBHOOK_SECRET`           | Admin webhook route                   | `apps/admin/.env.local`        | Admin only           | Verifies Resend webhook signatures.                                                                             |
+| `INVITATION_FROM_EMAIL`           | Admin server routes                   | `apps/admin/.env.local`        | Admin only           | Verified Resend sender, for example `ESH Platform <onboarding@example.com>`.                                    |
+| `INVITATION_BASE_URL`             | Admin server routes                   | `apps/admin/.env.local`        | Admin only           | Public Admin origin used in invitation links; no trailing path.                                                 |
+| `TENANT_ADMIN_BASE_URL`           | Admin server routes                   | `apps/admin/.env.local`        | Admin only           | Public tenant/Rider origin used after invitation acceptance.                                                    |
+| `NEXT_PUBLIC_DRIVER_APP_URL`      | Admin notifications                   | `apps/admin/.env.local`        | Admin only           | Driver portal origin used in driver notification links.                                                         |
+| `NEXT_PUBLIC_RIDER_APP_URL`       | Admin notifications                   | `apps/admin/.env.local`        | Admin only           | Rider portal origin used in Rider trip notification links.                                                      |
+| `NEXT_PUBLIC_COMMUNITY_APP_URL`   | Community entry                       | `apps/admin/.env.local`        | Admin browser        | Independent Community application origin.                                                                       |
+| `CRON_SECRET`                     | Scheduled jobs                        | app-specific `.env.local`      | Admin, Rider         | Authenticates Vercel's daily notification and recurring-autopay requests. Use a server-only high-entropy value. |
+| `NOTIFICATION_DELIVERY_URL`       | Transactional notification request    | app-specific `.env.local`      | Rider, Driver        | Exact Admin internal delivery endpoint; server-only despite being a URL.                                        |
+| `NOTIFICATION_DELIVERY_SECRET`    | Transactional notification request    | app-specific `.env.local`      | Admin, Rider, Driver | Shared high-entropy server credential authorizing event-driven outbox delivery. Never expose publicly.          |
+| `VAPID_SUBJECT`                   | Web Push identity                     | `apps/admin/.env.local`        | Admin only           | Contact URI such as `mailto:support@eshapp.com` used to identify the push sender.                               |
+| `VAPID_PUBLIC_KEY`                | Web Push sender                       | `apps/admin/.env.local`        | Admin only           | Public half of the Web Push VAPID pair used by the sender.                                                      |
+| `VAPID_PRIVATE_KEY`               | Web Push sender                       | `apps/admin/.env.local`        | Admin only           | Private VAPID signing key. Never expose to browsers or other apps.                                              |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`    | Browser push subscription             | app-specific `.env.local`      | Rider, Driver        | Public VAPID key used only to create browser subscriptions.                                                     |
 
 `NODE_ENV` is set by Next.js/Vercel and normally should not be entered manually. `NEXT_PUBLIC_APP_ENV` (`local`, `staging`, or `production`) and `LOG_LEVEL` (`debug`, `info`, `warn`, or `error`) have defaults but may be set per app when shared configuration consumes them.
 
@@ -64,6 +65,7 @@ These variables are not production deployment settings:
 Copy `apps/admin/.env.example` to `apps/admin/.env.local`. Create equivalent `.env.local` files in `apps/rider` and `apps/driver` containing the two public Supabase variables. Values printed by `pnpm supabase:status` can be used with the local Supabase stack.
 
 Keep production and preview values separate in Vercel. In particular, preview `INVITATION_BASE_URL` and `TENANT_ADMIN_BASE_URL` must point to stable, authorized origins if invitation flows are tested there; do not put secrets in `vercel.json`.
+
 ## Twilio transactional SMS
 
 Use the same Twilio account in all three server runtimes. Admin requires `TWILIO_ACCOUNT_SID`,

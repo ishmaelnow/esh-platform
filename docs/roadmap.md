@@ -58,9 +58,11 @@ Implementation order:
    locally: only enabled and assigned products appear operationally, tenant governance is isolated
    at `/governance`, and inactive direct links return to explicit product entry instead of leaving
    a dead end. Production deployment and the revised two-tab validation remain.
-6. Extract Community Admin and Transportation Admin into separately deployed applications, with
-   independent domains, environment contracts, releases, and product-specific navigation.
-7. Core content, typed records, targets, actions, lifecycle, and search indexes.
+6. Independent `apps/community` member application is implemented locally with isolated auth,
+   explicit product-session entry, chronological feed, and ordinary member posting. Community
+   Admin and Transportation Admin extraction remain.
+7. Core content, typed records, targets, actions, lifecycle, and search indexes are implemented
+   locally in `20260823000600_community_core_content.sql`; production dark rollout and pilot remain.
 8. Comments, reactions, private media, blocks, mutes, and reports.
 9. Service directory and provider-owned listings.
 10. Moderation and submit-for-announcement workflow.

@@ -6,6 +6,7 @@ import type { Database, Tables, TablesInsert, TablesUpdate } from "./database.ty
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./database.types";
 export type {
   CommunityArea,
+  CommunityFeedItem,
   CommunityGroup,
   CommunityGroupMembership,
   CommunityOrganization,

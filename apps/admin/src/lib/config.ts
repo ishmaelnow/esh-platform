@@ -1,4 +1,5 @@
 export type AdminPublicConfig = {
+  communityAppUrl: string;
   supabase: {
     url: string;
     anonKey: string;
@@ -43,6 +44,7 @@ type AdminConfigKey =
   | "TENANT_ADMIN_BASE_URL"
   | "NEXT_PUBLIC_DRIVER_APP_URL"
   | "NEXT_PUBLIC_RIDER_APP_URL"
+  | "NEXT_PUBLIC_COMMUNITY_APP_URL"
   | "VAPID_SUBJECT"
   | "VAPID_PUBLIC_KEY"
   | "VAPID_PRIVATE_KEY"
@@ -53,6 +55,7 @@ type AdminConfigKey =
 let cachedServerConfig: AdminServerConfig | null = null;
 
 export const adminPublicConfig = readAdminPublicConfig({
+  NEXT_PUBLIC_COMMUNITY_APP_URL: process.env.NEXT_PUBLIC_COMMUNITY_APP_URL,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 });
@@ -82,10 +85,17 @@ function readAdminPublicConfig(source: AdminConfigSource): AdminPublicConfig {
   const errors: string[] = [];
   const supabaseUrl = requiredUrl(source, "NEXT_PUBLIC_SUPABASE_URL", errors);
   const supabaseAnonKey = requiredString(source, "NEXT_PUBLIC_SUPABASE_ANON_KEY", errors);
+  const communityAppUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_COMMUNITY_APP_URL",
+    "https://community.eshapp.com",
+    errors,
+  );
 
   assertNoConfigErrors(errors);
 
   return {
+    communityAppUrl,
     supabase: {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
@@ -114,6 +124,12 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
     "https://rider.eshapp.com",
     errors,
   );
+  const communityAppUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_COMMUNITY_APP_URL",
+    "https://community.eshapp.com",
+    errors,
+  );
   const vapidSubject = source.VAPID_SUBJECT?.trim() ?? "";
   const vapidPublicKey = source.VAPID_PUBLIC_KEY?.trim() ?? "";
   const vapidPrivateKey = source.VAPID_PRIVATE_KEY?.trim() ?? "";
@@ -124,6 +140,7 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
   assertNoConfigErrors(errors);
 
   return {
+    communityAppUrl,
     supabase: {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,

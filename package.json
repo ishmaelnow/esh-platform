@@ -12,6 +12,7 @@
     "dev:admin": "pnpm --filter @esh-platform/admin dev",
     "dev:rider": "pnpm --filter @esh-platform/rider dev",
     "dev:driver": "pnpm --filter @esh-platform/driver dev",
+    "dev:community": "pnpm --filter @esh-platform/community dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint",

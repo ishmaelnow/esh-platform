@@ -13,6 +13,12 @@ tenants.
 This document is an architecture contract. It does not create SQL, application routes, storage
 buckets, delivery jobs, or production configuration.
 
+The first member-facing slice is implemented in `apps/community` with Migration
+`20260823000600_community_core_content.sql`. It provides explicit Community-session entry, a
+chronological feed, and controlled ordinary member posts. Announcements, events, alerts, help,
+opportunities, resources, targeting, and structured actions have normalized schema foundations but
+do not yet expose broad authoring UI. Community remains tenant-disabled until a deliberate pilot.
+
 ## Existing Platform Primitives
 
 Community reuses:

@@ -21,6 +21,18 @@ Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain s
 
 ## Community Platform checkpoint (2026-08-23)
 
+The first visible Community slice is implemented locally. New deployable `apps/community` uses an
+isolated ESH session, lists only enabled Community enrollments, explicitly enters the Community
+product lease, renders a chronological feed, and creates ordinary public/member posts through a
+narrow RPC. Migration `20260823000600_community_core_content.sql` adds the shared envelope, typed
+post/announcement/event/alert/help/opportunity/resource records, tenant-aware targets, structured
+actions, search/lifecycle indexes, RLS, typed-kind guards, and a display-safe feed RPC. It creates no
+tenant content, does not enable Community, and grants clients no direct writes. Local
+Community/Admin/Supabase typechecks, lint, Community unit tests, the static migration contract, both
+production builds, formatting, and diff validation pass. Next: owner dry-run/apply only Migration 6,
+deploy the Community Vercel project, then authorize and test a narrowly scoped Yahooemail pilot
+separately.
+
 The approved product direction is documented in `docs/architecture/community-platform.md`, and the
 ordered database/RLS rollout is documented in
 `docs/architecture/community-platform-migration-plan.md`. Community will reuse neutral ESH identity,

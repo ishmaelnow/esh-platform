@@ -107,3 +107,15 @@ export type CommunityProviderVerification = {
   effective_at: string | null;
   expires_at: string | null;
 };
+
+export type CommunityFeedItem = {
+  contentId: string;
+  contentKind: string;
+  title: string | null;
+  body: string;
+  visibility: "public" | "members" | "group_private";
+  priority: "normal" | "important" | "urgent" | "emergency";
+  publishedAt: string;
+  expiresAt: string | null;
+  authorName: string;
+};
