@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   availableOperationalWorkspaces,
+  eligibleTransportationRows,
   parseWorkspaceAdminSnapshot,
   rolesForWorkspace,
 } from "./types";
@@ -82,5 +83,26 @@ describe("workspace administration contracts", () => {
         roles: ["transportation_admin"],
       },
     ]);
+  });
+
+  test("admits only explicit Transportation administrators", () => {
+    expect(
+      eligibleTransportationRows([
+        {
+          tenant_id: "transport-tenant",
+          membership_id: "transport-member",
+          workspace_key: "transportation",
+          workspace_name: "Transportation",
+          role_keys: ["transportation_admin"],
+        },
+        {
+          tenant_id: "community-tenant",
+          membership_id: "community-member",
+          workspace_key: "community",
+          workspace_name: "Community",
+          role_keys: ["community_admin"],
+        },
+      ]),
+    ).toHaveLength(1);
   });
 });

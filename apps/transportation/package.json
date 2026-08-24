@@ -1,0 +1,24 @@
+{
+  "name": "@esh-platform/transportation-admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3004",
+    "lint": "eslint . ../admin/src/components/tenant-admin ../admin/src/components/workspace-admin/TransportationEntryApp.tsx ../admin/src/lib",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@esh-platform/config": "workspace:*",
+    "@esh-platform/logger": "workspace:*",
+    "@esh-platform/maps": "workspace:*",
+    "@esh-platform/stripe": "workspace:*",
+    "@esh-platform/supabase": "workspace:*",
+    "next": "15.5.20",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": { "@types/web-push": "^3.6.4" }
+}

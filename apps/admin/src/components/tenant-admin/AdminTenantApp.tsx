@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
+import { type SupabaseAuthSession } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
-import { adminPublicConfig } from "@/lib/config";
+import { createAdminBrowserClient } from "@/lib/browser-client";
 import {
   adminAuthRefreshMode,
   loadPrincipalTenantContext,
@@ -82,7 +82,7 @@ export function AdminTenantApp() {
     () =>
       typeof window === "undefined"
         ? null
-        : createBrowserSupabaseClient(adminPublicConfig.supabase),
+        : createAdminBrowserClient(),
     [],
   );
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
@@ -272,8 +272,8 @@ export function AdminTenantApp() {
     return (
       <main className="workspace-portal">
         <section className="state-block">
-          <h2>Returning to ESH Admin</h2>
-          <p>Sign in from the ESH Admin entry page before opening Transportation.</p>
+          <h2>Returning to Transportation</h2>
+          <p>Sign in from the Transportation Administration entry page.</p>
         </section>
       </main>
     );
@@ -333,7 +333,7 @@ export function AdminTenantApp() {
         {!loading && selectedTenant && hasTransportationAccess === false ? (
           <StateBlock
             title="Returning to product entry"
-            message="Transportation requires an explicit operational session. Redirecting you to the ESH control plane."
+            message="Transportation requires an explicit operational session. Redirecting you to Transportation entry."
           />
         ) : null}
         {hasTransportationAccess !== false && shouldRenderResolvedTenantWorkspace(loading, hasResolvedTenantContext, error !== null) ? (
@@ -4188,7 +4188,7 @@ type LedgerSummary = {
 };
 
 function PricingPanel({ canManageTenant, onRefresh, summary }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary }) {
-  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const supabase = useMemo(() => createAdminBrowserClient(), []);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const settings = summary.pricingSettings;
@@ -4287,7 +4287,7 @@ function PricingPanel({ canManageTenant, onRefresh, summary }: { canManageTenant
 }
 
 function LedgerPanel({ canManageTenant, onRefresh, summary }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary }) {
-  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const supabase = useMemo(() => createAdminBrowserClient(), []);
   const [ledger, setLedger] = useState<LedgerSummary | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -4483,7 +4483,7 @@ function LedgerPanel({ canManageTenant, onRefresh, summary }: { canManageTenant:
 
 function ReputationPanel({ canManageTenant, onRefresh, summary }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary }) {
   const [message, setMessage] = useState<string | null>(null);
-  const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const supabase = useMemo(() => createAdminBrowserClient(), []);
   const average = summary.tripRatings.length
     ? (summary.tripRatings.reduce((sum, rating) => sum + rating.overall_rating, 0) / summary.tripRatings.length).toFixed(1)
     : "—";

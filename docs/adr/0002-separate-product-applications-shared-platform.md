@@ -41,8 +41,10 @@ product, explicit enrollment, product role/capability, and the active product-se
 
 The deployed `/`, `/transportation`, and `/community` routes inside the current Admin application
 are a transitional validation surface. They proved enrollment and role separation but are not the
-final combined operating experience. They remain until separate deployments and session enforcement
-are production-verified, then `admin.eshapp.com` is reduced to governance only.
+final combined operating experience. The independent Transportation Admin application now exists
+at `apps/transportation`; its legacy Admin route remains only as a rollback surface until the
+separate deployment passes production validation. Community Admin extraction follows, after which
+`admin.eshapp.com` is reduced to governance only.
 
 ## Consequences
 

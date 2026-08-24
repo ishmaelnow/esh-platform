@@ -3,6 +3,7 @@ import type {
   ProductEntitlementStatus,
   ProductWorkspaceKey,
   WorkspaceRoleKey,
+  MyWorkspaceAccess,
 } from "@esh-platform/supabase";
 
 export type WorkspaceSummary = {
@@ -103,6 +104,14 @@ export function rolesForWorkspace(workspaceKey: ProductWorkspaceKey) {
 export function availableOperationalWorkspaces(workspaces: WorkspaceSummary[]) {
   return workspaces.filter(
     (workspace) => workspace.status === "enabled" && workspace.roles.length > 0,
+  );
+}
+
+export function eligibleTransportationRows(rows: readonly MyWorkspaceAccess[]) {
+  return rows.filter(
+    (row) =>
+      row.workspace_key === "transportation" &&
+      row.role_keys.includes("transportation_admin"),
   );
 }
 

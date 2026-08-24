@@ -212,6 +212,40 @@ importers:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
 
+  apps/transportation:
+    dependencies:
+      '@esh-platform/config':
+        specifier: workspace:*
+        version: link:../../packages/platform/config
+      '@esh-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/platform/logger
+      '@esh-platform/maps':
+        specifier: workspace:*
+        version: link:../../packages/platform/maps
+      '@esh-platform/stripe':
+        specifier: workspace:*
+        version: link:../../packages/platform/stripe
+      '@esh-platform/supabase':
+        specifier: workspace:*
+        version: link:../../packages/platform/supabase
+      next:
+        specifier: 15.5.20
+        version: 15.5.20(@playwright/test@1.54.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+      web-push:
+        specifier: ^3.6.7
+        version: 3.6.7
+    devDependencies:
+      '@types/web-push':
+        specifier: ^3.6.4
+        version: 3.6.4
+
   packages/platform/auth: {}
 
   packages/platform/config:

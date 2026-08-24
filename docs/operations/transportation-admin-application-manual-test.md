@@ -1,0 +1,66 @@
+# Transportation Admin Application — Production Manual Test
+
+## Deployment Gate
+
+1. Confirm `git status --short --branch` is clean after the owner commit/push.
+2. Create or select the Vercel project whose Root Directory is `apps/transportation`.
+3. Add every variable from `apps/transportation/.env.example`, using the corresponding production
+   Admin values. Set `NEXT_PUBLIC_ADMIN_SURFACE` exactly to `transportation` and
+   `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` to `https://transportation.eshapp.com`.
+4. Add the same `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` to the existing Admin Vercel project.
+5. Add `https://transportation.eshapp.com` to the Mapbox public-token URL restrictions.
+6. Deploy both projects and attach `transportation.eshapp.com` to Transportation Admin. There is no
+   Supabase migration for this feature.
+
+## Product-Specific Authentication
+
+1. Sign out of all ESH products and open `https://transportation.eshapp.com`.
+2. Confirm the page says **ESH Transportation** and **Transportation Administration**. It must not
+   show Platform, tenant-governance, Community, Rider, or Driver navigation.
+3. Sign in using an account that is only a Community member/admin. Expect:
+   `This account does not have access to ESH Transportation Administration.`
+4. Refresh. Confirm the denied account was not retained as signed in.
+5. Sign in using the Yahooemail Transportation administrator.
+6. Confirm only enabled Transportation tenants with an explicit `transportation_admin` role appear.
+7. Choose Yahooemail and click **Open Transportation**. Confirm the browser moves to
+   `/transportation` and the familiar Transportation tabs load in alphabetical order.
+
+## Operational Regression
+
+Using clearly identified production test data, verify read access to Dashboard, Dispatch, Drivers,
+Service Areas, Vehicles, and Notifications. Perform one safe reversible update, refresh, and verify
+it persisted. Restore the original value. Do not leave a Driver online or a booking unfinished.
+
+Confirm these paths redirect to the Transportation entry page and expose no corresponding UI:
+
+- `/platform`
+- `/governance`
+- `/community`
+- `/invite/example`
+- `/api/cron/driver-notifications`
+
+## Product Exclusivity
+
+1. Leave Transportation operations open in Tab A.
+2. In Tab B, enter Community or open `https://admin.eshapp.com/governance` using the same person.
+3. Return to Tab A and wait up to 60 seconds.
+4. Confirm operational data clears and the browser returns to Transportation entry.
+5. Confirm reopening `/transportation` does not silently create a new lease.
+6. Explicitly open Transportation again and confirm access returns.
+
+## Control-Plane Regression
+
+1. Open `https://admin.eshapp.com` in a fresh browser context.
+2. Confirm it remains ESH Platform/Tenant governance and does not display Transportation operations.
+3. Click the Transportation product launcher. Confirm it opens
+   `https://transportation.eshapp.com`, not `/transportation` on the Admin domain.
+4. Confirm Platform and tenant governance remain available only on `admin.eshapp.com`.
+
+## Pass Criteria
+
+- Transportation has a dedicated domain, deployment, sign-in, storage namespace, and route set.
+- Shared credentials alone do not grant Transportation admission.
+- Explicit enrollment and `transportation_admin` role are required.
+- Opening Transportation creates its exclusive product lease on its own origin.
+- A superseding product/governance context invalidates the stale Transportation tab.
+- Existing Transportation operations and Admin governance remain functional and visually separate.

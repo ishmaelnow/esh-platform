@@ -15,6 +15,8 @@ This directory contains project documentation that should evolve with the codeba
 - [Platform Product Entitlements Manual Test](./operations/platform-product-entitlements-manual-test.md)
 - [Exclusive Operational Product Sessions](./architecture/exclusive-product-sessions.md)
 - [ADR 0002: Separate Product Applications on Shared Platform Infrastructure](./adr/0002-separate-product-applications-shared-platform.md)
+- [Independent Transportation Admin Application](./architecture/transportation-admin-application.md)
+- [Transportation Admin Application Manual Test](./operations/transportation-admin-application-manual-test.md)
 - [Product Workspace Foundation Manual Test](./operations/product-workspace-foundation-manual-test.md)
 - [Admin Workspace Selector Manual Test](./operations/admin-workspace-selector-manual-test.md)
 - [Exclusive Product Sessions Manual Test](./operations/exclusive-product-sessions-manual-test.md)

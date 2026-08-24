@@ -4,6 +4,22 @@ Last updated: 2026-08-24
 
 ## Current objective
 
+The independent Transportation Admin application is implemented locally in `apps/transportation`.
+It is a separate deployable with its own route set, metadata, environment template, and isolated
+`esh-transportation-admin-auth` browser session. Authentication alone is rejected unless
+`my_workspace_access()` returns an enabled Transportation enrollment with the explicit
+`transportation_admin` role. Product entry persists the selected tenant and creates the existing
+server-authoritative Transportation lease before loading the proven operations UI. The Admin
+control plane now launches `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` and does not create the product
+lease itself. The standalone app exposes only `/`, `/transportation`, and required
+`/api/tenant-admin/*` handlers; Platform, governance, Community, invitation, reset, and cron routes
+are absent/redirected. No migration is required. Local Admin typecheck, 70 tests, and lint pass;
+Transportation typecheck and production build pass with only the existing Supabase Realtime and
+Next ESLint-plugin warnings. Next: owner commit/push, create the Vercel project rooted at
+`apps/transportation`, configure the documented environment and `transportation.eshapp.com`, deploy
+Admin plus Transportation, then run the dedicated manual test. Keep the legacy Admin
+`/transportation` route until that production test passes.
+
 Separate ESH products operationally while retaining shared platform infrastructure. Community
 Migrations 1–6, exclusive product sessions, stabilized product entry, the independent Community app
 at `community.eshapp.com`, and strict Community product admission are deployed through commit
@@ -902,11 +918,13 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Owner dry-run only `20260823000200_community_places_organizations_trust.sql`, apply it after review,
-push the implementation, and run
-`docs/operations/community-places-organizations-trust-manual-test.md`. Keep all Community
-capabilities disabled and do not create production Community records until the dark-rollout check
-passes.
+Owner stages and commits the independent Transportation Admin files, pushes `main`, then creates a
+Vercel project with Root Directory `apps/transportation`. Configure it from
+`apps/transportation/.env.example`, set `NEXT_PUBLIC_ADMIN_SURFACE=transportation`, attach
+`transportation.eshapp.com`, add that origin to the Mapbox token restrictions, and add
+`NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL=https://transportation.eshapp.com` to the existing Admin
+project. Deploy both applications and run
+`docs/operations/transportation-admin-application-manual-test.md`. There is no Supabase migration.
 
 Native release `1.0.1` remains operationally validated for Rider and Driver. Keep Android signing
 credentials outside Git and independently backed up. Native APNs/FCM push remains unimplemented,

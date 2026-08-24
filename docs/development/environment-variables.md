@@ -8,9 +8,9 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 
 | Variable                          | Required by                           | Local file                     | Vercel project(s)    | Purpose                                                                                                         |
 | --------------------------------- | ------------------------------------- | ------------------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`        | All apps                              | each app's `.env.local`        | Admin, Rider, Driver | Supabase project URL exposed to the browser.                                                                    |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | All apps                              | each app's `.env.local`        | Admin, Rider, Driver | Publishable/anonymous Supabase key; authorization remains enforced by RLS.                                      |
-| `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Live trip maps                        | each app's `.env.local`        | Admin, Rider, Driver | Public, URL-restricted Mapbox token for permanent geocoding, road routes, maps, and ETA.                        |
+| `NEXT_PUBLIC_SUPABASE_URL`        | All apps                              | each app's `.env.local`        | All applications     | Supabase project URL exposed to the browser.                                                                    |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | All apps                              | each app's `.env.local`        | All applications     | Publishable/anonymous Supabase key; authorization remains enforced by RLS.                                      |
+| `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Live trip maps                        | each app's `.env.local`        | Transportation Admin, Admin, Rider, Driver | Public, URL-restricted Mapbox token for permanent geocoding, road routes, maps, and ETA. |
 | `MAPBOX_DOWNLOADS_TOKEN`          | Native Mapbox SDK download            | Codemagic `mapbox_credentials` | Driver Android only  | Secret `sk.` token with `Downloads:Read`; never expose or commit.                                               |
 | `MAPBOX_ACCESS_TOKEN`             | Native Mapbox runtime                 | Codemagic `mapbox_credentials` | Driver Android only  | Public `pk.` token without web-only URL restrictions, injected into the native resource at build time.          |
 | `SUPABASE_SERVICE_ROLE_KEY`       | Privileged server routes              | app-specific `.env.local`      | Admin, Rider         | Privileged server-side Supabase access. Never expose to client code.                                            |
@@ -26,6 +26,8 @@ For Vercel, define values in each Vercel project's **Settings → Environment Va
 | `NEXT_PUBLIC_DRIVER_APP_URL`      | Admin notifications                   | `apps/admin/.env.local`        | Admin only           | Driver portal origin used in driver notification links.                                                         |
 | `NEXT_PUBLIC_RIDER_APP_URL`       | Admin notifications                   | `apps/admin/.env.local`        | Admin only           | Rider portal origin used in Rider trip notification links.                                                      |
 | `NEXT_PUBLIC_COMMUNITY_APP_URL`   | Community entry                       | `apps/admin/.env.local`        | Admin browser        | Independent Community application origin.                                                                       |
+| `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` | Transportation entry             | Admin and Transportation `.env.local` | Admin, Transportation Admin | Independent Transportation Administration origin. |
+| `NEXT_PUBLIC_ADMIN_SURFACE`       | Admin application boundary            | Admin or Transportation `.env.local` | Admin, Transportation Admin | Use `control-plane` for Admin and `transportation` for the dedicated Transportation deployment. |
 | `CRON_SECRET`                     | Scheduled jobs                        | app-specific `.env.local`      | Admin, Rider         | Authenticates Vercel's daily notification and recurring-autopay requests. Use a server-only high-entropy value. |
 | `NOTIFICATION_DELIVERY_URL`       | Transactional notification request    | app-specific `.env.local`      | Rider, Driver        | Exact Admin internal delivery endpoint; server-only despite being a URL.                                        |
 | `NOTIFICATION_DELIVERY_SECRET`    | Transactional notification request    | app-specific `.env.local`      | Admin, Rider, Driver | Shared high-entropy server credential authorizing event-driven outbox delivery. Never expose publicly.          |
@@ -62,7 +64,11 @@ These variables are not production deployment settings:
 
 ## Local setup
 
-Copy `apps/admin/.env.example` to `apps/admin/.env.local`. Create equivalent `.env.local` files in `apps/rider` and `apps/driver` containing the two public Supabase variables. Values printed by `pnpm supabase:status` can be used with the local Supabase stack.
+Copy `apps/admin/.env.example` to `apps/admin/.env.local`. The independent Transportation Admin
+deployment uses `apps/transportation/.env.example`; its server routes require the corresponding
+Admin production secrets, while its browser session remains isolated. Create equivalent
+`.env.local` files in the other applications using their templates. Values printed by
+`pnpm supabase:status` can be used with the local Supabase stack.
 
 Keep production and preview values separate in Vercel. In particular, preview `INVITATION_BASE_URL` and `TENANT_ADMIN_BASE_URL` must point to stable, authorized origins if invitation flows are tested there; do not put secrets in `vercel.json`.
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createBrowserSupabaseClient,
@@ -31,7 +30,6 @@ const roleLabels: Record<WorkspaceRoleKey, string> = {
 };
 
 export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "governance" }) {
-  const router = useRouter();
   const supabase = useMemo(
     () =>
       typeof window === "undefined"
@@ -136,24 +134,13 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
     }
   }
 
-  async function openWorkspace(tenantId: string, workspaceKey: ProductWorkspaceKey) {
+  function openWorkspace(workspaceKey: ProductWorkspaceKey) {
     if (!supabase) return;
     if (workspaceKey === "community") {
       window.location.assign(adminPublicConfig.communityAppUrl);
       return;
     }
-    setBusy(true);
-    setError(null);
-    const { error: enterError } = await supabase.rpc("enter_my_product_session", {
-      target_tenant_id: tenantId,
-      target_workspace_key: workspaceKey,
-    });
-    if (enterError) {
-      setError(enterError.message);
-      setBusy(false);
-      return;
-    }
-    router.push("/transportation");
+    window.location.assign(adminPublicConfig.transportationAdminUrl);
   }
 
   if (!session) return <AdminSignIn />;
@@ -247,7 +234,7 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
                       className="primary-button"
                       disabled={busy}
                       onClick={() =>
-                        void openWorkspace(selectedTenant.tenant.tenant_id, workspace.workspaceKey)
+                        void openWorkspace(workspace.workspaceKey)
                       }
                       type="button"
                     >

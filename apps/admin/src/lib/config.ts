@@ -1,5 +1,7 @@
 export type AdminPublicConfig = {
   communityAppUrl: string;
+  surface: "control-plane" | "transportation";
+  transportationAdminUrl: string;
   supabase: {
     url: string;
     anonKey: string;
@@ -45,6 +47,8 @@ type AdminConfigKey =
   | "NEXT_PUBLIC_DRIVER_APP_URL"
   | "NEXT_PUBLIC_RIDER_APP_URL"
   | "NEXT_PUBLIC_COMMUNITY_APP_URL"
+  | "NEXT_PUBLIC_ADMIN_SURFACE"
+  | "NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL"
   | "VAPID_SUBJECT"
   | "VAPID_PUBLIC_KEY"
   | "VAPID_PRIVATE_KEY"
@@ -55,7 +59,9 @@ type AdminConfigKey =
 let cachedServerConfig: AdminServerConfig | null = null;
 
 export const adminPublicConfig = readAdminPublicConfig({
+  NEXT_PUBLIC_ADMIN_SURFACE: process.env.NEXT_PUBLIC_ADMIN_SURFACE,
   NEXT_PUBLIC_COMMUNITY_APP_URL: process.env.NEXT_PUBLIC_COMMUNITY_APP_URL,
+  NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL: process.env.NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 });
@@ -91,11 +97,20 @@ function readAdminPublicConfig(source: AdminConfigSource): AdminPublicConfig {
     "https://community.eshapp.com",
     errors,
   );
+  const transportationAdminUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL",
+    "https://transportation.eshapp.com",
+    errors,
+  );
+  const surface = optionalAdminSurface(source, errors);
 
   assertNoConfigErrors(errors);
 
   return {
     communityAppUrl,
+    surface,
+    transportationAdminUrl,
     supabase: {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
@@ -130,6 +145,13 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
     "https://community.eshapp.com",
     errors,
   );
+  const transportationAdminUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL",
+    "https://transportation.eshapp.com",
+    errors,
+  );
+  const surface = optionalAdminSurface(source, errors);
   const vapidSubject = source.VAPID_SUBJECT?.trim() ?? "";
   const vapidPublicKey = source.VAPID_PUBLIC_KEY?.trim() ?? "";
   const vapidPrivateKey = source.VAPID_PRIVATE_KEY?.trim() ?? "";
@@ -141,6 +163,8 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
 
   return {
     communityAppUrl,
+    surface,
+    transportationAdminUrl,
     supabase: {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
@@ -169,6 +193,13 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
       messagingServiceSid: twilioMessagingServiceSid,
     },
   };
+}
+
+function optionalAdminSurface(source: AdminConfigSource, errors: string[]) {
+  const value = source.NEXT_PUBLIC_ADMIN_SURFACE?.trim() || "control-plane";
+  if (value === "control-plane" || value === "transportation") return value;
+  errors.push("NEXT_PUBLIC_ADMIN_SURFACE must be control-plane or transportation");
+  return "control-plane";
 }
 
 function optionalUrl(
