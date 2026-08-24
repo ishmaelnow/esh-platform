@@ -1,6 +1,6 @@
 import type { SupabaseAuthSession } from "@esh-platform/supabase";
 import type { MutationResult } from "@/lib/tenant-admin/types";
-import type { TenantProvisioningPayload } from "./types";
+import type { ProductEntitlementActionPayload, TenantProvisioningPayload } from "./types";
 
 export async function provisionTenant(
   session: SupabaseAuthSession,
@@ -59,6 +59,13 @@ export async function setTenantCapability(
     capabilityKey,
     enabled,
   });
+}
+
+export async function setTenantProductEntitlement(
+  session: SupabaseAuthSession,
+  payload: ProductEntitlementActionPayload,
+): Promise<MutationResult> {
+  return postPlatformMutation(session, "/api/platform-admin/entitlements", payload);
 }
 
 async function postPlatformMutation(

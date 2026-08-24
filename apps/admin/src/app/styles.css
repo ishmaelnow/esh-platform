@@ -262,6 +262,10 @@ select:disabled {
   gap: 18px;
 }
 
+.compact-stack {
+  gap: 8px;
+}
+
 .metric-grid {
   display: grid;
   gap: 14px;

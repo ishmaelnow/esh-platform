@@ -1,6 +1,15 @@
 export type ProductWorkspaceKey = "transportation" | "community";
+export type ProductEntitlementStatus = "granted" | "suspended" | "revoked";
 export type TenantWorkspaceStatus = "disabled" | "enabled" | "suspended";
 export type WorkspaceEnrollmentStatus = "active" | "suspended" | "removed" | "expired";
+export type TenantProductEntitlement = {
+  tenantId: string;
+  workspaceKey: ProductWorkspaceKey;
+  status: ProductEntitlementStatus;
+  grantSource: "platform_admin" | "migration" | "system";
+  grantedAt: string;
+  reason: string;
+};
 export type WorkspaceRoleKey =
   | "transportation_admin"
   | "community_member"

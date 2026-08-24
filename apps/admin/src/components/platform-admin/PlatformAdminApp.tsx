@@ -12,12 +12,17 @@ import {
   closeProvisioningTenant,
   provisionTenant,
   resendTenantInvitation,
+  setTenantProductEntitlement,
 } from "@/lib/platform-admin/mutations";
 import { setTenantCapability } from "@/lib/platform-admin/mutations";
 import { loadPlatformAdminSummary } from "@/lib/platform-admin/queries";
 import type { PlatformAdminSummary, TenantProvisioningPayload } from "@/lib/platform-admin/types";
 
 const platformProvisioningDraftKey = "esh-platform:platform-provisioning-draft";
+const platformProducts = [
+  { workspaceKey: "transportation", displayName: "Transportation" },
+  { workspaceKey: "community", displayName: "Community" },
+] as const;
 
 const defaultTenantProvisioningPayload: TenantProvisioningPayload = {
   displayName: "",
@@ -368,6 +373,34 @@ function PlatformProvisioningPanel({
     onRefresh();
   }
 
+  async function handleEntitlement(
+    tenantId: string,
+    workspaceKey: "transportation" | "community",
+    status: "granted" | "suspended" | "revoked",
+  ) {
+    const reason = window
+      .prompt(`Reason to set ${workspaceKey} product entitlement to ${status}`)
+      ?.trim();
+    if (!reason) return;
+
+    const actionKey = `entitlement:${tenantId}:${workspaceKey}:${status}`;
+    setActionMessage(null);
+    setActiveAction(actionKey);
+    const result = await setTenantProductEntitlement(session, {
+      tenantId,
+      workspaceKey,
+      status,
+      reason,
+    });
+    setActiveAction(null);
+    setActionMessage(
+      result.ok
+        ? (result.message ?? `${workspaceKey} entitlement is now ${status}.`)
+        : result.message,
+    );
+    onRefresh();
+  }
+
   return (
     <section className="content-stack">
       <header className="workspace-header">
@@ -387,7 +420,7 @@ function PlatformProvisioningPanel({
       <section className="panel">
         <PanelHeader
           title="Create tenant"
-          description="Creates only Tenant Foundation records. Transportation modules remain out of scope."
+          description="Creates a neutral tenant and first-owner invitation. Grant products separately after provisioning."
         />
         <form className="settings-grid" onSubmit={(event) => void handleSubmit(event)}>
           <PlatformTextInput
@@ -476,6 +509,7 @@ function PlatformProvisioningPanel({
                 <tr>
                   <th>Tenant</th>
                   <th>Status</th>
+                  <th>Product entitlements</th>
                   <th>Capabilities</th>
                   <th>Pending owner invitation</th>
                   <th>Email delivery</th>
@@ -500,6 +534,76 @@ function PlatformProvisioningPanel({
                         <span className={`status-pill ${item.tenant.status}`}>
                           {item.tenant.status}
                         </span>
+                      </td>
+                      <td>
+                        <div className="content-stack compact-stack">
+                          {platformProducts.map((product) => {
+                            const entitlement = item.entitlements.find(
+                              ({ workspace_key }) => workspace_key === product.workspaceKey,
+                            );
+                            const status = entitlement?.status ?? "not granted";
+                            return (
+                              <div className="row-actions" key={product.workspaceKey}>
+                                <span>
+                                  {product.displayName}: {status}
+                                </span>
+                                {status !== "granted" ? (
+                                  <button
+                                    className="secondary-button"
+                                    disabled={activeAction?.startsWith(
+                                      `entitlement:${item.tenant.tenant_id}:${product.workspaceKey}:`,
+                                    )}
+                                    onClick={() =>
+                                      void handleEntitlement(
+                                        item.tenant.tenant_id,
+                                        product.workspaceKey,
+                                        "granted",
+                                      )
+                                    }
+                                    type="button"
+                                  >
+                                    {status === "suspended" ? "Restore" : "Grant"}
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="secondary-button"
+                                    disabled={activeAction?.startsWith(
+                                      `entitlement:${item.tenant.tenant_id}:${product.workspaceKey}:`,
+                                    )}
+                                    onClick={() =>
+                                      void handleEntitlement(
+                                        item.tenant.tenant_id,
+                                        product.workspaceKey,
+                                        "suspended",
+                                      )
+                                    }
+                                    type="button"
+                                  >
+                                    Suspend
+                                  </button>
+                                )}
+                                {entitlement && status !== "revoked" ? (
+                                  <button
+                                    className="secondary-button"
+                                    disabled={activeAction?.startsWith(
+                                      `entitlement:${item.tenant.tenant_id}:${product.workspaceKey}:`,
+                                    )}
+                                    onClick={() =>
+                                      void handleEntitlement(
+                                        item.tenant.tenant_id,
+                                        product.workspaceKey,
+                                        "revoked",
+                                      )
+                                    }
+                                    type="button"
+                                  >
+                                    Revoke
+                                  </button>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </td>
                       <td>
                         {item.capabilities.filter(({ enabled }) => enabled).length} enabled

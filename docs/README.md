@@ -11,6 +11,8 @@ This directory contains project documentation that should evolve with the codeba
 - [Community Places, Organizations, and Trust Manual Test](./operations/community-places-organizations-trust-manual-test.md)
 - [Community Core Content Manual Test](./operations/community-core-content-manual-test.md)
 - [Product Workspace Foundation](./architecture/product-workspace-foundation.md)
+- [Platform Product Entitlements](./architecture/platform-product-entitlements.md)
+- [Platform Product Entitlements Manual Test](./operations/platform-product-entitlements-manual-test.md)
 - [Exclusive Operational Product Sessions](./architecture/exclusive-product-sessions.md)
 - [ADR 0002: Separate Product Applications on Shared Platform Infrastructure](./adr/0002-separate-product-applications-shared-platform.md)
 - [Product Workspace Foundation Manual Test](./operations/product-workspace-foundation-manual-test.md)

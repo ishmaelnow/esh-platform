@@ -300,7 +300,9 @@ function WorkspaceGovernance({
   tenantId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
-  const [workspaceKey, setWorkspaceKey] = useState<ProductWorkspaceKey>("community");
+  const [workspaceKey, setWorkspaceKey] = useState<ProductWorkspaceKey>(
+    snapshot.workspaces[0]?.workspaceKey ?? "community",
+  );
   const [membershipId, setMembershipId] = useState(snapshot.memberships[0]?.membershipId ?? "");
   const [roleKey, setRoleKey] = useState<WorkspaceRoleKey>("community_member");
   const [reason, setReason] = useState("");
@@ -315,10 +317,14 @@ function WorkspaceGovernance({
   );
 
   useEffect(() => {
+    if (!snapshot.workspaces.some((item) => item.workspaceKey === workspaceKey)) {
+      setWorkspaceKey(snapshot.workspaces[0]?.workspaceKey ?? "community");
+      return;
+    }
     const roles = rolesForWorkspace(workspaceKey);
     setRoleKey(roles[0]);
     setMembershipId(candidates[0]?.membershipId ?? "");
-  }, [workspaceKey, snapshot.enrollments.length]);
+  }, [workspaceKey, snapshot.enrollments.length, snapshot.workspaces]);
 
   async function submitEnrollment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -347,139 +353,152 @@ function WorkspaceGovernance({
           </p>
         </div>
       </div>
-      <div className="workspace-status-controls">
-        {snapshot.workspaces.map((item) => (
-          <article key={item.workspaceKey}>
-            <div>
-              <strong>{item.displayName}</strong>
-              <span className={`status-pill ${item.status}`}>{item.status}</span>
-            </div>
-            {item.workspaceKey === "community" && item.status !== "enabled" ? (
-              <p className="muted">
-                Enable all required Community capabilities in Transportation → Capabilities before
-                enabling this workspace.
-              </p>
-            ) : null}
-            <button
-              className="secondary-button"
-              disabled={busy}
-              onClick={() => {
-                const nextStatus = item.status === "enabled" ? "suspended" : "enabled";
-                const reasonValue = window
-                  .prompt(`Reason to ${nextStatus} ${item.displayName}`)
-                  ?.trim();
-                if (reasonValue)
-                  void onMutate(
-                    () =>
-                      supabase.rpc("set_tenant_workspace_status", {
-                        target_tenant_id: tenantId,
-                        target_workspace_key: item.workspaceKey,
-                        target_status: nextStatus,
-                        reason_value: reasonValue,
-                      }),
-                    `${item.displayName} is now ${nextStatus}.`,
-                  );
-              }}
-              type="button"
-            >
-              {item.status === "enabled" ? "Suspend" : "Enable"}
-            </button>
-          </article>
-        ))}
-      </div>
-      <form className="form-grid" onSubmit={(event) => void submitEnrollment(event)}>
-        <label>
-          Workspace
-          <select
-            value={workspaceKey}
-            onChange={(event) => setWorkspaceKey(event.target.value as ProductWorkspaceKey)}
-          >
-            <option value="community">Community</option>
-            <option value="transportation">Transportation</option>
-          </select>
-        </label>
-        <label>
-          Tenant member
-          <select
-            required
-            value={membershipId}
-            onChange={(event) => setMembershipId(event.target.value)}
-          >
-            <option value="">Select a member</option>
-            {candidates.map((member) => (
-              <option key={member.membershipId} value={member.membershipId}>
-                {member.displayName} — {member.email}
-              </option>
+      {snapshot.workspaces.length === 0 ? (
+        <State
+          title="No products granted"
+          message="ESH Platform Administration has not granted an operational product to this tenant."
+        />
+      ) : null}
+      {snapshot.workspaces.length > 0 ? (
+        <>
+          <div className="workspace-status-controls">
+            {snapshot.workspaces.map((item) => (
+              <article key={item.workspaceKey}>
+                <div>
+                  <strong>{item.displayName}</strong>
+                  <span className={`status-pill ${item.status}`}>{item.status}</span>
+                </div>
+                {item.workspaceKey === "community" && item.status !== "enabled" ? (
+                  <p className="muted">
+                    Enable the required Community capabilities in Tenant Administration before
+                    enabling this product.
+                  </p>
+                ) : null}
+                <button
+                  className="secondary-button"
+                  disabled={busy}
+                  onClick={() => {
+                    const nextStatus = item.status === "enabled" ? "suspended" : "enabled";
+                    const reasonValue = window
+                      .prompt(`Reason to ${nextStatus} ${item.displayName}`)
+                      ?.trim();
+                    if (reasonValue)
+                      void onMutate(
+                        () =>
+                          supabase.rpc("set_tenant_workspace_status", {
+                            target_tenant_id: tenantId,
+                            target_workspace_key: item.workspaceKey,
+                            target_status: nextStatus,
+                            reason_value: reasonValue,
+                          }),
+                        `${item.displayName} is now ${nextStatus}.`,
+                      );
+                  }}
+                  type="button"
+                >
+                  {item.status === "enabled" ? "Suspend" : "Enable"}
+                </button>
+              </article>
             ))}
-          </select>
-        </label>
-        <label>
-          Workspace role
-          <select
-            value={roleKey}
-            onChange={(event) => setRoleKey(event.target.value as WorkspaceRoleKey)}
-          >
-            {rolesForWorkspace(workspaceKey).map((role) => (
-              <option key={role} value={role}>
-                {roleLabels[role]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Reason
-          <input
-            required
-            placeholder="Example: Community pilot administrator"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-          />
-        </label>
-        <button
-          className="primary-button"
-          disabled={busy || workspace?.status !== "enabled" || !membershipId}
-          type="submit"
-        >
-          Enroll member
-        </button>
-      </form>
-      <div className="workspace-enrollment-list">
-        {snapshot.enrollments.map((enrollment) => (
-          <article key={enrollment.enrollmentId}>
-            <div>
-              <strong>{enrollment.displayName}</strong>
-              <span>{enrollment.email}</span>
-              <span>
-                {enrollment.workspaceKey} ·{" "}
-                {enrollment.roles.map((role) => roleLabels[role]).join(", ")}
-              </span>
-            </div>
+          </div>
+          <form className="form-grid" onSubmit={(event) => void submitEnrollment(event)}>
+            <label>
+              Workspace
+              <select
+                value={workspaceKey}
+                onChange={(event) => setWorkspaceKey(event.target.value as ProductWorkspaceKey)}
+              >
+                {snapshot.workspaces.map((item) => (
+                  <option key={item.workspaceKey} value={item.workspaceKey}>
+                    {item.displayName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Tenant member
+              <select
+                required
+                value={membershipId}
+                onChange={(event) => setMembershipId(event.target.value)}
+              >
+                <option value="">Select a member</option>
+                {candidates.map((member) => (
+                  <option key={member.membershipId} value={member.membershipId}>
+                    {member.displayName} — {member.email}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Workspace role
+              <select
+                value={roleKey}
+                onChange={(event) => setRoleKey(event.target.value as WorkspaceRoleKey)}
+              >
+                {rolesForWorkspace(workspaceKey).map((role) => (
+                  <option key={role} value={role}>
+                    {roleLabels[role]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Reason
+              <input
+                required
+                placeholder="Example: Community pilot administrator"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            </label>
             <button
-              className="danger-button"
-              disabled={busy}
-              onClick={() => {
-                const reasonValue = window
-                  .prompt(
-                    `Reason to remove ${enrollment.displayName} from ${enrollment.workspaceKey}`,
-                  )
-                  ?.trim();
-                if (reasonValue)
-                  void onMutate(
-                    () =>
-                      supabase.rpc("remove_tenant_workspace_enrollment", {
-                        target_enrollment_id: enrollment.enrollmentId,
-                        reason_value: reasonValue,
-                      }),
-                    "Workspace enrollment removed.",
-                  );
-              }}
-              type="button"
+              className="primary-button"
+              disabled={busy || workspace?.status !== "enabled" || !membershipId}
+              type="submit"
             >
-              Remove access
+              Enroll member
             </button>
-          </article>
-        ))}
-      </div>
+          </form>
+          <div className="workspace-enrollment-list">
+            {snapshot.enrollments.map((enrollment) => (
+              <article key={enrollment.enrollmentId}>
+                <div>
+                  <strong>{enrollment.displayName}</strong>
+                  <span>{enrollment.email}</span>
+                  <span>
+                    {enrollment.workspaceKey} ·{" "}
+                    {enrollment.roles.map((role) => roleLabels[role]).join(", ")}
+                  </span>
+                </div>
+                <button
+                  className="danger-button"
+                  disabled={busy}
+                  onClick={() => {
+                    const reasonValue = window
+                      .prompt(
+                        `Reason to remove ${enrollment.displayName} from ${enrollment.workspaceKey}`,
+                      )
+                      ?.trim();
+                    if (reasonValue)
+                      void onMutate(
+                        () =>
+                          supabase.rpc("remove_tenant_workspace_enrollment", {
+                            target_enrollment_id: enrollment.enrollmentId,
+                            reason_value: reasonValue,
+                          }),
+                        "Workspace enrollment removed.",
+                      );
+                  }}
+                  type="button"
+                >
+                  Remove access
+                </button>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }

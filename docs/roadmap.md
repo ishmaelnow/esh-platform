@@ -15,7 +15,7 @@ remain independent of transportation-specific workflows.
 
 ## Next Product Domain: Community Platform
 
-Status: **Migrations 1–3 deployed and production-validated**.
+Status: **Community Migrations 1–6 deployed; platform entitlement separation implemented locally**.
 
 Community is the second product domain built on ESH Platform. It will be a tenant-enabled module
 that reuses platform identity, tenant membership, capabilities, RLS, audit, maps, storage, and
@@ -62,12 +62,17 @@ Implementation order:
    explicit product-session entry, chronological feed, and ordinary member posting. Community
    Admin and Transportation Admin extraction remain.
 7. Core content, typed records, targets, actions, lifecycle, and search indexes are implemented
-   locally in `20260823000600_community_core_content.sql`; production dark rollout and pilot remain.
-8. Comments, reactions, private media, blocks, mutes, and reports.
-9. Service directory and provider-owned listings.
-10. Moderation and submit-for-announcement workflow.
-11. Person-based in-app notifications and compatible delivery generalization.
-12. Lifecycle automation, read models, discovery UI, and production pilot gates.
+   and deployed in `20260823000600_community_core_content.sql`; the independent Community app is
+   deployed at `community.eshapp.com` with strict product-specific admission.
+8. Platform-controlled tenant product entitlement is implemented locally in
+   `20260824000100_platform_product_entitlements.sql`. Existing enabled products are grandfathered;
+   new tenants receive no product automatically; Tenant Governance sees only Platform-granted
+   products. Production rollout precedes the Community-only pilot tenant.
+9. Comments, reactions, private media, blocks, mutes, and reports.
+10. Service directory and provider-owned listings.
+11. Moderation and submit-for-announcement workflow.
+12. Person-based in-app notifications and compatible delivery generalization.
+13. Lifecycle automation, read models, discovery UI, and production pilot gates.
 
 Architecture: `docs/architecture/community-platform.md`.
 Migration plan: `docs/architecture/community-platform-migration-plan.md`.

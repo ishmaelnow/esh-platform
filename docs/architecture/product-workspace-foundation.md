@@ -5,9 +5,11 @@ A person may belong to Yahooemail while operating Transportation, Community, bot
 
 Authorization follows this conjunction:
 
-`active identity + active tenant membership + enabled workspace + active workspace enrollment + explicit workspace role + enabled capability`
+`active identity + active tenant membership + platform product entitlement + enabled workspace + active workspace enrollment + explicit workspace role + enabled capability`
 
 No factor substitutes for another. In particular:
+
+- Tenant ownership cannot grant a Platform product entitlement.
 
 - Rider or Driver status never enrolls a person in Community.
 - General tenant membership never enrolls a person in a product workspace.
@@ -20,6 +22,10 @@ The `tenant_product_workspaces` table enables or suspends a product for a tenant
 `tenant_workspace_enrollments` records a person's explicit entry into that product, and
 `tenant_workspace_role_assignments` records operational authority within it. All assignments are
 tenant-bound, expirable, non-destructively revoked, and audited through controlled RPCs.
+
+The preceding Platform authority layer is defined in
+`docs/architecture/platform-product-entitlements.md`. Tenant governance receives only entitled
+products in its read model and cannot enable an unentitled product.
 
 Migration `20260823000300_product_workspace_foundation.sql` performs a one-time Transportation
 compatibility backfill for existing active tenant owners/admins. It deliberately creates zero

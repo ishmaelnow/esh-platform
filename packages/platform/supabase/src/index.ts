@@ -18,10 +18,12 @@ export type {
 } from "./community.types";
 export type {
   MyWorkspaceAccess,
+  ProductEntitlementStatus,
   ProductWorkspaceKey,
   ProductOperationalSession,
   ProductOperationalSessionStatus,
   TenantWorkspaceStatus,
+  TenantProductEntitlement,
   WorkspaceEnrollmentStatus,
   WorkspaceRoleKey,
 } from "./workspace.types";
@@ -118,6 +120,7 @@ export type TenantCommunitySettingsRow = Tables<"tenant_community_settings">;
 export type TenantCommunityRoleAssignmentRow = Tables<"tenant_community_role_assignments">;
 export type TenantMembershipRow = Tables<"tenant_memberships">;
 export type TenantInvitationRow = Tables<"tenant_invitations">;
+export type TenantProductEntitlementRow = Tables<"tenant_product_entitlements">;
 export type PlatformRoleAssignmentRow = Tables<"platform_role_assignments">;
 export type TenantRoleAssignmentRow = Tables<"tenant_role_assignments">;
 export type TenantAuditEventRow = Tables<"tenant_audit_events">;

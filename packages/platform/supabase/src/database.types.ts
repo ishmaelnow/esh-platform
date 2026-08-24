@@ -2221,6 +2221,77 @@ export type Database = {
           },
         ]
       }
+      tenant_product_entitlements: {
+        Row: {
+          created_at: string
+          grant_source: string
+          granted_at: string
+          granted_by_person_id: string | null
+          reason: string
+          status: string
+          status_changed_at: string
+          status_changed_by_person_id: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_key: string
+        }
+        Insert: {
+          created_at?: string
+          grant_source?: string
+          granted_at?: string
+          granted_by_person_id?: string | null
+          reason: string
+          status: string
+          status_changed_at?: string
+          status_changed_by_person_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          workspace_key: string
+        }
+        Update: {
+          created_at?: string
+          grant_source?: string
+          granted_at?: string
+          granted_by_person_id?: string | null
+          reason?: string
+          status?: string
+          status_changed_at?: string
+          status_changed_by_person_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          workspace_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_product_entitlements_granted_by_person_id_fkey"
+            columns: ["granted_by_person_id"]
+            isOneToOne: false
+            referencedRelation: "person_profiles"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "tenant_product_entitlements_status_changed_by_person_id_fkey"
+            columns: ["status_changed_by_person_id"]
+            isOneToOne: false
+            referencedRelation: "person_profiles"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "tenant_product_entitlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_product_entitlements_workspace_key_fkey"
+            columns: ["workspace_key"]
+            isOneToOne: false
+            referencedRelation: "product_workspace_catalog"
+            referencedColumns: ["workspace_key"]
+          },
+        ]
+      }
       tenant_memberships: {
         Row: {
           activated_at: string | null
@@ -3112,6 +3183,19 @@ export type Database = {
       }
       tenant_capability_enabled: {
         Args: { required_capability: string; target_tenant_id: string }
+        Returns: boolean
+      }
+      has_active_product_entitlement: {
+        Args: { target_tenant_id: string; target_workspace_key: string }
+        Returns: boolean
+      }
+      set_tenant_product_entitlement: {
+        Args: {
+          reason_value: string
+          target_status: string
+          target_tenant_id: string
+          target_workspace_key: string
+        }
         Returns: boolean
       }
       tenant_has_active_owner: {

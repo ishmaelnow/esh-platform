@@ -1,37 +1,38 @@
 # Session Handoff
 
-Last updated: 2026-08-23
+Last updated: 2026-08-24
 
 ## Current objective
 
-Separate ESH products operationally while retaining shared platform infrastructure. Migrations
-1–5 and Admin product-session commit `0d7aef0` are deployed; shared identity, tenant membership,
-product enrollment, roles, and exclusive operational leases are separate foundations. Production
-confirmed that direct `/transportation` access is denied without an active lease while the neutral
-`/` control plane remains accessible. The owner rated the transitional experience B-minus because
-the denied deep link was a dead end and governance still visually combined unrelated products.
-Transportation navigation is deployed alphabetically in commit `a8e7f4c`. Product-entry UX
-stabilization is now implemented locally: operational entry lists only enabled products with an
-assigned role and contains no governance controls; tenant governance is isolated at `/governance`;
-inactive direct links perform a real redirect to `/` with guidance but never create a lease; and
-the product/control-plane layouts use the available viewport width without oversized side gutters.
-Independent product application extraction remains next. Transportation
-operational follow-ups, native push,
-Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
+Separate ESH products operationally while retaining shared platform infrastructure. Community
+Migrations 1–6, exclusive product sessions, stabilized product entry, the independent Community app
+at `community.eshapp.com`, and strict Community product admission are deployed through commit
+`5c3120f`. The immediate objective is Platform-controlled tenant product entitlement. Migration
+`20260824000100_platform_product_entitlements.sql` is implemented locally with paired Platform and
+Tenant Governance UI. Existing enabled products receive a migration-sourced grant, preserving all
+current Transportation tenants; disabled Community workspaces receive no grant. New tenants receive
+no product automatically. Only Platform Owner/Admin can grant, suspend, restore, or revoke a product
+with a reason and audit evidence. Tenant Governance shows only entitled products and cannot enable
+an unentitled product. A Community grant manages its six required capabilities without activating
+the workspace or enrolling anyone. Suspension/revocation ends active product sessions. Local
+typechecks, lint, 69 Admin tests, five entitlement contract tests, formatting, diff validation, and
+the Admin production build pass. Next: owner dry-run/apply Migration 7, deploy, verify compatibility,
+then provision a new Community-only pilot tenant and grant only Community. Transportation
+operational follow-ups, native push, Twilio billing ticket `#29018616`, and the Stripe sandbox
+dispute retry remain separate work.
 
 ## Community Platform checkpoint (2026-08-23)
 
-The first visible Community slice is implemented locally. New deployable `apps/community` uses an
+The first visible Community slice is deployed. `apps/community` uses an
 isolated ESH session, lists only enabled Community enrollments, explicitly enters the Community
 product lease, renders a chronological feed, and creates ordinary public/member posts through a
 narrow RPC. Migration `20260823000600_community_core_content.sql` adds the shared envelope, typed
 post/announcement/event/alert/help/opportunity/resource records, tenant-aware targets, structured
 actions, search/lifecycle indexes, RLS, typed-kind guards, and a display-safe feed RPC. It creates no
-tenant content, does not enable Community, and grants clients no direct writes. Local
-Community/Admin/Supabase typechecks, lint, Community unit tests, the static migration contract, both
-production builds, formatting, and diff validation pass. Next: owner dry-run/apply only Migration 6,
-deploy the Community Vercel project, then authorize and test a narrowly scoped Yahooemail pilot
-separately.
+tenant content, does not enable Community, and grants clients no direct writes. Migration 6 is
+applied and commit `144bc43` is deployed. Product-specific admission correction `5c3120f` is also
+deployed. The pilot direction changed from adding Community to Yahooemail to provisioning a new,
+Community-only tenant after Platform entitlement separation is deployed.
 
 The Community product entrance now enforces the clean product-admission contract locally: shared
 credential infrastructure is not shared product admission. After credential verification, the app

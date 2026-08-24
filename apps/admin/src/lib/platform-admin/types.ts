@@ -3,6 +3,7 @@ import type {
   TenantCapabilityRow,
   TenantConfigurationRow,
   TenantInvitationRow,
+  TenantProductEntitlementRow,
   TenantRow,
 } from "@esh-platform/supabase";
 
@@ -15,6 +16,7 @@ export type PlatformTenantListItem = {
   configuration: TenantConfigurationRow | null;
   capabilities: TenantCapabilityRow[];
   invitations: TenantInvitationRow[];
+  entitlements: TenantProductEntitlementRow[];
 };
 
 export type PlatformAdminSummary = {
@@ -35,4 +37,9 @@ export type TenantProvisioningPayload = {
 export type PlatformTenantActionPayload = {
   tenantId: string;
   reason: string;
+};
+
+export type ProductEntitlementActionPayload = PlatformTenantActionPayload & {
+  workspaceKey: "transportation" | "community";
+  status: "granted" | "suspended" | "revoked";
 };
