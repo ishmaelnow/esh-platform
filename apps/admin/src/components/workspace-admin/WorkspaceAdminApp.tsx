@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient, type ProductWorkspaceKey, type SupabaseAuthSession, type WorkspaceRoleKey } from "@esh-platform/supabase";
 import { adminPublicConfig } from "@/lib/config";
@@ -18,6 +18,7 @@ const roleLabels: Record<WorkspaceRoleKey, string> = {
 };
 
 export function WorkspaceAdminApp() {
+  const router = useRouter();
   const supabase = useMemo(() => typeof window === "undefined" ? null : createBrowserSupabaseClient(adminPublicConfig.supabase), []);
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
   const [resolution, setResolution] = useState<TenantContextResolution | null>(null);
@@ -31,6 +32,8 @@ export function WorkspaceAdminApp() {
     if (!supabase || !activeSession?.user) { setResolution(null); setSnapshot(null); setLoading(false); return; }
     setLoading(true); setError(null);
     try {
+      const { error: leaveError } = await supabase.rpc("leave_my_product_session", { reason_value: "Entered ESH governance control plane." });
+      if (leaveError) throw leaveError;
       const nextResolution = await loadPrincipalTenantContext(supabase, activeSession.user);
       setResolution(nextResolution);
       if (nextResolution.status === "ready") {
@@ -69,6 +72,14 @@ export function WorkspaceAdminApp() {
     finally { setBusy(false); }
   }
 
+  async function openWorkspace(tenantId: string, workspaceKey: ProductWorkspaceKey) {
+    if (!supabase) return;
+    setBusy(true); setError(null);
+    const { error: enterError } = await supabase.rpc("enter_my_product_session", { target_tenant_id: tenantId, target_workspace_key: workspaceKey });
+    if (enterError) { setError(enterError.message); setBusy(false); return; }
+    router.push(workspaceKey === "transportation" ? "/transportation" : "/community");
+  }
+
   if (!session) return <AdminSignIn />;
 
   return (
@@ -87,11 +98,10 @@ export function WorkspaceAdminApp() {
           {snapshot.workspaces.map((workspace) => {
             const hasRole = workspace.roles.length > 0;
             const available = workspace.status === "enabled" && hasRole;
-            const href = workspace.workspaceKey === "transportation" ? "/transportation" : "/community";
             return <article className="workspace-card" key={workspace.workspaceKey}>
               <div><span className={`status-pill ${workspace.status}`}>{workspace.status}</span><h2>{workspace.displayName}</h2><p>{workspace.description || (workspace.workspaceKey === "community" ? "Community publishing, services, groups, and moderation." : "Dispatch, drivers, vehicles, fares, and operations.")}</p></div>
               <p className="workspace-role-summary">{hasRole ? workspace.roles.map((role) => roleLabels[role]).join(", ") : "No workspace role assigned"}</p>
-              {available ? <Link className="primary-button" href={href}>Open {workspace.displayName}</Link> : <button className="secondary-button" disabled type="button">{workspace.status !== "enabled" ? "Workspace not enabled" : "Enrollment required"}</button>}
+              {available ? <button className="primary-button" disabled={busy} onClick={() => void openWorkspace(selectedTenant.tenant.tenant_id, workspace.workspaceKey)} type="button">Open {workspace.displayName}</button> : <button className="secondary-button" disabled type="button">{workspace.status !== "enabled" ? "Workspace not enabled" : "Enrollment required"}</button>}
             </article>;
           })}
         </section>

@@ -18,6 +18,8 @@ export type {
 export type {
   MyWorkspaceAccess,
   ProductWorkspaceKey,
+  ProductOperationalSession,
+  ProductOperationalSessionStatus,
   TenantWorkspaceStatus,
   WorkspaceEnrollmentStatus,
   WorkspaceRoleKey,

@@ -15,3 +15,18 @@ export type MyWorkspaceAccess = {
   workspace_name: string;
   role_keys: WorkspaceRoleKey[];
 };
+
+export type ProductOperationalSessionStatus = "active" | "ended" | "expired" | "superseded";
+export type ProductOperationalSession = {
+  productSessionId: string;
+  personId: string;
+  authSessionId: string;
+  tenantId: string;
+  workspaceKey: ProductWorkspaceKey;
+  status: ProductOperationalSessionStatus;
+  activatedAt: string;
+  heartbeatAt: string;
+  expiresAt: string;
+  endedAt: string | null;
+  endReason: string | null;
+};

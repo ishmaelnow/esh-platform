@@ -2412,6 +2412,10 @@ export type Database = {
       }
     }
     Functions: {
+      enter_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: Json }
+      refresh_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: boolean }
+      leave_my_product_session: { Args: { reason_value?: string }; Returns: boolean }
+      has_active_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: boolean }
       workspace_admin_snapshot: { Args: { target_tenant_id: string }; Returns: Json }
       my_workspace_access: { Args: never; Returns: { tenant_id: string; membership_id: string; workspace_key: string; workspace_name: string; role_keys: string[] }[] }
       has_workspace_role: { Args: { target_tenant_id: string; target_workspace_key: string; required_roles: string[] }; Returns: boolean }

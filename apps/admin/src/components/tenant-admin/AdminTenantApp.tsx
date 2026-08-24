@@ -131,14 +131,21 @@ export function AdminTenantApp() {
         let nextTransportationAccess: boolean | null = null;
         if (nextResolution.status === "ready") {
           const tenantId = nextResolution.selectedTenant.tenant.tenant_id;
-          const { data: access, error: accessError } = await supabase.rpc("has_workspace_role", {
-            target_tenant_id: tenantId,
-            target_workspace_key: "transportation",
-            required_roles: ["transportation_admin"],
-          });
-          if (accessError) throw accessError;
-          nextTransportationAccess = access;
-          if (access) nextSummary = await loadTenantSummary(supabase, tenantId);
+          const [roleResult, productSessionResult] = await Promise.all([
+            supabase.rpc("has_workspace_role", {
+              target_tenant_id: tenantId,
+              target_workspace_key: "transportation",
+              required_roles: ["transportation_admin"],
+            }),
+            supabase.rpc("has_active_product_session", {
+              target_tenant_id: tenantId,
+              target_workspace_key: "transportation",
+            }),
+          ]);
+          if (roleResult.error) throw roleResult.error;
+          if (productSessionResult.error) throw productSessionResult.error;
+          nextTransportationAccess = roleResult.data && productSessionResult.data;
+          if (nextTransportationAccess) nextSummary = await loadTenantSummary(supabase, tenantId);
         }
         if (requestId !== refreshRequestId.current) return;
         setResolution(nextResolution);
@@ -203,6 +210,24 @@ export function AdminTenantApp() {
     selectedTenant?.roles.includes("tenant_admin") ||
     false;
   const hasResolvedTenantContext = resolution !== null;
+
+  useEffect(() => {
+    if (!supabase || !selectedTenant || !hasTransportationAccess) return;
+    const tenantId = selectedTenant.tenant.tenant_id;
+    const refreshLease = async () => {
+      const { data, error: leaseError } = await supabase.rpc("refresh_my_product_session", {
+        target_tenant_id: tenantId,
+        target_workspace_key: "transportation",
+      });
+      if (leaseError || !data) {
+        setHasTransportationAccess(false);
+        setSummary(null);
+        setError("This Transportation session ended because another product or governance context became active.");
+      }
+    };
+    const interval = window.setInterval(() => void refreshLease(), 60_000);
+    return () => window.clearInterval(interval);
+  }, [hasTransportationAccess, selectedTenant, supabase]);
 
   async function handleTenantSelect(tenantId: string) {
     if (!supabase || !resolution || !("context" in resolution)) {
@@ -284,7 +309,7 @@ export function AdminTenantApp() {
         ) : null}
         {error ? <StateBlock tone="danger" title="Unable to load" message={error} /> : null}
         {!loading && selectedTenant && hasTransportationAccess === false ? (
-          <StateBlock title="Transportation workspace access required" message="Your tenant relationship does not include an active Transportation administrator enrollment." tone="danger" />
+          <StateBlock title="Transportation session is not active" message="Return to the ESH control plane and explicitly enter Transportation. Another product or governance tab may have ended this session." tone="danger" />
         ) : null}
         {hasTransportationAccess !== false && shouldRenderResolvedTenantWorkspace(loading, hasResolvedTenantContext, error !== null) ? (
           <ResolvedWorkspace

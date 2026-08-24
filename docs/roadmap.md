@@ -53,7 +53,9 @@ Implementation order:
    owner-controlled enrollment are deployed in commit `22fcafe`; Migration 4 is applied. It proved
    the access boundary but is not the final combined operating experience.
 5. ADR 0002 establishes governance-only Admin plus independently deployed product applications.
-   Next: implement exclusive server-authoritative product sessions and stale-tab denial.
+   Exclusive server-authoritative product sessions and stale-tab denial are implemented locally in
+   Migration `20260823000500_exclusive_product_sessions.sql` and the transitional Admin routes.
+   Production dry-run/apply and two-tab validation remain.
 6. Extract Community Admin and Transportation Admin into separately deployed applications, with
    independent domains, environment contracts, releases, and product-specific navigation.
 7. Core content, typed records, targets, actions, lifecycle, and search indexes.

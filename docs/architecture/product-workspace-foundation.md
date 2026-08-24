@@ -56,3 +56,7 @@ Product-session exclusivity is an additional authorization factor to be implemen
 Community activation. A stale product tab must be denied by the server/database even when its UI
 has not refreshed. Product applications must use distinct storage/draft namespaces, visual identity,
 notification copy, environment configuration, release gates, and observability.
+
+That factor is implemented locally in Migration 5 and specified in
+`docs/architecture/exclusive-product-sessions.md`. It remains disabled in production until the
+owner applies the migration and deploys the paired Admin integration.

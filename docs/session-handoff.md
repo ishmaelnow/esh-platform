@@ -7,7 +7,8 @@ Last updated: 2026-08-23
 Separate ESH products operationally while retaining shared platform infrastructure. Migrations
 1–4 and Admin workspace commit `22fcafe` are deployed; shared identity, tenant membership, product
 enrollment, and roles are separate foundations. The selector is now explicitly transitional while
-the governance control plane and independent product applications are established. Transportation
+the governance control plane and independent product applications are established. Exclusive
+product sessions are implemented locally and pending deployment. Transportation
 operational follow-ups, native push,
 Twilio billing ticket `#29018616`, and the Stripe sandbox dispute retry remain separate work.
 
@@ -114,6 +115,25 @@ Community Admin, Community member, Rider, and Driver products. One identity may 
 several products but may operate only one product at a time. The next implementation milestone is a
 server-authoritative exclusive product-session lease with stale-tab denial; after that, extract the
 two Admin products from the transitional routes. No product/domain/DNS change has been made yet.
+
+That exclusive-session milestone is now implemented locally in Migration
+`20260823000500_exclusive_product_sessions.sql`. `product_operational_sessions` permits one active
+lease per person across browsers/devices and binds it to the server-derived Supabase Auth session,
+tenant, and product. Explicit entry supersedes the prior lease; governance entry ends it; one-minute
+heartbeats extend a 30-minute lease; expiration and every entry/exit/supersession preserve history
+and audit evidence. Clients receive no table write grants.
+
+Transportation tenant-role authorization now requires both the original foundation tenant role
+and an active Transportation product lease. Neutral tenant-owner workspace governance uses the new
+ungated `has_foundation_tenant_role`, preventing the session rule from locking owners out of the
+control plane. The selector enters products before navigation and never auto-enters from a direct
+URL. Transportation and Community routes verify and refresh their expected lease; a superseded tab
+clears operational data and denies access within 60 seconds. Community remains disabled and no
+Community enrollment/session is introduced. Local validation passes: 68 Admin tests, seven static
+product-session/workspace contracts, uncached Admin and Supabase typechecks, Admin lint, formatting,
+diff validation, and the Admin production build. Only the existing Supabase Realtime dynamic-import
+and Next ESLint-plugin warnings remain. Next: owner dry-runs and applies only Migration 5, deploys
+the paired UI, and runs the two-tab production test before product application extraction.
 
 Local Migration 3 validation passes: workspace static contract 4/4, Migration 2 domain contract
 3/3, Migration 1 static RLS contract 1/1 with its opt-in live database test skipped, Supabase
