@@ -51,3 +51,7 @@ entitlement, workspace enrollment, role, and exclusive-session contracts.
 The legacy `admin.eshapp.com/transportation` route remains temporarily as a rollback surface. It is
 removed only after the independent deployment passes production admission, operations, stale-tab,
 and control-plane regression tests.
+
+This deployment is also the reference proof for ESH white-label product shells. The reusable
+procedure, safety boundaries, and eventual shared-package destination are documented in
+`docs/development/white-label-product-guide.md`.

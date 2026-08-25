@@ -1,5 +1,15 @@
 # Transportation Admin Application — Production Manual Test
 
+## Production Result — 2026-08-25
+
+**PASS.** The independent application is deployed at `https://transportation.eshapp.com`.
+Transportation-specific admission, authorized Yahooemail entry, unrelated-account denial,
+same-origin backend rewrites, operational reads and a reversible settings write, prohibited-route
+isolation, exclusive-session invalidation, and Mapbox rendering passed. Browser Network requests
+returned `200`; no Mapbox `401` or `403` remained after adding the custom origin to the public-token
+restrictions. The legacy Admin Transportation route remains available temporarily as rollback
+protection.
+
 ## Deployment Gate
 
 1. Confirm `git status --short --branch` is clean after the owner commit/push.

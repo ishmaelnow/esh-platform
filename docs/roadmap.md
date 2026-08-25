@@ -37,6 +37,12 @@ Approved direction:
 - in-app notifications first, with external Community broadcast channels deferred until their
   delivery and operational controls are production-verified.
 
+Reusable product engines may support ESH or approved partner-branded shells. White-labeling changes
+the deployment, domain, branding, public configuration, and admission experience; it does not fork
+business rules, duplicate privileged infrastructure, or weaken tenant/product authorization. The
+Transportation parallel deployment is the reference extraction pattern, with reusable code moving
+to a neutral package after production proof.
+
 Implementation order:
 
 1. Community capability/permission catalogs and conservative settings are deployed and passed the

@@ -1,8 +1,16 @@
 # Session Handoff
 
-Last updated: 2026-08-24
+Last updated: 2026-08-25
 
 ## Current objective
+
+The white-label application-shell pattern is now memorialized in
+`docs/development/white-label-product-guide.md` for junior developers and future recovery. The
+durable rule is: reuse the proven product engine, isolate each branded shell and browser session,
+centralize the trusted backend, preserve server-authoritative tenant/product access, deploy in
+parallel, and cut over only after proof. Direct cross-app source import is an extraction bridge;
+after production validation, reusable Transportation UI should move into a neutral product package.
+Branding, domains, and configuration never constitute authorization.
 
 The independent Transportation Admin application was committed as `c67f3a1` in
 `apps/transportation`. The rollout is now explicitly a parallel interface over the existing proven
@@ -16,14 +24,18 @@ control plane now launches `NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL` and does not c
 lease itself. The standalone app exposes only `/` and `/transportation`; its authenticated
 `/api/tenant-admin/*` requests are rewritten to the stable existing Admin backend. Duplicated
 privileged handlers and secret requirements have been removed. Platform, governance, Community,
-invitation, reset, and cron routes are absent/redirected. No migration is required. The rewrite
-correction is currently uncommitted. Transportation typecheck, lint, production build, all 70 Admin
-tests, and diff validation pass; the production route manifest contains only `/` and
-`/transportation`. Next: owner commit/push,
-finish the Vercel project rooted at `apps/transportation`, configure the six documented values and
-`transportation.eshapp.com`, deploy Admin plus Transportation, then run the dedicated manual test.
-Keep the legacy Admin
-`/transportation` route until that production test passes.
+invitation, reset, and cron routes are absent/redirected. No migration is required. The rewrite was
+committed as `48b977e`. The Vercel deployment and custom domain
+`https://transportation.eshapp.com` passed product-specific admission, unrelated-account denial,
+authorized Yahooemail entry, backend-rewrite evidence, operational reads and a reversible write,
+prohibited-route isolation, exclusive-session invalidation, and Mapbox rendering. Browser Network
+requests returned `200` throughout, with no Mapbox `401` or `403` after its exact origin was added
+to the production public-token restrictions. A keyboard-accessible eye control for explicitly
+showing or hiding the Transportation sign-in password is now implemented locally; typecheck, lint,
+production build, and diff validation pass. Next: owner commit/push this documentation and password
+UX checkpoint, deploy Transportation, manually verify the toggle, then begin the independent
+Community Admin application. Keep the legacy Admin `/transportation` route only through the agreed
+rollback observation window.
 
 Separate ESH products operationally while retaining shared platform infrastructure. Community
 Migrations 1–6, exclusive product sessions, stabilized product entry, the independent Community app

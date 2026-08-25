@@ -12,9 +12,21 @@
     sans-serif;
 }
 
-.esh-trip-map-shell { margin-top: 1rem; }
-.esh-trip-map { width: 100%; height: 320px; border: 1px solid #d9dedb; border-radius: 14px; overflow: hidden; }
-.esh-trip-map-summary { margin: .55rem 0 0; color: #52605a; font-size: .9rem; }
+.esh-trip-map-shell {
+  margin-top: 1rem;
+}
+.esh-trip-map {
+  width: 100%;
+  height: 320px;
+  border: 1px solid #d9dedb;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.esh-trip-map-summary {
+  margin: 0.55rem 0 0;
+  color: #52605a;
+  font-size: 0.9rem;
+}
 
 * {
   box-sizing: border-box;
@@ -362,6 +374,49 @@ select {
   color: #17202c;
   min-height: 40px;
   padding: 9px 11px;
+}
+
+.password-input-wrap {
+  display: grid;
+  position: relative;
+}
+
+.password-input-wrap input {
+  padding-right: 46px;
+  width: 100%;
+}
+
+.password-visibility-button {
+  align-items: center;
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  color: #5d6878;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0 12px;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.password-visibility-button:hover {
+  color: #17202c;
+}
+
+.password-visibility-button:focus-visible {
+  border-radius: 5px;
+  outline: 2px solid #1b6b5a;
+  outline-offset: -3px;
+}
+
+.password-visibility-button svg {
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  width: 20px;
 }
 
 .inline-form {
