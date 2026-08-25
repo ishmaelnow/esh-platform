@@ -22,6 +22,7 @@ This directory contains project documentation that should evolve with the codeba
 - [White-Label Product Applications Guide](./development/white-label-product-guide.md)
 - [Product Workspace Foundation Manual Test](./operations/product-workspace-foundation-manual-test.md)
 - [Tenant Governance Context Manual Test](./operations/tenant-governance-ux-manual-test.md)
+- [Admin Control Plane Safe Cleanup](./operations/admin-control-plane-safe-cleanup.md)
 - [Admin Workspace Selector Manual Test](./operations/admin-workspace-selector-manual-test.md)
 - [Exclusive Product Sessions Manual Test](./operations/exclusive-product-sessions-manual-test.md)
 - [Product Sign-Out Manual Test](./operations/product-sign-out-manual-test.md)

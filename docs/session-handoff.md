@@ -2,6 +2,17 @@
 
 Last updated: 2026-08-25
 
+## Safe Admin cleanup reminder
+
+The independent Transportation Admin, Community Admin, and tenant-governance UX have passed their
+current production checks. The future cleanup sequence for the old Admin surface is memorialized in
+`docs/operations/admin-control-plane-safe-cleanup.md`. Do not remove or rename
+`admin.eshapp.com` yet: Transportation still uses it as the trusted backend selected by
+`TRANSPORTATION_BACKEND_URL`. First end the rollback observation window, retire only the legacy
+`/transportation` and `/community` UI routes, establish and prove a stable replacement backend
+origin, repoint every consumer, and only then decide whether the public control-plane domain should
+be renamed.
+
 ## Current objective
 
 Tenant Governance UX is redesigned locally around an explicit scope hierarchy. The active tenant is
