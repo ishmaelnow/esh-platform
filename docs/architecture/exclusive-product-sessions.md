@@ -15,6 +15,12 @@ Leases expire after 30 minutes without a heartbeat. Product applications refresh
 Entering governance ends the operational lease. A stale tab fails `has_active_product_session`,
 cannot renew, loses its loaded operational state, and must return to governance.
 
+Browser sign-out is deliberately local to the current application/device. Product exit controls
+await the authentication result, expose progress or errors, and explicitly return to that product's
+entry state. Community attempts to close its operational lease before sign-out, but a lease-exit
+failure cannot prevent local credential removal; server authorization and lease expiration remain
+the backstop. A normal product sign-out must not intentionally revoke unrelated device sessions.
+
 Transportation's legacy operational authorization derives from `has_tenant_role`. Migration
 `20260823000500_exclusive_product_sessions.sql` separates the underlying tenant-governance role
 check into `has_foundation_tenant_role`, then requires an active Transportation lease from

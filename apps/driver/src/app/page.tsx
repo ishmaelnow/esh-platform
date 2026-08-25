@@ -227,7 +227,21 @@ export default function DriverHome() {
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
   const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const knownDispatchOfferIds = useRef<Set<string>>(new Set());
+
+  async function signOut() {
+    if (!supabase) return;
+    setSigningOut(true);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      if (error) throw error;
+      window.location.replace("/");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+      setSigningOut(false);
+    }
+  }
   const processedAuthCallbacks = useRef(new Set<string>());
   const earningsStatement = useMemo(() => buildEarningsStatement(
     wallet?.trips ?? [], bankPayouts, { startDate: statementStartDate, endDate: statementEndDate },
@@ -1941,10 +1955,11 @@ export default function DriverHome() {
             </section>
             <button
               className="secondary"
-              onClick={() => void supabase?.auth.signOut()}
+              disabled={signingOut}
+              onClick={() => void signOut()}
               type="button"
             >
-              Sign out
+              {signingOut ? "Signing out…" : "Sign out"}
             </button>
           </div>
         ) : null}

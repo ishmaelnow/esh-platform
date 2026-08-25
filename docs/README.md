@@ -21,6 +21,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Product Workspace Foundation Manual Test](./operations/product-workspace-foundation-manual-test.md)
 - [Admin Workspace Selector Manual Test](./operations/admin-workspace-selector-manual-test.md)
 - [Exclusive Product Sessions Manual Test](./operations/exclusive-product-sessions-manual-test.md)
+- [Product Sign-Out Manual Test](./operations/product-sign-out-manual-test.md)
 - [Service Area Management](./architecture/service-area-management.md)
 - [Manual Dispatch and Trip Core](./architecture/manual-dispatch-trip-core.md)
 - [Verified Rider Booking](./architecture/verified-rider-booking.md)

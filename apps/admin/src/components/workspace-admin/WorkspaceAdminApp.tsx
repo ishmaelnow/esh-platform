@@ -46,6 +46,20 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  async function signOut() {
+    if (!supabase) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+      if (signOutError) throw signOutError;
+      window.location.replace("/");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+      setBusy(false);
+    }
+  }
+
   useEffect(() => {
     const requestedWorkspace = new URLSearchParams(window.location.search).get("entry");
     if (requestedWorkspace === "transportation" || requestedWorkspace === "community") {
@@ -167,12 +181,11 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
         )}
         <button
           className="secondary-button"
-          onClick={() => {
-            if (supabase) void supabase.auth.signOut();
-          }}
+          disabled={busy}
+          onClick={() => void signOut()}
           type="button"
         >
-          Sign out
+          {busy ? "Signing out…" : "Sign out"}
         </button>
       </header>
 

@@ -208,6 +208,20 @@ export default function RiderHome() {
   const [busy, setBusy] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+
+  async function signOut() {
+    if (!supabase) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+      if (signOutError) throw signOutError;
+      window.location.replace("/");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to sign out. Please try again.");
+      setBusy(false);
+    }
+  }
   const [smsSettings, setSmsSettings] = useState<SmsSettings>({ enabled: false, maskedPhone: null, verifiedAt: null });
   const [smsPhone, setSmsPhone] = useState("");
   const [smsCode, setSmsCode] = useState("");
@@ -1098,8 +1112,8 @@ export default function RiderHome() {
           </div>
         </div>
         {session ? (
-          <button className="button secondary" onClick={() => void supabase?.auth.signOut()}>
-            Sign out
+          <button className="button secondary" disabled={busy} onClick={() => void signOut()}>
+            {busy ? "Signing out…" : "Sign out"}
           </button>
         ) : null}
       </header>

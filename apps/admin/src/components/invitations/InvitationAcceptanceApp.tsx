@@ -50,6 +50,20 @@ export function InvitationAcceptanceApp() {
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  async function signOut() {
+    if (!supabase) return;
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      if (error) throw error;
+      window.location.reload();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
   const inspectInvitation = useCallback(
     async (activeSession: SupabaseAuthSession | null) => {
       if (!token) {
@@ -180,14 +194,11 @@ export function InvitationAcceptanceApp() {
               </button>
               <button
                 className="secondary-button"
-                onClick={() => {
-                  if (supabase) {
-                    void supabase.auth.signOut();
-                  }
-                }}
+                disabled={submitting}
+                onClick={() => void signOut()}
                 type="button"
               >
-                Sign in with another account
+                {submitting ? "Signing out…" : "Sign in with another account"}
               </button>
             </div>
           ) : (

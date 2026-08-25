@@ -45,6 +45,19 @@ export default function DriverApplicationPage({
     return () => subscription.unsubscribe();
   }, [supabase]);
 
+  async function signOut() {
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      if (error) throw error;
+      window.location.reload();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
   async function requestVerification(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("Sending verification email…");
@@ -131,10 +144,11 @@ export default function DriverApplicationPage({
             <strong>Verified email:</strong> {session.user.email}
             <button
               className="secondary-button"
-              onClick={() => void supabase.auth.signOut()}
+              disabled={submitting}
+              onClick={() => void signOut()}
               type="button"
             >
-              Use a different email
+              {submitting ? "Signing out…" : "Use a different email"}
             </button>
           </div>
         ) : null}

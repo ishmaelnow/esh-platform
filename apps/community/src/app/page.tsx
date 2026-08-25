@@ -219,10 +219,14 @@ export default function CommunityHome() {
       const { error } = await client.rpc("leave_my_product_session", {
         reason_value: "Exited ESH Community.",
       });
-      if (error) throw error;
+      if (error && !signOut) throw error;
       setActiveTenantId(null);
       setFeed([]);
-      if (signOut) await client.auth.signOut();
+      if (signOut) {
+        const { error: signOutError } = await client.auth.signOut({ scope: "local" });
+        if (signOutError) throw signOutError;
+        window.location.replace("/");
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to exit Community.");
     } finally {

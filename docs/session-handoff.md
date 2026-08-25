@@ -4,6 +4,16 @@ Last updated: 2026-08-25
 
 ## Current objective
 
+Cross-application sign-out stabilization is implemented locally after production review found exit
+buttons appearing ineffective. Platform, tenant governance, Transportation, Community, Rider,
+Driver, tenant invitation account switching, and Driver application email switching now await a
+local-device sign-out, disable duplicate clicks, show progress, report errors, and explicitly return
+to the appropriate entry state. Community sign-out is no longer blocked by failure to end its
+operational lease. Admin, Transportation, Community, and Driver type/lint validation pass; Rider
+package typecheck remains blocked by the pre-existing `google-tolls.test.ts` tuple typing error.
+No migration or environment change is required. Next: owner commit/push, allow each affected Vercel
+project to deploy, and execute `docs/operations/product-sign-out-manual-test.md`.
+
 The white-label application-shell pattern is now memorialized in
 `docs/development/white-label-product-guide.md` for junior developers and future recovery. The
 durable rule is: reuse the proven product engine, isolate each branded shell and browser session,

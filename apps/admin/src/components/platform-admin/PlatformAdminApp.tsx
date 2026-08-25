@@ -49,6 +49,20 @@ export function PlatformAdminApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  async function signOut() {
+    if (!supabase) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+      if (signOutError) throw signOutError;
+      window.location.replace("/");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+      setLoading(false);
+    }
+  }
+
   const refresh = useCallback(
     async (activeSession: SupabaseAuthSession | null) => {
       if (!supabase) {
@@ -148,14 +162,11 @@ export function PlatformAdminApp() {
 
         <button
           className="secondary-button full-width"
-          onClick={() => {
-            if (supabase) {
-              void supabase.auth.signOut();
-            }
-          }}
+          disabled={loading}
+          onClick={() => void signOut()}
           type="button"
         >
-          Sign out
+          {loading ? "Signing out…" : "Sign out"}
         </button>
       </aside>
 

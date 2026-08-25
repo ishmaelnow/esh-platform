@@ -97,6 +97,20 @@ export function AdminTenantApp() {
   const activeAuthUserId = useRef<string | null>(null);
   const refreshRequestId = useRef(0);
 
+  async function signOut() {
+    if (!supabase) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+      if (signOutError) throw signOutError;
+      window.location.replace("/");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     const stored = window.sessionStorage.getItem("esh-admin-active-view");
     if (views.some(({ key }) => key === stored)) setActiveView(stored as ViewKey);
@@ -310,14 +324,11 @@ export function AdminTenantApp() {
 
         <button
           className="secondary-button full-width"
-          onClick={() => {
-            if (supabase) {
-              void supabase.auth.signOut();
-            }
-          }}
+          disabled={loading}
+          onClick={() => void signOut()}
           type="button"
         >
-          Sign out
+          {loading ? "Signing out…" : "Sign out"}
         </button>
       </aside>
 

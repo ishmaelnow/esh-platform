@@ -100,6 +100,20 @@ export function TransportationEntryApp() {
     setBusy(false);
   }
 
+  async function signOut() {
+    if (!supabase) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      if (error) throw error;
+      window.location.replace("/");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+      setBusy(false);
+    }
+  }
+
   async function enterTransportation(item: TransportationAccess) {
     if (!supabase || !session?.user) return;
     setBusy(true);
@@ -179,10 +193,11 @@ export function TransportationEntryApp() {
         </div>
         <button
           className="secondary-button"
-          onClick={() => void supabase?.auth.signOut({ scope: "local" })}
+          disabled={busy}
+          onClick={() => void signOut()}
           type="button"
         >
-          Sign out
+          {busy ? "Signing out…" : "Sign out"}
         </button>
       </header>
       {message ? <p className="form-error">{message}</p> : null}
