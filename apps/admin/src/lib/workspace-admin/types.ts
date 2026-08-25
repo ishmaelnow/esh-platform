@@ -110,8 +110,7 @@ export function availableOperationalWorkspaces(workspaces: WorkspaceSummary[]) {
 export function eligibleTransportationRows(rows: readonly MyWorkspaceAccess[]) {
   return rows.filter(
     (row) =>
-      row.workspace_key === "transportation" &&
-      row.role_keys.includes("transportation_admin"),
+      row.workspace_key === "transportation" && row.role_keys.includes("transportation_admin"),
   );
 }
 
@@ -127,6 +126,13 @@ export function eligibleCommunityAdminRows(rows: readonly MyWorkspaceAccess[]) {
       row.workspace_key === "community" &&
       row.role_keys.some((role) => communityAdminRoles.has(role)),
   );
+}
+
+export function enrollmentsForWorkspace(
+  enrollments: readonly WorkspaceEnrollment[],
+  workspaceKey: ProductWorkspaceKey,
+) {
+  return enrollments.filter((enrollment) => enrollment.workspaceKey === workspaceKey);
 }
 
 function parseRoles(value: unknown) {

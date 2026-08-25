@@ -4,6 +4,18 @@ Last updated: 2026-08-25
 
 ## Current objective
 
+Tenant Governance UX is redesigned locally around an explicit scope hierarchy. The active tenant is
+repeated in a dedicated governance banner; one product is then selected above all product-specific
+controls. The page names `<Product> access governance`, filters current enrollments to that product,
+shows only its roles and eligible members, and names the tenant/product in status prompts, reasons,
+enrollment buttons, and removal controls. The generic Workspace dropdown and mixed-product access
+list are removed. Authorization and RPCs are unchanged; no migration is required. Admin,
+Transportation, and Community Admin typechecks plus the 6/6 workspace UX contract tests pass.
+Admin and Community Admin lint, all 72 Admin tests, the Admin production build, formatting, and diff
+validation also pass; the build retains only the existing Supabase Realtime dynamic-import and Next
+ESLint-plugin warnings. Next: owner commit/push the combined Community Admin and governance
+checkpoint, deploy Admin, then run `docs/operations/tenant-governance-ux-manual-test.md`.
+
 Independent Community Administration is implemented locally in `apps/community-admin`, following
 the proven Transportation extraction. It uses its own `esh-community-admin-auth` browser session,
 admits only explicit `community_admin`, `community_moderator`, or `emergency_publisher` roles,

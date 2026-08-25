@@ -48,6 +48,29 @@ panel that calls reason-required audited RPCs; the UI never inserts enrollment o
 active membership and enrollment details needed to govern access. Other callers receive only their
 own active workspace access and never the tenant member directory.
 
+## Governance Context Contract
+
+Governance is shared infrastructure, but product access changes are never context-free. The UI
+resolves and repeats the active tenant first, then requires one explicit product scope. Status,
+eligible members, role choices, enrollments, reasons, and action labels are derived only from that
+selected tenant/product pair.
+
+The product selector sits above the mutation form. A generic Workspace dropdown inside the form is
+not sufficient because it permits the surrounding page to remain visually ambiguous. Community
+and Transportation enrollments are rendered in separate lists, and a role from one product cannot
+appear while governing another. Product operations remain outside governance entirely.
+
+The required visible hierarchy is:
+
+```text
+Tenant governance
+  -> Governance tenant: <tenant>
+    -> Managing product: <product>
+      -> Product status
+      -> Product-specific member enrollment and role
+      -> Product-specific current access
+```
+
 ## Control Plane And Product Applications
 
 The visible workspace launcher is transitional. The accepted target architecture is recorded in

@@ -15,6 +15,7 @@ import {
 import type { ActiveTenantOption, TenantContextResolution } from "@/lib/tenant-admin/types";
 import {
   availableOperationalWorkspaces,
+  enrollmentsForWorkspace,
   parseWorkspaceAdminSnapshot,
   rolesForWorkspace,
   type WorkspaceAdminSnapshot,
@@ -246,9 +247,7 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
                     <button
                       className="primary-button"
                       disabled={busy}
-                      onClick={() =>
-                        void openWorkspace(workspace.workspaceKey)
-                      }
+                      onClick={() => void openWorkspace(workspace.workspaceKey)}
                       type="button"
                     >
                       Open {workspace.displayName}
@@ -270,6 +269,9 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
               snapshot={snapshot}
               onMutate={mutate}
               tenantId={selectedTenant.tenant.tenant_id}
+              tenantName={
+                selectedTenant.configuration?.display_name ?? selectedTenant.tenant.tenant_id
+              }
             />
           ) : null}
           {mode === "governance" && !snapshot.canManage ? (
@@ -290,6 +292,7 @@ function WorkspaceGovernance({
   snapshot,
   onMutate,
   tenantId,
+  tenantName,
 }: {
   busy: boolean;
   snapshot: WorkspaceAdminSnapshot;
@@ -298,6 +301,7 @@ function WorkspaceGovernance({
     success: string,
   ) => Promise<void>;
   tenantId: string;
+  tenantName: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(adminPublicConfig.supabase), []);
   const [workspaceKey, setWorkspaceKey] = useState<ProductWorkspaceKey>(
@@ -307,14 +311,12 @@ function WorkspaceGovernance({
   const [roleKey, setRoleKey] = useState<WorkspaceRoleKey>("community_member");
   const [reason, setReason] = useState("");
   const workspace = snapshot.workspaces.find((item) => item.workspaceKey === workspaceKey);
-  const existingMembershipIds = new Set(
-    snapshot.enrollments
-      .filter((item) => item.workspaceKey === workspaceKey)
-      .map((item) => item.membershipId),
-  );
+  const workspaceEnrollments = enrollmentsForWorkspace(snapshot.enrollments, workspaceKey);
+  const existingMembershipIds = new Set(workspaceEnrollments.map((item) => item.membershipId));
   const candidates = snapshot.memberships.filter(
     (item) => !existingMembershipIds.has(item.membershipId),
   );
+  const firstCandidateMembershipId = candidates[0]?.membershipId ?? "";
 
   useEffect(() => {
     if (!snapshot.workspaces.some((item) => item.workspaceKey === workspaceKey)) {
@@ -323,8 +325,8 @@ function WorkspaceGovernance({
     }
     const roles = rolesForWorkspace(workspaceKey);
     setRoleKey(roles[0]);
-    setMembershipId(candidates[0]?.membershipId ?? "");
-  }, [workspaceKey, snapshot.enrollments.length, snapshot.workspaces]);
+    setMembershipId(firstCandidateMembershipId);
+  }, [firstCandidateMembershipId, tenantId, workspaceKey, snapshot.workspaces]);
 
   async function submitEnrollment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -344,14 +346,13 @@ function WorkspaceGovernance({
 
   return (
     <section className="panel workspace-governance">
-      <div className="panel-header">
+      <div className="governance-tenant-scope">
         <div>
-          <p className="eyebrow">Tenant governance</p>
-          <h2>Workspace access</h2>
-          <p>
-            Tenant ownership can grant product access without granting access to another product.
-          </p>
+          <p className="eyebrow">Governance tenant</p>
+          <h2>{tenantName}</h2>
+          <p>Every change on this page applies only to this tenant.</p>
         </div>
+        <span className="scope-lock">Tenant scope locked</span>
       </div>
       {snapshot.workspaces.length === 0 ? (
         <State
@@ -361,60 +362,74 @@ function WorkspaceGovernance({
       ) : null}
       {snapshot.workspaces.length > 0 ? (
         <>
-          <div className="workspace-status-controls">
+          <div className="product-governance-selector" aria-label="Product governance scope">
             {snapshot.workspaces.map((item) => (
-              <article key={item.workspaceKey}>
-                <div>
-                  <strong>{item.displayName}</strong>
-                  <span className={`status-pill ${item.status}`}>{item.status}</span>
-                </div>
-                {item.workspaceKey === "community" && item.status !== "enabled" ? (
-                  <p className="muted">
-                    Enable the required Community capabilities in Tenant Administration before
-                    enabling this product.
-                  </p>
-                ) : null}
+              <button
+                aria-pressed={workspaceKey === item.workspaceKey}
+                className={`product-governance-option${workspaceKey === item.workspaceKey ? " active" : ""}`}
+                key={item.workspaceKey}
+                onClick={() => setWorkspaceKey(item.workspaceKey)}
+                type="button"
+              >
+                <span>{item.displayName}</span>
+                <span className={`status-pill ${item.status}`}>{item.status}</span>
+              </button>
+            ))}
+          </div>
+          {workspace ? (
+            <div className="product-governance-scope">
+              <div>
+                <p className="eyebrow">Managing product</p>
+                <h2>{workspace.displayName} access governance</h2>
+                <p>
+                  Roles and actions below affect only {workspace.displayName} in {tenantName}.
+                </p>
+              </div>
+              <div className="product-governance-state">
+                <span className={`status-pill ${workspace.status}`}>{workspace.status}</span>
                 <button
                   className="secondary-button"
                   disabled={busy}
                   onClick={() => {
-                    const nextStatus = item.status === "enabled" ? "suspended" : "enabled";
+                    const nextStatus = workspace.status === "enabled" ? "suspended" : "enabled";
                     const reasonValue = window
-                      .prompt(`Reason to ${nextStatus} ${item.displayName}`)
+                      .prompt(`Reason to ${nextStatus} ${workspace.displayName} for ${tenantName}`)
                       ?.trim();
                     if (reasonValue)
                       void onMutate(
                         () =>
                           supabase.rpc("set_tenant_workspace_status", {
                             target_tenant_id: tenantId,
-                            target_workspace_key: item.workspaceKey,
+                            target_workspace_key: workspace.workspaceKey,
                             target_status: nextStatus,
                             reason_value: reasonValue,
                           }),
-                        `${item.displayName} is now ${nextStatus}.`,
+                        `${workspace.displayName} is now ${nextStatus} for ${tenantName}.`,
                       );
                   }}
                   type="button"
                 >
-                  {item.status === "enabled" ? "Suspend" : "Enable"}
+                  {workspace.status === "enabled"
+                    ? `Suspend ${workspace.displayName}`
+                    : `Enable ${workspace.displayName}`}
                 </button>
-              </article>
-            ))}
-          </div>
-          <form className="form-grid" onSubmit={(event) => void submitEnrollment(event)}>
-            <label>
-              Workspace
-              <select
-                value={workspaceKey}
-                onChange={(event) => setWorkspaceKey(event.target.value as ProductWorkspaceKey)}
-              >
-                {snapshot.workspaces.map((item) => (
-                  <option key={item.workspaceKey} value={item.workspaceKey}>
-                    {item.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
+              </div>
+            </div>
+          ) : null}
+          {workspace?.workspaceKey === "community" && workspace.status !== "enabled" ? (
+            <p className="workspace-entry-guidance">
+              Community must have its Platform-granted capabilities before this workspace can be
+              enabled.
+            </p>
+          ) : null}
+          <form
+            className="form-grid governance-enrollment-form"
+            onSubmit={(event) => void submitEnrollment(event)}
+          >
+            <div className="panel-header">
+              <p className="eyebrow">Grant product access</p>
+              <h3>Enroll a member in {workspace?.displayName ?? "this product"}</h3>
+            </div>
             <label>
               Tenant member
               <select
@@ -431,23 +446,29 @@ function WorkspaceGovernance({
               </select>
             </label>
             <label>
-              Workspace role
-              <select
-                value={roleKey}
-                onChange={(event) => setRoleKey(event.target.value as WorkspaceRoleKey)}
-              >
-                {rolesForWorkspace(workspaceKey).map((role) => (
-                  <option key={role} value={role}>
-                    {roleLabels[role]}
-                  </option>
-                ))}
-              </select>
+              {workspace?.displayName ?? "Product"} role
+              {rolesForWorkspace(workspaceKey).length === 1 ? (
+                <span className="governance-fixed-role">
+                  {roleLabels[rolesForWorkspace(workspaceKey)[0]]}
+                </span>
+              ) : (
+                <select
+                  value={roleKey}
+                  onChange={(event) => setRoleKey(event.target.value as WorkspaceRoleKey)}
+                >
+                  {rolesForWorkspace(workspaceKey).map((role) => (
+                    <option key={role} value={role}>
+                      {roleLabels[role]}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
             <label>
               Reason
               <input
                 required
-                placeholder="Example: Community pilot administrator"
+                placeholder={`Why should this member receive ${workspace?.displayName ?? "product"} access?`}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
               />
@@ -457,17 +478,24 @@ function WorkspaceGovernance({
               disabled={busy || workspace?.status !== "enabled" || !membershipId}
               type="submit"
             >
-              Enroll member
+              Enroll in {workspace?.displayName ?? "product"}
             </button>
           </form>
+          <div className="governance-enrollment-heading">
+            <div>
+              <p className="eyebrow">Current product access</p>
+              <h3>{workspace?.displayName} enrollments</h3>
+            </div>
+            <span>{workspaceEnrollments.length} enrolled</span>
+          </div>
           <div className="workspace-enrollment-list">
-            {snapshot.enrollments.map((enrollment) => (
+            {workspaceEnrollments.map((enrollment) => (
               <article key={enrollment.enrollmentId}>
                 <div>
                   <strong>{enrollment.displayName}</strong>
                   <span>{enrollment.email}</span>
                   <span>
-                    {enrollment.workspaceKey} ·{" "}
+                    {workspace?.displayName} ·{" "}
                     {enrollment.roles.map((role) => roleLabels[role]).join(", ")}
                   </span>
                 </div>
@@ -477,7 +505,7 @@ function WorkspaceGovernance({
                   onClick={() => {
                     const reasonValue = window
                       .prompt(
-                        `Reason to remove ${enrollment.displayName} from ${enrollment.workspaceKey}`,
+                        `Reason to remove ${enrollment.displayName} from ${workspace?.displayName} in ${tenantName}`,
                       )
                       ?.trim();
                     if (reasonValue)
@@ -487,15 +515,20 @@ function WorkspaceGovernance({
                             target_enrollment_id: enrollment.enrollmentId,
                             reason_value: reasonValue,
                           }),
-                        "Workspace enrollment removed.",
+                        `${workspace?.displayName} access removed from ${enrollment.displayName}.`,
                       );
                   }}
                   type="button"
                 >
-                  Remove access
+                  Remove {workspace?.displayName} access
                 </button>
               </article>
             ))}
+            {workspaceEnrollments.length === 0 ? (
+              <p className="empty-state">
+                No members are enrolled in {workspace?.displayName} for {tenantName}.
+              </p>
+            ) : null}
           </div>
         </>
       ) : null}

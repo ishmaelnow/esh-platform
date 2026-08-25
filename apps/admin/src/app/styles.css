@@ -674,6 +674,113 @@ td span {
   gap: 16px;
 }
 
+.governance-tenant-scope,
+.product-governance-scope,
+.governance-enrollment-heading {
+  align-items: center;
+  border: 1px solid #d7e0ea;
+  border-radius: 10px;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.governance-tenant-scope {
+  background: #f4f8fc;
+  border-color: #b9cbe0;
+}
+
+.governance-tenant-scope h2,
+.product-governance-scope h2,
+.governance-enrollment-heading h3,
+.governance-enrollment-form h3 {
+  margin: 0;
+}
+
+.governance-tenant-scope p,
+.product-governance-scope p {
+  margin: 4px 0 0;
+}
+
+.scope-lock {
+  background: #dce9f5;
+  border-radius: 999px;
+  color: #274865;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.product-governance-selector {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.product-governance-option {
+  align-items: center;
+  background: #fff;
+  border: 2px solid #dce3eb;
+  border-radius: 9px;
+  color: #344055;
+  display: flex;
+  font-weight: 800;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.product-governance-option:hover,
+.product-governance-option.active {
+  border-color: #1b6b5a;
+}
+
+.product-governance-option.active {
+  background: #edf8f4;
+  color: #145648;
+}
+
+.product-governance-scope {
+  border-left: 5px solid #1b6b5a;
+}
+
+.product-governance-state {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.governance-enrollment-form {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 18px;
+}
+
+.governance-fixed-role {
+  background: #f3f6fa;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #344055;
+  min-height: 42px;
+  padding: 10px;
+}
+
+.governance-enrollment-heading {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0;
+  padding: 18px 0 0;
+}
+
+.governance-enrollment-heading > span {
+  color: #687487;
+  font-weight: 750;
+}
+
 .workspace-status-controls {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -698,6 +805,20 @@ td span {
 .workspace-enrollment-list span {
   color: #687487;
   font-size: 0.86rem;
+}
+
+@media (max-width: 680px) {
+  .governance-tenant-scope,
+  .product-governance-scope,
+  .governance-enrollment-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .product-governance-state {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
 }
 
 .workspace-back-link {

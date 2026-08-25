@@ -73,7 +73,10 @@ Implementation order:
    now awaits local-device completion, reports failures, and explicitly returns each product to its
    own entry state; production validation remains. The independent `apps/community-admin` shell is
    implemented with isolated authentication, explicit Community-operator admission, product entry,
-   and restricted routes. Vercel deployment and production validation follow.
+   and restricted routes. Its generated and custom production domains passed initial admission.
+   Shared tenant governance is now tenant-first and product-explicit: one selected product controls
+   status, roles, candidates, enrollment actions, and current-access lists without mixing products.
+   Production validation follows.
 7. Core content, typed records, targets, actions, lifecycle, and search indexes are implemented
    and deployed in `20260823000600_community_core_content.sql`; the independent Community app is
    deployed at `community.eshapp.com` with strict product-specific admission.

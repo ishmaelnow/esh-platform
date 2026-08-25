@@ -3,6 +3,7 @@ import {
   availableOperationalWorkspaces,
   eligibleCommunityAdminRows,
   eligibleTransportationRows,
+  enrollmentsForWorkspace,
   parseWorkspaceAdminSnapshot,
   rolesForWorkspace,
 } from "./types";
@@ -138,5 +139,31 @@ describe("workspace administration contracts", () => {
         role_keys: ["community_admin"],
       }),
     ]);
+  });
+
+  test("keeps governance enrollment lists inside the selected product context", () => {
+    const enrollments = [
+      {
+        enrollmentId: "community-enrollment",
+        membershipId: "member-1",
+        workspaceKey: "community" as const,
+        status: "active",
+        displayName: "Community operator",
+        email: "community@example.com",
+        roles: ["community_admin" as const],
+      },
+      {
+        enrollmentId: "transportation-enrollment",
+        membershipId: "member-2",
+        workspaceKey: "transportation" as const,
+        status: "active",
+        displayName: "Transportation operator",
+        email: "transportation@example.com",
+        roles: ["transportation_admin" as const],
+      },
+    ];
+
+    expect(enrollmentsForWorkspace(enrollments, "community")).toEqual([enrollments[0]]);
+    expect(enrollmentsForWorkspace(enrollments, "transportation")).toEqual([enrollments[1]]);
   });
 });
