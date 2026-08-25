@@ -116,6 +116,24 @@ importers:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
 
+  apps/community-admin:
+    dependencies:
+      '@esh-platform/config':
+        specifier: workspace:*
+        version: link:../../packages/platform/config
+      '@esh-platform/supabase':
+        specifier: workspace:*
+        version: link:../../packages/platform/supabase
+      next:
+        specifier: 15.5.20
+        version: 15.5.20(@playwright/test@1.54.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+
   apps/driver:
     dependencies:
       '@capacitor/android':

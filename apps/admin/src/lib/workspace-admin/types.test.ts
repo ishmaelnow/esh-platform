@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   availableOperationalWorkspaces,
+  eligibleCommunityAdminRows,
   eligibleTransportationRows,
   parseWorkspaceAdminSnapshot,
   rolesForWorkspace,
@@ -104,5 +105,38 @@ describe("workspace administration contracts", () => {
         },
       ]),
     ).toHaveLength(1);
+  });
+
+  test("admits Community operators but rejects member-only and Transportation access", () => {
+    expect(
+      eligibleCommunityAdminRows([
+        {
+          tenant_id: "community-admin-tenant",
+          membership_id: "community-admin-member",
+          workspace_key: "community",
+          workspace_name: "Community",
+          role_keys: ["community_admin"],
+        },
+        {
+          tenant_id: "community-member-tenant",
+          membership_id: "community-member",
+          workspace_key: "community",
+          workspace_name: "Community",
+          role_keys: ["community_member"],
+        },
+        {
+          tenant_id: "transport-tenant",
+          membership_id: "transport-member",
+          workspace_key: "transportation",
+          workspace_name: "Transportation",
+          role_keys: ["transportation_admin"],
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        tenant_id: "community-admin-tenant",
+        role_keys: ["community_admin"],
+      }),
+    ]);
   });
 });

@@ -71,7 +71,9 @@ Implementation order:
    to the existing proven Transportation backend. It duplicates neither privileged handlers nor
    backend secrets. Production deployment/testing passed. Cross-application sign-out stabilization
    now awaits local-device completion, reports failures, and explicitly returns each product to its
-   own entry state; production validation remains. Community Admin extraction follows.
+   own entry state; production validation remains. The independent `apps/community-admin` shell is
+   implemented with isolated authentication, explicit Community-operator admission, product entry,
+   and restricted routes. Vercel deployment and production validation follow.
 7. Core content, typed records, targets, actions, lifecycle, and search indexes are implemented
    and deployed in `20260823000600_community_core_content.sql`; the independent Community app is
    deployed at `community.eshapp.com` with strict product-specific admission.

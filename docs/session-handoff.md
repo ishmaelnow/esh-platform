@@ -4,6 +4,20 @@ Last updated: 2026-08-25
 
 ## Current objective
 
+Independent Community Administration is implemented locally in `apps/community-admin`, following
+the proven Transportation extraction. It uses its own `esh-community-admin-auth` browser session,
+admits only explicit `community_admin`, `community_moderator`, or `emergency_publisher` roles,
+selects from eligible Community tenants, and creates the Community product lease on its own origin.
+`community_member` alone and unrelated Transportation/Rider/Driver/governance identity are denied.
+The shell exposes only `/` and `/community`, reuses the existing Supabase/RLS/session backend, and
+requires no privileged secrets or migration. Admin's Community launcher now targets the distinct
+`NEXT_PUBLIC_COMMUNITY_ADMIN_URL` instead of the member application. Admin, Transportation, and
+Community Admin typechecks, lint, its production build, all 71 Admin tests, and the 5/5 admission
+contract tests pass. The production route manifest contains only `/` and `/community`. Next: owner
+commit/push, create the Vercel project rooted at `apps/community-admin`, configure the four
+documented public values, test the generated URL, then attach
+`community-admin.eshapp.com`. Keep `admin.eshapp.com/community` only through the rollback window.
+
 Cross-application sign-out stabilization is implemented locally after production review found exit
 buttons appearing ineffective. Platform, tenant governance, Transportation, Community, Rider,
 Driver, tenant invitation account switching, and Driver application email switching now await a

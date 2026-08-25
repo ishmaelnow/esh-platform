@@ -1,0 +1,19 @@
+{
+  "name": "@esh-platform/community-admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3005",
+    "lint": "eslint . ../admin/src/components/workspace-admin ../admin/src/lib",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@esh-platform/config": "workspace:*",
+    "@esh-platform/supabase": "workspace:*",
+    "next": "15.5.20",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  }
+}

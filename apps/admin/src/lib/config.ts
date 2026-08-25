@@ -1,6 +1,7 @@
 export type AdminPublicConfig = {
+  communityAdminUrl: string;
   communityAppUrl: string;
-  surface: "control-plane" | "transportation";
+  surface: "community-admin" | "control-plane" | "transportation";
   transportationAdminUrl: string;
   supabase: {
     url: string;
@@ -47,6 +48,7 @@ type AdminConfigKey =
   | "NEXT_PUBLIC_DRIVER_APP_URL"
   | "NEXT_PUBLIC_RIDER_APP_URL"
   | "NEXT_PUBLIC_COMMUNITY_APP_URL"
+  | "NEXT_PUBLIC_COMMUNITY_ADMIN_URL"
   | "NEXT_PUBLIC_ADMIN_SURFACE"
   | "NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL"
   | "VAPID_SUBJECT"
@@ -60,6 +62,7 @@ let cachedServerConfig: AdminServerConfig | null = null;
 
 export const adminPublicConfig = readAdminPublicConfig({
   NEXT_PUBLIC_ADMIN_SURFACE: process.env.NEXT_PUBLIC_ADMIN_SURFACE,
+  NEXT_PUBLIC_COMMUNITY_ADMIN_URL: process.env.NEXT_PUBLIC_COMMUNITY_ADMIN_URL,
   NEXT_PUBLIC_COMMUNITY_APP_URL: process.env.NEXT_PUBLIC_COMMUNITY_APP_URL,
   NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL: process.env.NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -97,6 +100,12 @@ function readAdminPublicConfig(source: AdminConfigSource): AdminPublicConfig {
     "https://community.eshapp.com",
     errors,
   );
+  const communityAdminUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_COMMUNITY_ADMIN_URL",
+    "https://community-admin.eshapp.com",
+    errors,
+  );
   const transportationAdminUrl = optionalUrl(
     source,
     "NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL",
@@ -108,6 +117,7 @@ function readAdminPublicConfig(source: AdminConfigSource): AdminPublicConfig {
   assertNoConfigErrors(errors);
 
   return {
+    communityAdminUrl,
     communityAppUrl,
     surface,
     transportationAdminUrl,
@@ -145,6 +155,12 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
     "https://community.eshapp.com",
     errors,
   );
+  const communityAdminUrl = optionalUrl(
+    source,
+    "NEXT_PUBLIC_COMMUNITY_ADMIN_URL",
+    "https://community-admin.eshapp.com",
+    errors,
+  );
   const transportationAdminUrl = optionalUrl(
     source,
     "NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL",
@@ -162,6 +178,7 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
   assertNoConfigErrors(errors);
 
   return {
+    communityAdminUrl,
     communityAppUrl,
     surface,
     transportationAdminUrl,
@@ -197,8 +214,10 @@ function readAdminServerConfig(source: AdminConfigSource): AdminServerConfig {
 
 function optionalAdminSurface(source: AdminConfigSource, errors: string[]) {
   const value = source.NEXT_PUBLIC_ADMIN_SURFACE?.trim() || "control-plane";
-  if (value === "control-plane" || value === "transportation") return value;
-  errors.push("NEXT_PUBLIC_ADMIN_SURFACE must be control-plane or transportation");
+  if (value === "community-admin" || value === "control-plane" || value === "transportation") {
+    return value;
+  }
+  errors.push("NEXT_PUBLIC_ADMIN_SURFACE must be community-admin, control-plane, or transportation");
   return "control-plane";
 }
 

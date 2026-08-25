@@ -115,6 +115,20 @@ export function eligibleTransportationRows(rows: readonly MyWorkspaceAccess[]) {
   );
 }
 
+const communityAdminRoles = new Set<WorkspaceRoleKey>([
+  "community_admin",
+  "community_moderator",
+  "emergency_publisher",
+]);
+
+export function eligibleCommunityAdminRows(rows: readonly MyWorkspaceAccess[]) {
+  return rows.filter(
+    (row) =>
+      row.workspace_key === "community" &&
+      row.role_keys.some((role) => communityAdminRoles.has(role)),
+  );
+}
+
 function parseRoles(value: unknown) {
   return asArray(value)
     .map(asString)

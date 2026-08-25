@@ -1,18 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { createBrowserSupabaseClient } from "@esh-platform/supabase";
-import { adminPublicConfig } from "@/lib/config";
+import { createAdminBrowserClient } from "@/lib/browser-client";
 import { loadPrincipalTenantContext } from "@/lib/tenant-admin/context";
 
 export function CommunityWorkspaceApp() {
-  const supabase = useMemo(() => typeof window === "undefined" ? null : createBrowserSupabaseClient(adminPublicConfig.supabase), []);
+  const supabase = useMemo(
+    () => (typeof window === "undefined" ? null : createAdminBrowserClient()),
+    [],
+  );
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [tenantName, setTenantName] = useState("");
   const [tenantId, setTenantId] = useState("");
   const [allowed, setAllowed] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [exiting, setExiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,6 +56,22 @@ export function CommunityWorkspaceApp() {
     return () => window.clearInterval(interval);
   }, [allowed, supabase, tenantId]);
 
+  async function exitCommunity() {
+    if (!supabase) return;
+    setExiting(true);
+    setError(null);
+    try {
+      const { error } = await supabase.rpc("leave_my_product_session", {
+        reason_value: "Exited ESH Community Administration.",
+      });
+      if (error) throw error;
+      window.location.replace("/");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to exit Community Administration.");
+      setExiting(false);
+    }
+  }
+
   useEffect(() => {
     if (signedIn === false && !checking) {
       window.location.replace(new URL("/", window.location.origin).href);
@@ -66,12 +84,12 @@ export function CommunityWorkspaceApp() {
     }
   }, [allowed, checking, error, signedIn]);
 
-  if (signedIn === false) return <main className="workspace-portal"><section className="state-block"><h2>Returning to ESH Admin</h2><p>Sign in from the ESH Admin entry page before opening Community.</p></section></main>;
+  if (signedIn === false) return <main className="workspace-portal"><section className="state-block"><h2>Returning to Community Administration</h2><p>Sign in from the Community Administration entry page before opening operations.</p></section></main>;
   if (signedIn === null || checking) return <main className="workspace-portal"><section className="state-block"><h2>Loading Community workspace</h2><p>Verifying explicit workspace enrollment, role, and product session.</p></section></main>;
   if (error || !allowed) return <main className="workspace-portal"><section className="state-block"><h2>Returning to product entry</h2><p>Community requires an explicit operational session. Redirecting you to the ESH control plane.</p></section></main>;
 
   return <main className="workspace-portal">
-    <header className="workspace-portal-header"><div><p className="eyebrow">Community</p><h1>{tenantName} Community Administration</h1><p className="muted">A separate operational workspace for publishing, services, groups, trust, and moderation.</p></div><Link className="secondary-button" href="/">Exit Community</Link></header>
+    <header className="workspace-portal-header"><div><p className="eyebrow">ESH Community</p><h1>{tenantName} Community Administration</h1><p className="muted">A separate operational workspace for publishing, services, groups, trust, and moderation.</p></div><button className="secondary-button" disabled={exiting} onClick={() => void exitCommunity()} type="button">{exiting ? "Exiting…" : "Exit Community Administration"}</button></header>
     <section className="workspace-card-grid">
       {[
         ["Foundation", "Workspace enrollment and authorization are active."],
