@@ -2,35 +2,37 @@
 
 Last updated: 2026-08-26
 
-## Rider SMS consent checkpoint
+## Rider SMS and Sent compliance checkpoint
 
-The immediate objective is the Sent/10DLC consent foundation for ESH Rider under FAIR FARE COMPANY
-LLC. It is implemented locally but not committed, deployed, or migrated. Rider now has a dedicated
-**Account** tab with an E.164 mobile field and optional checkbox that is unchecked by default. The
-full required disclosure and Fair Fare Privacy Policy link remain visible for one-screen compliance
-evidence. The existing email secure-link authentication flow is unchanged.
+ESH Rider SMS consent is implemented, migrated, deployed, and manually validated under FAIR FARE
+COMPANY LLC. The Rider **Account** tab has an E.164 mobile field and an optional unchecked checkbox
+with the complete Sent disclosure and Fair Fare Privacy Policy link. Email magic-link authentication
+is unchanged. Phone-only save does not grant consent; consent records `consented_unverified` without
+calling Twilio; withdrawal persists and remains effective after refresh. The ten-second portal
+refresh race and withdrawal constraint defect were both corrected. No production SMS was sent.
 
-Migration `20260826000100_rider_sms_consent_foundation.sql` separates phone possession, explicit
-consent, verification, and delivery. It adds consent source/version and lifecycle states to the
-existing service-only subscription, creates append-only consent history, and exposes a narrow Rider
-save RPC. Saving unchecked records no consent; checking records `consented_unverified`; neither
-operation calls Twilio or enables delivery; withdrawal is audited. The shared Driver verification
-path is preserved. No environment changes are required.
+Migrations `20260826000100_rider_sms_consent_foundation.sql` and
+`20260826000200_fix_rider_sms_withdrawal.sql` are applied. Consent state is separate from phone
+possession, verification, and delivery; append-only `sms_consent_events` and tenant audit preserve
+source, disclosure version, timestamps, and last-four evidence. New consent/unit and migration
+contract tests pass (6/6 contract tests); targeted Rider lint has no errors beyond the existing
+optimized-image warning. Full Rider typecheck still has the unrelated
+`src/lib/google-tolls.test.ts` tuple typing failure.
 
-New unit and migration contract tests pass 9/9. Targeted lint passes with only the pre-existing
-optimized-image warning in the Rider page. The first production withdrawal test exposed an
-upsert check-constraint ordering defect; follow-up migration
-`20260826000200_fix_rider_sms_withdrawal.sql` supplies the existing consent timestamp in the
-proposed disabled row. Full Rider
-typecheck remains blocked only by the pre-existing `src/lib/google-tolls.test.ts` tuple typing
-errors. Production review then found the Account checkbox could be overwritten by the ten-second
-portal refresh, and its feedback used stale local state. Rider now protects edits while saving and
-uses the database response for the result message. The local contract suite is 6/6 and targeted
-lint has no errors. Next: owner stages/commits the UI correction, runs the Supabase dry run (the
-database is already current), pushes, deploys Rider, and executes
-`docs/operations/rider-sms-consent-manual-test.md`. Do not send or verify a production SMS in this
-phase. Community Conversations and Safety has already been applied/pushed and its manual test may
-resume separately.
+The separate Fair Fare repository is `/mnt/c/Users/koshi/dynamic-frontend`. Its pushed commit
+`4d4336b` adds the public `/sms-opt-in` evidence page and `0616c2e` adds the required Privacy Policy
+sentence. The page is branded FAIR FARE COMPANY LLC, shows the exact disclosure and unchecked
+checkbox, and links to `/privacy-policy`; it intentionally does not persist data or place phone
+values in a redirect. The authenticated ESH Rider Account remains the source of truth. That repo has
+many unrelated uncommitted modifications; preserve them and never stage broadly.
+
+Sent has verified the FAIR FARE brand but requested the opt-in screenshot/link and privacy-policy
+update before campaign approval. The screenshot page can be uploaded through Google Drive/Dropbox
+as instructed. Sent’s WhatsApp/Meta email is optional and irrelevant to SMS. Do not add Sent keys or
+provider code yet. Next: finish/resubmit Sent compliance using the public Fair Fare opt-in evidence,
+then obtain Sent’s API key, SMS sender/profile, template/OTP behavior, webhook signing secret, and
+10DLC approval. Only then implement a provider-neutral Sent adapter while preserving Twilio as a
+switchable fallback. Never send duplicate traffic through both providers.
 
 ## Community Conversations and Safety checkpoint
 
