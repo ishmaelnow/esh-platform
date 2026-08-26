@@ -33,6 +33,12 @@ describe("Community conversations and safety migration", () => {
     expect(migration).not.toContain("grant insert on public.community_reports");
   });
 
+  test("builds an empty-safe nested comment feed without reserved aliases", () => {
+    expect(migration).toContain(") order by cmt.created_at), '[]'::jsonb)");
+    expect(migration).toContain("from public.community_comments cmt");
+    expect(migration).not.toContain("from public.community_comments comment\n");
+  });
+
   test("uses private bounded media and rechecks readable content", () => {
     expect(migration).toContain("'community-media', 'community-media', false, 5242880");
     expect(migration).toContain("allowed_mime_types");

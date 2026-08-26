@@ -499,21 +499,21 @@ returns jsonb language sql stable security definer set search_path = public as $
         where reaction.tenant_id = item.tenant_id and reaction.content_id = item.content_id
           and reaction.actor_person_id = public.current_person_id()),
       'comments', (select coalesce(jsonb_agg(jsonb_build_object(
-          'comment_id', comment.comment_id, 'parent_comment_id', comment.parent_comment_id,
-          'body', comment.body, 'author_name', comment_profile.display_name,
-          'author_person_id', comment.author_person_id, 'viewer_is_author', comment.author_person_id = public.current_person_id(),
-          'created_at', comment.created_at,
+          'comment_id', cmt.comment_id, 'parent_comment_id', cmt.parent_comment_id,
+          'body', cmt.body, 'author_name', comment_profile.display_name,
+          'author_person_id', cmt.author_person_id, 'viewer_is_author', cmt.author_person_id = public.current_person_id(),
+          'created_at', cmt.created_at,
           'reaction_counts', (select coalesce(jsonb_object_agg(crs.reaction_kind, crs.total), '{}'::jsonb)
             from (select reaction_kind, count(*) total from public.community_comment_reactions cr
-              where cr.tenant_id = comment.tenant_id and cr.comment_id = comment.comment_id group by reaction_kind) crs),
+              where cr.tenant_id = cmt.tenant_id and cr.comment_id = cmt.comment_id group by reaction_kind) crs),
           'viewer_reactions', (select coalesce(jsonb_agg(reaction_kind), '[]'::jsonb) from public.community_comment_reactions cr
-            where cr.tenant_id = comment.tenant_id and cr.comment_id = comment.comment_id
+            where cr.tenant_id = cmt.tenant_id and cr.comment_id = cmt.comment_id
               and cr.actor_person_id = public.current_person_id())
-        ) order by comment.created_at) from public.community_comments comment
-        join public.person_profiles comment_profile on comment_profile.person_id = comment.author_person_id
-        where comment.tenant_id = item.tenant_id and comment.content_id = item.content_id
-          and comment.moderation_status = 'clear'
-          and not public.community_actor_hidden(comment.tenant_id, comment.author_person_id)),
+        ) order by cmt.created_at), '[]'::jsonb) from public.community_comments cmt
+        join public.person_profiles comment_profile on comment_profile.person_id = cmt.author_person_id
+        where cmt.tenant_id = item.tenant_id and cmt.content_id = item.content_id
+          and cmt.moderation_status = 'clear'
+          and not public.community_actor_hidden(cmt.tenant_id, cmt.author_person_id)),
       'media', (select coalesce(jsonb_agg(jsonb_build_object('media_id', media.media_id,
           'storage_path', media.storage_path, 'alt_text', media.alt_text, 'mime_type', media.mime_type)
           order by attachment.sort_order), '[]'::jsonb)
@@ -541,14 +541,14 @@ returns jsonb language sql stable security definer set search_path = public as $
         'target_id', coalesce(report.content_id, report.comment_id), 'category', report.category,
         'details', report.details, 'status', report.status, 'created_at', report.created_at,
         'reporter_name', reporter.display_name,
-        'target_excerpt', case when report.target_type = 'content' then left(content.body, 300) else left(comment.body, 300) end,
+        'target_excerpt', case when report.target_type = 'content' then left(content.body, 300) else left(cmt.body, 300) end,
         'target_author_name', target_author.display_name
       ) order by report.created_at)
       from public.community_reports report
       join public.person_profiles reporter on reporter.person_id = report.reporter_person_id
       left join public.community_content_items content on content.tenant_id = report.tenant_id and content.content_id = report.content_id
-      left join public.community_comments comment on comment.tenant_id = report.tenant_id and comment.comment_id = report.comment_id
-      join public.person_profiles target_author on target_author.person_id = coalesce(content.author_person_id, comment.author_person_id)
+      left join public.community_comments cmt on cmt.tenant_id = report.tenant_id and cmt.comment_id = report.comment_id
+      join public.person_profiles target_author on target_author.person_id = coalesce(content.author_person_id, cmt.author_person_id)
       where report.tenant_id = target_tenant_id and report.status in ('open', 'reviewing')
       limit greatest(1, least(coalesce(result_limit, 100), 200))
     ), '[]'::jsonb)) end;

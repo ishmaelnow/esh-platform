@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-25
+Last updated: 2026-08-26
 
 ## Community Conversations and Safety checkpoint
 
@@ -14,12 +14,15 @@ decision writes tenant audit evidence. Direct client table writes remain denied,
 and tenant authorization remain server-derived, and removed content/history is preserved. Shared
 types, parser tests, migration security contracts, architecture, roadmap, and the production manual
 test are updated. Community, Admin, Community Admin, and Supabase typechecks pass; Community/Admin/
-Community Admin lint passes; 3 Community tests, 73 Admin tests, and 4 migration contract tests pass;
+Community Admin lint passes; 3 Community tests, 73 Admin tests, and 5 migration contract tests pass;
 and all three affected production builds pass with only the existing Next ESLint-plugin and Admin
-Supabase Realtime warnings. No migration, commit, push, or deployment has occurred yet. Next: the
-owner runs the dry run, confirms only `20260825000100_community_conversations_safety.sql` is listed,
-stages/commits the explicit files,
-applies the migration, pushes, waits for both Vercel deployments, and executes the manual test.
+Supabase Realtime warnings. The owner committed the feature as `ed12bbc`; the dry run listed only
+the intended migration. The
+first production apply failed transactionally before migration history was recorded because the
+feed snapshot used `comment` as a SQL alias and omitted the comments aggregate's empty-array
+fallback. The local migration now uses the unambiguous `cmt` alias and a complete `coalesce`.
+Next: owner commits this migration/handoff correction, reruns the dry run, applies the same migration,
+pushes, waits for both Vercel deployments, and executes the manual test.
 
 ## Safe Admin cleanup reminder
 
