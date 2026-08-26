@@ -31,6 +31,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Manual Dispatch and Trip Core](./architecture/manual-dispatch-trip-core.md)
 - [Verified Rider Booking](./architecture/verified-rider-booking.md)
 - [Rider Trip Notifications](./architecture/rider-trip-notifications.md)
+- [Rider SMS Consent Foundation Manual Test](./operations/rider-sms-consent-manual-test.md)
 - [Scheduled Rider Bookings](./architecture/scheduled-rider-bookings.md)
 - [Automatic Driver Matching](./architecture/automatic-driver-matching.md)
 - [Realtime Driver Location](./architecture/realtime-driver-location.md)

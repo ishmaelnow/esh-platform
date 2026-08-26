@@ -1537,9 +1537,15 @@ export type Database = {
         Relationships: []
       }
       sms_notification_subscriptions: {
-        Row: { consented_at: string; created_at: string; disabled_at: string | null; driver_profile_id: string | null; person_id: string; phone_e164: string; rider_profile_id: string | null; sms_subscription_id: string; status: string; tenant_id: string; updated_at: string; verified_at: string }
-        Insert: { consented_at?: string; created_at?: string; disabled_at?: string | null; driver_profile_id?: string | null; person_id: string; phone_e164: string; rider_profile_id?: string | null; sms_subscription_id?: string; status?: string; tenant_id: string; updated_at?: string; verified_at?: string }
-        Update: { consented_at?: string; created_at?: string; disabled_at?: string | null; driver_profile_id?: string | null; person_id?: string; phone_e164?: string; rider_profile_id?: string | null; sms_subscription_id?: string; status?: string; tenant_id?: string; updated_at?: string; verified_at?: string }
+        Row: { consent_source: string | null; consented_at: string | null; created_at: string; disabled_at: string | null; disclosure_version: string | null; driver_profile_id: string | null; person_id: string; phone_e164: string; rider_profile_id: string | null; sms_subscription_id: string; status: string; tenant_id: string; updated_at: string; verified_at: string | null }
+        Insert: { consent_source?: string | null; consented_at?: string | null; created_at?: string; disabled_at?: string | null; disclosure_version?: string | null; driver_profile_id?: string | null; person_id: string; phone_e164: string; rider_profile_id?: string | null; sms_subscription_id?: string; status?: string; tenant_id: string; updated_at?: string; verified_at?: string | null }
+        Update: { consent_source?: string | null; consented_at?: string | null; created_at?: string; disabled_at?: string | null; disclosure_version?: string | null; driver_profile_id?: string | null; person_id?: string; phone_e164?: string; rider_profile_id?: string | null; sms_subscription_id?: string; status?: string; tenant_id?: string; updated_at?: string; verified_at?: string | null }
+        Relationships: []
+      }
+      sms_consent_events: {
+        Row: { consent_action: string; consent_source: string; disclosure_version: string; occurred_at: string; person_id: string; phone_e164: string; rider_profile_id: string; sms_consent_event_id: string; sms_subscription_id: string; tenant_id: string }
+        Insert: { consent_action: string; consent_source: string; disclosure_version: string; occurred_at?: string; person_id: string; phone_e164: string; rider_profile_id: string; sms_consent_event_id?: string; sms_subscription_id: string; tenant_id: string }
+        Update: { consent_action?: string; consent_source?: string; disclosure_version?: string; occurred_at?: string; person_id?: string; phone_e164?: string; rider_profile_id?: string; sms_consent_event_id?: string; sms_subscription_id?: string; tenant_id?: string }
         Relationships: []
       }
       sms_delivery_attempts: {
@@ -2960,6 +2966,7 @@ export type Database = {
       my_driver_earnings_notification_preferences: { Args: never; Returns: Json }
       my_driver_sms_notification_settings: { Args: never; Returns: Json }
       my_rider_sms_notification_settings: { Args: { target_tenant_slug: string }; Returns: Json }
+      save_my_rider_sms_consent: { Args: { target_tenant_slug: string; phone_e164_value: string; sms_consent_value: boolean }; Returns: Json }
       my_rider_scheduling: {
         Args: { target_tenant_slug: string }
         Returns: Json

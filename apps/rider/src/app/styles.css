@@ -258,8 +258,61 @@ textarea:focus {
 }
 .rider-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 20px;
+}
+
+.sms-account-section {
+  max-width: 860px;
+}
+
+.sms-consent-card {
+  display: grid;
+  gap: 20px;
+}
+
+.sms-consent-card h3 {
+  margin-bottom: 8px;
+}
+
+.sms-consent-choice {
+  align-items: flex-start;
+  background: #f5f9f7;
+  border: 1px solid #cfddd5;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: row;
+  font-size: 0.94rem;
+  font-weight: 500;
+  gap: 12px;
+  line-height: 1.55;
+  padding: 18px;
+}
+
+.sms-consent-choice input {
+  accent-color: #16714a;
+  flex: 0 0 auto;
+  margin-top: 4px;
+  min-height: 20px;
+  width: 20px;
+}
+
+.sms-consent-choice a {
+  color: #0e6844;
+  font-weight: 800;
+}
+
+.sms-consent-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.sms-consent-actions .status {
+  max-width: 520px;
+  white-space: normal;
 }
 .booking-only {
   display: block;

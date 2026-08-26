@@ -209,8 +209,10 @@ deferred from this milestone and were delivered under the later milestones below
      bounded retry/manual recovery, Rider alerts, and Admin failure visibility.
    - Current delivery in progress: explicit per-browser Rider and Driver Web Push subscriptions,
      privacy-safe urgent alerts, independent delivery attempts, and expired-endpoint cleanup.
-   - Current delivery in progress: verified, explicitly consented Rider and Driver transactional
-     SMS for urgent events with privacy-safe copy and independent delivery attempts.
+   - Current delivery in progress: FAIR FARE COMPANY LLC operational-SMS consent for ESH Rider is
+     separate from phone storage, email authentication, number verification, and delivery; it is
+     optional, versioned, auditable, and withdrawable. Verified Rider and Driver transactional SMS
+     delivery remains gated behind provider approval and phone verification.
    - Operational blocker: SMS code is deployed, but production verification is waiting for Twilio
      to explain and reactivate a suspended account under billing ticket `#29018616`.
    - Current stabilization: installed Rider and Driver shells now distinguish unavailable native

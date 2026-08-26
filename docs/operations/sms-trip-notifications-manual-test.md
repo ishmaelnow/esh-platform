@@ -7,9 +7,9 @@
    `TWILIO_VERIFY_SERVICE_SID` to Rider and Driver. Never use `NEXT_PUBLIC_` for these values.
 3. Dry-run and apply only `20260815000400_sms_trip_notifications_v1.sql`, then deploy Admin,
    Rider, and Driver.
-4. In Rider **My trips**, enter a test mobile number in E.164 format, request a code, enter the
-   received code, and confirm success or failure appears inside the Text alerts card and the enabled
-   UI shows only the last four digits.
+4. Complete the separate Rider consent-foundation test first. Rider consent now lives under
+   **Account** and must exist before any verification request. Do not run a production verification
+   while the provider account or 10DLC campaign is unapproved.
 5. Repeat in Driver **Text alerts**. Confirm an incorrect or expired code does not enable texts.
 6. Create a test trip. Confirm Driver receives one generic new-offer text with no Rider name,
    address, or fare.

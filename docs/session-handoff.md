@@ -2,6 +2,30 @@
 
 Last updated: 2026-08-26
 
+## Rider SMS consent checkpoint
+
+The immediate objective is the Sent/10DLC consent foundation for ESH Rider under FAIR FARE COMPANY
+LLC. It is implemented locally but not committed, deployed, or migrated. Rider now has a dedicated
+**Account** tab with an E.164 mobile field and optional checkbox that is unchecked by default. The
+full required disclosure and Fair Fare Privacy Policy link remain visible for one-screen compliance
+evidence. The existing email secure-link authentication flow is unchanged.
+
+Migration `20260826000100_rider_sms_consent_foundation.sql` separates phone possession, explicit
+consent, verification, and delivery. It adds consent source/version and lifecycle states to the
+existing service-only subscription, creates append-only consent history, and exposes a narrow Rider
+save RPC. Saving unchecked records no consent; checking records `consented_unverified`; neither
+operation calls Twilio or enables delivery; withdrawal is audited. The shared Driver verification
+path is preserved. No environment changes are required.
+
+New unit and migration contract tests pass 9/9. Targeted lint passes with only the pre-existing
+optimized-image warning in the Rider page. Full Rider
+typecheck remains blocked only by the pre-existing `src/lib/google-tolls.test.ts` tuple typing
+errors. Next: complete validation, owner review, then owner stages/commits. The owner must run the
+Supabase dry run and apply only after review, deploy Rider, and execute
+`docs/operations/rider-sms-consent-manual-test.md`. Do not send or verify a production SMS in this
+phase. Community Conversations and Safety has already been applied/pushed and its manual test may
+resume separately.
+
 ## Community Conversations and Safety checkpoint
 
 Community Conversations and Safety V1 is implemented locally in Migration
@@ -1004,14 +1028,13 @@ not get reconstructed if they had no stored telemetry.
 
 ## Exact next action
 
-Owner stages and commits the parallel-interface correction, pushes `main`, then finishes the Vercel
-project with Root Directory `apps/transportation`. Configure only the six entries in
-`apps/transportation/.env.example`, set `NEXT_PUBLIC_ADMIN_SURFACE=transportation`, set
-`TRANSPORTATION_BACKEND_URL` to the stable existing Admin project origin, attach
-`transportation.eshapp.com`, add that origin to the Mapbox token restrictions, and add
-`NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL=https://transportation.eshapp.com` to the existing Admin
-project. Deploy both applications and run
-`docs/operations/transportation-admin-application-manual-test.md`. There is no Supabase migration.
+Owner reviews the Rider SMS consent implementation. If approved, stage each listed file explicitly,
+commit without altering the already-pushed Community checkpoint, and run
+`pnpm exec supabase db push --dry-run`. Continue only if it lists exactly
+`20260826000100_rider_sms_consent_foundation.sql`; then the owner applies it, pushes `main`, waits
+for Rider deployment, and runs `docs/operations/rider-sms-consent-manual-test.md`. Capture the Sent
+evidence while the checkbox is visibly unchecked. Do not request a verification code or send a
+production SMS during this phase.
 
 Native release `1.0.1` remains operationally validated for Rider and Driver. Keep Android signing
 credentials outside Git and independently backed up. Native APNs/FCM push remains unimplemented,

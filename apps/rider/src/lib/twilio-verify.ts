@@ -1,9 +1,4 @@
-export function normalizeE164(value: string) {
-  const normalized = value.replace(/[\s().-]/g, "");
-  if (!/^\+[1-9][0-9]{7,14}$/.test(normalized))
-    throw new Error("Enter a mobile number in international format, such as +12155550123.");
-  return normalized;
-}
+export { normalizeE164 } from "./sms-consent";
 
 export async function requestTwilioVerification(phone: string) {
   return twilioVerifyRequest("Verifications", new URLSearchParams({ To: phone, Channel: "sms" }));

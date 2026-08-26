@@ -26,6 +26,13 @@ import {
   generateRecurringPickupTimes,
 } from "./booking";
 import { currentPushSubscription, pushSupported, pushUnavailableMessage, vapidApplicationKey } from "../lib/push";
+import {
+  EMPTY_RIDER_SMS_SETTINGS,
+  FAIR_FARE_PRIVACY_POLICY_URL,
+  normalizeE164,
+  smsConsentStatusMessage,
+  type RiderSmsSettings,
+} from "../lib/sms-consent";
 import appIcon from "../../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png";
 
 type BookingTenant = { tenant_slug: string; display_name: string };
@@ -82,7 +89,6 @@ type RiderPortal = {
   bookings: RiderBooking[];
 };
 type RiderNotificationPreferences = { tripUpdatesEnabled: boolean; paymentUpdatesEnabled: boolean };
-type SmsSettings = { enabled: boolean; maskedPhone: string | null; verifiedAt: string | null };
 type RiderScheduling = {
   timeZone: string;
   settings: {
@@ -222,14 +228,13 @@ export default function RiderHome() {
       setBusy(false);
     }
   }
-  const [smsSettings, setSmsSettings] = useState<SmsSettings>({ enabled: false, maskedPhone: null, verifiedAt: null });
+  const [smsSettings, setSmsSettings] = useState<RiderSmsSettings>(EMPTY_RIDER_SMS_SETTINGS);
   const [smsPhone, setSmsPhone] = useState("");
-  const [smsCode, setSmsCode] = useState("");
-  const [smsPending, setSmsPending] = useState(false);
+  const [smsConsentChecked, setSmsConsentChecked] = useState(false);
   const [smsBusy, setSmsBusy] = useState(false);
   const [smsFeedback, setSmsFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-  const [activePortalTab, setActivePortalTab] = useState<"book" | "trips" | "payments" | "wallet">("book");
+  const [activePortalTab, setActivePortalTab] = useState<"account" | "book" | "trips" | "payments" | "wallet">("book");
   const [showTripHistory, setShowTripHistory] = useState(false);
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
@@ -310,7 +315,12 @@ export default function RiderHome() {
       if (reconciliationResult.error && !reconciliationResult.error.message.includes("trip_fare_reconciliations")) throw reconciliationResult.error;
       if (reputationResult.error) throw reputationResult.error;
       if (refundResult.error) throw refundResult.error;
-      if (!smsResult.error && smsResult.data) setSmsSettings(smsResult.data as unknown as SmsSettings);
+      if (!smsResult.error && smsResult.data) {
+        const nextSmsSettings = smsResult.data as unknown as RiderSmsSettings;
+        setSmsSettings(nextSmsSettings);
+        setSmsPhone(nextSmsSettings.phoneE164 ?? nextPortal.profile.phone ?? "");
+        setSmsConsentChecked(nextSmsSettings.consented);
+      }
       setReputationTrips((reputationResult.data ?? []) as unknown as ReputationTrip[]);
       setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
       setNotificationPreferences(preferenceData as RiderNotificationPreferences);
@@ -1060,23 +1070,29 @@ export default function RiderHome() {
     } catch (value) { setError(riderErrorMessage(value)); } finally { setBusy(false); }
   }
 
-  async function updateRiderSms(action: "start" | "check" | "disable") {
-    if (!session || !supabase) return;
+  async function saveRiderSmsConsent() {
+    if (!supabase) return;
     setSmsBusy(true); setSmsFeedback(null);
     try {
-      if (action === "disable") {
-        const result = await supabase.rpc("disable_my_rider_sms_notifications", { target_tenant_slug: tenantSlug });
-        if (result.error) throw result.error;
-        setSmsSettings((current) => ({ ...current, enabled: false })); setSmsPending(false);
-        setSmsFeedback({ kind: "success", message: "Text alerts disabled." }); return;
-      }
-      const response = await fetch("/api/notifications/sms", { method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ action, phone: smsPhone, code: smsCode, tenantSlug }) });
-      const result = await response.json() as { message?: string };
-      if (!response.ok) throw new Error(result.message ?? "SMS verification failed.");
-      if (action === "start") { setSmsPending(true); setSmsFeedback({ kind: "success", message: "Verification code sent. Check this phone for the SMS. Standard message rates may apply." }); }
-      else { setSmsPending(false); setSmsCode(""); setSmsFeedback({ kind: "success", message: "Phone verified and transactional text alerts enabled." }); await loadPortal(); }
+      const normalizedPhone = normalizeE164(smsPhone);
+      const result = await supabase.rpc("save_my_rider_sms_consent", {
+        target_tenant_slug: tenantSlug,
+        phone_e164_value: normalizedPhone,
+        sms_consent_value: smsConsentChecked,
+      });
+      if (result.error) throw result.error;
+      const nextSettings = result.data as unknown as RiderSmsSettings;
+      setSmsSettings(nextSettings);
+      setSmsPhone(nextSettings.phoneE164 ?? normalizedPhone);
+      setSmsConsentChecked(nextSettings.consented);
+      setSmsFeedback({
+        kind: "success",
+        message: smsConsentChecked
+          ? "Your mobile number and SMS consent were saved. No text message was sent."
+          : smsSettings.consented
+            ? "Your SMS consent was withdrawn. Text delivery is off."
+            : "Your mobile number was saved without SMS consent.",
+      });
     } catch (value) { setSmsFeedback({ kind: "error", message: riderErrorMessage(value) }); } finally { setSmsBusy(false); }
   }
 
@@ -1199,6 +1215,7 @@ export default function RiderHome() {
                 autoComplete="tel"
                 placeholder="Example: 469-555-0123"
               />
+              <span className="field-hint">Optional. Adding a phone number does not opt you into SMS.</span>
             </label>
             <label className="wide">
               Accessibility or pickup notes
@@ -1216,12 +1233,61 @@ export default function RiderHome() {
       ) : (
         <>
         <nav className="rider-tabs" aria-label="Rider portal sections">
+          <button className={activePortalTab === "account" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("account")} type="button">Account</button>
           <button className={activePortalTab === "book" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("book")} type="button">Book trip</button>
           <button className={activePortalTab === "trips" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("trips")} type="button">{currentBookings.length > 0 ? "Current trip" : "My trips"}</button>
           <button className={activePortalTab === "payments" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("payments")} type="button">Payments</button>
           <button className={activePortalTab === "wallet" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("wallet")} type="button">Wallet</button>
         </nav>
         <div className={activePortalTab === "book" ? "portal-grid booking-only" : "portal-grid trips-only"}>
+          {activePortalTab === "account" ? (
+          <section className="history sms-account-section">
+            <div className="section-heading">
+              <div><p className="kicker">ESH Rider</p><h2>Account and communication settings</h2></div>
+            </div>
+            <article className="card sms-consent-card">
+              <div>
+                <p className="kicker">Optional SMS</p>
+                <h3>Mobile and SMS preferences</h3>
+                <p>Keep your mobile contact current and choose whether FAIR FARE COMPANY LLC may send ESH service messages.</p>
+              </div>
+              <label>
+                Mobile phone number
+                <input
+                  aria-describedby="sms-phone-help"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  onChange={(event) => setSmsPhone(event.target.value)}
+                  placeholder="Example: +1 215 555 0123"
+                  type="tel"
+                  value={smsPhone}
+                />
+                <span className="field-hint" id="sms-phone-help">Use international format. Saving this number alone does not grant SMS consent.</span>
+              </label>
+              <label className="sms-consent-choice">
+                <input
+                  checked={smsConsentChecked}
+                  disabled={smsBusy}
+                  onChange={(event) => setSmsConsentChecked(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>
+                  I agree to receive SMS messages from <strong>FAIR FARE COMPANY LLC</strong> regarding ESH ride updates, account and service notifications, and customer care. Msg and data rates may apply. Msg frequency will vary. Reply HELP for help or STOP to opt out.{" "}
+                  <a href={FAIR_FARE_PRIVACY_POLICY_URL} rel="noopener noreferrer" target="_blank">Privacy Policy</a>.
+                </span>
+              </label>
+              <p className="field-hint">Optional. SMS consent is not required to use ESH Rider and is separate from email sign-in and other agreements.</p>
+              <div className="sms-consent-actions">
+                <button className="button primary" disabled={smsBusy || smsPhone.trim().length === 0} onClick={() => void saveRiderSmsConsent()} type="button">
+                  {smsBusy ? "Saving…" : "Save mobile preferences"}
+                </button>
+                <span className={`status status-${smsSettings.status}`}>{smsConsentStatusMessage(smsSettings)}</span>
+              </div>
+              {smsFeedback ? <p className={smsFeedback.kind === "error" ? "error" : "notice"} role="status">{smsFeedback.message}</p> : null}
+            </article>
+          </section>
+          ) : null}
+
           {activePortalTab === "book" ? (
           <section className="card booking-card">
             <p className="kicker">{portal.tenant.displayName}</p>
@@ -1480,15 +1546,6 @@ export default function RiderHome() {
               {pushSupported() ? <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}
             </div>
             {!pushSupported() ? <p className="notice" role="status">{pushUnavailableMessage()}</p> : null}
-            <div className="card">
-              <strong>Text alerts</strong>
-              <p>Opt in to privacy-safe transactional texts for urgent trip and payment updates. Message and data rates may apply. No marketing messages.</p>
-              {smsSettings.enabled ? <div className="preference-card"><span>On · verified {smsSettings.maskedPhone}</span><button className="button secondary compact" disabled={smsBusy} onClick={() => void updateRiderSms("disable")} type="button">Turn off texts</button></div> : <div className="panel-stack">
-                <label>Mobile number<input value={smsPhone} disabled={smsPending} onChange={(event) => setSmsPhone(event.target.value)} placeholder="+12155550123" autoComplete="tel" inputMode="tel" /></label>
-                {!smsPending ? <button className="button secondary compact" disabled={smsBusy || !/^\+[1-9][0-9]{7,14}$/.test(smsPhone.replace(/[\s().-]/g, ""))} onClick={() => void updateRiderSms("start")} type="button">Text me a verification code</button> : <><p className="notice">Code sent to {smsPhone}. Enter the 4–10 digit code below.</p><label>Verification code<input value={smsCode} onChange={(event) => setSmsCode(event.target.value.replace(/\D/g, "").slice(0, 10))} autoComplete="one-time-code" inputMode="numeric" /></label><div className="button-row"><button className="button secondary compact" disabled={smsBusy || !/^\d{4,10}$/.test(smsCode)} onClick={() => void updateRiderSms("check")} type="button">Verify and enable texts</button><button className="button secondary compact" disabled={smsBusy} onClick={() => { setSmsPending(false); setSmsCode(""); setSmsFeedback(null); }} type="button">Change number</button></div></>}
-              </div>}
-              {smsFeedback ? <p className={smsFeedback.kind === "error" ? "error" : "notice"} role="status">{smsFeedback.message}</p> : null}
-            </div>
             {currentBookings.length > 0 ? <section className="panel-stack">
               <div className="section-heading"><div><p className="kicker">Current trip</p><h3>Track your active ride</h3></div></div>
               {currentBookings.map((booking) => <article className="card trip-card" key={`current-${booking.bookingId}`}>
