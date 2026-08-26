@@ -6,8 +6,8 @@ shared beyond the compliance reviewer.
 
 ## Deployment prerequisite
 
-1. Confirm `pnpm exec supabase db push --dry-run` lists only
-   `20260826000100_rider_sms_consent_foundation.sql`.
+1. Confirm `pnpm exec supabase db push --dry-run` lists the consent foundation and, after the
+   withdrawal fix is committed, `20260826000200_fix_rider_sms_withdrawal.sql`.
 2. The owner applies that migration, pushes the reviewed commit, and waits for the Rider deployment
    to become Ready.
 3. No new environment variables are required. Do not activate or test Twilio delivery in this phase.

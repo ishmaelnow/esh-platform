@@ -18,10 +18,13 @@ operation calls Twilio or enables delivery; withdrawal is audited. The shared Dr
 path is preserved. No environment changes are required.
 
 New unit and migration contract tests pass 9/9. Targeted lint passes with only the pre-existing
-optimized-image warning in the Rider page. Full Rider
+optimized-image warning in the Rider page. The first production withdrawal test exposed an
+upsert check-constraint ordering defect; follow-up migration
+`20260826000200_fix_rider_sms_withdrawal.sql` supplies the existing consent timestamp in the
+proposed disabled row. Full Rider
 typecheck remains blocked only by the pre-existing `src/lib/google-tolls.test.ts` tuple typing
-errors. Next: complete validation, owner review, then owner stages/commits. The owner must run the
-Supabase dry run and apply only after review, deploy Rider, and execute
+errors. Next: owner stages/commits the withdrawal fix, runs the Supabase dry run, applies both
+migrations if listed, deploys Rider, and executes
 `docs/operations/rider-sms-consent-manual-test.md`. Do not send or verify a production SMS in this
 phase. Community Conversations and Safety has already been applied/pushed and its manual test may
 resume separately.
