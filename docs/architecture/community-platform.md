@@ -19,6 +19,12 @@ chronological feed, and controlled ordinary member posts. Announcements, events,
 opportunities, resources, targeting, and structured actions have normalized schema foundations but
 do not yet expose broad authoring UI. Community remains tenant-disabled until a deliberate pilot.
 
+Community Conversations and Safety V1 is implemented in
+`20260825000100_community_conversations_safety.sql`. It adds bounded comments, controlled
+reactions, private photo attachments, private reports, reversible viewer-owned mute/block controls,
+and a reason-required Community Admin moderation queue. Reports do not automatically hide content;
+authorized review produces soft restriction/removal and append-only tenant audit evidence.
+
 ## Existing Platform Primitives
 
 Community reuses:
@@ -280,7 +286,7 @@ without rewriting the service directory.
 
 ## Interactions, Media, And Safety
 
-Planned interaction records:
+Interaction records:
 
 - `community_comments`, with optional parent comment and bounded nesting;
 - `community_content_reactions` and `community_comment_reactions`, using explicit foreign keys;
@@ -288,10 +294,11 @@ Planned interaction records:
 - `community_user_blocks`; and
 - `community_user_mutes`.
 
-V1 reactions use a small controlled catalog such as `like`, `support`, and `helpful`. Reaction
+V1 reactions use the controlled catalog `like`, `support`, and `helpful`. Reaction
 counts are derived or safely aggregated; they do not control engagement-maximizing ranking.
 
-Community media uses a private storage bucket and tenant-prefixed paths. Metadata records include
+Community media uses the private `community-media` bucket and tenant/auth-user-prefixed paths.
+Metadata records include
 owner, MIME type, byte size, dimensions where known, alt text, moderation state, and attachment
 ordering. Upload and signed-view operations are server-mediated or narrowly authorized. Removed
 content must not remain publicly viewable through permanent object URLs.

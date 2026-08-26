@@ -4,12 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import {
   createIsolatedBrowserSupabaseClient,
   type CommunityFeedItem,
+  type CommunityReactionKind,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import { eligibleCommunityRows } from "@/lib/admission";
 import { parseCommunityFeed } from "@/lib/feed";
+import { CommunityFeedCard } from "@/components/CommunityFeedCard";
 
 type CommunityAccess = { tenantId: string; tenantName: string; roles: string[] };
+type SafetyMember = { personId: string; displayName: string };
 
 export default function CommunityHome() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,6 +29,9 @@ export default function CommunityHome() {
   const [access, setAccess] = useState<CommunityAccess[]>([]);
   const [activeTenantId, setActiveTenantId] = useState<string | null>(null);
   const [feed, setFeed] = useState<CommunityFeedItem[]>([]);
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  const [blockedMembers, setBlockedMembers] = useState<SafetyMember[]>([]);
+  const [mutedMembers, setMutedMembers] = useState<SafetyMember[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -102,7 +108,63 @@ export default function CommunityHome() {
         result_limit: 50,
       });
       if (error) throw error;
-      setFeed(parseCommunityFeed(data));
+      const nextFeed = parseCommunityFeed(data);
+      setFeed(nextFeed);
+      const media = nextFeed.flatMap((item) => item.media);
+      if (!media.length) {
+        setMediaUrls({});
+        return;
+      }
+      const signed = await Promise.all(
+        media.map(async (asset) => {
+          const result = await client.storage
+            .from("community-media")
+            .createSignedUrl(asset.storagePath, 600);
+          return result.data?.signedUrl ? ([asset.mediaId, result.data.signedUrl] as const) : null;
+        }),
+      );
+      setMediaUrls(
+        Object.fromEntries(
+          signed.filter((item): item is readonly [string, string] => item !== null),
+        ),
+      );
+    },
+    [client],
+  );
+
+  const loadSafety = useCallback(
+    async (tenantId: string) => {
+      if (!client) return;
+      const { data, error } = await client.rpc("my_community_safety_snapshot", {
+        target_tenant_id: tenantId,
+      });
+      if (error) throw error;
+      const source =
+        data && typeof data === "object" && !Array.isArray(data)
+          ? (data as Record<string, unknown>)
+          : {};
+      const parse = (value: unknown) =>
+        Array.isArray(value)
+          ? value.flatMap((entry) => {
+              const row =
+                entry && typeof entry === "object" && !Array.isArray(entry)
+                  ? (entry as Record<string, unknown>)
+                  : {};
+              return typeof row.person_id === "string"
+                ? [
+                    {
+                      personId: row.person_id,
+                      displayName:
+                        typeof row.display_name === "string"
+                          ? row.display_name
+                          : "Community member",
+                    },
+                  ]
+                : [];
+            })
+          : [];
+      setBlockedMembers(parse(source.blocked));
+      setMutedMembers(parse(source.muted));
     },
     [client],
   );
@@ -178,7 +240,7 @@ export default function CommunityHome() {
       });
       if (error) throw error;
       setActiveTenantId(tenantId);
-      await loadFeed(tenantId);
+      await Promise.all([loadFeed(tenantId), loadSafety(tenantId)]);
     } catch (error) {
       setActiveTenantId(null);
       setMessage(error instanceof Error ? error.message : "Unable to enter Community.");
@@ -195,19 +257,151 @@ export default function CommunityHome() {
     setBusy(true);
     setMessage(null);
     try {
-      const { error } = await client.rpc("create_my_community_post", {
+      const mediaFiles = form
+        .getAll("media")
+        .filter((value): value is File => value instanceof File && value.size > 0);
+      if (mediaFiles.length > 4) throw new Error("Attach no more than four photos per post.");
+      if (
+        mediaFiles.some(
+          (file) =>
+            !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5_242_880,
+        )
+      )
+        throw new Error("Photos must be JPEG, PNG, or WebP and no larger than 5 MB.");
+      const { data: contentId, error } = await client.rpc("create_my_community_post", {
         target_tenant_id: activeTenantId,
         title_value: formText(form, "title"),
         body_value: formText(form, "body"),
         visibility_value: formText(form, "visibility") || "members",
       });
       if (error) throw error;
+      if (!contentId) throw new Error("The post was created without an identifier.");
+      for (const [index, file] of mediaFiles.entries()) {
+        const extension =
+          file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+        const path = `${activeTenantId}/${session?.user.id}/${crypto.randomUUID()}/photo.${extension}`;
+        const upload = await client.storage
+          .from("community-media")
+          .upload(path, file, { upsert: false });
+        if (upload.error) throw upload.error;
+        const attachment = await client.rpc("attach_my_community_media", {
+          target_tenant_id: activeTenantId,
+          target_content_id: contentId,
+          storage_path_value: path,
+          mime_type_value: file.type,
+          byte_size_value: file.size,
+          alt_text_value: formText(form, "media_alt"),
+          sort_order_value: index,
+        });
+        if (attachment.error) throw attachment.error;
+      }
       formElement.reset();
       await loadFeed(activeTenantId);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to publish your post.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function mutateFeed(action: () => PromiseLike<{ error: { message: string } | null }>) {
+    if (!activeTenantId) return false;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await action();
+      if (result.error) throw new Error(result.error.message);
+      await loadFeed(activeTenantId);
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to update Community.");
+    } finally {
+      setBusy(false);
+    }
+    return false;
+  }
+
+  async function createComment(contentId: string, body: string) {
+    if (!client || !activeTenantId) return;
+    await mutateFeed(() =>
+      client.rpc("create_my_community_comment", {
+        target_tenant_id: activeTenantId,
+        target_content_id: contentId,
+        body_value: body,
+        parent_comment_id_value: null,
+      }),
+    );
+  }
+  async function reactToContent(contentId: string, kind: CommunityReactionKind) {
+    if (!client || !activeTenantId) return;
+    await mutateFeed(() =>
+      client.rpc("toggle_my_community_content_reaction", {
+        target_tenant_id: activeTenantId,
+        target_content_id: contentId,
+        reaction_kind_value: kind,
+      }),
+    );
+  }
+  async function reactToComment(commentId: string, kind: CommunityReactionKind) {
+    if (!client || !activeTenantId) return;
+    await mutateFeed(() =>
+      client.rpc("toggle_my_community_comment_reaction", {
+        target_tenant_id: activeTenantId,
+        target_comment_id: commentId,
+        reaction_kind_value: kind,
+      }),
+    );
+  }
+  async function reportItem(
+    targetType: "content" | "comment",
+    targetId: string,
+    category: string,
+    details: string,
+  ) {
+    if (!client || !activeTenantId) return;
+    if (
+      await mutateFeed(() =>
+        client.rpc("report_community_item", {
+          target_tenant_id: activeTenantId,
+          target_type_value: targetType,
+          target_id_value: targetId,
+          category_value: category,
+          details_value: details || null,
+        }),
+      )
+    )
+      setMessage("Your report was submitted privately for moderator review.");
+  }
+  async function setRelationship(personId: string, type: "mute" | "block") {
+    if (!client || !activeTenantId) return;
+    if (
+      await mutateFeed(() =>
+        client.rpc("set_my_community_relationship", {
+          target_tenant_id: activeTenantId,
+          target_person_id: personId,
+          relationship_type: type,
+          active_value: true,
+        }),
+      )
+    ) {
+      await loadSafety(activeTenantId);
+      setMessage(type === "block" ? "This member is blocked." : "This member is muted.");
+    }
+  }
+  async function clearRelationship(personId: string, type: "mute" | "block") {
+    if (!client || !activeTenantId) return;
+    if (
+      await mutateFeed(() =>
+        client.rpc("set_my_community_relationship", {
+          target_tenant_id: activeTenantId,
+          target_person_id: personId,
+          relationship_type: type,
+          active_value: false,
+        }),
+      )
+    ) {
+      await loadSafety(activeTenantId);
+      setMessage(type === "block" ? "This member is unblocked." : "This member is unmuted.");
     }
   }
 
@@ -303,6 +497,7 @@ export default function CommunityHome() {
         <a href="#discover">Discover</a>
         <a href="#services">Services</a>
         <a href="#groups">Groups</a>
+        <a href="#safety">Safety</a>
       </nav>
       <section className="community-layout" id="home">
         <form className="community-card form-grid" onSubmit={(event) => void createPost(event)}>
@@ -328,6 +523,18 @@ export default function CommunityHome() {
               <option value="public">Public</option>
             </select>
           </label>
+          <label>
+            Photos <span>(optional, up to 4 JPEG, PNG, or WebP files; 5 MB each)</span>
+            <input accept="image/jpeg,image/png,image/webp" multiple name="media" type="file" />
+          </label>
+          <label>
+            Photo description <span>(optional accessibility text)</span>
+            <input
+              maxLength={300}
+              name="media_alt"
+              placeholder="Example: Neighbors gathered at the park"
+            />
+          </label>
           <button disabled={busy} type="submit">
             Publish post
           </button>
@@ -349,15 +556,17 @@ export default function CommunityHome() {
           {message ? <p className="error">{message}</p> : null}
           {feed.length ? (
             feed.map((item) => (
-              <article className="community-card feed-item" key={item.contentId}>
-                <div className="feed-meta">
-                  <strong>{item.authorName}</strong>
-                  <time>{new Date(item.publishedAt).toLocaleString()}</time>
-                </div>
-                {item.title ? <h3>{item.title}</h3> : null}
-                <p>{item.body}</p>
-                <span className="tag">{item.contentKind.replaceAll("_", " ")}</span>
-              </article>
+              <CommunityFeedCard
+                busy={busy}
+                item={item}
+                key={item.contentId}
+                mediaUrls={mediaUrls}
+                onComment={createComment}
+                onCommentReaction={reactToComment}
+                onReaction={reactToContent}
+                onRelationship={setRelationship}
+                onReport={reportItem}
+              />
             ))
           ) : (
             <div className="community-card">
@@ -366,6 +575,39 @@ export default function CommunityHome() {
             </div>
           )}
         </section>
+      </section>
+      <section className="community-card safety-settings" id="safety">
+        <p className="eyebrow">Privacy and safety</p>
+        <h2>Muted and blocked members</h2>
+        {!mutedMembers.length && !blockedMembers.length ? (
+          <p>You have not muted or blocked anyone in this Community.</p>
+        ) : null}
+        {mutedMembers.map((member) => (
+          <div key={`mute-${member.personId}`}>
+            <span>{member.displayName} · muted</span>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => void clearRelationship(member.personId, "mute")}
+              type="button"
+            >
+              Unmute
+            </button>
+          </div>
+        ))}
+        {blockedMembers.map((member) => (
+          <div key={`block-${member.personId}`}>
+            <span>{member.displayName} · blocked</span>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => void clearRelationship(member.personId, "block")}
+              type="button"
+            >
+              Unblock
+            </button>
+          </div>
+        ))}
       </section>
     </main>
   );

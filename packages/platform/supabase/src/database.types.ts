@@ -2487,6 +2487,15 @@ export type Database = {
       can_read_community_content: { Args: { target_tenant_id: string; target_content_id: string }; Returns: boolean }
       community_feed_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       create_my_community_post: { Args: { target_tenant_id: string; title_value: string; body_value: string; visibility_value?: string }; Returns: string }
+      create_my_community_comment: { Args: { target_tenant_id: string; target_content_id: string; body_value: string; parent_comment_id_value?: string | null }; Returns: string }
+      toggle_my_community_content_reaction: { Args: { target_tenant_id: string; target_content_id: string; reaction_kind_value: string }; Returns: boolean }
+      toggle_my_community_comment_reaction: { Args: { target_tenant_id: string; target_comment_id: string; reaction_kind_value: string }; Returns: boolean }
+      report_community_item: { Args: { target_tenant_id: string; target_type_value: string; target_id_value: string; category_value: string; details_value?: string | null }; Returns: string }
+      set_my_community_relationship: { Args: { target_tenant_id: string; target_person_id: string; relationship_type: string; active_value: boolean }; Returns: boolean }
+      my_community_safety_snapshot: { Args: { target_tenant_id: string }; Returns: Json }
+      attach_my_community_media: { Args: { target_tenant_id: string; target_content_id: string; storage_path_value: string; mime_type_value: string; byte_size_value: number; alt_text_value: string; sort_order_value: number }; Returns: string }
+      community_moderation_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      moderate_community_report: { Args: { target_report_id: string; decision_value: string; reason_value: string }; Returns: boolean }
       enter_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: Json }
       refresh_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: boolean }
       leave_my_product_session: { Args: { reason_value?: string }; Returns: boolean }

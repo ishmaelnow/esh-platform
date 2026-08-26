@@ -123,6 +123,11 @@ Required indexes:
 
 ## Migration 4: Comments, Reactions, Media, Blocks, And Reports
 
+Implemented in `20260825000100_community_conversations_safety.sql` as Community Conversations and
+Safety V1, including the paired member interactions and independent Community Admin moderation
+queue. The migration remains unapplied until the owner completes the documented production
+workflow.
+
 Planned tables/storage:
 
 - `community_comments`

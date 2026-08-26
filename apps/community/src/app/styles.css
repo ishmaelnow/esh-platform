@@ -153,6 +153,94 @@ nav a {
   padding: 6px 10px;
   text-transform: capitalize;
 }
+.media-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 16px 0;
+}
+.media-grid img {
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+.item-actions,
+.safety-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.reaction,
+.safety-actions button,
+.report-control summary {
+  background: #edf2ee;
+  border: 1px solid #cfdbd3;
+  color: #244b3c;
+  font-size: 0.8rem;
+  padding: 7px 11px;
+}
+.reaction.active {
+  background: #176447;
+  color: white;
+}
+.comments {
+  border-top: 1px solid #e3ded2;
+  margin-top: 20px;
+  padding-top: 18px;
+}
+.comment {
+  background: #f7f6f0;
+  border-radius: 14px;
+  margin-top: 10px;
+  padding: 14px;
+}
+.comment-form,
+.report-control form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.safety-settings {
+  display: grid;
+  gap: 10px;
+}
+.safety-settings > div {
+  align-items: center;
+  border-top: 1px solid #e3ded2;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding-top: 10px;
+}
+.comment-form label,
+.report-control label {
+  display: grid;
+  gap: 6px;
+}
+.report-control {
+  position: relative;
+}
+.report-control summary {
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 750;
+  list-style: none;
+}
+.report-control form {
+  background: white;
+  border: 1px solid #dcd6c7;
+  border-radius: 14px;
+  box-shadow: 0 14px 30px rgb(37 58 46 / 14%);
+  min-width: min(300px, 80vw);
+  padding: 14px;
+  position: absolute;
+  right: 0;
+  z-index: 2;
+}
 .error {
   background: #fff0ee;
   border: 1px solid #e4b9b2;

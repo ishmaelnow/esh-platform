@@ -84,7 +84,8 @@ Implementation order:
    `20260824000100_platform_product_entitlements.sql`. Existing enabled products are grandfathered;
    new tenants receive no product automatically; Tenant Governance sees only Platform-granted
    products. Production rollout precedes the Community-only pilot tenant.
-9. Comments, reactions, private media, blocks, mutes, and reports.
+9. Comments, reactions, private media, blocks, mutes, reports, and the reasoned/audited Community
+   Admin moderation queue are implemented locally in Community Conversations and Safety V1.
 10. Service directory and provider-owned listings.
 11. Moderation and submit-for-announcement workflow.
 12. Person-based in-app notifications and compatible delivery generalization.

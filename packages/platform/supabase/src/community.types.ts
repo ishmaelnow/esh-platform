@@ -118,4 +118,42 @@ export type CommunityFeedItem = {
   publishedAt: string;
   expiresAt: string | null;
   authorName: string;
+  authorPersonId: string;
+  viewerIsAuthor: boolean;
+  reactionCounts: CommunityReactionCounts;
+  viewerReactions: CommunityReactionKind[];
+  comments: CommunityComment[];
+  media: CommunityMedia[];
+};
+
+export type CommunityReactionKind = "like" | "support" | "helpful";
+export type CommunityReactionCounts = Partial<Record<CommunityReactionKind, number>>;
+export type CommunityComment = {
+  commentId: string;
+  parentCommentId: string | null;
+  body: string;
+  authorName: string;
+  authorPersonId: string;
+  viewerIsAuthor: boolean;
+  createdAt: string;
+  reactionCounts: CommunityReactionCounts;
+  viewerReactions: CommunityReactionKind[];
+};
+export type CommunityMedia = {
+  mediaId: string;
+  storagePath: string;
+  altText: string | null;
+  mimeType: "image/jpeg" | "image/png" | "image/webp";
+};
+export type CommunityModerationReport = {
+  reportId: string;
+  targetType: "content" | "comment";
+  targetId: string;
+  category: string;
+  details: string | null;
+  status: "open" | "reviewing";
+  createdAt: string;
+  reporterName: string;
+  targetExcerpt: string;
+  targetAuthorName: string;
 };

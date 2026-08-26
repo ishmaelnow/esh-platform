@@ -2,6 +2,25 @@
 
 Last updated: 2026-08-25
 
+## Community Conversations and Safety checkpoint
+
+Community Conversations and Safety V1 is implemented locally in Migration
+`20260825000100_community_conversations_safety.sql`. The Community member application now supports
+comments, `like`/`support`/`helpful` reactions, up to four private 5 MB JPEG/PNG/WebP attachments,
+private reports, and reversible mute/block controls. Reporting does not automatically hide content.
+The independent Community Admin application now has a private moderation queue with reason-required
+dismiss, restrict, remove, and restore decisions; related open reports resolve together and every
+decision writes tenant audit evidence. Direct client table writes remain denied, product-session
+and tenant authorization remain server-derived, and removed content/history is preserved. Shared
+types, parser tests, migration security contracts, architecture, roadmap, and the production manual
+test are updated. Community, Admin, Community Admin, and Supabase typechecks pass; Community/Admin/
+Community Admin lint passes; 3 Community tests, 73 Admin tests, and 4 migration contract tests pass;
+and all three affected production builds pass with only the existing Next ESLint-plugin and Admin
+Supabase Realtime warnings. No migration, commit, push, or deployment has occurred yet. Next: the
+owner runs the dry run, confirms only `20260825000100_community_conversations_safety.sql` is listed,
+stages/commits the explicit files,
+applies the migration, pushes, waits for both Vercel deployments, and executes the manual test.
+
 ## Safe Admin cleanup reminder
 
 The independent Transportation Admin, Community Admin, and tenant-governance UX have passed their

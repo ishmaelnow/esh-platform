@@ -10,6 +10,7 @@ This directory contains project documentation that should evolve with the codeba
 - [Community Authorization Foundation Manual Test](./operations/community-authorization-foundation-manual-test.md)
 - [Community Places, Organizations, and Trust Manual Test](./operations/community-places-organizations-trust-manual-test.md)
 - [Community Core Content Manual Test](./operations/community-core-content-manual-test.md)
+- [Community Conversations and Safety Manual Test](./operations/community-conversations-safety-manual-test.md)
 - [Product Workspace Foundation](./architecture/product-workspace-foundation.md)
 - [Platform Product Entitlements](./architecture/platform-product-entitlements.md)
 - [Platform Product Entitlements Manual Test](./operations/platform-product-entitlements-manual-test.md)

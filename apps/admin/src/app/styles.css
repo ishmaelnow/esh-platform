@@ -1037,3 +1037,40 @@ td span {
     grid-template-columns: 1fr;
   }
 }
+.moderation-workspace {
+  display: grid;
+  gap: 20px;
+}
+.moderation-list {
+  display: grid;
+  gap: 16px;
+}
+.moderation-case {
+  align-items: start;
+  background: var(--surface-subtle, #f7f8f7);
+  border: 1px solid var(--border, #d9dfdb);
+  border-radius: 16px;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  padding: 20px;
+}
+.moderation-case blockquote {
+  border-left: 4px solid #697b70;
+  margin: 12px 0;
+  padding-left: 14px;
+  white-space: pre-wrap;
+}
+.moderation-case form,
+.moderation-case label {
+  display: grid;
+  gap: 8px;
+}
+.moderation-case form {
+  gap: 14px;
+}
+@media (max-width: 760px) {
+  .moderation-case {
+    grid-template-columns: 1fr;
+  }
+}

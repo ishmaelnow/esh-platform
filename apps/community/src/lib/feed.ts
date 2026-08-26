@@ -1,4 +1,11 @@
-import type { CommunityFeedItem, Json } from "@esh-platform/supabase";
+import type {
+  CommunityComment,
+  CommunityFeedItem,
+  CommunityMedia,
+  CommunityReactionCounts,
+  CommunityReactionKind,
+  Json,
+} from "@esh-platform/supabase";
 export function parseCommunityFeed(value: Json): CommunityFeedItem[] {
   const source = asRecord(value);
   return asArray(source.items).flatMap((item) => {
@@ -18,9 +25,65 @@ export function parseCommunityFeed(value: Json): CommunityFeedItem[] {
         publishedAt,
         expiresAt: nullableString(row.expires_at),
         authorName: asString(row.author_name) || "Community member",
+        authorPersonId: asString(row.author_person_id),
+        viewerIsAuthor: row.viewer_is_author === true,
+        reactionCounts: parseReactionCounts(row.reaction_counts),
+        viewerReactions: parseReactions(row.viewer_reactions),
+        comments: asArray(row.comments).flatMap(parseComment),
+        media: asArray(row.media).flatMap(parseMedia),
       },
     ];
   });
+}
+function parseComment(value: unknown): CommunityComment[] {
+  const row = asRecord(value);
+  const commentId = asString(row.comment_id);
+  const body = asString(row.body);
+  const createdAt = asString(row.created_at);
+  if (!commentId || !body || !createdAt) return [];
+  return [
+    {
+      commentId,
+      parentCommentId: nullableString(row.parent_comment_id),
+      body,
+      authorName: asString(row.author_name) || "Community member",
+      authorPersonId: asString(row.author_person_id),
+      viewerIsAuthor: row.viewer_is_author === true,
+      createdAt,
+      reactionCounts: parseReactionCounts(row.reaction_counts),
+      viewerReactions: parseReactions(row.viewer_reactions),
+    },
+  ];
+}
+function parseMedia(value: unknown): CommunityMedia[] {
+  const row = asRecord(value);
+  const mediaId = asString(row.media_id);
+  const storagePath = asString(row.storage_path);
+  const mimeType = asString(row.mime_type);
+  if (!mediaId || !storagePath || !["image/jpeg", "image/png", "image/webp"].includes(mimeType))
+    return [];
+  return [
+    {
+      mediaId,
+      storagePath,
+      altText: nullableString(row.alt_text),
+      mimeType: mimeType as CommunityMedia["mimeType"],
+    },
+  ];
+}
+function parseReactionCounts(value: unknown): CommunityReactionCounts {
+  const row = asRecord(value);
+  return Object.fromEntries(
+    (["like", "support", "helpful"] as const).flatMap((kind) =>
+      typeof row[kind] === "number" ? [[kind, row[kind]]] : [],
+    ),
+  );
+}
+function parseReactions(value: unknown): CommunityReactionKind[] {
+  return asArray(value).filter(
+    (item): item is CommunityReactionKind =>
+      item === "like" || item === "support" || item === "helpful",
+  );
 }
 function parseVisibility(value: unknown): CommunityFeedItem["visibility"] {
   return value === "public" || value === "group_private" ? value : "members";
