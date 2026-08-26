@@ -233,6 +233,7 @@ export default function RiderHome() {
   const [smsConsentChecked, setSmsConsentChecked] = useState(false);
   const [smsBusy, setSmsBusy] = useState(false);
   const [smsFeedback, setSmsFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  const smsConsentEditing = useRef(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<"account" | "book" | "trips" | "payments" | "wallet">("book");
   const [showTripHistory, setShowTripHistory] = useState(false);
@@ -318,8 +319,10 @@ export default function RiderHome() {
       if (!smsResult.error && smsResult.data) {
         const nextSmsSettings = smsResult.data as unknown as RiderSmsSettings;
         setSmsSettings(nextSmsSettings);
-        setSmsPhone(nextSmsSettings.phoneE164 ?? nextPortal.profile.phone ?? "");
-        setSmsConsentChecked(nextSmsSettings.consented);
+        if (!smsConsentEditing.current) {
+          setSmsPhone(nextSmsSettings.phoneE164 ?? nextPortal.profile.phone ?? "");
+          setSmsConsentChecked(nextSmsSettings.consented);
+        }
       }
       setReputationTrips((reputationResult.data ?? []) as unknown as ReputationTrip[]);
       setTripLocations((locationResult.data ?? []) as unknown as RiderTripLocation[]);
@@ -1085,12 +1088,13 @@ export default function RiderHome() {
       setSmsSettings(nextSettings);
       setSmsPhone(nextSettings.phoneE164 ?? normalizedPhone);
       setSmsConsentChecked(nextSettings.consented);
+      smsConsentEditing.current = false;
       setSmsFeedback({
         kind: "success",
-        message: smsConsentChecked
-          ? "Your mobile number and SMS consent were saved. No text message was sent."
-          : smsSettings.consented
-            ? "Your SMS consent was withdrawn. Text delivery is off."
+        message: nextSettings.status === "disabled"
+          ? "Your SMS consent was withdrawn. Text delivery is off."
+          : nextSettings.consented
+            ? "Your mobile number and SMS consent were saved. No text message was sent."
             : "Your mobile number was saved without SMS consent.",
       });
     } catch (value) { setSmsFeedback({ kind: "error", message: riderErrorMessage(value) }); } finally { setSmsBusy(false); }
@@ -1257,7 +1261,7 @@ export default function RiderHome() {
                   aria-describedby="sms-phone-help"
                   autoComplete="tel"
                   inputMode="tel"
-                  onChange={(event) => setSmsPhone(event.target.value)}
+                  onChange={(event) => { smsConsentEditing.current = true; setSmsPhone(event.target.value); }}
                   placeholder="Example: +1 215 555 0123"
                   type="tel"
                   value={smsPhone}
@@ -1268,7 +1272,7 @@ export default function RiderHome() {
                 <input
                   checked={smsConsentChecked}
                   disabled={smsBusy}
-                  onChange={(event) => setSmsConsentChecked(event.target.checked)}
+                  onChange={(event) => { smsConsentEditing.current = true; setSmsConsentChecked(event.target.checked); }}
                   type="checkbox"
                 />
                 <span>

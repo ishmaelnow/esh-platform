@@ -57,5 +57,7 @@ describe("Rider SMS consent foundation", () => {
     expect(riderPage).toContain("smsConsentChecked");
     expect(riderPage).toContain('supabase.rpc("save_my_rider_sms_consent"');
     expect(riderPage).not.toContain('fetch("/api/notifications/sms"');
+    expect(riderPage).toContain('nextSettings.status === "disabled"');
+    expect(riderPage).toContain("smsConsentEditing.current");
   });
 });

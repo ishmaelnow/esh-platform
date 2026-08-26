@@ -23,8 +23,11 @@ upsert check-constraint ordering defect; follow-up migration
 `20260826000200_fix_rider_sms_withdrawal.sql` supplies the existing consent timestamp in the
 proposed disabled row. Full Rider
 typecheck remains blocked only by the pre-existing `src/lib/google-tolls.test.ts` tuple typing
-errors. Next: owner stages/commits the withdrawal fix, runs the Supabase dry run, applies both
-migrations if listed, deploys Rider, and executes
+errors. Production review then found the Account checkbox could be overwritten by the ten-second
+portal refresh, and its feedback used stale local state. Rider now protects edits while saving and
+uses the database response for the result message. The local contract suite is 6/6 and targeted
+lint has no errors. Next: owner stages/commits the UI correction, runs the Supabase dry run (the
+database is already current), pushes, deploys Rider, and executes
 `docs/operations/rider-sms-consent-manual-test.md`. Do not send or verify a production SMS in this
 phase. Community Conversations and Safety has already been applied/pushed and its manual test may
 resume separately.
