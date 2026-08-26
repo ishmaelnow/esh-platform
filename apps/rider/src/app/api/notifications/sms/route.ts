@@ -12,6 +12,19 @@ export async function POST(request: Request) {
     const body = await request.json() as { action?: string; phone?: string; code?: string; tenantSlug?: string };
     const phone = normalizeE164(body.phone ?? "");
     if (body.action === "start") {
+      if (!body.tenantSlug) throw new Error("A valid tenant is required.");
+      const settings = await authenticated.rpc("my_rider_sms_notification_settings", {
+        target_tenant_slug: body.tenantSlug,
+      });
+      if (settings.error) throw settings.error;
+      const consent = settings.data as {
+        consented?: boolean;
+        phoneE164?: string | null;
+        status?: string;
+      } | null;
+      if (!consent?.consented || consent.status !== "consented_unverified" || consent.phoneE164 !== phone) {
+        throw new Error("Save explicit SMS consent for this mobile number before requesting verification.");
+      }
       await requestTwilioVerification(phone);
       return NextResponse.json({ pending: true });
     }
