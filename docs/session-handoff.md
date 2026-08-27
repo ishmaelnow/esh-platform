@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-26
+Last updated: 2026-08-27
 
 ## Rider iOS payment-return crash checkpoint (2026-08-27)
 
@@ -13,6 +13,29 @@ local and uncommitted; owner should review, commit, push, deploy the Rider web a
 new Rider iOS/TestFlight build because the native Browser integration requires a new binary.
 Rider tests pass 15/15 and `git diff --check` passes. The existing Rider typecheck remains blocked
 by the unrelated `src/lib/google-tolls.test.ts` tuple typing failure.
+
+## Mobile payment and sign-in callback pause point (2026-08-27)
+
+Pause mobile testing here. The Rider payment backend is functioning: Stripe payment records are
+created, the verified `checkout.session.completed` webhook finalizes ordinary paid bookings, and
+wallet-covered ordinary trips finalize directly. Existing paid orphan recovery succeeded by
+resending the matching Stripe checkout event; no duplicate charge was created. Payment lifecycle
+changes are committed in `9ac54d9`, and native payment callback processing is committed in
+`f460b84` plus browser-sheet handling in `0db5bd0`.
+
+The remaining mobile issues are callback/session UX defects, not payment or SMS defects. iOS no
+longer violently crashes, but the Stripe browser overlay can remain visible after returning to the
+app. Android opens Rider but can refresh into a new unauthenticated WebView session after a magic
+link, even though the server-side booking remains intact. The release Android certificate
+fingerprint was identified and is locally added to Rider `assetlinks.json`; that change is
+uncommitted along with the Rider post-booking state/Book-again UI changes. Do not make another
+payment or continue iterative mobile builds until this checkpoint is resumed.
+
+Clean next implementation: use a deliberate native callback contract for authentication instead of
+depending on mixed HTTPS Universal Link behavior, and separately design payment return so the
+external browser sheet cannot remain attached to the app. Then build Rider once for iOS and Android
+and run a controlled sign-in/payment test. Preserve the existing successful payment/booking record
+and do not refund or recreate it during recovery.
 
 ## Rider SMS and Sent compliance checkpoint
 
