@@ -2,6 +2,18 @@
 
 Last updated: 2026-08-26
 
+## Rider iOS payment-return crash checkpoint (2026-08-27)
+
+The Rider iOS payment flow exposed a Universal Link loop after Stripe confirmation. Native
+checkout now opens through Capacitor Browser, while browser checkout continues using normal web
+navigation. When iOS returns the HTTPS `payment=success` Universal Link, the native callback handler
+updates the in-app history and reloads in place instead of assigning the same Universal Link again.
+This prevents repeated Safari/app handoffs and the resulting apparent crash/shaking. The patch is
+local and uncommitted; owner should review, commit, push, deploy the Rider web app, then create a
+new Rider iOS/TestFlight build because the native Browser integration requires a new binary.
+Rider tests pass 15/15 and `git diff --check` passes. The existing Rider typecheck remains blocked
+by the unrelated `src/lib/google-tolls.test.ts` tuple typing failure.
+
 ## Rider SMS and Sent compliance checkpoint
 
 ESH Rider SMS consent is implemented, migrated, deployed, and manually validated under FAIR FARE

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import { Geolocation } from "@capacitor/geolocation";
 import Image from "next/image";
@@ -522,7 +523,12 @@ export default function RiderHome() {
       processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
       if (callback.searchParams.get("payment")) {
-        window.location.assign(callback.toString());
+        // The HTTPS payment return is also an iOS Universal Link. Redirecting
+        // to it from the native callback handler re-opens this app repeatedly.
+        // Update the in-app URL and reload the hosted page without invoking
+        // another Universal Link handoff.
+        window.history.replaceState({}, "", callback.toString());
+        window.location.reload();
         return;
       }
       const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
@@ -865,7 +871,8 @@ export default function RiderHome() {
           return;
         }
         if (!result.url) throw new Error(result.message ?? "Payment checkout could not be opened.");
-        window.location.assign(result.url);
+        if (Capacitor.isNativePlatform()) await Browser.open({ url: result.url });
+        else window.location.assign(result.url);
         return;
       }
       const result = recurringOccurrenceId
@@ -944,7 +951,10 @@ export default function RiderHome() {
       if (checkout.walletOnly) {
         setPaymentConfirmed(true); await loadWallet();
         setMessage(`Wallet credit covers the ${formatDate(occurrence.scheduledPickupAt)} trip. Review and request it once.`);
-      } else if (checkout.url) window.location.assign(checkout.url);
+      } else if (checkout.url) {
+        if (Capacitor.isNativePlatform()) await Browser.open({ url: checkout.url });
+        else window.location.assign(checkout.url);
+      }
       else throw new Error("Payment checkout could not be opened.");
     } catch (value) { setError(riderErrorMessage(value)); setBusy(false); }
   }
