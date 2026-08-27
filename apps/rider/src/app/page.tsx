@@ -365,7 +365,7 @@ export default function RiderHome() {
       setTripLocations([]);
       setReputationTrips([]);
     }
-  }, [session, supabase, tenantSlug, nativePaymentReturnNonce]);
+  }, [session, supabase, tenantSlug]);
 
   const loadPayments = useCallback(async () => {
     if (!supabase || !session || !portal) return;
@@ -478,7 +478,7 @@ export default function RiderHome() {
       setMessage(returnedOccurrenceId ? "Payment received. This recurring occurrence is ready to request." : "Payment received. Review the trip, then request it once.");
     })().catch((value) => setError(value instanceof Error ? value.message : "We could not confirm the payment."))
       .finally(() => setBusy(false));
-  }, [session, supabase, tenantSlug]);
+  }, [session, supabase, tenantSlug, nativePaymentReturnNonce]);
 
   useEffect(() => {
     if (!supabase) {
