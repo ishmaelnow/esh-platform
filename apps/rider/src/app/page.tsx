@@ -454,6 +454,8 @@ export default function RiderHome() {
       if (!result?.quote) throw new Error("Payment confirmation is taking longer than expected. Please refresh shortly.");
       if (result.bookingId && !returnedOccurrenceId) {
         clearPaymentReturnParams();
+        setPaymentConfirmed(false);
+        setPriceQuote(null);
         await loadPortal();
         setActivePortalTab("trips");
         setMessage("Payment received and trip requested. Dispatch can now find an eligible driver.");
@@ -1046,6 +1048,25 @@ export default function RiderHome() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function bookAgain(booking: RiderBooking) {
+    if (!supabase || !tenantSlug) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const area = await supabase.rpc("my_rider_service_area_context", {
+        target_tenant_slug: tenantSlug, target_service_area_id: booking.serviceAreaId,
+      });
+      if (area.error || !area.data) throw area.error ?? new Error("Service area is unavailable.");
+      setServiceAreaId(booking.serviceAreaId);
+      setServiceAreaContext(area.data as ServiceAreaContext);
+      setPickupQuery(booking.pickupAddress); setDestinationQuery(booking.destinationAddress);
+      setPickupSelection({ mapboxId: `again:${booking.bookingId}:pickup`, label: booking.pickupAddress });
+      setDestinationSelection({ mapboxId: `again:${booking.bookingId}:destination`, label: booking.destinationAddress });
+      setPriceQuote(null); setPaymentConfirmed(false); setActivePortalTab("book");
+      setMessage("Review this new trip and confirm the fare before requesting it.");
+    } catch (value) { setError(riderErrorMessage(value)); }
+    finally { setBusy(false); }
   }
 
   async function setTripUpdates(enabled: boolean) {
@@ -1702,6 +1723,7 @@ export default function RiderHome() {
                     <p className="area">{booking.serviceAreaName}</p>
                     {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? <p className="area"><strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100)}</strong></p> : null}
                     {booking.reconciliationStatus && booking.fareCurrencyCode ? <p className="area">Fare contract review: {booking.reconciliationStatus.replaceAll("_", " ")}{booking.contractFareMinor != null ? ` · contract fare ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.contractFareMinor / 100)}` : ""}{booking.rawMeterFareMinor != null && booking.rawMeterFareMinor !== booking.contractFareMinor ? ` · raw meter ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.rawMeterFareMinor / 100)}` : ""}</p> : null}
+                    <button className="button secondary compact" type="button" disabled={busy} onClick={() => void bookAgain(booking)}>Book again</button>
                   </article>
                 )) : null}
               </section>
