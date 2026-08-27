@@ -528,6 +528,7 @@ export default function RiderHome() {
         // to it from the native callback handler re-opens this app repeatedly.
         // Update the in-app URL and let the payment effect process it without
         // reloading the hosted page or losing the current session.
+        await Browser.close().catch(() => undefined);
         window.history.replaceState({}, "", callback.toString());
         setNativePaymentReturnNonce((current) => current + 1);
         return;
