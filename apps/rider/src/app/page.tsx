@@ -236,6 +236,7 @@ export default function RiderHome() {
   const [smsFeedback, setSmsFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const smsConsentEditing = useRef(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [nativePaymentReturnNonce, setNativePaymentReturnNonce] = useState(0);
   const [activePortalTab, setActivePortalTab] = useState<"account" | "book" | "trips" | "payments" | "wallet">("book");
   const [showTripHistory, setShowTripHistory] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -364,7 +365,7 @@ export default function RiderHome() {
       setTripLocations([]);
       setReputationTrips([]);
     }
-  }, [session, supabase, tenantSlug]);
+  }, [session, supabase, tenantSlug, nativePaymentReturnNonce]);
 
   const loadPayments = useCallback(async () => {
     if (!supabase || !session || !portal) return;
@@ -525,10 +526,10 @@ export default function RiderHome() {
       if (callback.searchParams.get("payment")) {
         // The HTTPS payment return is also an iOS Universal Link. Redirecting
         // to it from the native callback handler re-opens this app repeatedly.
-        // Update the in-app URL and reload the hosted page without invoking
-        // another Universal Link handoff.
+        // Update the in-app URL and let the payment effect process it without
+        // reloading the hosted page or losing the current session.
         window.history.replaceState({}, "", callback.toString());
-        window.location.reload();
+        setNativePaymentReturnNonce((current) => current + 1);
         return;
       }
       const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
