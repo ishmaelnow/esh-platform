@@ -48,6 +48,16 @@ export async function POST(request: Request) {
     if (walletResult.error || !walletResult.data) throw walletResult.error ?? new Error("Wallet credit could not be prepared.");
     const split = walletResult.data as unknown as { walletAmountMinor: number; cardAmountMinor: number };
     if (split.cardAmountMinor === 0) {
+      if (!occurrenceId) {
+        const booked = await authenticated.rpc("create_my_rider_priced_booking_with_service_type", {
+          target_quote_id: quote.quote_id,
+          booking_notes_value: typeof bookingNotes === "string" ? bookingNotes.slice(0, 500) : "",
+          service_type_value: typeof serviceType === "string" ? serviceType : "standard",
+          scheduled_pickup_at_value: typeof scheduledPickupAt === "string" ? scheduledPickupAt : null,
+        });
+        if (booked.error || !booked.data) throw booked.error ?? new Error("Wallet booking could not be created.");
+        return NextResponse.json({ walletOnly: true, booked: true, bookingId: booked.data, walletAmountMinor: split.walletAmountMinor });
+      }
       return NextResponse.json({ walletOnly: true, walletAmountMinor: split.walletAmountMinor });
     }
     const origin = new URL(request.url).origin;
@@ -60,6 +70,7 @@ export async function POST(request: Request) {
       success_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=success&quote=${quote.quote_id}${occurrenceId ? `&occurrence=${encodeURIComponent(occurrenceId)}` : ""}`,
       cancel_url: `${origin}/?tenant=${encodeURIComponent(tenantSlug)}&payment=cancelled`,
       metadata: { quote_id: quote.quote_id, tenant_id: quote.tenant_id,
+        occurrence_id: occurrenceId ?? "",
         wallet_amount_minor: String(split.walletAmountMinor), booking_notes: typeof bookingNotes === "string" ? bookingNotes.slice(0, 500) : "",
         service_type: typeof serviceType === "string" ? serviceType : "standard", scheduled_pickup_at: typeof scheduledPickupAt === "string" ? scheduledPickupAt : "" },
       payment_intent_data: { setup_future_usage: "off_session" },

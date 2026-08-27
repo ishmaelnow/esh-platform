@@ -76,6 +76,15 @@ export async function POST(request: Request) {
       failure_message_value: status === "failed" ? "Stripe reported an asynchronous payment failure." : null,
     });
     if (result.error) throw result.error;
+    if (status === "paid" && session.metadata?.quote_id && !session.metadata?.occurrence_id) {
+      const finalized = await service.rpc("finalize_paid_rider_booking_internal", {
+        target_quote_id: session.metadata.quote_id,
+        booking_notes_value: session.metadata.booking_notes ?? "",
+        scheduled_pickup_at_value: (session.metadata.scheduled_pickup_at || null) as unknown as string,
+        service_type_value: session.metadata.service_type || "standard",
+      });
+      if (finalized.error) throw finalized.error;
+    }
     if (status === "paid" && typeof session.customer === "string" && typeof session.payment_intent === "string") {
       const intent = await stripe.paymentIntents.retrieve(session.payment_intent);
       const paymentMethodId = typeof intent.payment_method === "string" ? intent.payment_method : intent.payment_method?.id;
