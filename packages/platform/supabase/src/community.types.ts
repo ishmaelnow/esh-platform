@@ -107,6 +107,22 @@ export type CommunityProviderVerification = {
   effective_at: string | null;
   expires_at: string | null;
 };
+export type CommunityServiceListing = {
+  listing_id: string;
+  provider_id: string;
+  provider_name: string;
+  provider_status: string;
+  service_category: string;
+  title: string;
+  description: string;
+  service_area_id: string | null;
+  service_area_name: string | null;
+  rate_text: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  website_url: string | null;
+  updated_at: string;
+};
 
 export type CommunityFeedItem = {
   contentId: string;

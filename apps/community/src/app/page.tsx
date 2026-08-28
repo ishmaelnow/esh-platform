@@ -5,6 +5,7 @@ import {
   createIsolatedBrowserSupabaseClient,
   type CommunityFeedItem,
   type CommunityReactionKind,
+  type CommunityServiceListing,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import { eligibleCommunityRows } from "@/lib/admission";
@@ -32,6 +33,7 @@ export default function CommunityHome() {
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [blockedMembers, setBlockedMembers] = useState<SafetyMember[]>([]);
   const [mutedMembers, setMutedMembers] = useState<SafetyMember[]>([]);
+  const [services, setServices] = useState<CommunityServiceListing[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -169,6 +171,15 @@ export default function CommunityHome() {
     [client],
   );
 
+  const loadServices = useCallback(async (tenantId: string) => {
+    if (!client) return;
+    const { data, error } = await client.rpc("community_service_directory_snapshot", {
+      target_tenant_id: tenantId, result_limit: 50,
+    });
+    if (error) throw error;
+    setServices(Array.isArray(data) ? data as unknown as CommunityServiceListing[] : []);
+  }, [client]);
+
   useEffect(() => {
     if (!client) {
       setAuthResolved(true);
@@ -240,7 +251,7 @@ export default function CommunityHome() {
       });
       if (error) throw error;
       setActiveTenantId(tenantId);
-      await Promise.all([loadFeed(tenantId), loadSafety(tenantId)]);
+      await Promise.all([loadFeed(tenantId), loadSafety(tenantId), loadServices(tenantId)]);
     } catch (error) {
       setActiveTenantId(null);
       setMessage(error instanceof Error ? error.message : "Unable to enter Community.");
@@ -575,6 +586,21 @@ export default function CommunityHome() {
             </div>
           )}
         </section>
+      </section>
+      <section className="community-card" id="services">
+        <div className="section-heading">
+          <div><p className="eyebrow">Local services</p><h2>Services directory</h2></div>
+          <button className="secondary" onClick={() => { if (activeTenantId) void loadServices(activeTenantId); }} type="button">Refresh</button>
+        </div>
+        {services.length ? services.map((listing) => (
+          <article className="community-card" key={listing.listing_id}>
+            <p className="eyebrow">{listing.service_category}{listing.service_area_name ? ` · ${listing.service_area_name}` : ""}</p>
+            <h3>{listing.title}</h3>
+            <p>{listing.description}</p>
+            <p>{listing.provider_name}{listing.rate_text ? ` · ${listing.rate_text}` : ""}</p>
+            <p>{listing.contact_email ?? listing.contact_phone ?? listing.website_url}</p>
+          </article>
+        )) : <p>No active service listings are available yet.</p>}
       </section>
       <section className="community-card safety-settings" id="safety">
         <p className="eyebrow">Privacy and safety</p>

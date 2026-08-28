@@ -19,6 +19,7 @@ export function CommunityWorkspaceApp() {
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState(false);
   const [reports, setReports] = useState<CommunityModerationReport[]>([]);
+  const [listings, setListings] = useState<ServiceListing[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadReports = useCallback(
@@ -33,6 +34,14 @@ export function CommunityWorkspaceApp() {
     },
     [supabase],
   );
+  const loadListings = useCallback(async (selectedTenantId: string) => {
+    if (!supabase) return;
+    const { data, error: snapshotError } = await supabase.rpc("community_service_moderation_snapshot", {
+      target_tenant_id: selectedTenantId, result_limit: 100,
+    });
+    if (snapshotError) throw snapshotError;
+    setListings(parseServiceListings(data));
+  }, [supabase]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -73,7 +82,7 @@ export function CommunityWorkspaceApp() {
         const admitted = Boolean(roleResult.data && productSessionResult.data);
         setAllowed(admitted);
         setCanModerate(Boolean(moderationRoleResult.data));
-        if (admitted && moderationRoleResult.data) await loadReports(selectedTenantId);
+        if (admitted && moderationRoleResult.data) await Promise.all([loadReports(selectedTenantId), loadListings(selectedTenantId)]);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Unable to verify Community access.");
       } finally {
@@ -83,7 +92,7 @@ export function CommunityWorkspaceApp() {
     return () => {
       mounted = false;
     };
-  }, [loadReports, supabase]);
+  }, [loadListings, loadReports, supabase]);
 
   useEffect(() => {
     if (!supabase || !allowed || !tenantId) return;
@@ -127,6 +136,24 @@ export function CommunityWorkspaceApp() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function reviewListing(event: FormEvent<HTMLFormElement>, listingId: string) {
+    event.preventDefault();
+    if (!supabase) return;
+    const values = new FormData(event.currentTarget);
+    setBusy(true); setError(null);
+    try {
+      const { error: reviewError } = await supabase.rpc("review_community_service_listing", {
+        target_listing_id: listingId,
+        decision_value: String(values.get("decision") ?? "rejected"),
+        reason_value: String(values.get("reason") ?? ""),
+      });
+      if (reviewError) throw reviewError;
+      await loadListings(tenantId);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to review service listing.");
+    } finally { setBusy(false); }
   }
 
   async function exitCommunity() {
@@ -278,8 +305,30 @@ export function CommunityWorkspaceApp() {
           </div>
         )}
       </section>
+      <section className="workspace-card moderation-workspace">
+        <div className="workspace-portal-header">
+          <div><p className="eyebrow">Services</p><h2>Service listing review</h2><p className="muted">Approve or remove provider listings before they appear in the member directory.</p></div>
+          <button className="secondary-button" disabled={busy || !canModerate} onClick={() => void loadListings(tenantId)} type="button">Refresh</button>
+        </div>
+        {!canModerate ? <div className="state-block"><h3>Moderation role required</h3><p>Service listing review is restricted to Community moderators and administrators.</p></div> : listings.length ? <div className="moderation-list">
+          {listings.map((listing) => <article className="moderation-case" key={listing.listingId}>
+            <div><p className="eyebrow">{listing.serviceCategory} · {listing.status}</p><h3>{listing.title}</h3><p>{listing.description}</p><p><strong>Provider:</strong> {listing.providerName}</p><p><strong>Contact:</strong> {listing.contactEmail ?? listing.contactPhone ?? listing.websiteUrl ?? "Not provided"}</p></div>
+            <form onSubmit={(event) => void reviewListing(event, listing.listingId)}><label>Decision<select name="decision"><option value="active">Approve and publish</option><option value="rejected">Reject</option><option value="suspended">Suspend</option><option value="inactive">Deactivate</option></select></label><label>Moderator reason<textarea name="reason" minLength={3} maxLength={1000} required rows={3} placeholder="Explain the evidence and decision…" /></label><button disabled={busy} type="submit">Complete review</button></form>
+          </article>)}
+        </div> : <div className="state-block"><h3>No service listings awaiting review</h3><p>New provider submissions will appear here.</p></div>}
+      </section>
     </main>
   );
+}
+
+type ServiceListing = { listingId: string; serviceCategory: string; title: string; description: string; providerName: string; status: string; contactEmail: string | null; contactPhone: string | null; websiteUrl: string | null };
+function parseServiceListings(value: unknown): ServiceListing[] {
+  return Array.isArray(value) ? value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const row = entry as Record<string, unknown>;
+    if (typeof row.listing_id !== "string" || typeof row.title !== "string") return [];
+    return [{ listingId: row.listing_id, serviceCategory: String(row.service_category ?? "Service"), title: row.title, description: String(row.description ?? ""), providerName: String(row.provider_name ?? "Provider"), status: String(row.status ?? "pending"), contactEmail: typeof row.contact_email === "string" ? row.contact_email : null, contactPhone: typeof row.contact_phone === "string" ? row.contact_phone : null, websiteUrl: typeof row.website_url === "string" ? row.website_url : null }];
+  }) : [];
 }
 
 function State({ title, message }: { title: string; message: string }) {

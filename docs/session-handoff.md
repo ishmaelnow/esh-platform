@@ -2,6 +2,20 @@
 
 Last updated: 2026-08-27
 
+## Community service directory checkpoint (2026-08-27)
+
+The next Community slice is implemented locally but is not committed or deployed. Migration
+`20260827000100_community_service_listings.sql` adds tenant-scoped provider listings with pending
+publication, owner/moderator RLS boundaries, a member directory snapshot, and reason-required
+moderator review with tenant audit evidence. The Community member app now has a Services directory
+section; Community Admin has a Service listing review queue. Community remains opt-in and existing
+tenant settings currently keep provider posting disabled.
+
+Local validation so far: Community and Admin TypeScript checks completed without errors and
+`git diff --check` passes. The migration has not yet been pushed. Before handoff, run the targeted
+contract test and inspect the migration dry run. Owner must review, stage each file explicitly,
+commit, run `pnpm exec supabase db push --dry-run`, then apply and push only after approval.
+
 ## Rider iOS payment-return crash checkpoint (2026-08-27)
 
 The Rider iOS payment flow exposed a Universal Link loop after Stripe confirmation. Native

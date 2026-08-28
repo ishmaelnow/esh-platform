@@ -15,6 +15,7 @@ export type {
   CommunityOrganizationVerification,
   CommunityProviderProfile,
   CommunityProviderVerification,
+  CommunityServiceListing,
   CommunityMedia,
   CommunityModerationReport,
   CommunityReactionCounts,

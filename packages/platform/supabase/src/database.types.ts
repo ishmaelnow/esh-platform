@@ -2492,6 +2492,10 @@ export type Database = {
       can_operate_community: { Args: { target_tenant_id: string }; Returns: boolean }
       can_read_community_content: { Args: { target_tenant_id: string; target_content_id: string }; Returns: boolean }
       community_feed_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      community_service_directory_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      create_my_community_service_listing: { Args: { target_tenant_id: string; target_provider_id: string; category_value: string; title_value: string; description_value: string; service_area_id_value?: string | null; rate_text_value?: string | null; contact_email_value?: string | null; contact_phone_value?: string | null; website_url_value?: string | null }; Returns: string }
+      community_service_moderation_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      review_community_service_listing: { Args: { target_listing_id: string; decision_value: string; reason_value: string }; Returns: boolean }
       create_my_community_post: { Args: { target_tenant_id: string; title_value: string; body_value: string; visibility_value?: string }; Returns: string }
       create_my_community_comment: { Args: { target_tenant_id: string; target_content_id: string; body_value: string; parent_comment_id_value?: string | null }; Returns: string }
       toggle_my_community_content_reaction: { Args: { target_tenant_id: string; target_content_id: string; reaction_kind_value: string }; Returns: boolean }

@@ -86,7 +86,7 @@ Implementation order:
    products. Production rollout precedes the Community-only pilot tenant.
 9. Comments, reactions, private media, blocks, mutes, reports, and the reasoned/audited Community
    Admin moderation queue are implemented locally in Community Conversations and Safety V1.
-10. Service directory and provider-owned listings.
+10. Service directory and provider-owned listings (implementation in progress locally; migration not yet applied).
 11. Moderation and submit-for-announcement workflow.
 12. Person-based in-app notifications and compatible delivery generalization.
 13. Lifecycle automation, read models, discovery UI, and production pilot gates.
