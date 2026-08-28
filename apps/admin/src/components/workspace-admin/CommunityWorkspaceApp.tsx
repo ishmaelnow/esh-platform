@@ -170,8 +170,10 @@ export function CommunityWorkspaceApp() {
     if (!supabase) return; setBusy(true); setError(null);
     try {
       if (kind === "join" && decision === "approved") {
-        const { data: request, error: requestError } = await supabase.from("community_join_requests").select("email").eq("request_id", id).single();
+        const { data: requestSnapshot, error: requestError } = await supabase.rpc("community_join_review_snapshot", { target_tenant_id: tenantId, result_limit: 100 });
         if (requestError) throw requestError;
+        const request = parseJoinRequests(requestSnapshot).find((entry) => entry.requestId === id);
+        if (!request) throw new Error("Membership request could not be found.");
         const { data: auth } = await supabase.auth.getSession();
         const response = await fetch("/api/tenant-admin/invitations", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${auth.session?.access_token ?? ""}` }, body: JSON.stringify({ tenantId, email: request.email, role: "tenant_member", workspaceKey: "community", workspaceRoleKey: "community_member" }) });
         if (!response.ok) throw new Error((await response.json()).message ?? "Unable to send Community invitation.");
