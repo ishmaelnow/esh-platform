@@ -146,8 +146,8 @@ export function CommunityWorkspaceApp() {
     try {
       const { error: reviewError } = await supabase.rpc("review_community_service_listing", {
         target_listing_id: listingId,
-        decision_value: String(values.get("decision") ?? "rejected"),
-        reason_value: String(values.get("reason") ?? ""),
+        decision_value: formValue(values.get("decision"), "rejected"),
+        reason_value: formValue(values.get("reason"), ""),
       });
       if (reviewError) throw reviewError;
       await loadListings(tenantId);
@@ -322,12 +322,18 @@ export function CommunityWorkspaceApp() {
 }
 
 type ServiceListing = { listingId: string; serviceCategory: string; title: string; description: string; providerName: string; status: string; contactEmail: string | null; contactPhone: string | null; websiteUrl: string | null };
+function formValue(value: FormDataEntryValue | null, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+function textValue(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
 function parseServiceListings(value: unknown): ServiceListing[] {
   return Array.isArray(value) ? value.flatMap((entry) => {
     if (!entry || typeof entry !== "object") return [];
     const row = entry as Record<string, unknown>;
     if (typeof row.listing_id !== "string" || typeof row.title !== "string") return [];
-    return [{ listingId: row.listing_id, serviceCategory: String(row.service_category ?? "Service"), title: row.title, description: String(row.description ?? ""), providerName: String(row.provider_name ?? "Provider"), status: String(row.status ?? "pending"), contactEmail: typeof row.contact_email === "string" ? row.contact_email : null, contactPhone: typeof row.contact_phone === "string" ? row.contact_phone : null, websiteUrl: typeof row.website_url === "string" ? row.website_url : null }];
+    return [{ listingId: row.listing_id, serviceCategory: textValue(row.service_category, "Service"), title: row.title, description: textValue(row.description, ""), providerName: textValue(row.provider_name, "Provider"), status: textValue(row.status, "pending"), contactEmail: typeof row.contact_email === "string" ? row.contact_email : null, contactPhone: typeof row.contact_phone === "string" ? row.contact_phone : null, websiteUrl: typeof row.website_url === "string" ? row.website_url : null }];
   }) : [];
 }
 
