@@ -176,7 +176,11 @@ export function CommunityWorkspaceApp() {
         if (!request) throw new Error("Membership request could not be found.");
         const { data: auth } = await supabase.auth.getSession();
         const response = await fetch("/api/tenant-admin/invitations", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${auth.session?.access_token ?? ""}` }, body: JSON.stringify({ tenantId, email: request.email, role: "tenant_member", workspaceKey: "community", workspaceRoleKey: "community_member" }) });
-        if (!response.ok) throw new Error((await response.json()).message ?? "Unable to send Community invitation.");
+        if (!response.ok) {
+          const payload: unknown = await response.json();
+          const errorMessage = payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : "Unable to send Community invitation.";
+          throw new Error(errorMessage);
+        }
       }
       const result = kind === "join" ? await supabase.rpc("review_community_join_request", { target_request_id: id, decision_value: decision }) : await supabase.rpc("review_community_public_feedback", { target_feedback_id: id, decision_value: decision });
       if (result.error) throw result.error; await loadPublicQueue(tenantId);
