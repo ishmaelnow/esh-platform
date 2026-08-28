@@ -468,6 +468,7 @@ export default function CommunityHome() {
             <p>{publicSurface ? "Browse public information, request membership, or send private feedback." : "Sign in to your ESH Community account."}</p>
           </div>
         </header>
+        {message ? <p className={message.includes("submitted") || message.includes("Thank you") ? "notice" : "error"}>{message}</p> : null}
         <section className="community-card">
           <h2>Explore Community</h2>
           <p>Browse public information without signing in. Actions require approved Community membership.</p>
