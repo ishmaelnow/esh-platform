@@ -2,6 +2,14 @@
 
 Last updated: 2026-08-27
 
+## Community public entry checkpoint (2026-08-27)
+
+The public-entry foundation is local and uncommitted. Migration `20260827000200_community_public_entry.sql`
+adds separate private join-request and visitor-feedback records with anonymous RPC submission,
+without granting Community or Transportation access. The signed-out Community page now exposes
+browse-only discovery plus separate join and feedback forms. Community Admin approval queues remain
+the next slice; do not apply this migration until those review controls are implemented and tested.
+
 ## Community service directory checkpoint (2026-08-27)
 
 The next Community slice is implemented locally but is not committed or deployed. Migration

@@ -13,6 +13,7 @@ import { parseCommunityFeed } from "@/lib/feed";
 import { CommunityFeedCard } from "@/components/CommunityFeedCard";
 
 type CommunityAccess = { tenantId: string; tenantName: string; roles: string[] };
+type PublicCommunity = { tenant_id: string; display_name: string };
 type SafetyMember = { personId: string; displayName: string };
 
 export default function CommunityHome() {
@@ -34,6 +35,7 @@ export default function CommunityHome() {
   const [blockedMembers, setBlockedMembers] = useState<SafetyMember[]>([]);
   const [mutedMembers, setMutedMembers] = useState<SafetyMember[]>([]);
   const [services, setServices] = useState<CommunityServiceListing[]>([]);
+  const [publicCommunities, setPublicCommunities] = useState<PublicCommunity[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -191,6 +193,13 @@ export default function CommunityHome() {
     });
     return () => data.subscription.unsubscribe();
   }, [client, resolveCommunityAdmission]);
+
+  useEffect(() => {
+    if (!client || session) return;
+    void client.rpc("community_public_directory_snapshot").then(({ data }) => {
+      setPublicCommunities(Array.isArray(data) ? data as unknown as PublicCommunity[] : []);
+    });
+  }, [client, session]);
 
   useEffect(() => {
     if (!client || !activeTenantId) return;
@@ -455,7 +464,13 @@ export default function CommunityHome() {
             <p>Sign in to your ESH Community account.</p>
           </div>
         </header>
+        <section className="community-card">
+          <h2>Explore Community</h2>
+          <p>Browse public information without signing in. Actions require approved Community membership.</p>
+          {publicCommunities.length ? publicCommunities.map((community) => <article key={community.tenant_id}><h3>{community.display_name}</h3><p>Public Community information and local services.</p></article>) : <p>No public Communities are currently available.</p>}
+        </section>
         <form className="community-card form-grid" onSubmit={(event) => void signIn(event)}>
+          <h2>Member sign in</h2>
           <label>
             Email
             <input name="email" type="email" autoComplete="email" required />
@@ -468,6 +483,14 @@ export default function CommunityHome() {
           <button disabled={busy} type="submit">
             Sign in
           </button>
+        </form>
+        <form className="community-card form-grid" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const form = new FormData(event.currentTarget); setBusy(true); try { const result = await client.rpc("submit_community_join_request", { target_tenant_id: formText(form, "tenant"), email_value: formText(form, "join_email"), display_name_value: formText(form, "join_name"), locality_value: formText(form, "locality") || null, reason_value: formText(form, "join_reason") || null }); if (result.error) throw result.error; setMessage("Your join request was submitted for Community review."); event.currentTarget.reset(); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit your join request."); } finally { setBusy(false); } }}>
+          <h2>Request membership</h2><p>Membership is reviewed before you can post or interact.</p>
+          <label>Community<select name="tenant" required><option value="">Choose a Community</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label>
+          <label>Name<input name="join_name" required /></label><label>Email<input name="join_email" type="email" required /></label><label>Locality<input name="locality" placeholder="City or neighborhood" /></label><label>Why would you like to join?<textarea name="join_reason" maxLength={1000} rows={3} /></label><button disabled={busy} type="submit">Request to join</button>
+        </form>
+        <form className="community-card form-grid" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const form = new FormData(event.currentTarget); setBusy(true); try { const result = await client.rpc("submit_community_public_feedback", { target_tenant_id: formText(form, "feedback_tenant") || null, category_value: formText(form, "feedback_category"), message_value: formText(form, "feedback_message"), contact_email_value: formText(form, "feedback_email") || null }); if (result.error) throw result.error; setMessage("Thank you. Your feedback was sent privately to the Community team."); event.currentTarget.reset(); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit feedback."); } finally { setBusy(false); } }}>
+          <h2>Public feedback</h2><label>Community (optional)<select name="feedback_tenant"><option value="">General feedback</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label><label>Category<select name="feedback_category"><option value="suggestion">Suggestion</option><option value="issue">Issue</option><option value="question">Question</option><option value="service_concern">Service concern</option></select></label><label>Message<textarea name="feedback_message" required maxLength={5000} rows={4} /></label><label>Email for follow-up (optional)<input name="feedback_email" type="email" /></label><button disabled={busy} type="submit">Send feedback</button>
         </form>
       </main>
     );

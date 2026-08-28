@@ -2496,6 +2496,13 @@ export type Database = {
       create_my_community_service_listing: { Args: { target_tenant_id: string; target_provider_id: string; category_value: string; title_value: string; description_value: string; service_area_id_value?: string | null; rate_text_value?: string | null; contact_email_value?: string | null; contact_phone_value?: string | null; website_url_value?: string | null }; Returns: string }
       community_service_moderation_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       review_community_service_listing: { Args: { target_listing_id: string; decision_value: string; reason_value: string }; Returns: boolean }
+      submit_community_join_request: { Args: { target_tenant_id: string; email_value: string; display_name_value: string; locality_value?: string | null; reason_value?: string | null }; Returns: string }
+      submit_community_public_feedback: { Args: { target_tenant_id?: string | null; category_value: string; message_value: string; contact_email_value?: string | null }; Returns: string }
+      community_public_directory_snapshot: { Args: Record<PropertyKey, never>; Returns: Json }
+      community_join_review_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      community_feedback_review_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      review_community_join_request: { Args: { target_request_id: string; decision_value: string }; Returns: boolean }
+      review_community_public_feedback: { Args: { target_feedback_id: string; decision_value: string }; Returns: boolean }
       create_my_community_post: { Args: { target_tenant_id: string; title_value: string; body_value: string; visibility_value?: string }; Returns: string }
       create_my_community_comment: { Args: { target_tenant_id: string; target_content_id: string; body_value: string; parent_comment_id_value?: string | null }; Returns: string }
       toggle_my_community_content_reaction: { Args: { target_tenant_id: string; target_content_id: string; reaction_kind_value: string }; Returns: boolean }

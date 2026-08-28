@@ -20,6 +20,8 @@ export function CommunityWorkspaceApp() {
   const [busy, setBusy] = useState(false);
   const [reports, setReports] = useState<CommunityModerationReport[]>([]);
   const [listings, setListings] = useState<ServiceListing[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
+  const [feedback, setFeedback] = useState<PublicFeedback[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadReports = useCallback(
@@ -41,6 +43,15 @@ export function CommunityWorkspaceApp() {
     });
     if (snapshotError) throw snapshotError;
     setListings(parseServiceListings(data));
+  }, [supabase]);
+  const loadPublicQueue = useCallback(async (selectedTenantId: string) => {
+    if (!supabase) return;
+    const [joins, notes] = await Promise.all([
+      supabase.rpc("community_join_review_snapshot", { target_tenant_id: selectedTenantId, result_limit: 100 }),
+      supabase.rpc("community_feedback_review_snapshot", { target_tenant_id: selectedTenantId, result_limit: 100 }),
+    ]);
+    if (joins.error) throw joins.error; if (notes.error) throw notes.error;
+    setJoinRequests(parseJoinRequests(joins.data)); setFeedback(parseFeedback(notes.data));
   }, [supabase]);
 
   useEffect(() => {
@@ -82,7 +93,7 @@ export function CommunityWorkspaceApp() {
         const admitted = Boolean(roleResult.data && productSessionResult.data);
         setAllowed(admitted);
         setCanModerate(Boolean(moderationRoleResult.data));
-        if (admitted && moderationRoleResult.data) await Promise.all([loadReports(selectedTenantId), loadListings(selectedTenantId)]);
+        if (admitted && moderationRoleResult.data) await Promise.all([loadReports(selectedTenantId), loadListings(selectedTenantId), loadPublicQueue(selectedTenantId)]);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Unable to verify Community access.");
       } finally {
@@ -92,7 +103,7 @@ export function CommunityWorkspaceApp() {
     return () => {
       mounted = false;
     };
-  }, [loadListings, loadReports, supabase]);
+  }, [loadListings, loadPublicQueue, loadReports, supabase]);
 
   useEffect(() => {
     if (!supabase || !allowed || !tenantId) return;
@@ -154,6 +165,10 @@ export function CommunityWorkspaceApp() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to review service listing.");
     } finally { setBusy(false); }
+  }
+  async function reviewPublic(kind: "join" | "feedback", id: string, decision: string) {
+    if (!supabase) return; setBusy(true); setError(null);
+    try { const result = kind === "join" ? await supabase.rpc("review_community_join_request", { target_request_id: id, decision_value: decision }) : await supabase.rpc("review_community_public_feedback", { target_feedback_id: id, decision_value: decision }); if (result.error) throw result.error; await loadPublicQueue(tenantId); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to complete public review."); } finally { setBusy(false); }
   }
 
   async function exitCommunity() {
@@ -317,11 +332,14 @@ export function CommunityWorkspaceApp() {
           </article>)}
         </div> : <div className="state-block"><h3>No service listings awaiting review</h3><p>New provider submissions will appear here.</p></div>}
       </section>
+      <section className="workspace-card moderation-workspace"><div className="workspace-portal-header"><div><p className="eyebrow">Public entry</p><h2>Join requests and feedback</h2><p className="muted">Review resident access requests separately from published Community content.</p></div><button className="secondary-button" disabled={busy || !canModerate} onClick={() => void loadPublicQueue(tenantId)} type="button">Refresh</button></div>{!canModerate ? <div className="state-block"><h3>Moderation role required</h3></div> : <><h3>Membership requests</h3>{joinRequests.length ? joinRequests.map((request) => <article className="moderation-case" key={request.requestId}><div><h3>{request.displayName}</h3><p>{request.email}{request.locality ? ` · ${request.locality}` : ""}</p><p>{request.reason ?? "No reason provided"}</p></div><div><button disabled={busy} onClick={() => void reviewPublic("join", request.requestId, "approved")} type="button">Approve</button><button disabled={busy} onClick={() => void reviewPublic("join", request.requestId, "rejected")} type="button">Reject</button></div></article>) : <p>No pending membership requests.</p>}<h3>Visitor feedback</h3>{feedback.length ? feedback.map((note) => <article className="moderation-case" key={note.feedbackId}><div><p className="eyebrow">{note.category}</p><p>{note.message}</p>{note.contactEmail ? <p>Follow-up: {note.contactEmail}</p> : null}</div><div><button disabled={busy} onClick={() => void reviewPublic("feedback", note.feedbackId, "reviewing")} type="button">Review</button><button disabled={busy} onClick={() => void reviewPublic("feedback", note.feedbackId, "resolved")} type="button">Resolve</button><button disabled={busy} onClick={() => void reviewPublic("feedback", note.feedbackId, "dismissed")} type="button">Dismiss</button></div></article>) : <p>No new visitor feedback.</p>}</>}</section>
     </main>
   );
 }
 
 type ServiceListing = { listingId: string; serviceCategory: string; title: string; description: string; providerName: string; status: string; contactEmail: string | null; contactPhone: string | null; websiteUrl: string | null };
+type JoinRequest = { requestId: string; email: string; displayName: string; locality: string | null; reason: string | null };
+type PublicFeedback = { feedbackId: string; category: string; message: string; contactEmail: string | null };
 function formValue(value: FormDataEntryValue | null, fallback: string): string {
   return typeof value === "string" ? value : fallback;
 }
@@ -336,6 +354,8 @@ function parseServiceListings(value: unknown): ServiceListing[] {
     return [{ listingId: row.listing_id, serviceCategory: textValue(row.service_category, "Service"), title: row.title, description: textValue(row.description, ""), providerName: textValue(row.provider_name, "Provider"), status: textValue(row.status, "pending"), contactEmail: typeof row.contact_email === "string" ? row.contact_email : null, contactPhone: typeof row.contact_phone === "string" ? row.contact_phone : null, websiteUrl: typeof row.website_url === "string" ? row.website_url : null }];
   }) : [];
 }
+function parseJoinRequests(value: unknown): JoinRequest[] { return Array.isArray(value) ? value.flatMap((entry) => { const row = entry && typeof entry === "object" ? entry as Record<string, unknown> : {}; return typeof row.request_id === "string" && typeof row.email === "string" && typeof row.display_name === "string" ? [{ requestId: row.request_id, email: row.email, displayName: row.display_name, locality: typeof row.locality === "string" ? row.locality : null, reason: typeof row.reason === "string" ? row.reason : null }] : []; }) : []; }
+function parseFeedback(value: unknown): PublicFeedback[] { return Array.isArray(value) ? value.flatMap((entry) => { const row = entry && typeof entry === "object" ? entry as Record<string, unknown> : {}; return typeof row.feedback_id === "string" && typeof row.category === "string" && typeof row.message === "string" ? [{ feedbackId: row.feedback_id, category: row.category, message: row.message, contactEmail: typeof row.contact_email === "string" ? row.contact_email : null }] : []; }) : []; }
 
 function State({ title, message }: { title: string; message: string }) {
   return (
