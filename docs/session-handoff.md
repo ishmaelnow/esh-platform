@@ -2,6 +2,25 @@
 
 Last updated: 2026-08-27
 
+## Community invitation/password recovery checkpoint (2026-08-28)
+
+The public/member Community split is deployed: `community.eshapp.com` is browse-only and
+`app.community.eshapp.com` is the authenticated member surface. Public join requests and feedback
+are reviewed at `community-admin.eshapp.com`. Community Admin approval now routes invitation
+creation through the existing Admin backend, and the invitation-context trigger assigns the
+`community_member` workspace role after acceptance. Community member password recovery is also
+available from the member sign-in page.
+
+Important production state: `kand8363@gmail.com` has invitation
+`650a20d9-eadf-4340-8747-b15bc6c9d5fd`, currently `pending`, with Community context repaired to
+`workspace_key = community` and `workspace_role_key = community_member`. It remains pending until
+the recipient opens the invitation and completes credentials. Do not manually set it to accepted.
+After acceptance, verify the invitation becomes `accepted` and that a Community enrollment and
+`community_member` role assignment exist. The older `ishmaelkosh@gmail.com` invitation is already
+accepted and predates the Community-context workflow.
+
+Current Git state is clean and `main` matches `origin/main`; no migration or deployment is waiting.
+
 ## Community public entry checkpoint (2026-08-27)
 
 The public-entry foundation is local and uncommitted. Migration `20260827000200_community_public_entry.sql`
