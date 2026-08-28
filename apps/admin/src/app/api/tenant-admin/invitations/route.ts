@@ -19,7 +19,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Authentication is required." }, { status: 401 });
     }
 
-    const payload = validateInvitationPayload((await request.json()) as unknown);
+    const requestBody = (await request.json()) as { workspaceKey?: unknown; workspaceRoleKey?: unknown };
+    const payload = validateInvitationPayload(requestBody);
+    const workspaceKey = requestBody.workspaceKey === "community" ? "community" : null;
+    const workspaceRoleKey = requestBody.workspaceRoleKey === "community_member" ? "community_member" : null;
     const config = getAdminServerConfig();
     const supabase = createRequestSupabaseClient({ accessToken });
     const {
@@ -64,6 +67,8 @@ export async function POST(request: Request) {
         invited_by_person_id: person.person_id,
         status: "pending",
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        workspace_key: workspaceKey,
+        workspace_role_key: workspaceRoleKey,
       })
       .select("invitation_id")
       .single();

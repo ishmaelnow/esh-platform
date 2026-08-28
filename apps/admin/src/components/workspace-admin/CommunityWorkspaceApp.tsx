@@ -168,7 +168,17 @@ export function CommunityWorkspaceApp() {
   }
   async function reviewPublic(kind: "join" | "feedback", id: string, decision: string) {
     if (!supabase) return; setBusy(true); setError(null);
-    try { const result = kind === "join" ? await supabase.rpc("review_community_join_request", { target_request_id: id, decision_value: decision }) : await supabase.rpc("review_community_public_feedback", { target_feedback_id: id, decision_value: decision }); if (result.error) throw result.error; await loadPublicQueue(tenantId); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to complete public review."); } finally { setBusy(false); }
+    try {
+      if (kind === "join" && decision === "approved") {
+        const { data: request, error: requestError } = await supabase.from("community_join_requests").select("email").eq("request_id", id).single();
+        if (requestError) throw requestError;
+        const { data: auth } = await supabase.auth.getSession();
+        const response = await fetch("/api/tenant-admin/invitations", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${auth.session?.access_token ?? ""}` }, body: JSON.stringify({ tenantId, email: request.email, role: "tenant_member", workspaceKey: "community", workspaceRoleKey: "community_member" }) });
+        if (!response.ok) throw new Error((await response.json()).message ?? "Unable to send Community invitation.");
+      }
+      const result = kind === "join" ? await supabase.rpc("review_community_join_request", { target_request_id: id, decision_value: decision }) : await supabase.rpc("review_community_public_feedback", { target_feedback_id: id, decision_value: decision });
+      if (result.error) throw result.error; await loadPublicQueue(tenantId);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to complete public review."); } finally { setBusy(false); }
   }
 
   async function exitCommunity() {
