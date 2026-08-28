@@ -36,6 +36,7 @@ export default function CommunityHome() {
   const [mutedMembers, setMutedMembers] = useState<SafetyMember[]>([]);
   const [services, setServices] = useState<CommunityServiceListing[]>([]);
   const [publicCommunities, setPublicCommunities] = useState<PublicCommunity[]>([]);
+  const [publicSurface, setPublicSurface] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -182,7 +183,10 @@ export default function CommunityHome() {
     setServices(Array.isArray(data) ? data as unknown as CommunityServiceListing[] : []);
   }, [client]);
 
+  useEffect(() => { setPublicSurface(window.location.hostname === "community.eshapp.com"); }, []);
+
   useEffect(() => {
+    if (publicSurface) { setAuthResolved(true); return; }
     if (!client) {
       setAuthResolved(true);
       return;
@@ -192,14 +196,14 @@ export default function CommunityHome() {
       void resolveCommunityAdmission(nextSession);
     });
     return () => data.subscription.unsubscribe();
-  }, [client, resolveCommunityAdmission]);
+  }, [client, publicSurface, resolveCommunityAdmission]);
 
   useEffect(() => {
-    if (!client || session) return;
+    if (!client || session || !publicSurface) return;
     void client.rpc("community_public_directory_snapshot").then(({ data }) => {
       setPublicCommunities(Array.isArray(data) ? data as unknown as PublicCommunity[] : []);
     });
-  }, [client, session]);
+  }, [client, publicSurface, session]);
 
   useEffect(() => {
     if (!client || !activeTenantId) return;
@@ -461,7 +465,7 @@ export default function CommunityHome() {
           <div>
             <p className="eyebrow">ESH Community</p>
             <h1>Neighbors. Information. Local help.</h1>
-            <p>Sign in to your ESH Community account.</p>
+            <p>{publicSurface ? "Browse public information, request membership, or send private feedback." : "Sign in to your ESH Community account."}</p>
           </div>
         </header>
         <section className="community-card">
@@ -469,7 +473,7 @@ export default function CommunityHome() {
           <p>Browse public information without signing in. Actions require approved Community membership.</p>
           {publicCommunities.length ? publicCommunities.map((community) => <article key={community.tenant_id}><h3>{community.display_name}</h3><p>Public Community information and local services.</p></article>) : <p>No public Communities are currently available.</p>}
         </section>
-        <form className="community-card form-grid" onSubmit={(event) => void signIn(event)}>
+        {!publicSurface ? <form className="community-card form-grid" onSubmit={(event) => void signIn(event)}>
           <h2>Member sign in</h2>
           <label>
             Email
@@ -483,7 +487,7 @@ export default function CommunityHome() {
           <button disabled={busy} type="submit">
             Sign in
           </button>
-        </form>
+        </form> : null}
         <form className="community-card form-grid" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const form = new FormData(event.currentTarget); setBusy(true); try { const result = await client.rpc("submit_community_join_request", { target_tenant_id: formText(form, "tenant"), email_value: formText(form, "join_email"), display_name_value: formText(form, "join_name"), locality_value: formText(form, "locality") || null, reason_value: formText(form, "join_reason") || null }); if (result.error) throw result.error; setMessage("Your join request was submitted for Community review."); event.currentTarget.reset(); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit your join request."); } finally { setBusy(false); } }}>
           <h2>Request membership</h2><p>Membership is reviewed before you can post or interact.</p>
           <label>Community<select name="tenant" required><option value="">Choose a Community</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label>
