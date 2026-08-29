@@ -28,4 +28,6 @@ function corsHeaders() {
   };
 }
 
-export const config = { matcher: ["/transport/:path*"] };
+export const config = {
+  matcher: ["/transport/:path*", "/api/tenant-admin/invitations"],
+};

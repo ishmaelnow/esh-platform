@@ -77,23 +77,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: error.message }, { status: 403 });
     }
 
-    await sendTenantInvitationEmail(config, {
-      invitationId: invitation.invitation_id,
-      toEmail: email,
-      tenantDisplayName: tenantConfiguration.display_name,
-      intendedRole: payload.role,
-      token: invitationToken.token,
-    });
-
+    const attemptedAt = new Date().toISOString();
     await supabase
       .from("tenant_invitations")
       .update({
         email_delivery_status: "pending",
-        email_delivery_attempted_at: new Date().toISOString(),
+        email_delivery_attempted_at: attemptedAt,
         email_delivered_at: null,
         email_delivery_error: null,
       })
       .eq("invitation_id", invitation.invitation_id);
+
+    try {
+      await sendTenantInvitationEmail(config, {
+        invitationId: invitation.invitation_id,
+        toEmail: email,
+        tenantDisplayName: tenantConfiguration.display_name,
+        intendedRole: payload.role,
+        token: invitationToken.token,
+      });
+    } catch (deliveryError) {
+      const message = deliveryError instanceof Error
+        ? deliveryError.message
+        : "Invitation email delivery failed.";
+      await supabase
+        .from("tenant_invitations")
+        .update({
+          email_delivery_status: "failed",
+          email_delivery_error: message,
+        })
+        .eq("invitation_id", invitation.invitation_id);
+      return NextResponse.json({ message }, { status: 502 });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
