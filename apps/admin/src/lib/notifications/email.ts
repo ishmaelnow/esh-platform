@@ -65,15 +65,17 @@ export function buildCommunityNotificationContent(
     throw new Error("Unsupported community notification type.");
   }
   const displayName = textValue(payload.display_name) || "there";
+  const signInUrl = new URL("/", communityAppUrl);
+  if (signInUrl.hostname === "community.eshapp.com") signInUrl.hostname = "app.community.eshapp.com";
   return {
     subject: "Your ESH Community membership was approved",
     text: [
       `${displayName}, your ESH Community membership request was approved.`,
       "",
-      "Open ESH Community to sign in and complete your member profile:",
-      new URL("/", communityAppUrl).toString(),
-    ].join("\\n"),
-    html: `<p>${escapeHtml(displayName)}, your ESH Community membership request was approved.</p><p><a href="${escapeHtml(new URL("/", communityAppUrl).toString())}">Open ESH Community</a></p>`,
+      "Sign in to ESH Community and complete your member profile:",
+      signInUrl.toString(),
+    ].join("\n"),
+    html: `<p>${escapeHtml(displayName)}, your ESH Community membership request was approved.</p><p><a href="${escapeHtml(signInUrl.toString())}">Sign in to ESH Community</a></p>`,
   };
 }
 
