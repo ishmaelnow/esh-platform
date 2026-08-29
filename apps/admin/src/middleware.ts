@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/tenant-admin/invitations")) {
+  if (
+    request.nextUrl.pathname.startsWith("/api/tenant-admin/invitations")
+    || request.nextUrl.pathname.startsWith("/api/tenant-admin/notifications/deliver")
+  ) {
     if (request.method === "OPTIONS") {
       return new NextResponse(null, { status: 204, headers: corsHeaders() });
     }
