@@ -11,7 +11,11 @@ alter table public.notification_outbox
       'vehicle_evidence_expired', 'dispatch_offer_created',
       'rider_booking_created', 'rider_dispatch_searching', 'rider_driver_accepted',
       'rider_driver_arrived', 'rider_trip_started', 'rider_trip_completed',
-      'rider_booking_cancelled', 'community_membership_approved'
+      'rider_booking_cancelled', 'rider_booking_scheduled', 'rider_scheduled_reminder',
+      'rider_scheduled_dispatch_started', 'rider_payment_succeeded', 'rider_refund_succeeded',
+      'rider_recurring_autopay_succeeded', 'rider_recurring_autopay_failed',
+      'driver_earnings_recorded', 'driver_transfer_succeeded', 'driver_bank_payout_created',
+      'driver_bank_payout_paid', 'driver_bank_payout_failed', 'community_membership_approved'
     )
   );
 
