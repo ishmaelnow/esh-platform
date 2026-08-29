@@ -169,17 +169,22 @@ export function CommunityWorkspaceApp() {
   async function reviewPublic(kind: "join" | "feedback", id: string, decision: string) {
     if (!supabase) return; setBusy(true); setError(null);
     try {
-      const result = kind === "join" ? await supabase.rpc("review_community_join_request", { target_request_id: id, decision_value: decision }) : await supabase.rpc("review_community_public_feedback", { target_feedback_id: id, decision_value: decision });
-      if (result.error) throw result.error; await loadPublicQueue(tenantId);
       if (kind === "join" && decision === "approved") {
         const { data: auth } = await supabase.auth.getSession();
         const delivery = await fetch("/api/tenant-admin/notifications/deliver", {
           method: "POST",
           headers: { "content-type": "application/json", authorization: `Bearer ${auth.session?.access_token ?? ""}` },
-          body: JSON.stringify({ tenantId }),
+          body: JSON.stringify({ tenantId, requestId: id, decision }),
         });
         if (!delivery.ok) throw new Error("Membership approved, but its email could not be delivered.");
+      } else if (kind === "join") {
+        const { error: resultError } = await supabase.rpc("review_community_join_request", { target_request_id: id, decision_value: decision });
+        if (resultError) throw resultError;
+      } else {
+        const { error: resultError } = await supabase.rpc("review_community_public_feedback", { target_feedback_id: id, decision_value: decision });
+        if (resultError) throw resultError;
       }
+      await loadPublicQueue(tenantId);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to complete public review."); } finally { setBusy(false); }
   }
 

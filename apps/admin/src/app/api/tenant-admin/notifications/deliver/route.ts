@@ -15,6 +15,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Authentication is required." }, { status: 401 });
     const body = (await request.json()) as Record<string, unknown>;
     const tenantId = validateTenantId(body.tenantId);
+    if (typeof body.requestId === "string" && body.requestId && body.decision === "approved") {
+      const authenticated = createRequestSupabaseClient({ accessToken: token });
+      const { error: reviewError } = await authenticated.rpc("review_community_join_request", {
+        target_request_id: body.requestId,
+        decision_value: "approved",
+      });
+      if (reviewError) throw reviewError;
+    }
     const notificationId =
       typeof body.notificationId === "string" && body.notificationId
         ? validateTenantId(body.notificationId)
