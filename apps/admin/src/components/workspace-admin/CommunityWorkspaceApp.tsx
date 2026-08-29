@@ -171,7 +171,7 @@ export function CommunityWorkspaceApp() {
     try {
       if (kind === "join" && decision === "approved") {
         const { data: auth } = await supabase.auth.getSession();
-        const delivery = await fetch("/api/tenant-admin/notifications/deliver", {
+        const delivery = await fetch("https://admin.eshapp.com/api/tenant-admin/notifications/deliver", {
           method: "POST",
           headers: { "content-type": "application/json", authorization: `Bearer ${auth.session?.access_token ?? ""}` },
           body: JSON.stringify({ tenantId, requestId: id, decision }),

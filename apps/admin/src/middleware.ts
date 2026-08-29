@@ -29,5 +29,9 @@ function corsHeaders() {
 }
 
 export const config = {
-  matcher: ["/transport/:path*", "/api/tenant-admin/invitations"],
+  matcher: [
+    "/transport/:path*",
+    "/api/tenant-admin/invitations",
+    "/api/tenant-admin/notifications/deliver",
+  ],
 };
