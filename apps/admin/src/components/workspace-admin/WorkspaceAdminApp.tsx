@@ -152,7 +152,7 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
   function openWorkspace(workspaceKey: ProductWorkspaceKey) {
     if (!supabase) return;
     if (workspaceKey === "community") {
-      window.location.assign(adminPublicConfig.communityAdminUrl);
+      window.location.assign("/community");
       return;
     }
     window.location.assign(adminPublicConfig.transportationAdminUrl);
