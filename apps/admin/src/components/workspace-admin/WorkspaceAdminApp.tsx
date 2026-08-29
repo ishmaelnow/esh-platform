@@ -149,10 +149,30 @@ export function WorkspaceAdminApp({ mode = "entry" }: { mode?: "entry" | "govern
     }
   }
 
-  function openWorkspace(workspaceKey: ProductWorkspaceKey) {
-    if (!supabase) return;
+  async function openWorkspace(workspaceKey: ProductWorkspaceKey) {
+    if (!supabase || !selectedTenant) return;
+    setBusy(true);
+    setError(null);
     if (workspaceKey === "community") {
+      const { error } = await supabase.rpc("enter_my_product_session", {
+        target_tenant_id: selectedTenant.tenant.tenant_id,
+        target_workspace_key: "community",
+      });
+      if (error) {
+        setError(error.message);
+        setBusy(false);
+        return;
+      }
       window.location.assign("/community");
+      return;
+    }
+    const { error } = await supabase.rpc("enter_my_product_session", {
+      target_tenant_id: selectedTenant.tenant.tenant_id,
+      target_workspace_key: "transportation",
+    });
+    if (error) {
+      setError(error.message);
+      setBusy(false);
       return;
     }
     window.location.assign(adminPublicConfig.transportationAdminUrl);
