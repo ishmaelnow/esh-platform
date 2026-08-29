@@ -169,21 +169,17 @@ export function CommunityWorkspaceApp() {
   async function reviewPublic(kind: "join" | "feedback", id: string, decision: string) {
     if (!supabase) return; setBusy(true); setError(null);
     try {
-      if (kind === "join" && decision === "approved") {
-        const { data: requestSnapshot, error: requestError } = await supabase.rpc("community_join_review_snapshot", { target_tenant_id: tenantId, result_limit: 100 });
-        if (requestError) throw requestError;
-        const request = parseJoinRequests(requestSnapshot).find((entry) => entry.requestId === id);
-        if (!request) throw new Error("Membership request could not be found.");
-        const { data: auth } = await supabase.auth.getSession();
-        const response = await fetch("https://admin.eshapp.com/api/tenant-admin/invitations", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${auth.session?.access_token ?? ""}` }, body: JSON.stringify({ tenantId, email: request.email, role: "tenant_member", workspaceKey: "community", workspaceRoleKey: "community_member" }) });
-        if (!response.ok) {
-          const payload: unknown = await response.json();
-          const errorMessage = payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : "Unable to send Community invitation.";
-          throw new Error(errorMessage);
-        }
-      }
       const result = kind === "join" ? await supabase.rpc("review_community_join_request", { target_request_id: id, decision_value: decision }) : await supabase.rpc("review_community_public_feedback", { target_feedback_id: id, decision_value: decision });
       if (result.error) throw result.error; await loadPublicQueue(tenantId);
+      if (kind === "join" && decision === "approved") {
+        const { data: auth } = await supabase.auth.getSession();
+        const delivery = await fetch("/api/tenant-admin/notifications/deliver", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: `Bearer ${auth.session?.access_token ?? ""}` },
+          body: JSON.stringify({ tenantId }),
+        });
+        if (!delivery.ok) throw new Error("Membership approved, but its email could not be delivered.");
+      }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to complete public review."); } finally { setBusy(false); }
   }
 

@@ -11,7 +11,13 @@ export async function sendNotificationEmail(
   config: AdminServerConfig,
   notification: NotificationEmail,
 ) {
-  const content = notification.notificationType.startsWith("rider_")
+  const content = notification.notificationType.startsWith("community_")
+    ? buildCommunityNotificationContent(
+        notification.notificationType,
+        notification.payload,
+        config.communityAppUrl,
+      )
+    : notification.notificationType.startsWith("rider_")
     ? buildRiderNotificationContent(
         notification.notificationType,
         notification.payload,
@@ -48,6 +54,27 @@ export async function sendNotificationEmail(
   }
 
   return (await response.json()) as { id: string };
+}
+
+export function buildCommunityNotificationContent(
+  notificationType: string,
+  payload: Record<string, unknown>,
+  communityAppUrl: string,
+) {
+  if (notificationType !== "community_membership_approved") {
+    throw new Error("Unsupported community notification type.");
+  }
+  const displayName = textValue(payload.display_name) || "there";
+  return {
+    subject: "Your ESH Community membership was approved",
+    text: [
+      `${displayName}, your ESH Community membership request was approved.`,
+      "",
+      "Open ESH Community to sign in and complete your member profile:",
+      new URL("/", communityAppUrl).toString(),
+    ].join("\\n"),
+    html: `<p>${escapeHtml(displayName)}, your ESH Community membership request was approved.</p><p><a href="${escapeHtml(new URL("/", communityAppUrl).toString())}">Open ESH Community</a></p>`,
+  };
 }
 
 export function buildDriverNotificationContent(

@@ -24,9 +24,20 @@ export async function POST(request: Request) {
       "can_manage_driver_management",
       { target_tenant_id: tenantId },
     );
-    if (permissionError || !canManage) {
+    const { data: canModerateCommunity, error: communityPermissionError } = await authenticated.rpc(
+      "has_workspace_role",
+      {
+        target_tenant_id: tenantId,
+        target_workspace_key: "community",
+        required_roles: ["community_admin", "community_moderator"],
+      },
+    );
+    if (permissionError && communityPermissionError) {
+      return NextResponse.json({ message: "Notification delivery authorization failed." }, { status: 403 });
+    }
+    if (!canManage && !canModerateCommunity) {
       return NextResponse.json(
-        { message: "Driver management permission is required." },
+        { message: "Community moderation or driver management permission is required." },
         { status: 403 },
       );
     }
