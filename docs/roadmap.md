@@ -15,11 +15,12 @@ remain independent of transportation-specific workflows.
 
 ## Next Product Domain: Community Platform
 
-Status: **Community Migrations 1–6 deployed; platform entitlement separation implemented locally**.
+Status: **Community foundation, independent applications, safety, services, public entry, and
+member invitation delivery deployed; first invitation acceptance verification pending**.
 
-Community is the second product domain built on ESH Platform. It will be a tenant-enabled module
-that reuses platform identity, tenant membership, capabilities, RLS, audit, maps, storage, and
-notification delivery without depending on Rider or Driver business identities.
+Community is the second product domain built on ESH Platform. It is an independently operated,
+tenant-enabled product that reuses platform identity, tenant membership, capabilities, RLS, audit,
+maps, storage, and notification delivery without depending on Rider or Driver business identities.
 
 Approved direction:
 
@@ -49,7 +50,7 @@ Implementation order:
    production authorization-foundation test.
 2. Community places, groups, organizations, providers, and private trust evidence are deployed and
    passed the production dark-rollout SQL and UI regression test.
-3. Product Workspace separation is implemented locally in
+3. Product Workspace separation is deployed in
    `20260823000300_product_workspace_foundation.sql`: shared identity, separate product enrollment,
    separate operational roles, no Rider/Driver coupling, and a one-time Transportation admin
    compatibility backfill. Production validation passed with all 17 Transportation workspaces
@@ -60,37 +61,41 @@ Implementation order:
    the access boundary but is not the final combined operating experience.
 5. ADR 0002 establishes governance-only Admin plus independently deployed product applications.
    Exclusive server-authoritative product sessions and stale-tab denial are deployed in Migration
-   `20260823000500_exclusive_product_sessions.sql`. Product-entry stabilization is implemented
-   locally: only enabled and assigned products appear operationally, tenant governance is isolated
-   at `/governance`, and inactive direct links return to explicit product entry instead of leaving
-   a dead end. Production deployment and the revised two-tab validation remain.
+   `20260823000500_exclusive_product_sessions.sql`. Product-entry stabilization is deployed: only
+   enabled and assigned products appear operationally, tenant governance is isolated at
+   `/governance`, and inactive direct links return to explicit product entry instead of leaving a
+   dead end.
 6. Independent `apps/community` member application is deployed with isolated auth, explicit
    product-session entry, chronological feed, and ordinary member posting. Independent
    `apps/transportation` Transportation Admin is implemented with a dedicated deployment/domain,
    isolated product admission, explicit tenant entry, restricted routes, and a same-origin rewrite
    to the existing proven Transportation backend. It duplicates neither privileged handlers nor
    backend secrets. Production deployment/testing passed. Cross-application sign-out stabilization
-   now awaits local-device completion, reports failures, and explicitly returns each product to its
-   own entry state; production validation remains. The independent `apps/community-admin` shell is
-   implemented with isolated authentication, explicit Community-operator admission, product entry,
-   and restricted routes. Its generated and custom production domains passed initial admission.
-   Shared tenant governance is now tenant-first and product-explicit: one selected product controls
-   status, roles, candidates, enrollment actions, and current-access lists without mixing products.
-   Production validation follows.
+   reports failures and explicitly returns each product to its own entry state. The independent
+   `apps/community-admin` shell is deployed with isolated authentication, explicit
+   Community-operator admission, product entry, and restricted routes. Shared tenant governance is
+   tenant-first and product-explicit: one selected product controls status, roles, candidates,
+   enrollment actions, and current-access lists without mixing products.
 7. Core content, typed records, targets, actions, lifecycle, and search indexes are implemented
    and deployed in `20260823000600_community_core_content.sql`; the independent Community app is
    deployed at `community.eshapp.com` with strict product-specific admission.
-8. Platform-controlled tenant product entitlement is implemented locally in
+8. Platform-controlled tenant product entitlement is deployed in
    `20260824000100_platform_product_entitlements.sql`. Existing enabled products are grandfathered;
    new tenants receive no product automatically; Tenant Governance sees only Platform-granted
-   products. Production rollout precedes the Community-only pilot tenant.
+   products. Product grants remain separate from workspace activation and member enrollment.
 9. Comments, reactions, private media, blocks, mutes, reports, and the reasoned/audited Community
-   Admin moderation queue are implemented locally in Community Conversations and Safety V1.
-10. Service directory and provider-owned listings (implementation in progress locally; migration not yet applied).
-11. Public Community browse, join requests, and visitor feedback (foundation implementation in progress locally).
-12. Moderation and submit-for-announcement workflow.
-13. Person-based in-app notifications and compatible delivery generalization.
-14. Lifecycle automation, read models, discovery UI, and production pilot gates.
+   Admin moderation queue are deployed in Community Conversations and Safety V1.
+10. The service directory and provider-owned listings are deployed with pending publication,
+    owner/moderator boundaries, reason-required review, and audit evidence.
+11. Public Community browse, join requests, and visitor feedback are deployed separately from the
+    authenticated member surface. Community Admin can review and approve join requests without
+    granting access before invitation acceptance.
+12. Community invitation context, member-role assignment after acceptance, password recovery, and
+    approval-email delivery through the shared notification outbox are deployed. Verification of
+    the first recipient-completed invitation remains the active production checkpoint.
+13. Remaining Community delivery: submit-for-announcement workflow, broader person-based in-app
+    notifications, compatible external delivery controls, lifecycle automation, richer read models
+    and discovery, and production pilot gates.
 
 Architecture: `docs/architecture/community-platform.md`.
 Migration plan: `docs/architecture/community-platform-migration-plan.md`.

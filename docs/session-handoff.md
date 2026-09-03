@@ -11,8 +11,9 @@ migration, or deployment is currently waiting.
 
 ## Authoritative checkpoint
 
-- Branch `main` matches `origin/main` at `12c09a9` (`fix: link community approval email to member
-  sign in`).
+- Branch `main` matches `origin/main` at `38325d3` (`docs: consolidate August 29 session handoff`).
+  The immediately preceding application commit is `12c09a9` (`fix: link community approval email
+  to member sign in`).
 - The public/member Community split is deployed:
   - `community.eshapp.com` is the browse-only public surface with join-request and visitor-feedback
     forms.
