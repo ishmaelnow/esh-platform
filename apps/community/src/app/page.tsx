@@ -347,7 +347,16 @@ export default function CommunityHome() {
   }
 
   async function updateProfilePhoto(event: FormEvent<HTMLInputElement>) {
-    if (!client || !activeTenantId || !session?.user.id || !profile) return;
+    if (!client || !activeTenantId || !session?.user.id) {
+      setMessage("Community is not ready for a profile photo. Please re-enter Community and try again.");
+      event.currentTarget.value = "";
+      return;
+    }
+    if (!profile) {
+      setMessage("Save your Community profile before adding a photo.");
+      event.currentTarget.value = "";
+      return;
+    }
     const file = event.currentTarget.files?.[0]; if (!file) return; setBusy(true); setMessage(null);
     try {
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5_242_880) throw new Error("Profile photos must be JPEG, PNG, or WebP and no larger than 5 MB.");
