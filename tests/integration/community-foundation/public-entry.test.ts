@@ -28,5 +28,6 @@ describe("Community public entry migration", () => {
   test("uses the passwordless invitation email instead of a second approval notification", () => {
     expect(passwordlessMigration).toContain("create or replace function public.review_community_join_request");
     expect(passwordlessMigration).not.toContain("insert into public.notification_outbox");
+    expect(passwordlessMigration).toContain("delivery_status = 'canceled'");
   });
 });

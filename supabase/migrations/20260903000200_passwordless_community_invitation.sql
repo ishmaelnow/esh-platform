@@ -38,3 +38,9 @@ revoke all on function public.review_community_join_request(uuid, text)
   from public, anon, authenticated;
 grant execute on function public.review_community_join_request(uuid, text)
   to authenticated;
+
+update public.notification_outbox
+set delivery_status = 'canceled',
+    delivery_error = 'Superseded by the tokenized passwordless Community invitation email.'
+where notification_type = 'community_membership_approved'
+  and delivery_status in ('queued', 'failed');

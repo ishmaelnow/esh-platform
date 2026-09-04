@@ -144,7 +144,7 @@ export async function POST(request: Request) {
             email: joinRequest.email,
             options: {
               emailRedirectTo: buildCommunityInvitationSignInRedirect(
-                config.invitations.baseUrl,
+                config.communityAppUrl,
                 invitationToken.token,
               ),
               shouldCreateUser: true,
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
             .from("tenant_invitations")
             .update({
               email_delivery_status: "sent",
-              email_delivered_at: new Date().toISOString(),
+              email_delivered_at: null,
               email_delivery_error: null,
             })
             .eq("invitation_id", invitationId as string);

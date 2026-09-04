@@ -11,8 +11,9 @@ duplicate-safe, and resurfaced approved requests that have no invitation for exp
 Commit `1653133` is pushed and Migration
 `20260903000100_recover_community_approval_invitations.sql` is applied. Product review then
 clarified that Community onboarding must be passwordless. A follow-up now sends one Supabase
-sign-in link carrying the invitation return context, automatically accepts the invitation after
-authentication, and redirects to the Community member app. Migration
+sign-in link to `app.community.eshapp.com/auth/callback` carrying the invitation context. The
+Community callback exchanges the code into the isolated `esh-community-auth` session, accepts the
+invitation through a same-origin authenticated endpoint, and redirects to the member app. Migration
 `20260903000200_passwordless_community_invitation.sql` removes the redundant generic approval
 notification and is not yet applied.
 
@@ -47,7 +48,9 @@ notification and is not yet applied.
 Owner reviews and commits the passwordless Community follow-up, then runs the required migration
 dry run. Continue only if it lists exactly
 `20260903000200_passwordless_community_invitation.sql`; apply it before deploying the Admin and
-Community Admin changes. In Community Admin, refresh **Public entry → Join requests and feedback**.
+Community changes. Before recovery, add `https://app.community.eshapp.com/auth/callback` to the
+Supabase Auth redirect allow-list. In Community Admin, refresh
+**Public entry → Join requests and feedback**.
 The already-approved production request should appear as
 **Approved · invitation recovery required**; click **Create missing invitation** once. Verify the
 recipient receives one **Your sign-in link** email, the link authenticates and accepts the

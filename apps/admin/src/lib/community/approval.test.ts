@@ -6,8 +6,8 @@ import {
 
 describe("Community membership approval invitation recovery", () => {
   it("returns passwordless sign-in to automatic Community invitation acceptance", () => {
-    expect(buildCommunityInvitationSignInRedirect("https://admin.eshapp.com", "raw token")).toBe(
-      "https://admin.eshapp.com/invite/accept?token=raw+token&product=community&auto_accept=1",
+    expect(buildCommunityInvitationSignInRedirect("https://community.eshapp.com", "raw token")).toBe(
+      "https://app.community.eshapp.com/auth/callback?invitation=raw+token",
     );
   });
 

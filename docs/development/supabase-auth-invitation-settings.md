@@ -4,6 +4,8 @@ Tenant invitations use two separate email systems:
 
 - Resend sends application invitation emails.
 - Supabase Auth sends account confirmation and password recovery emails.
+- Community join-request approval uses one Supabase Auth passwordless sign-in email whose approved
+  redirect carries the tenant invitation token to the isolated Community callback.
 
 Do not send password-reset or auth-confirmation emails through Resend in V1.
 
@@ -65,6 +67,17 @@ https://driver.eshapp.com/**
 ```
 
 Use explicitly authorized origins for preview deployments rather than arbitrary redirect destinations.
+
+Community passwordless invitation acceptance requires these redirect URLs:
+
+```text
+http://localhost:3003/auth/callback
+https://app.community.eshapp.com/auth/callback
+```
+
+The Community callback exchanges the authentication code with the `esh-community-auth` isolated
+client, then accepts the invitation through a same-origin authenticated endpoint. Do not route this
+callback through Admin: browser session storage is intentionally isolated by product and origin.
 
 ## Password Recovery
 

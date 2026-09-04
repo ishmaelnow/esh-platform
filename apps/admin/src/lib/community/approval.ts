@@ -6,11 +6,10 @@ export type PendingInvitationContext = {
 
 export type CommunityInvitationAction = "create" | "refresh" | "reuse";
 
-export function buildCommunityInvitationSignInRedirect(baseUrl: string, token: string) {
-  const url = new URL("/invite/accept", baseUrl);
-  url.searchParams.set("token", token);
-  url.searchParams.set("product", "community");
-  url.searchParams.set("auto_accept", "1");
+export function buildCommunityInvitationSignInRedirect(communityAppUrl: string, token: string) {
+  const url = new URL("/auth/callback", communityAppUrl);
+  if (url.hostname === "community.eshapp.com") url.hostname = "app.community.eshapp.com";
+  url.searchParams.set("invitation", token);
   return url.toString();
 }
 
