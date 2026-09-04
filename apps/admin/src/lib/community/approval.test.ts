@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { communityInvitationAction } from "./approval";
+import {
+  buildCommunityInvitationSignInRedirect,
+  communityInvitationAction,
+} from "./approval";
 
 describe("Community membership approval invitation recovery", () => {
+  it("returns passwordless sign-in to automatic Community invitation acceptance", () => {
+    expect(buildCommunityInvitationSignInRedirect("https://admin.eshapp.com", "raw token")).toBe(
+      "https://admin.eshapp.com/invite/accept?token=raw+token&product=community&auto_accept=1",
+    );
+  });
+
   it("creates an invitation when approval has none", () => {
     expect(communityInvitationAction(null)).toBe("create");
   });

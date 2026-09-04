@@ -6,10 +6,15 @@ Last updated: 2026-08-29
 
 Repair the Community join-request approval regression discovered in production. Commit `d1d51ba`
 moved approval into the shared notification endpoint but stopped creating the tenant invitation.
-The repair restores server-side Community invitation creation, makes retry behavior duplicate-safe,
-and resurfaces approved requests that have no invitation for explicit recovery. Commit `1653133`
-is pushed and Migration `20260903000100_recover_community_approval_invitations.sql` is applied;
-application deployment and production recovery verification remain.
+The first repair restored server-side Community invitation creation, made retry behavior
+duplicate-safe, and resurfaced approved requests that have no invitation for explicit recovery.
+Commit `1653133` is pushed and Migration
+`20260903000100_recover_community_approval_invitations.sql` is applied. Product review then
+clarified that Community onboarding must be passwordless. A follow-up now sends one Supabase
+sign-in link carrying the invitation return context, automatically accepts the invitation after
+authentication, and redirects to the Community member app. Migration
+`20260903000200_passwordless_community_invitation.sql` removes the redundant generic approval
+notification and is not yet applied.
 
 ## Authoritative checkpoint
 
@@ -39,11 +44,14 @@ application deployment and production recovery verification remain.
 
 ## Exact next action
 
-Wait for Admin and Community Admin deployment of `1653133`. In Community Admin, refresh
-**Public entry → Join requests and feedback**. The already-approved production request should
-appear as **Approved · invitation recovery required**; click **Create missing invitation** once.
-Verify the recipient receives the tokenized `Invitation to <tenant>` email and completes the
-acceptance flow before checking enrollment and role assignment.
+Owner reviews and commits the passwordless Community follow-up, then runs the required migration
+dry run. Continue only if it lists exactly
+`20260903000200_passwordless_community_invitation.sql`; apply it before deploying the Admin and
+Community Admin changes. In Community Admin, refresh **Public entry → Join requests and feedback**.
+The already-approved production request should appear as
+**Approved · invitation recovery required**; click **Create missing invitation** once. Verify the
+recipient receives one **Your sign-in link** email, the link authenticates and accepts the
+invitation without asking for a password, and the recipient lands at `app.community.eshapp.com`.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.
@@ -73,8 +81,9 @@ workflow; do not use it as proof of the new acceptance path.
 ## Repository and deployment state
 
 - Commit `1653133` is on `main` and `origin/main`. Migration
-  `20260903000100_recover_community_approval_invitations.sql` is applied. Admin and Community Admin
-  production readiness and the recovery manual test remain.
+  `20260903000100_recover_community_approval_invitations.sql` is applied. The passwordless
+  follow-up and Migration `20260903000200_passwordless_community_invitation.sql` are local; do not
+  run production recovery until they are committed, migrated, and deployed.
 - Before any future migration, the owner must run `pnpm exec supabase db push --dry-run` and confirm
   that it lists only the intended migration before applying it.
 - The project owner performs Git mutation, production deployment, and database mutation commands.

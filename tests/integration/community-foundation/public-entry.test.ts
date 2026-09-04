@@ -5,6 +5,10 @@ const recoveryMigration = readFileSync(
   "supabase/migrations/20260903000100_recover_community_approval_invitations.sql",
   "utf8",
 );
+const passwordlessMigration = readFileSync(
+  "supabase/migrations/20260903000200_passwordless_community_invitation.sql",
+  "utf8",
+);
 describe("Community public entry migration", () => {
   test("keeps visitor submissions separate from membership and content", () => {
     expect(migration).toContain("create table public.community_join_requests");
@@ -19,5 +23,10 @@ describe("Community public entry migration", () => {
     expect(recoveryMigration).toContain("not exists");
     expect(recoveryMigration).toContain("invitation.workspace_key = 'community'");
     expect(recoveryMigration).toContain("invitation.workspace_role_key = 'community_member'");
+  });
+
+  test("uses the passwordless invitation email instead of a second approval notification", () => {
+    expect(passwordlessMigration).toContain("create or replace function public.review_community_join_request");
+    expect(passwordlessMigration).not.toContain("insert into public.notification_outbox");
   });
 });

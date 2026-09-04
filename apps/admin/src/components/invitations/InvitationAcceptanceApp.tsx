@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createBrowserSupabaseClient, type SupabaseAuthSession } from "@esh-platform/supabase";
@@ -37,6 +37,8 @@ type InvitationDetails = {
 export function InvitationAcceptanceApp() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token")?.trim() ?? "";
+  const autoAccept = searchParams.get("auto_accept") === "1";
+  const communityInvitation = searchParams.get("product") === "community";
   const supabase = useMemo(
     () =>
       typeof window === "undefined"
@@ -49,6 +51,7 @@ export function InvitationAcceptanceApp() {
   const [details, setDetails] = useState<InvitationDetails | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const automaticAcceptanceStarted = useRef(false);
 
   async function signOut() {
     if (!supabase) return;
@@ -83,6 +86,30 @@ export function InvitationAcceptanceApp() {
       }
 
       if (nextStatus === "pending") {
+        if (activeSession && autoAccept && !automaticAcceptanceStarted.current) {
+          automaticAcceptanceStarted.current = true;
+          setSubmitting(true);
+          const acceptance = await postInvitationRequest(
+            "/api/invitations/accept",
+            token,
+            activeSession,
+          );
+          setSubmitting(false);
+          const acceptanceStatus = normalizeStatus(acceptance.status);
+          if (acceptanceStatus === "accepted") {
+            setStatus("success");
+            const destination = communityInvitation
+              ? communityMemberUrl(adminPublicConfig.communityAppUrl)
+              : (acceptance.redirect_to ?? "/");
+            window.setTimeout(() => window.location.assign(destination), 900);
+            return;
+          }
+          setStatus(
+            acceptanceStatus === "pending" ? "authentication_required" : acceptanceStatus,
+          );
+          setMessage(acceptance.message ?? null);
+          return;
+        }
         setStatus(activeSession ? "authentication_required" : "authentication_required");
         return;
       }
@@ -94,7 +121,7 @@ export function InvitationAcceptanceApp() {
 
       setStatus(nextStatus);
     },
-    [token],
+    [autoAccept, communityInvitation, token],
   );
 
   useEffect(() => {
@@ -220,6 +247,12 @@ export function InvitationAcceptanceApp() {
       </section>
     </main>
   );
+}
+
+function communityMemberUrl(configuredUrl: string) {
+  const url = new URL("/", configuredUrl);
+  if (url.hostname === "community.eshapp.com") url.hostname = "app.community.eshapp.com";
+  return url.toString();
 }
 
 function InvitationAuthForm({

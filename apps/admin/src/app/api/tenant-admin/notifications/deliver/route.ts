@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@esh-platform/supabase";
 import { getAdminServerConfig } from "@/lib/config";
-import { communityInvitationAction } from "@/lib/community/approval";
-import { sendTenantInvitationEmail } from "@/lib/invitations/email";
+import {
+  buildCommunityInvitationSignInRedirect,
+  communityInvitationAction,
+} from "@/lib/community/approval";
 import { deliverQueuedNotifications } from "@/lib/notifications/delivery";
 import {
   createInvitationTokenPair,
@@ -52,8 +54,6 @@ export async function POST(request: Request) {
 
     const service = createServiceSupabaseClient();
     const config = getAdminServerConfig();
-    let approvalNotificationId: string | null = null;
-
     if (requestId) {
       if (!canModerateCommunity) {
         return NextResponse.json(
@@ -100,13 +100,6 @@ export async function POST(request: Request) {
         .eq("auth_user_id", auth.user.id)
         .single();
       if (actorError) throw actorError;
-      const { data: tenant, error: tenantError } = await service
-        .from("tenant_configurations")
-        .select("display_name")
-        .eq("tenant_id", tenantId)
-        .single();
-      if (tenantError) throw tenantError;
-
       let invitationId = existingInvitation?.invitation_id ?? null;
       if (invitationAction !== "reuse") {
         const invitationToken = createInvitationTokenPair();
@@ -147,13 +140,26 @@ export async function POST(request: Request) {
         }
 
         try {
-          await sendTenantInvitationEmail(config, {
-            invitationId: invitationId as string,
-            toEmail: joinRequest.email,
-            tenantDisplayName: tenant.display_name,
-            intendedRole: "Community member",
-            token: invitationToken.token,
+          const { error: signInError } = await service.auth.signInWithOtp({
+            email: joinRequest.email,
+            options: {
+              emailRedirectTo: buildCommunityInvitationSignInRedirect(
+                config.invitations.baseUrl,
+                invitationToken.token,
+              ),
+              shouldCreateUser: true,
+            },
           });
+          if (signInError) throw signInError;
+          const { error: deliveredError } = await service
+            .from("tenant_invitations")
+            .update({
+              email_delivery_status: "sent",
+              email_delivered_at: new Date().toISOString(),
+              email_delivery_error: null,
+            })
+            .eq("invitation_id", invitationId as string);
+          if (deliveredError) throw deliveredError;
         } catch (deliveryError) {
           await service
             .from("tenant_invitations")
@@ -177,19 +183,16 @@ export async function POST(request: Request) {
         if (reviewError) throw reviewError;
       }
 
-      const { data: approvalNotification, error: approvalNotificationError } = await service
-        .from("notification_outbox")
-        .select("notification_id")
-        .eq("dedupe_key", `community_join_request:${requestId}:approved`)
-        .maybeSingle();
-      if (approvalNotificationError) throw approvalNotificationError;
-      approvalNotificationId = approvalNotification?.notification_id ?? null;
+      return NextResponse.json({
+        ok: true,
+        message: "Community sign-in link sent.",
+        invitationId,
+      });
     }
 
-    const scopedNotificationId = approvalNotificationId ?? notificationId;
     const { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed } = await deliverQueuedNotifications(service, config, {
       tenantId,
-      ...(scopedNotificationId ? { notificationId: scopedNotificationId } : {}),
+      ...(notificationId ? { notificationId } : {}),
       limit: 10,
     });
 
