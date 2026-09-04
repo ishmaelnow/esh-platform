@@ -91,8 +91,9 @@ Implementation order:
 11. Public Community browse, join requests, and visitor feedback are deployed separately from the
     authenticated member surface. Community Admin can review and approve join requests without
     granting access before invitation acceptance.
-12. Community invitation context, member-role assignment after acceptance, password recovery, and
-    approval-email delivery through the shared notification outbox are deployed. A production
+12. Community invitation context, member-role assignment after acceptance, passwordless email-link
+    sign-in for approval and returning members, and approval-email delivery through the shared
+    notification outbox are deployed. A production
     regression that approved requests without creating their tenant invitation is repaired in
     `1653133`. The passwordless acceptance follow-up removes the legacy password-form dependency;
     rollout and recovery of the affected approved request are complete.

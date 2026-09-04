@@ -17,4 +17,17 @@ describe("Community passwordless invitation callback contract", () => {
     expect(acceptanceRoute).toContain("accept_tenant_invitation");
     expect(acceptanceRoute).not.toContain("createServiceSupabaseClient");
   });
+
+  it("supports returning-member links without invitation context", () => {
+    expect(callback).toContain('if (!invitation)');
+    expect(callback).toContain('router.replace("/")');
+  });
+
+  it("requests regular Community access by email link", () => {
+    const page = readFileSync("src/app/page.tsx", "utf8");
+    expect(page).toContain("signInWithOtp");
+    expect(page).toContain('emailRedirectTo: `${window.location.origin}/auth/callback`');
+    expect(page).toContain("No password is required.");
+    expect(page).not.toContain("signInWithPassword");
+  });
 });

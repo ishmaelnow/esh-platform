@@ -37,8 +37,6 @@ export default function CommunityAuthCallbackPage() {
 
     const complete = async () => {
       if (callbackError) throw new Error(callbackError);
-      if (!invitation) throw new Error("This Community sign-in link is missing its invitation.");
-
       const code = callback.searchParams.get("code");
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -61,6 +59,14 @@ export default function CommunityAuthCallbackPage() {
       if (sessionError || !sessionData.session) {
         throw sessionError ?? new Error("Community sign-in did not create a session.");
       }
+      if (!invitation) {
+        if (!cancelled) {
+          setStatus("Signed in. Opening ESH Community…");
+          router.replace("/");
+        }
+        return;
+      }
+
       setStatus("Signed in. Completing Community membership…");
       const response = await fetch("/api/invitations/accept", {
         method: "POST",

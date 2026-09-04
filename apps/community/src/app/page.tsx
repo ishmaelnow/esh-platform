@@ -55,7 +55,6 @@ export default function CommunityHome() {
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [publicCommunities, setPublicCommunities] = useState<PublicCommunity[]>([]);
   const [publicSurface, setPublicSurface] = useState(false);
-  const [recoveryMode, setRecoveryMode] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -230,7 +229,6 @@ export default function CommunityHome() {
     }
     void client.auth.getSession().then(({ data }) => void resolveCommunityAdmission(data.session));
     const { data } = client.auth.onAuthStateChange((event, nextSession) => {
-      if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
       void resolveCommunityAdmission(nextSession);
     });
     return () => data.subscription.unsubscribe();
@@ -267,37 +265,18 @@ export default function CommunityHome() {
     return () => window.clearInterval(interval);
   }, [activeTenantId, client]);
 
-  async function signIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!client) return;
-    const form = new FormData(event.currentTarget);
-    setBusy(true);
-    setAuthResolved(false);
-    setMessage(null);
+  async function requestSignInLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!client) return;
+    const form = new FormData(event.currentTarget); setBusy(true); setMessage(null);
     try {
-      const { error } = await client.auth.signInWithPassword({
+      const { error } = await client.auth.signInWithOtp({
         email: formText(form, "email").trim(),
-        password: formText(form, "password"),
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback`, shouldCreateUser: false },
       });
-      if (error) {
-        setMessage(error.message);
-        setAuthResolved(true);
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to sign in.");
-      setAuthResolved(true);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function requestPasswordReset(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (!client) return; const form = new FormData(event.currentTarget); setBusy(true); setMessage(null);
-    try { const { error } = await client.auth.resetPasswordForEmail(formText(form, "email").trim(), { redirectTo: `${window.location.origin}/?recovery=1` }); if (error) throw error; setMessage("If that email has a Community account, a password-reset link has been sent."); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to send a password-reset link."); } finally { setBusy(false); }
-  }
-  async function updatePassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (!client) return; const form = new FormData(event.currentTarget); if (formText(form, "new_password") !== formText(form, "confirm_password")) { setMessage("Passwords do not match."); return; } setBusy(true); setMessage(null);
-    try { const { error } = await client.auth.updateUser({ password: formText(form, "new_password") }); if (error) throw error; setRecoveryMode(false); setMessage("Password updated. Sign in to continue."); await client.auth.signOut({ scope: "local" }); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to update your password."); } finally { setBusy(false); }
+      if (error) throw error;
+      setMessage("Check your email and open the newest secure sign-in link once.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to send a sign-in link."); }
+    finally { setBusy(false); }
   }
 
   async function enterCommunity(tenantId: string) {
@@ -593,24 +572,13 @@ export default function CommunityHome() {
           <p>Browse public information without signing in. Actions require approved Community membership.</p>
           {publicCommunities.length ? publicCommunities.map((community) => <article key={community.tenant_id}><h3>{community.display_name}</h3><p>Public Community information and local services.</p></article>) : <p>No public Communities are currently available.</p>}
         </section>
-        {!publicSurface && recoveryMode && session ? <form className="community-card form-grid" onSubmit={(event) => void updatePassword(event)}><h2>Set a new password</h2><label>New password<input name="new_password" type="password" minLength={8} required /></label><label>Confirm password<input name="confirm_password" type="password" minLength={8} required /></label><button disabled={busy} type="submit">Update password</button></form> : null}
-        {!publicSurface && !recoveryMode ? <form className="community-card form-grid" onSubmit={(event) => void signIn(event)}>
+        {!publicSurface ? <form className="community-card form-grid" onSubmit={(event) => void requestSignInLink(event)}>
           <h2>Member sign in</h2>
-          <label>
-            Email
-            <input name="email" type="email" autoComplete="email" required />
-          </label>
-          <label>
-            Password
-            <input name="password" type="password" autoComplete="current-password" required />
-          </label>
+          <p>Enter your email and we’ll send a one-time secure sign-in link. No password is required.</p>
+          <label>Email<input name="email" type="email" autoComplete="email" required /></label>
           {message ? <p className="error">{message}</p> : null}
-          <button disabled={busy} type="submit">
-            Sign in
-          </button>
-          <button className="secondary" disabled={busy} onClick={() => setRecoveryMode(true)} type="button">Forgot password?</button>
+          <button disabled={busy} type="submit">Email me a secure link</button>
         </form> : null}
-        {!publicSurface && recoveryMode && !session ? <form className="community-card form-grid" onSubmit={(event) => void requestPasswordReset(event)}><h2>Reset password</h2><label>Email<input name="email" type="email" required /></label><button disabled={busy} type="submit">Email reset link</button></form> : null}
         {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
         <form className="community-card form-grid" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const formElement = event.currentTarget; const form = new FormData(formElement); setBusy(true); try { const result = await client.rpc("submit_community_join_request", { target_tenant_id: formText(form, "tenant"), email_value: formText(form, "join_email"), display_name_value: formText(form, "join_name"), locality_value: formText(form, "locality") || null, reason_value: formText(form, "join_reason") || null }); if (result.error) throw result.error; setMessage("Your join request was submitted for Community review."); formElement.reset(); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit your join request."); } finally { setBusy(false); } }}>
           <h2>Request membership</h2><p>Membership is reviewed before you can post or interact.</p>

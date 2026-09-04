@@ -15,8 +15,9 @@ sign-in link to `app.community.eshapp.com/auth/callback` carrying the invitation
 Community callback exchanges the code into the isolated `esh-community-auth` session, accepts the
 invitation through a same-origin authenticated endpoint, and redirects to the member app. Migration
 `20260903000200_passwordless_community_invitation.sql` removes the redundant generic approval
-notification and is applied. The active follow-up adds tenant-scoped editable profiles and private
-profile photos.
+notification and is applied. Community authentication is being aligned to the Rider/Driver
+contract: email-link-only sign-in for approval and returning members, with no Community password
+UI. The active follow-up also adds tenant-scoped editable profiles and private profile photos.
 
 ## Authoritative checkpoint
 
@@ -46,7 +47,7 @@ profile photos.
 
 ## Exact next action
 
-Owner reviews the local member-profile migration and UI changes, then stages/commits them. Before
+Owner reviews the local member-profile migration/UI and email-link-only auth changes, then stages/commits them. Before
 production rollout, run `pnpm exec supabase db push --dry-run` and confirm it lists only
 `20260904000100_community_member_profiles.sql`; apply it only after review. Deploy Community and
 verify profile save, item add/edit/remove, photo replacement/removal, visibility, and cross-tenant
