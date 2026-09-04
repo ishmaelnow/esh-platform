@@ -15,6 +15,21 @@ import { CommunityFeedCard } from "@/components/CommunityFeedCard";
 type CommunityAccess = { tenantId: string; tenantName: string; roles: string[] };
 type PublicCommunity = { tenant_id: string; display_name: string };
 type SafetyMember = { personId: string; displayName: string };
+type CommunityProfile = {
+  profile_id: string;
+  display_name: string;
+  bio: string | null;
+  locality: string | null;
+  profile_visibility: "members" | "public";
+  avatar_media_id: string | null;
+};
+type CommunityProfileItem = {
+  item_id: string;
+  item_kind: "interest" | "skill" | "link" | "service";
+  label: string;
+  value: string;
+  item_visibility: "members" | "public";
+};
 
 export default function CommunityHome() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -35,6 +50,9 @@ export default function CommunityHome() {
   const [blockedMembers, setBlockedMembers] = useState<SafetyMember[]>([]);
   const [mutedMembers, setMutedMembers] = useState<SafetyMember[]>([]);
   const [services, setServices] = useState<CommunityServiceListing[]>([]);
+  const [profile, setProfile] = useState<CommunityProfile | null>(null);
+  const [profileItems, setProfileItems] = useState<CommunityProfileItem[]>([]);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [publicCommunities, setPublicCommunities] = useState<PublicCommunity[]>([]);
   const [publicSurface, setPublicSurface] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
@@ -184,6 +202,24 @@ export default function CommunityHome() {
     setServices(Array.isArray(data) ? data as unknown as CommunityServiceListing[] : []);
   }, [client]);
 
+  const loadProfile = useCallback(async (tenantId: string) => {
+    if (!client) return;
+    const { data, error } = await client.rpc("community_profile_snapshot", { target_tenant_id: tenantId });
+    if (error) throw error;
+    const source = data && typeof data === "object" && !Array.isArray(data) ? data as Record<string, unknown> : {};
+    const nextProfile = source.profile && typeof source.profile === "object" && !Array.isArray(source.profile)
+      ? source.profile as CommunityProfile : null;
+    setProfile(nextProfile);
+    setProfileItems(Array.isArray(source.items) ? source.items as CommunityProfileItem[] : []);
+    if (nextProfile?.avatar_media_id) {
+      const { data: media } = await client.from("community_media_assets").select("storage_path").eq("media_id", nextProfile.avatar_media_id).maybeSingle();
+      if (media?.storage_path) {
+        const signed = await client.storage.from("community-media").createSignedUrl(media.storage_path, 600);
+        setProfileAvatarUrl(signed.data?.signedUrl ?? null);
+      }
+    } else setProfileAvatarUrl(null);
+  }, [client]);
+
   useEffect(() => { setPublicSurface(window.location.hostname === "community.eshapp.com"); }, []);
 
   useEffect(() => {
@@ -275,13 +311,85 @@ export default function CommunityHome() {
       });
       if (error) throw error;
       setActiveTenantId(tenantId);
-      await Promise.all([loadFeed(tenantId), loadSafety(tenantId), loadServices(tenantId)]);
+      await Promise.all([loadFeed(tenantId), loadSafety(tenantId), loadServices(tenantId), loadProfile(tenantId)]);
     } catch (error) {
       setActiveTenantId(null);
       setMessage(error instanceof Error ? error.message : "Unable to enter Community.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!client || !activeTenantId) return;
+    const form = new FormData(event.currentTarget); setBusy(true); setMessage(null);
+    try {
+      const { error } = await client.rpc("upsert_my_community_profile", {
+        target_tenant_id: activeTenantId, display_name_value: formText(form, "profile_name"),
+        bio_value: formText(form, "profile_bio") || null, locality_value: formText(form, "profile_locality") || null,
+        visibility_value: formText(form, "profile_visibility") || "members",
+      });
+      if (error) throw error;
+      await loadProfile(activeTenantId); setMessage("Your Community profile was saved.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save your profile."); }
+    finally { setBusy(false); }
+  }
+
+  async function addProfileItem(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!client || !activeTenantId) return;
+    const formElement = event.currentTarget; const form = new FormData(formElement); setBusy(true); setMessage(null);
+    try {
+      const { error } = await client.rpc("add_my_community_profile_item", {
+        target_tenant_id: activeTenantId, item_kind_value: formText(form, "item_kind"), label_value: formText(form, "item_label"),
+        value_value: formText(form, "item_value"), visibility_value: formText(form, "item_visibility") || "members",
+      });
+      if (error) throw error; formElement.reset(); await loadProfile(activeTenantId); setMessage("Profile item added.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to add profile item."); }
+    finally { setBusy(false); }
+  }
+
+  async function removeProfileItem(itemId: string) {
+    if (!client || !activeTenantId) return; setBusy(true); setMessage(null);
+    try { const { error } = await client.rpc("remove_my_community_profile_item", { target_tenant_id: activeTenantId, item_id_value: itemId }); if (error) throw error; await loadProfile(activeTenantId); setMessage("Profile item removed."); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Unable to remove profile item."); } finally { setBusy(false); }
+  }
+
+  async function updateProfileItem(event: FormEvent<HTMLFormElement>, itemId: string) {
+    event.preventDefault(); if (!client || !activeTenantId) return;
+    const form = new FormData(event.currentTarget); setBusy(true); setMessage(null);
+    try {
+      const { error } = await client.rpc("update_my_community_profile_item", {
+        target_tenant_id: activeTenantId, item_id_value: itemId, item_kind_value: formText(form, "item_kind"),
+        label_value: formText(form, "item_label"), value_value: formText(form, "item_value"), visibility_value: formText(form, "item_visibility"),
+      });
+      if (error) throw error; await loadProfile(activeTenantId); setMessage("Profile item updated.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to update profile item."); }
+    finally { setBusy(false); }
+  }
+
+  async function updateProfilePhoto(event: FormEvent<HTMLInputElement>) {
+    if (!client || !activeTenantId || !session?.user.id || !profile) return;
+    const file = event.currentTarget.files?.[0]; if (!file) return; setBusy(true); setMessage(null);
+    try {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5_242_880) throw new Error("Profile photos must be JPEG, PNG, or WebP and no larger than 5 MB.");
+      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${activeTenantId}/${session.user.id}/profile/${crypto.randomUUID()}.${extension}`;
+      let previousPath: string | null = null;
+      if (profile.avatar_media_id) {
+        const previous = await client.from("community_media_assets").select("storage_path").eq("media_id", profile.avatar_media_id).maybeSingle();
+        previousPath = previous.data?.storage_path ?? null;
+      }
+      const upload = await client.storage.from("community-media").upload(path, file, { upsert: false }); if (upload.error) throw upload.error;
+      const attached = await client.rpc("attach_my_community_profile_avatar", { target_tenant_id: activeTenantId, storage_path_value: path, mime_type_value: file.type, byte_size_value: file.size, alt_text_value: "Community member profile photo" });
+      if (attached.error) throw attached.error; await loadProfile(activeTenantId); setMessage("Profile photo updated.");
+      if (previousPath) await client.storage.from("community-media").remove([previousPath]);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to update profile photo."); } finally { setBusy(false); event.currentTarget.value = ""; }
+  }
+
+  async function removeProfilePhoto() {
+    if (!client || !activeTenantId) return; setBusy(true); setMessage(null);
+    try { const { data, error } = await client.rpc("remove_my_community_profile_avatar", { target_tenant_id: activeTenantId }); if (error) throw error; if (data) await client.storage.from("community-media").remove([data]); await loadProfile(activeTenantId); setMessage("Profile photo removed."); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Unable to remove profile photo."); } finally { setBusy(false); }
   }
 
   async function createPost(event: FormEvent<HTMLFormElement>) {
@@ -553,6 +661,7 @@ export default function CommunityHome() {
         <a href="#services">Services</a>
         <a href="#groups">Groups</a>
         <a href="#safety">Safety</a>
+        <a href="#profile">Profile</a>
       </nav>
       <section className="community-layout" id="home">
         <form className="community-card form-grid" onSubmit={(event) => void createPost(event)}>
@@ -678,6 +787,31 @@ export default function CommunityHome() {
             </button>
           </div>
         ))}
+      </section>
+      <section className="community-card" id="profile">
+        <p className="eyebrow">Your profile</p><h2>Community profile</h2>
+        <p>Choose what other Community members can see. Your email and account identity stay private.</p>
+        <form className="form-grid" onSubmit={(event) => void saveProfile(event)}>
+          <label>Display name<input name="profile_name" defaultValue={profile?.display_name ?? ""} maxLength={120} required /></label>
+          <label>Bio<textarea name="profile_bio" defaultValue={profile?.bio ?? ""} maxLength={1000} rows={3} /></label>
+          <label>City or neighborhood<input name="profile_locality" defaultValue={profile?.locality ?? ""} maxLength={160} /></label>
+          <label>Profile visibility<select name="profile_visibility" defaultValue={profile?.profile_visibility ?? "members"}><option value="members">Community members</option><option value="public">Public</option></select></label>
+          <button disabled={busy} type="submit">Save profile</button>
+        </form>
+        <div className="profile-photo">
+          {profileAvatarUrl ? <img alt="Your Community profile" src={profileAvatarUrl} /> : <p>No profile photo yet.</p>}
+          <label>Profile photo<input accept="image/jpeg,image/png,image/webp" onChange={(event) => void updateProfilePhoto(event)} type="file" /></label>
+          {profileAvatarUrl ? <button className="secondary" disabled={busy} onClick={() => void removeProfilePhoto()} type="button">Remove photo</button> : null}
+        </div>
+        <h3>Profile items</h3>
+        {profileItems.map((item) => <form className="profile-item" key={item.item_id} onSubmit={(event) => void updateProfileItem(event, item.item_id)}><select name="item_kind" defaultValue={item.item_kind} aria-label="Item type"><option value="interest">Interest</option><option value="skill">Skill</option><option value="service">Service</option><option value="link">Link</option></select><input name="item_label" defaultValue={item.label} maxLength={80} aria-label="Item label" required /><input name="item_value" defaultValue={item.value} maxLength={300} aria-label="Item value" required /><select name="item_visibility" defaultValue={item.item_visibility} aria-label="Item visibility"><option value="members">Members</option><option value="public">Public</option></select><button disabled={busy} type="submit">Save</button><button className="secondary" disabled={busy} onClick={() => void removeProfileItem(item.item_id)} type="button">Remove</button></form>)}
+        <form className="form-grid" onSubmit={(event) => void addProfileItem(event)}>
+          <label>Type<select name="item_kind"><option value="interest">Interest</option><option value="skill">Skill</option><option value="service">Service</option><option value="link">Link</option></select></label>
+          <label>Label<input name="item_label" maxLength={80} placeholder="Example: Gardening" required /></label>
+          <label>Value<input name="item_value" maxLength={300} placeholder="Example: Weekend gardening projects" required /></label>
+          <label>Visibility<select name="item_visibility"><option value="members">Community members</option><option value="public">Public</option></select></label>
+          <button disabled={busy || !profile} type="submit">Add profile item</button>
+        </form>
       </section>
     </main>
   );

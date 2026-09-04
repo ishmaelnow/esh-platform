@@ -185,6 +185,24 @@ export type Database = {
           },
         ]
       }
+      community_media_assets: {
+        Row: { media_id: string; tenant_id: string; owner_membership_id: string; owner_person_id: string; storage_path: string; mime_type: string; byte_size: number; alt_text: string | null; moderation_status: string; created_at: string }
+        Insert: { media_id?: string; tenant_id: string; owner_membership_id: string; owner_person_id: string; storage_path: string; mime_type: string; byte_size: number; alt_text?: string | null; moderation_status?: string; created_at?: string }
+        Update: { media_id?: string; tenant_id?: string; owner_membership_id?: string; owner_person_id?: string; storage_path?: string; mime_type?: string; byte_size?: number; alt_text?: string | null; moderation_status?: string; created_at?: string }
+        Relationships: []
+      }
+      community_member_profiles: {
+        Row: { profile_id: string; tenant_id: string; membership_id: string; person_id: string; display_name: string; bio: string | null; locality: string | null; profile_visibility: string; avatar_media_id: string | null; created_at: string; updated_at: string }
+        Insert: { profile_id?: string; tenant_id: string; membership_id: string; person_id: string; display_name: string; bio?: string | null; locality?: string | null; profile_visibility?: string; avatar_media_id?: string | null; created_at?: string; updated_at?: string }
+        Update: { profile_id?: string; tenant_id?: string; membership_id?: string; person_id?: string; display_name?: string; bio?: string | null; locality?: string | null; profile_visibility?: string; avatar_media_id?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      community_member_profile_items: {
+        Row: { item_id: string; tenant_id: string; profile_id: string; item_kind: string; label: string; value: string; sort_order: number; item_visibility: string; created_at: string; updated_at: string }
+        Insert: { item_id?: string; tenant_id: string; profile_id: string; item_kind: string; label: string; value: string; sort_order?: number; item_visibility?: string; created_at?: string; updated_at?: string }
+        Update: { item_id?: string; tenant_id?: string; profile_id?: string; item_kind?: string; label?: string; value?: string; sort_order?: number; item_visibility?: string; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       driver_applications: {
         Row: {
           applicant_auth_user_id: string | null
@@ -2519,6 +2537,13 @@ export type Database = {
       attach_my_community_media: { Args: { target_tenant_id: string; target_content_id: string; storage_path_value: string; mime_type_value: string; byte_size_value: number; alt_text_value: string; sort_order_value: number }; Returns: string }
       community_moderation_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       moderate_community_report: { Args: { target_report_id: string; decision_value: string; reason_value: string }; Returns: boolean }
+      community_profile_snapshot: { Args: { target_tenant_id: string }; Returns: Json }
+      upsert_my_community_profile: { Args: { target_tenant_id: string; display_name_value: string; bio_value?: string | null; locality_value?: string | null; visibility_value?: string }; Returns: string }
+      add_my_community_profile_item: { Args: { target_tenant_id: string; item_kind_value: string; label_value: string; value_value: string; visibility_value?: string }; Returns: string }
+      update_my_community_profile_item: { Args: { target_tenant_id: string; item_id_value: string; item_kind_value: string; label_value: string; value_value: string; visibility_value?: string }; Returns: boolean }
+      remove_my_community_profile_item: { Args: { target_tenant_id: string; item_id_value: string }; Returns: boolean }
+      attach_my_community_profile_avatar: { Args: { target_tenant_id: string; storage_path_value: string; mime_type_value: string; byte_size_value: number; alt_text_value?: string | null }; Returns: string }
+      remove_my_community_profile_avatar: { Args: { target_tenant_id: string }; Returns: string | null }
       enter_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: Json }
       refresh_my_product_session: { Args: { target_tenant_id: string; target_workspace_key: string }; Returns: boolean }
       leave_my_product_session: { Args: { reason_value?: string }; Returns: boolean }

@@ -80,6 +80,30 @@ button:disabled {
   box-shadow: 0 14px 34px rgb(37 58 46 / 7%);
   padding: 24px;
 }
+
+.profile-photo {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.profile-photo img {
+  border-radius: 999px;
+  height: 96px;
+  object-fit: cover;
+  width: 96px;
+}
+
+.profile-item {
+  align-items: center;
+  border-top: 1px solid var(--border, #d8dee8);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .75rem 0;
+}
 .community-grid {
   display: grid;
   gap: 18px;

@@ -1,10 +1,10 @@
 # Session Handoff
 
-Last updated: 2026-08-29
+Last updated: 2026-09-04
 
 ## Current objective
 
-Repair the Community join-request approval regression discovered in production. Commit `d1d51ba`
+Implement the next Community member-profile slice after repairing the join-request approval regression. Commit `d1d51ba`
 moved approval into the shared notification endpoint but stopped creating the tenant invitation.
 The first repair restored server-side Community invitation creation, made retry behavior
 duplicate-safe, and resurfaced approved requests that have no invitation for explicit recovery.
@@ -15,11 +15,12 @@ sign-in link to `app.community.eshapp.com/auth/callback` carrying the invitation
 Community callback exchanges the code into the isolated `esh-community-auth` session, accepts the
 invitation through a same-origin authenticated endpoint, and redirects to the member app. Migration
 `20260903000200_passwordless_community_invitation.sql` removes the redundant generic approval
-notification and is not yet applied.
+notification and is applied. The active follow-up adds tenant-scoped editable profiles and private
+profile photos.
 
 ## Authoritative checkpoint
 
-- Branch `main` matches `origin/main` at `38325d3` (`docs: consolidate August 29 session handoff`).
+- Branch `main` matches `origin/main` at `e68ba6b` (`fix: complete Community passwordless callback`).
   The immediately preceding application commit is `12c09a9` (`fix: link community approval email
   to member sign in`).
 - The public/member Community split is deployed:
@@ -45,16 +46,11 @@ notification and is not yet applied.
 
 ## Exact next action
 
-Owner reviews and commits the passwordless Community follow-up, then runs the required migration
-dry run. Continue only if it lists exactly
-`20260903000200_passwordless_community_invitation.sql`; apply it before deploying the Admin and
-Community changes. Before recovery, add `https://app.community.eshapp.com/auth/callback` to the
-Supabase Auth redirect allow-list. In Community Admin, refresh
-**Public entry → Join requests and feedback**.
-The already-approved production request should appear as
-**Approved · invitation recovery required**; click **Create missing invitation** once. Verify the
-recipient receives one **Your sign-in link** email, the link authenticates and accepts the
-invitation without asking for a password, and the recipient lands at `app.community.eshapp.com`.
+Owner reviews the local member-profile migration and UI changes, then stages/commits them. Before
+production rollout, run `pnpm exec supabase db push --dry-run` and confirm it lists only
+`20260904000100_community_member_profiles.sql`; apply it only after review. Deploy Community and
+verify profile save, item add/edit/remove, photo replacement/removal, visibility, and cross-tenant
+denial with clearly identifiable pilot data.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.
