@@ -2153,6 +2153,8 @@ export type Database = {
           status: string
           tenant_id: string
           updated_at: string
+          workspace_key: string | null
+          workspace_role_key: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -2174,6 +2176,8 @@ export type Database = {
           status?: string
           tenant_id: string
           updated_at?: string
+          workspace_key?: string | null
+          workspace_role_key?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -2195,6 +2199,8 @@ export type Database = {
           status?: string
           tenant_id?: string
           updated_at?: string
+          workspace_key?: string | null
+          workspace_role_key?: string | null
         }
         Relationships: [
           {

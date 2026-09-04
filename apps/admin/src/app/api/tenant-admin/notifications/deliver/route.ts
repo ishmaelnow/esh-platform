@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@esh-platform/supabase";
 import { getAdminServerConfig } from "@/lib/config";
+import { communityInvitationAction } from "@/lib/community/approval";
+import { sendTenantInvitationEmail } from "@/lib/invitations/email";
 import { deliverQueuedNotifications } from "@/lib/notifications/delivery";
 import {
+  createInvitationTokenPair,
   createRequestSupabaseClient,
   getBearerToken,
+  normalizeEmail,
   validateTenantId,
 } from "@/lib/tenant-admin/server";
 
@@ -15,14 +19,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Authentication is required." }, { status: 401 });
     const body = (await request.json()) as Record<string, unknown>;
     const tenantId = validateTenantId(body.tenantId);
-    if (typeof body.requestId === "string" && body.requestId && body.decision === "approved") {
-      const authenticated = createRequestSupabaseClient({ accessToken: token });
-      const { error: reviewError } = await authenticated.rpc("review_community_join_request", {
-        target_request_id: body.requestId,
-        decision_value: "approved",
-      });
-      if (reviewError) throw reviewError;
-    }
+    const requestId =
+      typeof body.requestId === "string" && body.requestId && body.decision === "approved"
+        ? validateTenantId(body.requestId)
+        : null;
     const notificationId =
       typeof body.notificationId === "string" && body.notificationId
         ? validateTenantId(body.notificationId)
@@ -52,9 +52,144 @@ export async function POST(request: Request) {
 
     const service = createServiceSupabaseClient();
     const config = getAdminServerConfig();
+    let approvalNotificationId: string | null = null;
+
+    if (requestId) {
+      if (!canModerateCommunity) {
+        return NextResponse.json(
+          { message: "Community moderation permission is required." },
+          { status: 403 },
+        );
+      }
+
+      const { data: requestSnapshot, error: requestError } = await authenticated.rpc(
+        "community_join_review_snapshot",
+        { target_tenant_id: tenantId, result_limit: 100 },
+      );
+      if (requestError) throw requestError;
+      const joinRequest = parseJoinRequest(requestSnapshot, requestId);
+      if (!joinRequest) throw new Error("Community membership request was not found.");
+      if (joinRequest.status !== "pending" && joinRequest.status !== "approved") {
+        throw new Error("Only pending or approved Community requests can create an invitation.");
+      }
+
+      const normalizedEmail = normalizeEmail(joinRequest.email);
+      const { data: existingInvitation, error: existingInvitationError } = await service
+        .from("tenant_invitations")
+        .select("invitation_id,workspace_key,workspace_role_key,email_delivery_status")
+        .eq("tenant_id", tenantId)
+        .eq("normalized_email", normalizedEmail)
+        .eq("status", "pending")
+        .maybeSingle();
+      if (existingInvitationError) throw existingInvitationError;
+      const invitationAction = communityInvitationAction(
+        existingInvitation
+          ? {
+              emailDeliveryStatus: existingInvitation.email_delivery_status,
+              workspaceKey: existingInvitation.workspace_key,
+              workspaceRoleKey: existingInvitation.workspace_role_key,
+            }
+          : null,
+      );
+
+      const { data: auth, error: authError } = await authenticated.auth.getUser();
+      if (authError || !auth.user) throw authError ?? new Error("Authentication is required.");
+      const { data: actor, error: actorError } = await authenticated
+        .from("person_profiles")
+        .select("person_id")
+        .eq("auth_user_id", auth.user.id)
+        .single();
+      if (actorError) throw actorError;
+      const { data: tenant, error: tenantError } = await service
+        .from("tenant_configurations")
+        .select("display_name")
+        .eq("tenant_id", tenantId)
+        .single();
+      if (tenantError) throw tenantError;
+
+      let invitationId = existingInvitation?.invitation_id ?? null;
+      if (invitationAction !== "reuse") {
+        const invitationToken = createInvitationTokenPair();
+        if (invitationAction === "refresh" && existingInvitation) {
+          const { error: refreshError } = await service
+            .from("tenant_invitations")
+            .update({
+              invitation_token_hash: invitationToken.tokenHash,
+              expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              email_delivery_status: "pending",
+              email_delivery_attempted_at: new Date().toISOString(),
+              email_delivered_at: null,
+              email_delivery_error: null,
+            })
+            .eq("invitation_id", existingInvitation.invitation_id);
+          if (refreshError) throw refreshError;
+        } else {
+          const { data: createdInvitation, error: invitationError } = await service
+            .from("tenant_invitations")
+            .insert({
+              tenant_id: tenantId,
+              email: joinRequest.email.trim(),
+              normalized_email: normalizedEmail,
+              intended_role: "tenant_member",
+              invitation_token_hash: invitationToken.tokenHash,
+              invited_by_person_id: actor.person_id,
+              status: "pending",
+              expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              workspace_key: "community",
+              workspace_role_key: "community_member",
+              email_delivery_status: "pending",
+              email_delivery_attempted_at: new Date().toISOString(),
+            })
+            .select("invitation_id")
+            .single();
+          if (invitationError) throw invitationError;
+          invitationId = createdInvitation.invitation_id;
+        }
+
+        try {
+          await sendTenantInvitationEmail(config, {
+            invitationId: invitationId as string,
+            toEmail: joinRequest.email,
+            tenantDisplayName: tenant.display_name,
+            intendedRole: "Community member",
+            token: invitationToken.token,
+          });
+        } catch (deliveryError) {
+          await service
+            .from("tenant_invitations")
+            .update({
+              email_delivery_status: "failed",
+              email_delivery_error:
+                deliveryError instanceof Error
+                  ? deliveryError.message
+                  : "Invitation email delivery failed.",
+            })
+            .eq("invitation_id", invitationId as string);
+          throw deliveryError;
+        }
+      }
+
+      if (joinRequest.status === "pending") {
+        const { error: reviewError } = await authenticated.rpc("review_community_join_request", {
+          target_request_id: requestId,
+          decision_value: "approved",
+        });
+        if (reviewError) throw reviewError;
+      }
+
+      const { data: approvalNotification, error: approvalNotificationError } = await service
+        .from("notification_outbox")
+        .select("notification_id")
+        .eq("dedupe_key", `community_join_request:${requestId}:approved`)
+        .maybeSingle();
+      if (approvalNotificationError) throw approvalNotificationError;
+      approvalNotificationId = approvalNotification?.notification_id ?? null;
+    }
+
+    const scopedNotificationId = approvalNotificationId ?? notificationId;
     const { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed } = await deliverQueuedNotifications(service, config, {
       tenantId,
-      ...(notificationId ? { notificationId } : {}),
+      ...(scopedNotificationId ? { notificationId: scopedNotificationId } : {}),
       limit: 10,
     });
 
@@ -74,4 +209,25 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+}
+
+function parseJoinRequest(value: unknown, requestId: string) {
+  if (!Array.isArray(value)) return null;
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const row = entry as Record<string, unknown>;
+    if (
+      row.request_id === requestId
+      && typeof row.email === "string"
+      && typeof row.display_name === "string"
+      && (row.status === "pending" || row.status === "approved")
+    ) {
+      return {
+        displayName: row.display_name,
+        email: row.email,
+        status: row.status,
+      };
+    }
+  }
+  return null;
 }
