@@ -242,6 +242,13 @@ export default function CommunityHome() {
   }, [client, publicSurface, session]);
 
   useEffect(() => {
+    if (!client || !publicSurface || !publicCommunities.length) return;
+    const firstCommunity = publicCommunities[0];
+    if (!firstCommunity) return;
+    void loadFeed(firstCommunity.tenant_id).catch(() => setMessage("Public Community information is temporarily unavailable."));
+  }, [client, loadFeed, publicCommunities, publicSurface]);
+
+  useEffect(() => {
     if (!client || !activeTenantId) return;
     const interval = window.setInterval(() => {
       void (async () => {
@@ -581,6 +588,7 @@ export default function CommunityHome() {
           <p>Browse public information without signing in. Actions require approved Community membership.</p>
           {publicCommunities.length ? publicCommunities.map((community) => <article key={community.tenant_id}><h3>{community.display_name}</h3><p>Public Community information and local services.</p></article>) : <p>No public Communities are currently available.</p>}
         </section>
+        <section className="community-card" aria-live="polite"><p className="eyebrow">Public updates</p><h2>Community information</h2>{feed.length ? feed.map((item) => <article className="feed-item" key={item.contentId}><div className="feed-meta"><strong>{item.authorName}</strong><time>{new Date(item.publishedAt).toLocaleString()}</time></div>{item.title ? <h3>{item.title}</h3> : null}<p>{item.body}</p></article>) : <p>No public updates have been published yet.</p>}</section>
         {!publicSurface ? <form className="community-card form-grid" onSubmit={(event) => void requestSignInLink(event)}>
           <h2>Member sign in</h2>
           <p>Enter your email and we’ll send a one-time secure sign-in link. No password is required.</p>

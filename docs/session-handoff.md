@@ -47,11 +47,11 @@ UI. The active follow-up also adds tenant-scoped editable profiles and private p
 
 ## Exact next action
 
-Owner reviews the local member-profile migration/UI and email-link-only auth changes, then stages/commits them. Before
+Owner reviews the local member-profile/public-feed migrations and UI changes, then stages/commits them. Before
 production rollout, run `pnpm exec supabase db push --dry-run` and confirm it lists only
-`20260904000100_community_member_profiles.sql`; apply it only after review. Deploy Community and
-verify profile save, item add/edit/remove, photo replacement/removal, visibility, and cross-tenant
-denial with clearly identifiable pilot data.
+the intended migrations; apply them only after review. Deploy Community and verify public posts on
+`community.eshapp.com`, plus profile save, item add/edit/remove, photo replacement/removal,
+visibility, and cross-tenant denial with clearly identifiable pilot data.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.
