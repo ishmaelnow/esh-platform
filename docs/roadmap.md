@@ -108,6 +108,10 @@ Implementation order:
     notifications, compatible external delivery controls, lifecycle automation, richer read models
     and discovery, and production pilot gates.
 
+All six web applications now have install metadata, product manifests, responsive viewport
+configuration, and product icons as a PWA foundation. Offline data caching and synchronization are
+deferred until authenticated tenant-data caching rules are explicitly designed.
+
 Architecture: `docs/architecture/community-platform.md`.
 Migration plan: `docs/architecture/community-platform-migration-plan.md`.
 Product boundary decision: `docs/adr/0002-separate-product-applications-shared-platform.md`.

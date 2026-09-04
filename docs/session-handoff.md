@@ -47,7 +47,7 @@ UI. The active follow-up also adds tenant-scoped editable profiles and private p
 
 ## Exact next action
 
-Owner reviews the local member-profile/public-feed migrations and UI changes, then stages/commits them. Before
+Owner reviews the local member-profile/public-feed migrations, UI changes, and PWA metadata changes, then stages/commits them. Before
 production rollout, run `pnpm exec supabase db push --dry-run` and confirm it lists only
 the intended migrations; apply them only after review. Deploy Community and verify public posts on
 `community.eshapp.com`, plus profile save, item add/edit/remove, photo replacement/removal,
