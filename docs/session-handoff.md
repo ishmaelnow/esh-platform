@@ -6,8 +6,10 @@ Last updated: 2026-08-29
 
 Repair the Community join-request approval regression discovered in production. Commit `d1d51ba`
 moved approval into the shared notification endpoint but stopped creating the tenant invitation.
-The local repair restores server-side Community invitation creation, makes retry behavior
-duplicate-safe, and resurfaces approved requests that have no invitation for explicit recovery.
+The repair restores server-side Community invitation creation, makes retry behavior duplicate-safe,
+and resurfaces approved requests that have no invitation for explicit recovery. Commit `1653133`
+is pushed and Migration `20260903000100_recover_community_approval_invitations.sql` is applied;
+application deployment and production recovery verification remain.
 
 ## Authoritative checkpoint
 
@@ -37,13 +39,10 @@ duplicate-safe, and resurfaces approved requests that have no invitation for exp
 
 ## Exact next action
 
-Owner reviews and commits the Community approval recovery. Then run
-`pnpm exec supabase db push --dry-run` and continue only if it lists exactly
-`20260903000100_recover_community_approval_invitations.sql`. After the owner applies the migration
-and pushes the applications, wait for Admin and Community Admin deployment. In Community Admin,
-refresh **Public entry → Join requests and feedback**. The already-approved production request
-should appear as **Approved · invitation recovery required**; click **Create missing invitation**
-once. Verify the recipient receives the tokenized `Invitation to <tenant>` email and completes the
+Wait for Admin and Community Admin deployment of `1653133`. In Community Admin, refresh
+**Public entry → Join requests and feedback**. The already-approved production request should
+appear as **Approved · invitation recovery required**; click **Create missing invitation** once.
+Verify the recipient receives the tokenized `Invitation to <tenant>` email and completes the
 acceptance flow before checking enrollment and role assignment.
 
 Do not submit another join request, manually accept an invitation, or create a production
@@ -73,8 +72,9 @@ workflow; do not use it as proof of the new acceptance path.
 
 ## Repository and deployment state
 
-- Migration `20260903000100_recover_community_approval_invitations.sql` and the paired Admin and
-  Community Admin application changes are local and awaiting owner review/deployment.
+- Commit `1653133` is on `main` and `origin/main`. Migration
+  `20260903000100_recover_community_approval_invitations.sql` is applied. Admin and Community Admin
+  production readiness and the recovery manual test remain.
 - Before any future migration, the owner must run `pnpm exec supabase db push --dry-run` and confirm
   that it lists only the intended migration before applying it.
 - The project owner performs Git mutation, production deployment, and database mutation commands.

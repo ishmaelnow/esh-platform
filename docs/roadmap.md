@@ -16,7 +16,8 @@ remain independent of transportation-specific workflows.
 ## Next Product Domain: Community Platform
 
 Status: **Community foundation, independent applications, safety, services, and public entry
-deployed; join-request invitation regression repaired locally and awaiting rollout**.
+deployed; join-request invitation recovery pushed and migrated, with production verification
+pending**.
 
 Community is the second product domain built on ESH Platform. It is an independently operated,
 tenant-enabled product that reuses platform identity, tenant membership, capabilities, RLS, audit,
@@ -92,8 +93,9 @@ Implementation order:
     granting access before invitation acceptance.
 12. Community invitation context, member-role assignment after acceptance, password recovery, and
     approval-email delivery through the shared notification outbox are deployed. A production
-    regression that approved requests without creating their tenant invitation is repaired locally;
-    rollout and recovery of the affected approved request are the active checkpoint.
+    regression that approved requests without creating their tenant invitation is repaired in
+    `1653133`; production deployment and recovery of the affected approved request are the active
+    checkpoint.
 13. Remaining Community delivery: submit-for-announcement workflow, broader person-based in-app
     notifications, compatible external delivery controls, lifecycle automation, richer read models
     and discovery, and production pilot gates.
