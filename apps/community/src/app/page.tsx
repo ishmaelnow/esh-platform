@@ -881,6 +881,7 @@ function Header({ onExit, onSignOut }: { onExit?: () => void; onSignOut: () => v
         <p>Useful information and real local connections.</p>
       </div>
       <div className="header-actions">
+        <a className="secondary header-home-link" href="https://community.eshapp.com/">Return to Community home</a>
         {onExit ? (
           <button className="secondary" onClick={onExit} type="button">
             Exit Community

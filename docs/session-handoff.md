@@ -56,7 +56,8 @@ media authorization and install metadata for all six web applications.
 Owner reviews the mobile-first public-page UI diff, runs the Community lint/typecheck/build and
 browser checks, then stages/commits and deploys it. No Supabase migration is involved. Verify the
 compact navigation, cover/identity header, horizontal tabs, feed-first mobile layout, desktop
-sidebar/feed expansion, public search, sign-in, membership, and feedback actions.
+sidebar/feed expansion, public search, sign-in, membership, feedback, and authenticated return-home
+actions.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.

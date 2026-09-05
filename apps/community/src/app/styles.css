@@ -38,6 +38,14 @@ button:disabled {
   flex-wrap: wrap;
   gap: 10px;
 }
+.header-home-link {
+  align-items: center;
+  display: inline-flex;
+  font-size: .86rem;
+  font-weight: 750;
+  padding: 10px 14px;
+  text-decoration: none;
+}
 .community-shell {
   display: grid;
   gap: 28px;
