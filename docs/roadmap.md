@@ -16,8 +16,9 @@ remain independent of transportation-specific workflows.
 ## Next Product Domain: Community Platform
 
 Status: **Community foundation, independent applications, safety, services, public entry,
-passwordless invitation acceptance, public feed exposure, member profiles, and grounded public
-search are implemented; Admin-managed starter information is the next rollout**.
+passwordless invitation acceptance, public feed exposure, member profiles, grounded public search,
+and Admin-managed starter information are implemented; the mobile-first public Community redesign
+is the current rollout**.
 
 Community is the second product domain built on ESH Platform. It is an independently operated,
 tenant-enabled product that reuses platform identity, tenant membership, capabilities, RLS, audit,

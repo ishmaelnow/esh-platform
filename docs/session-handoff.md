@@ -7,8 +7,9 @@ Last updated: 2026-09-04
 Finish the Community public/member UX polish after the profile, public-feed media, and PWA
 foundations were deployed. The public membership and feedback forms are compact expandable
 panels, the landing surface has a stronger visual hierarchy, and grounded public search is live.
-The next follow-up adds Admin-managed, labeled, expirable starter information so useful public
-search results can exist before member activity grows.
+Admin-managed, labeled, expirable starter information is deployed. The current follow-up is a
+mobile-first Facebook-inspired Community public-page information-architecture redesign using
+ESH branding, without changing backend contracts.
 Commit `d1d51ba` moved approval into the shared notification endpoint but stopped creating the tenant invitation.
 The first repair restored server-side Community invitation creation, made retry behavior
 duplicate-safe, and resurfaced approved requests that have no invitation for explicit recovery.
@@ -52,11 +53,10 @@ media authorization and install metadata for all six web applications.
 
 ## Exact next action
 
-Owner reviews the starter-content migration and Community Admin UI diff. Run
-`pnpm exec supabase db push --dry-run` and confirm it lists only
-`20260904000700_community_starter_content.sql`; apply it only after review. Then run the
-Community Admin and Community lint/typechecks, deploy, create the school-season starter item,
-verify it appears in public feed/search, edit it, and archive it to confirm it disappears.
+Owner reviews the mobile-first public-page UI diff, runs the Community lint/typecheck/build and
+browser checks, then stages/commits and deploys it. No Supabase migration is involved. Verify the
+compact navigation, cover/identity header, horizontal tabs, feed-first mobile layout, desktop
+sidebar/feed expansion, public search, sign-in, membership, and feedback actions.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.

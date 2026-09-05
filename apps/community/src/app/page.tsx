@@ -617,22 +617,27 @@ export default function CommunityHome() {
   if (!session)
     return (
       <main className="community-shell">
-        <header className={publicSurface ? "public-hero" : undefined}>
+        {publicSurface ? <nav className="community-top-nav" aria-label="Community navigation"><a className="community-wordmark" href="#top"><span aria-hidden="true">C</span><strong>ESH Community</strong></a><div className="top-nav-links"><a href="#top">Home</a><a href="#about">About</a><a href="#public-updates">Updates</a><a href="#services">Services</a></div><div className="top-nav-actions"><a href="https://app.community.eshapp.com/">Sign in</a><a className="nav-join" href="#member-actions">Join</a></div></nav> : null}
+        <header className={publicSurface ? "community-cover" : undefined} id="top">
           <div className="hero-copy">
             <p className="eyebrow">ESH Community</p>
             <h1>{publicSurface ? "Your local network, made human." : "Neighbors. Information. Local help."}</h1>
-            <p>{publicSurface ? "Discover what is happening nearby, find trusted local help, and join the conversation when you are ready." : "Sign in to your ESH Community account."}</p>
+            <p>{publicSurface ? "People, services, groups, and useful local updates in one trusted place." : "Sign in to your ESH Community account."}</p>
           </div>
-          {publicSurface ? <div className="hero-note"><span>◎</span><strong>Useful, local, together.</strong><small>Public information is available before you sign in.</small></div> : null}
+          {publicSurface ? <div className="community-identity"><div className="community-avatar" aria-hidden="true">C</div><div><strong>ESH Community</strong><span>Local information, services, groups, and neighbor-to-neighbor connection.</span></div></div> : null}
           {publicSurface ? <form className="public-search" onSubmit={(event) => void searchPublicCommunity(event)}><label htmlFor="public-community-search">Search public Community information</label><div><input id="public-community-search" name="public_search" onChange={(event) => setSearchQuery(event.target.value)} placeholder="Try “local services” or “events”" value={searchQuery} /><button disabled={searchBusy || !searchQuery.trim()} type="submit">{searchBusy ? "Searching…" : "Search"}</button></div><small>Searches public posts and announcements only.</small></form> : null}
         </header>
         {message ? <p className={message.includes("submitted") || message.includes("Thank you") ? "notice" : "error"}>{message}</p> : null}
-        <section className="community-card explore-panel">
+        {publicSurface ? <div className="community-tabs" role="tablist" aria-label="Community sections"><a className="active" href="#top">Home</a><a href="#about">About</a><a href="#public-updates">Posts</a><a href="#services">Services</a><a href="#member-actions">Join Community</a></div> : null}
+        <div className={publicSurface ? "public-main-layout" : undefined}>
+        {publicSurface ? <aside className="community-sidebar"><section className="community-card about-card" id="about"><p className="eyebrow">About</p><h2>About ESH Community</h2><p>A trusted public space for useful local information, services, groups, and community updates.</p></section><section className="community-card explore-links"><p className="eyebrow">Explore</p><a href="#public-updates">Public updates <span>→</span></a><a href="#services">Local services <span>→</span></a><a href="#member-actions">Join the Community <span>→</span></a></section></aside> : null}
+        <section className="community-card explore-panel" id="services">
           <div className="section-heading"><div><p className="eyebrow">Find your people</p><h2>Explore Community</h2><p>Browse public information without signing in. Join when you want to post, connect, or participate.</p></div><span className="section-mark" aria-hidden="true">✦</span></div>
           {publicCommunities.length ? <div className="community-directory-grid">{publicCommunities.map((community) => <article className="community-spotlight" key={community.tenant_id}><div className="spotlight-icon" aria-hidden="true">{community.display_name.slice(0, 1).toUpperCase()}</div><div><h3>{community.display_name}</h3><p>Public information, local services, and neighbor-to-neighbor connection.</p><a href="#public-updates">See public updates <span aria-hidden="true">→</span></a></div></article>)}</div> : <p>No public Communities are currently available.</p>}
         </section>
         {searchQuery.trim() ? <section className="community-card search-results" aria-live="polite"><div className="section-heading"><div><p className="eyebrow">Search results</p><h2>Public information for “{searchQuery.trim()}”</h2></div><span className="live-pill">{searchResults.length} found</span></div>{searchResults.length ? <div className="search-result-list">{searchResults.map((item) => <article className="search-result" key={item.content_id}><div className="feed-meta"><strong>{item.community_name}</strong><time>{new Date(item.published_at).toLocaleDateString()}</time></div><p className="search-result-kind">{item.content_kind.replaceAll("_", " ")}</p>{item.title ? <h3>{item.title}</h3> : null}<p>{item.body}</p></article>)}</div> : <p>No public information matched that search yet. Try a broader phrase.</p>}</section> : null}
         <section className="community-card public-updates" id="public-updates" aria-live="polite"><div className="section-heading"><div><p className="eyebrow">Stay in the loop</p><h2>Community information</h2></div><span className="live-pill">Public updates</span></div>{feed.length ? feed.map((item) => <article className="feed-item" key={item.contentId}><div className="feed-meta"><strong>{item.authorName}</strong><time>{new Date(item.publishedAt).toLocaleString()}</time></div>{item.title ? <h3>{item.title}</h3> : null}<p>{item.body}</p>{item.media.length ? <div className="media-grid">{item.media.map((media) => mediaUrls[media.mediaId] ? <img alt={media.altText ?? "Community post photo"} key={media.mediaId} loading="lazy" src={mediaUrls[media.mediaId]} /> : null)}</div> : null}</article>) : <p>No public updates have been published yet.</p>}</section>
+        </div>
         {!publicSurface ? <form className="community-card form-grid" onSubmit={(event) => void requestSignInLink(event)}>
           <h2>Member sign in</h2>
           <p>Enter your email and we’ll send a one-time secure sign-in link. No password is required.</p>
@@ -640,6 +645,7 @@ export default function CommunityHome() {
           {message ? <p className="error">{message}</p> : null}
           <button disabled={busy} type="submit">Email me a secure link</button>
         </form> : null}
+        <div id="member-actions" className="public-actions">
         <section className={`community-card membership-panel${membershipFormOpen ? " is-open" : ""}`}>
           <div className="membership-summary">
             <div><p className="eyebrow">Join the conversation</p><h2>Request membership</h2></div>
@@ -669,6 +675,7 @@ export default function CommunityHome() {
             </form>
           </> : null}
         </section>
+        </div>
       </main>
     );
   if (!activeTenantId)
