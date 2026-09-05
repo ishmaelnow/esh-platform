@@ -56,6 +56,7 @@ export default function CommunityHome() {
   const [publicCommunities, setPublicCommunities] = useState<PublicCommunity[]>([]);
   const [publicSurface, setPublicSurface] = useState(false);
   const [membershipFormOpen, setMembershipFormOpen] = useState(false);
+  const [feedbackFormOpen, setFeedbackFormOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -613,10 +614,19 @@ export default function CommunityHome() {
             </form>
           </> : null}
         </section>
-        {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
-        <form className="community-card form-grid" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const formElement = event.currentTarget; const form = new FormData(formElement); setBusy(true); try { const result = await client.rpc("submit_community_public_feedback", { target_tenant_id: formText(form, "feedback_tenant") || null, category_value: formText(form, "feedback_category"), message_value: formText(form, "feedback_message"), contact_email_value: formText(form, "feedback_email") || null }); if (result.error) throw result.error; setMessage("Thank you. Your feedback was sent privately to the Community team."); formElement.reset(); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit feedback."); } finally { setBusy(false); } }}>
-          <h2>Public feedback</h2><label>Community (optional)<select name="feedback_tenant"><option value="">General feedback</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label><label>Category<select name="feedback_category"><option value="suggestion">Suggestion</option><option value="issue">Issue</option><option value="question">Question</option><option value="service_concern">Service concern</option></select></label><label>Message<textarea name="feedback_message" required maxLength={5000} rows={4} /></label><label>Email for follow-up (optional)<input name="feedback_email" type="email" /></label><button disabled={busy} type="submit">Send feedback</button>
-        </form>
+        <section className={`community-card membership-panel feedback-panel${feedbackFormOpen ? " is-open" : ""}`}>
+          <div className="membership-summary">
+            <div><p className="eyebrow">Help improve Community</p><h2>Public feedback</h2></div>
+            <button className="secondary" onClick={() => setFeedbackFormOpen((open) => !open)} type="button">{feedbackFormOpen ? "Close" : "Give feedback"}</button>
+          </div>
+          {!feedbackFormOpen ? <p className="membership-teaser">Send a private suggestion, issue, or question.</p> : null}
+          {feedbackFormOpen ? <>
+            {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+            <form className="form-grid membership-form" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const formElement = event.currentTarget; const form = new FormData(formElement); setBusy(true); try { const result = await client.rpc("submit_community_public_feedback", { target_tenant_id: formText(form, "feedback_tenant") || null, category_value: formText(form, "feedback_category"), message_value: formText(form, "feedback_message"), contact_email_value: formText(form, "feedback_email") || null }); if (result.error) throw result.error; setMessage("Thank you. Your feedback was sent privately to the Community team."); formElement.reset(); setFeedbackFormOpen(false); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit feedback."); } finally { setBusy(false); } }}>
+              <label>Community (optional)<select name="feedback_tenant"><option value="">General feedback</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label><label>Category<select name="feedback_category"><option value="suggestion">Suggestion</option><option value="issue">Issue</option><option value="question">Question</option><option value="service_concern">Service concern</option></select></label><label>Message<textarea name="feedback_message" required maxLength={5000} rows={3} /></label><label>Email for follow-up (optional)<input name="feedback_email" type="email" /></label><button disabled={busy} type="submit">Send feedback</button>
+            </form>
+          </> : null}
+        </section>
       </main>
     );
   if (!activeTenantId)
