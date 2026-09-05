@@ -238,14 +238,15 @@ nav a {
 .media-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 220px));
   margin: 12px 0;
 }
 .media-grid img {
   aspect-ratio: 4 / 3;
   border-radius: 14px;
-  height: 100%;
+  height: 165px;
   object-fit: cover;
+  max-width: 220px;
   width: 100%;
 }
 .item-actions,

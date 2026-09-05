@@ -51,10 +51,10 @@ media authorization and install metadata for all six web applications.
 
 ## Exact next action
 
-Owner reviews the membership-panel UI diff, runs the Community lint/typecheck in the normal local
-environment, then stages/commits and deploys it. No Supabase migration is involved. After deploy,
-verify that the public page initially shows a compact “Start request” panel, expands to the full
-request form, submits successfully, and collapses after a successful request on desktop and mobile.
+Owner reviews the membership-panel and feed-media sizing UI diff, runs the Community lint/typecheck
+in the normal local environment, then stages/commits and deploys it. No Supabase migration is
+involved. After deploy, verify the compact “Start request” panel and confirm uploaded feed images
+render as compact 220px thumbnails while profile avatars remain usable on desktop and mobile.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.
