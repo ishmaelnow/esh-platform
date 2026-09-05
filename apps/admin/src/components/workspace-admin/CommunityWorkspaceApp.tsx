@@ -22,6 +22,7 @@ export function CommunityWorkspaceApp() {
   const [listings, setListings] = useState<ServiceListing[]>([]);
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [feedback, setFeedback] = useState<PublicFeedback[]>([]);
+  const [starterPosts, setStarterPosts] = useState<StarterPost[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadReports = useCallback(
@@ -52,6 +53,12 @@ export function CommunityWorkspaceApp() {
     ]);
     if (joins.error) throw joins.error; if (notes.error) throw notes.error;
     setJoinRequests(parseJoinRequests(joins.data)); setFeedback(parseFeedback(notes.data));
+  }, [supabase]);
+  const loadStarterContent = useCallback(async (selectedTenantId: string) => {
+    if (!supabase) return;
+    const { data, error: snapshotError } = await supabase.rpc("community_starter_content_snapshot", { target_tenant_id: selectedTenantId, result_limit: 100 });
+    if (snapshotError) throw snapshotError;
+    setStarterPosts(parseStarterPosts(data));
   }, [supabase]);
 
   useEffect(() => {
@@ -93,7 +100,7 @@ export function CommunityWorkspaceApp() {
         const admitted = Boolean(roleResult.data && productSessionResult.data);
         setAllowed(admitted);
         setCanModerate(Boolean(moderationRoleResult.data));
-        if (admitted && moderationRoleResult.data) await Promise.all([loadReports(selectedTenantId), loadListings(selectedTenantId), loadPublicQueue(selectedTenantId)]);
+        if (admitted && moderationRoleResult.data) await Promise.all([loadReports(selectedTenantId), loadListings(selectedTenantId), loadPublicQueue(selectedTenantId), loadStarterContent(selectedTenantId)]);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Unable to verify Community access.");
       } finally {
@@ -103,7 +110,7 @@ export function CommunityWorkspaceApp() {
     return () => {
       mounted = false;
     };
-  }, [loadListings, loadPublicQueue, loadReports, supabase]);
+  }, [loadListings, loadPublicQueue, loadReports, loadStarterContent, supabase]);
 
   useEffect(() => {
     if (!supabase || !allowed || !tenantId) return;
@@ -165,6 +172,40 @@ export function CommunityWorkspaceApp() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to review service listing.");
     } finally { setBusy(false); }
+  }
+  async function createStarterContent(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!supabase) return;
+    const values = new FormData(event.currentTarget); setBusy(true); setError(null);
+    try {
+      const { error: createError } = await supabase.rpc("create_community_starter_post", {
+        target_tenant_id: tenantId, title_value: formValue(values.get("title"), ""), body_value: formValue(values.get("body"), ""),
+        expires_at_value: formValue(values.get("expires_at"), "") || null, label_value: "Starter information",
+      });
+      if (createError) throw createError;
+      event.currentTarget.reset(); await loadStarterContent(tenantId);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to create starter information."); }
+    finally { setBusy(false); }
+  }
+  async function updateStarterContent(event: FormEvent<HTMLFormElement>, contentId: string) {
+    event.preventDefault(); if (!supabase) return;
+    const values = new FormData(event.currentTarget); setBusy(true); setError(null);
+    try {
+      const { error: updateError } = await supabase.rpc("update_community_starter_post", {
+        target_tenant_id: tenantId, target_content_id: contentId, title_value: formValue(values.get("title"), ""), body_value: formValue(values.get("body"), ""), expires_at_value: formValue(values.get("expires_at"), "") || null,
+      });
+      if (updateError) throw updateError;
+      await loadStarterContent(tenantId);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to update starter information."); }
+    finally { setBusy(false); }
+  }
+  async function archiveStarterContent(contentId: string) {
+    if (!supabase) return; setBusy(true); setError(null);
+    try {
+      const { error: archiveError } = await supabase.rpc("archive_community_starter_post", { target_tenant_id: tenantId, target_content_id: contentId, reason_value: "Starter information retired by Community Administration." });
+      if (archiveError) throw archiveError;
+      await loadStarterContent(tenantId);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to archive starter information."); }
+    finally { setBusy(false); }
   }
   async function reviewPublic(kind: "join" | "feedback", id: string, decision: string) {
     if (!supabase) return; setBusy(true); setError(null);
@@ -349,12 +390,20 @@ export function CommunityWorkspaceApp() {
           </article>)}
         </div> : <div className="state-block"><h3>No service listings awaiting review</h3><p>New provider submissions will appear here.</p></div>}
       </section>
+      <section className="workspace-card moderation-workspace">
+        <div className="workspace-portal-header"><div><p className="eyebrow">Starter information</p><h2>Public Community guidance</h2><p className="muted">Publish clearly labeled placeholder information while the Community grows. Admins can update, expire, or archive it at any time.</p></div><button className="secondary-button" disabled={busy || !canModerate} onClick={() => void loadStarterContent(tenantId)} type="button">Refresh</button></div>
+        {!canModerate ? <div className="state-block"><h3>Moderation role required</h3></div> : <>
+          <form className="moderation-case" onSubmit={(event) => void createStarterContent(event)}><div><h3>Create starter information</h3><p className="muted">Example: “School season is underway.” Keep information general, useful, and easy to replace.</p><label>Title<input name="title" maxLength={180} required /></label><label>Public message<textarea name="body" maxLength={10000} required rows={3} /></label><label>Optional expiration<input name="expires_at" type="datetime-local" /></label></div><button disabled={busy} type="submit">Publish starter information</button></form>
+          {starterPosts.length ? <div className="moderation-list">{starterPosts.map((starter) => <form className="moderation-case" key={starter.contentId} onSubmit={(event) => void updateStarterContent(event, starter.contentId)}><div><p className="eyebrow">{starter.label} · {starter.publicationStatus}</p><label>Title<input defaultValue={starter.title ?? ""} name="title" maxLength={180} required /></label><label>Public message<textarea defaultValue={starter.body} name="body" maxLength={10000} required rows={3} /></label><label>Expiration<input defaultValue={starter.expiresAt ? starter.expiresAt.slice(0, 16) : ""} name="expires_at" type="datetime-local" /></label></div><div><button disabled={busy} type="submit">Save changes</button><button className="secondary-button" disabled={busy || starter.publicationStatus === "archived"} onClick={(event) => { event.preventDefault(); void archiveStarterContent(starter.contentId); }} type="button">Archive</button></div></form>)}</div> : <div className="state-block"><h3>No starter information yet</h3><p>Create the first clearly labeled public placeholder.</p></div>}
+        </>}
+      </section>
       <section className="workspace-card moderation-workspace"><div className="workspace-portal-header"><div><p className="eyebrow">Public entry</p><h2>Join requests and feedback</h2><p className="muted">Review resident access requests separately from published Community content.</p></div><button className="secondary-button" disabled={busy || !canModerate} onClick={() => void loadPublicQueue(tenantId)} type="button">Refresh</button></div>{!canModerate ? <div className="state-block"><h3>Moderation role required</h3></div> : <><h3>Membership requests</h3>{joinRequests.length ? joinRequests.map((request) => <article className="moderation-case" key={request.requestId}><div><p className="eyebrow">{request.status === "approved" ? "Approved · invitation recovery required" : "Pending review"}</p><h3>{request.displayName}</h3><p>{request.email}{request.locality ? ` · ${request.locality}` : ""}</p><p>{request.reason ?? "No reason provided"}</p></div><div><button disabled={busy} onClick={() => void reviewPublic("join", request.requestId, "approved")} type="button">{request.status === "approved" ? "Create missing invitation" : "Approve"}</button>{request.status === "pending" ? <button disabled={busy} onClick={() => void reviewPublic("join", request.requestId, "rejected")} type="button">Reject</button> : null}</div></article>) : <p>No membership requests awaiting action.</p>}<h3>Visitor feedback</h3>{feedback.length ? feedback.map((note) => <article className="moderation-case" key={note.feedbackId}><div><p className="eyebrow">{note.category}</p><p>{note.message}</p>{note.contactEmail ? <p>Follow-up: {note.contactEmail}</p> : null}</div><div><button disabled={busy} onClick={() => void reviewPublic("feedback", note.feedbackId, "reviewing")} type="button">Review</button><button disabled={busy} onClick={() => void reviewPublic("feedback", note.feedbackId, "resolved")} type="button">Resolve</button><button disabled={busy} onClick={() => void reviewPublic("feedback", note.feedbackId, "dismissed")} type="button">Dismiss</button></div></article>) : <p>No new visitor feedback.</p>}</>}</section>
     </main>
   );
 }
 
 type ServiceListing = { listingId: string; serviceCategory: string; title: string; description: string; providerName: string; status: string; contactEmail: string | null; contactPhone: string | null; websiteUrl: string | null };
+type StarterPost = { contentId: string; title: string | null; body: string; publicationStatus: string; expiresAt: string | null; label: string };
 type JoinRequest = { requestId: string; email: string; displayName: string; locality: string | null; reason: string | null; status: "pending" | "approved" };
 type PublicFeedback = { feedbackId: string; category: string; message: string; contactEmail: string | null };
 function formValue(value: FormDataEntryValue | null, fallback: string): string {
@@ -369,6 +418,15 @@ function parseServiceListings(value: unknown): ServiceListing[] {
     const row = entry as Record<string, unknown>;
     if (typeof row.listing_id !== "string" || typeof row.title !== "string") return [];
     return [{ listingId: row.listing_id, serviceCategory: textValue(row.service_category, "Service"), title: row.title, description: textValue(row.description, ""), providerName: textValue(row.provider_name, "Provider"), status: textValue(row.status, "pending"), contactEmail: typeof row.contact_email === "string" ? row.contact_email : null, contactPhone: typeof row.contact_phone === "string" ? row.contact_phone : null, websiteUrl: typeof row.website_url === "string" ? row.website_url : null }];
+  }) : [];
+}
+function parseStarterPosts(value: unknown): StarterPost[] {
+  return Array.isArray(value) ? value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const row = entry as Record<string, unknown>;
+    return typeof row.content_id === "string" && typeof row.body === "string"
+      ? [{ contentId: row.content_id, title: typeof row.title === "string" ? row.title : null, body: row.body, publicationStatus: textValue(row.publication_status, "published"), expiresAt: typeof row.expires_at === "string" ? row.expires_at : null, label: textValue(row.label, "Starter information") }]
+      : [];
   }) : [];
 }
 function parseJoinRequests(value: unknown): JoinRequest[] { return Array.isArray(value) ? value.flatMap((entry) => { const row = entry && typeof entry === "object" ? entry as Record<string, unknown> : {}; return typeof row.request_id === "string" && typeof row.email === "string" && typeof row.display_name === "string" && (row.status === "pending" || row.status === "approved") ? [{ requestId: row.request_id, email: row.email, displayName: row.display_name, locality: typeof row.locality === "string" ? row.locality : null, reason: typeof row.reason === "string" ? row.reason : null, status: row.status }] : []; }) : []; }

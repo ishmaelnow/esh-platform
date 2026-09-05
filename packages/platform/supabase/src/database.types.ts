@@ -2524,6 +2524,10 @@ export type Database = {
       submit_community_public_feedback: { Args: { target_tenant_id?: string | null; category_value: string; message_value: string; contact_email_value?: string | null }; Returns: string }
       community_public_directory_snapshot: { Args: Record<PropertyKey, never>; Returns: Json }
       community_public_search: { Args: { search_query: string; result_limit?: number }; Returns: Json }
+      community_starter_content_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
+      create_community_starter_post: { Args: { target_tenant_id: string; title_value: string; body_value: string; expires_at_value?: string | null; label_value?: string }; Returns: string }
+      update_community_starter_post: { Args: { target_tenant_id: string; target_content_id: string; title_value: string; body_value: string; expires_at_value?: string | null }; Returns: boolean }
+      archive_community_starter_post: { Args: { target_tenant_id: string; target_content_id: string; reason_value: string }; Returns: boolean }
       community_join_review_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       community_feedback_review_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       review_community_join_request: { Args: { target_request_id: string; decision_value: string }; Returns: boolean }
