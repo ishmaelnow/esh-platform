@@ -5,9 +5,9 @@ Last updated: 2026-09-04
 ## Current objective
 
 Finish the Community public/member UX polish after the profile, public-feed media, and PWA
-foundations were deployed. The latest follow-up makes the public membership request a compact
-expandable panel so the landing page is not dominated by a tall form; all required fields and
-the existing join-request RPC remain unchanged.
+foundations were deployed. The public membership and feedback forms are compact expandable
+panels, and the latest follow-up gives the public landing surface a stronger hero, Community
+directory cards, and clearer public-update hierarchy without changing data or authorization.
 Commit `d1d51ba` moved approval into the shared notification endpoint but stopped creating the tenant invitation.
 The first repair restored server-side Community invitation creation, made retry behavior
 duplicate-safe, and resurfaced approved requests that have no invitation for explicit recovery.
