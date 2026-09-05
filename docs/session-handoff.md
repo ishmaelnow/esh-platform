@@ -4,8 +4,11 @@ Last updated: 2026-09-04
 
 ## Current objective
 
-Implement the next Community member-profile slice after repairing the join-request approval regression. Commit `d1d51ba`
-moved approval into the shared notification endpoint but stopped creating the tenant invitation.
+Finish the Community public/member UX polish after the profile, public-feed media, and PWA
+foundations were deployed. The latest follow-up makes the public membership request a compact
+expandable panel so the landing page is not dominated by a tall form; all required fields and
+the existing join-request RPC remain unchanged.
+Commit `d1d51ba` moved approval into the shared notification endpoint but stopped creating the tenant invitation.
 The first repair restored server-side Community invitation creation, made retry behavior
 duplicate-safe, and resurfaced approved requests that have no invitation for explicit recovery.
 Commit `1653133` is pushed and Migration
@@ -17,7 +20,8 @@ invitation through a same-origin authenticated endpoint, and redirects to the me
 `20260903000200_passwordless_community_invitation.sql` removes the redundant generic approval
 notification and is applied. Community authentication is being aligned to the Rider/Driver
 contract: email-link-only sign-in for approval and returning members, with no Community password
-UI. The active follow-up also adds tenant-scoped editable profiles and private profile photos.
+UI. Tenant-scoped editable profiles and private profile photos are deployed, as are public feed
+media authorization and install metadata for all six web applications.
 
 ## Authoritative checkpoint
 
@@ -47,11 +51,10 @@ UI. The active follow-up also adds tenant-scoped editable profiles and private p
 
 ## Exact next action
 
-Owner reviews the local member-profile/public-feed migrations, UI changes, and PWA metadata changes, then stages/commits them. Before
-production rollout, run `pnpm exec supabase db push --dry-run` and confirm it lists only
-the intended migrations; apply them only after review. Deploy Community and verify public posts on
-`community.eshapp.com`, plus profile save, item add/edit/remove, photo replacement/removal,
-visibility, and cross-tenant denial with clearly identifiable pilot data.
+Owner reviews the membership-panel UI diff, runs the Community lint/typecheck in the normal local
+environment, then stages/commits and deploys it. No Supabase migration is involved. After deploy,
+verify that the public page initially shows a compact “Start request” panel, expands to the full
+request form, submits successfully, and collapses after a successful request on desktop and mobile.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.

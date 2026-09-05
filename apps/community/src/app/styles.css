@@ -115,6 +115,61 @@ button:disabled {
   gap: 16px;
   max-width: 680px;
 }
+.membership-panel {
+  max-width: 150px;
+  padding: 10px;
+}
+.membership-panel.is-open {
+  max-width: 560px;
+  padding: 14px 16px;
+}
+.membership-summary {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+.membership-summary h2,
+.membership-summary .eyebrow {
+  margin-bottom: 0;
+}
+.membership-panel:not(.is-open) .membership-summary {
+  align-items: stretch;
+  display: grid;
+  gap: 8px;
+}
+.membership-panel:not(.is-open) .membership-summary h2 {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+.membership-panel:not(.is-open) .membership-summary button {
+  padding: 8px 10px;
+}
+.membership-panel:not(.is-open) .membership-teaser {
+  display: none;
+}
+.membership-teaser {
+  color: #5d6c63;
+  font-size: 0.9rem;
+  margin: 8px 0 0;
+}
+.membership-form {
+  gap: 10px;
+  margin-top: 12px;
+}
+.membership-form > p {
+  color: #5d6c63;
+  font-size: 0.9rem;
+  margin: 0;
+}
+.membership-fields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.membership-form textarea {
+  min-height: 64px;
+}
 .form-grid label {
   display: grid;
   font-weight: 700;
@@ -287,5 +342,8 @@ nav a {
   .community-shell > header,
   .community-header {
     display: grid;
+  }
+  .membership-fields {
+    grid-template-columns: 1fr;
   }
 }

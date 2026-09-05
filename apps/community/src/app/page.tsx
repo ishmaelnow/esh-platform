@@ -55,6 +55,7 @@ export default function CommunityHome() {
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [publicCommunities, setPublicCommunities] = useState<PublicCommunity[]>([]);
   const [publicSurface, setPublicSurface] = useState(false);
+  const [membershipFormOpen, setMembershipFormOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -596,12 +597,22 @@ export default function CommunityHome() {
           {message ? <p className="error">{message}</p> : null}
           <button disabled={busy} type="submit">Email me a secure link</button>
         </form> : null}
-        {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
-        <form className="community-card form-grid" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const formElement = event.currentTarget; const form = new FormData(formElement); setBusy(true); try { const result = await client.rpc("submit_community_join_request", { target_tenant_id: formText(form, "tenant"), email_value: formText(form, "join_email"), display_name_value: formText(form, "join_name"), locality_value: formText(form, "locality") || null, reason_value: formText(form, "join_reason") || null }); if (result.error) throw result.error; setMessage("Your join request was submitted for Community review."); formElement.reset(); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit your join request."); } finally { setBusy(false); } }}>
-          <h2>Request membership</h2><p>Membership is reviewed before you can post or interact.</p>
-          <label>Community<select name="tenant" required><option value="">Choose a Community</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label>
-          <label>Name<input name="join_name" required /></label><label>Email<input name="join_email" type="email" required /></label><label>Locality<input name="locality" placeholder="City or neighborhood" /></label><label>Why would you like to join?<textarea name="join_reason" maxLength={1000} rows={3} /></label><button disabled={busy} type="submit">Request to join</button>
-        </form>
+        <section className={`community-card membership-panel${membershipFormOpen ? " is-open" : ""}`}>
+          <div className="membership-summary">
+            <div><p className="eyebrow">Join the conversation</p><h2>Request membership</h2></div>
+            <button className="secondary" onClick={() => setMembershipFormOpen((open) => !open)} type="button">{membershipFormOpen ? "Close" : "Start request"}</button>
+          </div>
+          {!membershipFormOpen ? <p className="membership-teaser">Membership is reviewed before you can post or interact.</p> : null}
+          {membershipFormOpen ? <>
+            {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+            <form className="form-grid membership-form" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const formElement = event.currentTarget; const form = new FormData(formElement); setBusy(true); try { const result = await client.rpc("submit_community_join_request", { target_tenant_id: formText(form, "tenant"), email_value: formText(form, "join_email"), display_name_value: formText(form, "join_name"), locality_value: formText(form, "locality") || null, reason_value: formText(form, "join_reason") || null }); if (result.error) throw result.error; setMessage("Your join request was submitted for Community review."); formElement.reset(); setMembershipFormOpen(false); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit your join request."); } finally { setBusy(false); } }}>
+              <p>Membership is reviewed before you can post or interact.</p>
+              <label>Community<select name="tenant" required><option value="">Choose a Community</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label>
+              <div className="membership-fields"><label>Name<input name="join_name" required /></label><label>Email<input name="join_email" type="email" required /></label></div>
+              <label>Locality<input name="locality" placeholder="City or neighborhood" /></label><label>Why would you like to join?<textarea name="join_reason" maxLength={1000} rows={2} /></label><button disabled={busy} type="submit">Request to join</button>
+            </form>
+          </> : null}
+        </section>
         {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
         <form className="community-card form-grid" onSubmit={async (event) => { event.preventDefault(); if (!client) return; const formElement = event.currentTarget; const form = new FormData(formElement); setBusy(true); try { const result = await client.rpc("submit_community_public_feedback", { target_tenant_id: formText(form, "feedback_tenant") || null, category_value: formText(form, "feedback_category"), message_value: formText(form, "feedback_message"), contact_email_value: formText(form, "feedback_email") || null }); if (result.error) throw result.error; setMessage("Thank you. Your feedback was sent privately to the Community team."); formElement.reset(); } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to submit feedback."); } finally { setBusy(false); } }}>
           <h2>Public feedback</h2><label>Community (optional)<select name="feedback_tenant"><option value="">General feedback</option>{publicCommunities.map((community) => <option key={community.tenant_id} value={community.tenant_id}>{community.display_name}</option>)}</select></label><label>Category<select name="feedback_category"><option value="suggestion">Suggestion</option><option value="issue">Issue</option><option value="question">Question</option><option value="service_concern">Service concern</option></select></label><label>Message<textarea name="feedback_message" required maxLength={5000} rows={4} /></label><label>Email for follow-up (optional)<input name="feedback_email" type="email" /></label><button disabled={busy} type="submit">Send feedback</button>
