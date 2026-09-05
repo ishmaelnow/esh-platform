@@ -14,6 +14,16 @@ import { CommunityFeedCard } from "@/components/CommunityFeedCard";
 
 type CommunityAccess = { tenantId: string; tenantName: string; roles: string[] };
 type PublicCommunity = { tenant_id: string; display_name: string };
+type PublicSearchItem = {
+  content_id: string;
+  tenant_id: string;
+  community_name: string;
+  content_kind: string;
+  title: string | null;
+  body: string;
+  published_at: string;
+  author_name: string;
+};
 type SafetyMember = { personId: string; displayName: string };
 type CommunityProfile = {
   profile_id: string;
@@ -54,6 +64,9 @@ export default function CommunityHome() {
   const [profileItems, setProfileItems] = useState<CommunityProfileItem[]>([]);
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [publicCommunities, setPublicCommunities] = useState<PublicCommunity[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<PublicSearchItem[]>([]);
+  const [searchBusy, setSearchBusy] = useState(false);
   const [publicSurface, setPublicSurface] = useState(false);
   const [membershipFormOpen, setMembershipFormOpen] = useState(false);
   const [feedbackFormOpen, setFeedbackFormOpen] = useState(false);
@@ -156,6 +169,33 @@ export default function CommunityHome() {
     },
     [client],
   );
+
+  async function searchPublicCommunity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!client) return;
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchBusy(true);
+    try {
+      const { data, error } = await client.rpc("community_public_search", {
+        search_query: query,
+        result_limit: 20,
+      });
+      if (error) throw error;
+      const source = data && typeof data === "object" && !Array.isArray(data)
+        ? data as { items?: unknown }
+        : {};
+      setSearchResults(Array.isArray(source.items) ? source.items as PublicSearchItem[] : []);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Community search is temporarily unavailable.");
+      setSearchResults([]);
+    } finally {
+      setSearchBusy(false);
+    }
+  }
 
   const loadSafety = useCallback(
     async (tenantId: string) => {
@@ -584,12 +624,14 @@ export default function CommunityHome() {
             <p>{publicSurface ? "Discover what is happening nearby, find trusted local help, and join the conversation when you are ready." : "Sign in to your ESH Community account."}</p>
           </div>
           {publicSurface ? <div className="hero-note"><span>◎</span><strong>Useful, local, together.</strong><small>Public information is available before you sign in.</small></div> : null}
+          {publicSurface ? <form className="public-search" onSubmit={(event) => void searchPublicCommunity(event)}><label htmlFor="public-community-search">Search public Community information</label><div><input id="public-community-search" name="public_search" onChange={(event) => setSearchQuery(event.target.value)} placeholder="Try “local services” or “events”" value={searchQuery} /><button disabled={searchBusy || !searchQuery.trim()} type="submit">{searchBusy ? "Searching…" : "Search"}</button></div><small>Searches public posts and announcements only.</small></form> : null}
         </header>
         {message ? <p className={message.includes("submitted") || message.includes("Thank you") ? "notice" : "error"}>{message}</p> : null}
         <section className="community-card explore-panel">
           <div className="section-heading"><div><p className="eyebrow">Find your people</p><h2>Explore Community</h2><p>Browse public information without signing in. Join when you want to post, connect, or participate.</p></div><span className="section-mark" aria-hidden="true">✦</span></div>
           {publicCommunities.length ? <div className="community-directory-grid">{publicCommunities.map((community) => <article className="community-spotlight" key={community.tenant_id}><div className="spotlight-icon" aria-hidden="true">{community.display_name.slice(0, 1).toUpperCase()}</div><div><h3>{community.display_name}</h3><p>Public information, local services, and neighbor-to-neighbor connection.</p><a href="#public-updates">See public updates <span aria-hidden="true">→</span></a></div></article>)}</div> : <p>No public Communities are currently available.</p>}
         </section>
+        {searchQuery.trim() ? <section className="community-card search-results" aria-live="polite"><div className="section-heading"><div><p className="eyebrow">Search results</p><h2>Public information for “{searchQuery.trim()}”</h2></div><span className="live-pill">{searchResults.length} found</span></div>{searchResults.length ? <div className="search-result-list">{searchResults.map((item) => <article className="search-result" key={item.content_id}><div className="feed-meta"><strong>{item.community_name}</strong><time>{new Date(item.published_at).toLocaleDateString()}</time></div><p className="search-result-kind">{item.content_kind.replaceAll("_", " ")}</p>{item.title ? <h3>{item.title}</h3> : null}<p>{item.body}</p></article>)}</div> : <p>No public information matched that search yet. Try a broader phrase.</p>}</section> : null}
         <section className="community-card public-updates" id="public-updates" aria-live="polite"><div className="section-heading"><div><p className="eyebrow">Stay in the loop</p><h2>Community information</h2></div><span className="live-pill">Public updates</span></div>{feed.length ? feed.map((item) => <article className="feed-item" key={item.contentId}><div className="feed-meta"><strong>{item.authorName}</strong><time>{new Date(item.publishedAt).toLocaleString()}</time></div>{item.title ? <h3>{item.title}</h3> : null}<p>{item.body}</p>{item.media.length ? <div className="media-grid">{item.media.map((media) => mediaUrls[media.mediaId] ? <img alt={media.altText ?? "Community post photo"} key={media.mediaId} loading="lazy" src={mediaUrls[media.mediaId]} /> : null)}</div> : null}</article>) : <p>No public updates have been published yet.</p>}</section>
         {!publicSurface ? <form className="community-card form-grid" onSubmit={(event) => void requestSignInLink(event)}>
           <h2>Member sign in</h2>

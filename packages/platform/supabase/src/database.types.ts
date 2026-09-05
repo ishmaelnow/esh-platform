@@ -2523,6 +2523,7 @@ export type Database = {
       submit_community_join_request: { Args: { target_tenant_id: string; email_value: string; display_name_value: string; locality_value?: string | null; reason_value?: string | null }; Returns: string }
       submit_community_public_feedback: { Args: { target_tenant_id?: string | null; category_value: string; message_value: string; contact_email_value?: string | null }; Returns: string }
       community_public_directory_snapshot: { Args: Record<PropertyKey, never>; Returns: Json }
+      community_public_search: { Args: { search_query: string; result_limit?: number }; Returns: Json }
       community_join_review_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       community_feedback_review_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       review_community_join_request: { Args: { target_request_id: string; decision_value: string }; Returns: boolean }

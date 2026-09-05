@@ -6,8 +6,8 @@ Last updated: 2026-09-04
 
 Finish the Community public/member UX polish after the profile, public-feed media, and PWA
 foundations were deployed. The public membership and feedback forms are compact expandable
-panels, and the latest follow-up gives the public landing surface a stronger hero, Community
-directory cards, and clearer public-update hierarchy without changing data or authorization.
+panels, the landing surface has a stronger visual hierarchy, and the latest follow-up adds a
+public-data search RPC and grounded search UI for public Community posts and announcements.
 Commit `d1d51ba` moved approval into the shared notification endpoint but stopped creating the tenant invitation.
 The first repair restored server-side Community invitation creation, made retry behavior
 duplicate-safe, and resurfaced approved requests that have no invitation for explicit recovery.
@@ -51,10 +51,11 @@ media authorization and install metadata for all six web applications.
 
 ## Exact next action
 
-Owner reviews the membership-panel and feed-media sizing UI diff, runs the Community lint/typecheck
-in the normal local environment, then stages/commits and deploys it. No Supabase migration is
-involved. After deploy, verify the compact “Start request” panel and confirm uploaded feed images
-render as compact 220px thumbnails while profile avatars remain usable on desktop and mobile.
+Owner reviews the public search migration and UI diff. Run
+`pnpm exec supabase db push --dry-run` and confirm it lists only
+`20260904000600_community_public_search.sql`; apply it only after review. Then run the Community
+lint/typecheck, deploy, and verify public searches return only published/clear public content,
+never member/private records, with empty and unmatched searches handled cleanly.
 
 Do not submit another join request, manually accept an invitation, or create a production
 invitation outside this recovery path.
