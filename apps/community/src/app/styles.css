@@ -17,7 +17,7 @@ textarea {
   font: inherit;
 }
 button {
-  background: #176447;
+  background: #123b5d;
   border: 0;
   border-radius: 999px;
   color: white;
@@ -30,8 +30,8 @@ button:disabled {
   opacity: 0.6;
 }
 .secondary {
-  background: #e4ece7;
-  color: #164b38;
+  background: #e5ebf2;
+  color: #123b5d;
 }
 .header-actions {
   display: flex;
@@ -65,11 +65,11 @@ button:disabled {
   margin-bottom: 6px;
 }
 .policy-card h2 {
-  color: #164b38;
+  color: #123b5d;
   margin: 28px 0 8px;
 }
 .policy-card a {
-  color: #176447;
+  color: #123b5d;
   font-weight: 700;
 }
 .policy-updated {
@@ -96,7 +96,7 @@ button:disabled {
   z-index: 10;
 }
 .community-top-nav a {
-  color: #33483c;
+  color: #334253;
   font-size: 0.86rem;
   font-weight: 750;
   text-decoration: none;
@@ -109,12 +109,12 @@ button:disabled {
   gap: 10px;
 }
 .community-wordmark {
-  color: #176447 !important;
+  color: #123b5d !important;
   flex: 0 0 auto;
 }
 .community-wordmark span {
   align-items: center;
-  background: #176447;
+  background: #123b5d;
   border-radius: 9px;
   color: white;
   display: flex;
@@ -141,13 +141,13 @@ button:disabled {
   white-space: nowrap;
 }
 .top-nav-actions .nav-join {
-  background: #176447;
+  background: #123b5d;
   border-radius: 999px;
   color: white;
   padding: 8px 12px;
 }
 .community-cover {
-  background: linear-gradient(135deg, #173f31 0%, #176447 62%, #2f8560 100%);
+  background: linear-gradient(135deg, #0b2740 0%, #123b5d 62%, #1f5f8f 100%);
   border-radius: 20px;
   color: #fffdf7;
   min-height: 280px;
@@ -193,7 +193,7 @@ button:disabled {
   background: #f1cf77;
   border: 4px solid #fffdf7;
   border-radius: 50%;
-  color: #176447;
+  color: #123b5d;
   display: flex;
   flex: 0 0 62px;
   font-size: 1.8rem;
@@ -228,7 +228,7 @@ button:disabled {
 }
 .community-tabs a {
   border-bottom: 3px solid transparent;
-  color: #5d6c63;
+  color: #5f6978;
   flex: 0 0 auto;
   font-size: .88rem;
   font-weight: 800;
@@ -238,8 +238,8 @@ button:disabled {
 }
 .community-tabs a.active,
 .community-tabs a:hover {
-  border-bottom-color: #176447;
-  color: #176447;
+  border-bottom-color: #123b5d;
+  color: #123b5d;
 }
 .public-main-layout {
   display: grid;
@@ -251,7 +251,7 @@ button:disabled {
   gap: 12px;
 }
 .about-card p:last-child {
-  color: #5d6c63;
+  color: #5f6978;
   line-height: 1.5;
   margin-bottom: 0;
 }
@@ -261,7 +261,7 @@ button:disabled {
 }
 .explore-links a {
   border-top: 1px solid #e8e3d8;
-  color: #176447;
+  color: #123b5d;
   display: flex;
   font-size: .9rem;
   font-weight: 800;
@@ -270,7 +270,7 @@ button:disabled {
   text-decoration: none;
 }
 .explore-links a:hover {
-  color: #0f4a32;
+  color: #0d314d;
 }
 .public-actions {
   display: grid;
@@ -285,7 +285,7 @@ button:disabled {
   justify-content: space-between;
 }
 .public-hero {
-  background: radial-gradient(circle at 82% 18%, rgb(231 192 102 / 30%), transparent 28%), linear-gradient(135deg, #173f31 0%, #176447 58%, #2f8560 100%);
+  background: radial-gradient(circle at 82% 18%, rgb(231 192 102 / 30%), transparent 28%), linear-gradient(135deg, #0b2740 0%, #123b5d 58%, #1f5f8f 100%);
   border-radius: 28px;
   box-shadow: 0 22px 55px rgb(23 63 49 / 20%);
   color: #fffdf7;
@@ -377,7 +377,7 @@ button:disabled {
 }
 .public-search button {
   background: #f1cf77;
-  color: #173f31;
+  color: #0b2740;
   flex: 0 0 auto;
   padding: 10px 16px;
 }
@@ -396,7 +396,7 @@ button:disabled {
   margin-top: 0;
 }
 .eyebrow {
-  color: #176447;
+  color: #123b5d;
   font-size: 0.75rem;
   font-weight: 850;
   letter-spacing: 0.12em;
@@ -418,7 +418,7 @@ button:disabled {
   margin-bottom: 22px;
 }
 .explore-panel .section-heading p:last-child {
-  color: #5d6c63;
+  color: #5f6978;
   line-height: 1.5;
   margin-bottom: 0;
   max-width: 620px;
@@ -443,15 +443,15 @@ button:disabled {
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 .community-spotlight:hover {
-  border-color: #a9c7b5;
+  border-color: #b7c8d8;
   box-shadow: 0 12px 24px rgb(37 58 46 / 10%);
   transform: translateY(-2px);
 }
 .spotlight-icon {
   align-items: center;
-  background: #e4eee8;
+  background: #e5ebf2;
   border-radius: 14px;
-  color: #176447;
+  color: #123b5d;
   display: flex;
   flex: 0 0 42px;
   font-size: 1.15rem;
@@ -463,13 +463,13 @@ button:disabled {
   margin-bottom: 6px;
 }
 .community-spotlight p {
-  color: #66736b;
+  color: #687381;
   font-size: 0.9rem;
   line-height: 1.45;
   margin-bottom: 10px;
 }
 .community-spotlight a {
-  color: #176447;
+  color: #123b5d;
   font-size: 0.88rem;
   font-weight: 800;
   text-decoration: none;
@@ -482,9 +482,9 @@ button:disabled {
   margin-bottom: 16px;
 }
 .live-pill {
-  background: #e4eee8;
+  background: #e5ebf2;
   border-radius: 999px;
-  color: #176447;
+  color: #123b5d;
   font-size: 0.76rem;
   font-weight: 800;
   padding: 7px 10px;
@@ -511,7 +511,7 @@ button:disabled {
   margin-bottom: 0;
 }
 .search-result-kind {
-  color: #176447;
+  color: #123b5d;
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -586,7 +586,7 @@ button:disabled {
   display: none;
 }
 .membership-teaser {
-  color: #5d6c63;
+  color: #5f6978;
   font-size: 0.9rem;
   margin: 8px 0 0;
 }
@@ -595,7 +595,7 @@ button:disabled {
   margin-top: 12px;
 }
 .membership-form > p {
-  color: #5d6c63;
+  color: #5f6978;
   font-size: 0.9rem;
   margin: 0;
 }
@@ -613,7 +613,7 @@ button:disabled {
   gap: 7px;
 }
 .form-grid label span {
-  color: #66736b;
+  color: #687381;
   font-weight: 400;
 }
 input,
@@ -625,7 +625,7 @@ textarea {
   padding: 12px 14px;
 }
 nav {
-  background: #173f31;
+  background: #0b2740;
   border-radius: 16px;
   display: flex;
   flex-wrap: wrap;
@@ -651,7 +651,7 @@ nav a {
   gap: 12px;
 }
 .feed-meta {
-  color: #5d6c63;
+  color: #5f6978;
   display: flex;
   font-size: 0.86rem;
   gap: 10px;
@@ -663,9 +663,9 @@ nav a {
   white-space: pre-wrap;
 }
 .tag {
-  background: #e4eee8;
+  background: #e5ebf2;
   border-radius: 999px;
-  color: #176447;
+  color: #123b5d;
   display: inline-block;
   font-size: 0.78rem;
   font-weight: 750;
@@ -697,14 +697,14 @@ nav a {
 .reaction,
 .safety-actions button,
 .report-control summary {
-  background: #edf2ee;
-  border: 1px solid #cfdbd3;
-  color: #244b3c;
+  background: #edf1f6;
+  border: 1px solid #d2d9e3;
+  color: #29435d;
   font-size: 0.8rem;
   padding: 7px 11px;
 }
 .reaction.active {
-  background: #176447;
+  background: #123b5d;
   color: white;
 }
 .comments {
