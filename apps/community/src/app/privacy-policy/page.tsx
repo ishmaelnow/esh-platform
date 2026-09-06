@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | ESH Community",
@@ -9,11 +10,11 @@ export default function CommunityPrivacyPolicy() {
   return (
     <main className="community-shell policy-shell">
       <nav className="community-top-nav" aria-label="Privacy policy navigation">
-        <a className="community-wordmark" href="/">
+        <Link className="community-wordmark" href="/">
           <span aria-hidden="true">C</span>
           <strong>ESH Community</strong>
-        </a>
-        <a className="secondary policy-home-link" href="/">Return to Community</a>
+        </Link>
+        <Link className="secondary policy-home-link" href="/">Return to Community</Link>
       </nav>
       <article className="community-card policy-card">
         <p className="eyebrow">ESH Community</p>
