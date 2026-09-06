@@ -1,12 +1,17 @@
 # Mobile app shell
 
-ESH Rider and ESH Driver use Capacitor shells around the existing deployed Next.js applications.
+ESH Rider, ESH Driver, and ESH Community use thin Capacitor shells around the existing deployed
+Next.js applications.
 The shell is intentionally thin: authentication, Supabase access, Stripe checkout, maps, dispatch,
 and financial operations remain in the existing web applications and server routes.
 
 The Rider shell uses `com.esh.rider` and loads `https://rider.eshapp.com`; the Driver shell uses
 `com.esh.driver` and loads `https://driver.eshapp.com`. `CAPACITOR_SERVER_URL` may override either
 URL for emulator development. Cleartext traffic and mixed content are disabled by default.
+The Community member shell uses `com.esh.community` and loads `https://app.community.eshapp.com`;
+`CAPACITOR_SERVER_URL` may override that URL for emulator development. Community Administration
+remains web-only. Community native sign-in uses `com.esh.community://auth/callback`; the hosted
+HTTPS callback remains available for browser/PWA sign-in.
 
 Rider Android magic-link authentication uses the verified HTTPS App Link
 `https://rider.eshapp.com/auth/callback?tenant=<tenantSlug>`. The Rider manifest declares the

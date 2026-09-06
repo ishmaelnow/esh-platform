@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   createIsolatedBrowserSupabaseClient,
   type CommunityFeedItem,
@@ -277,6 +279,36 @@ export default function CommunityHome() {
   }, [client, publicSurface, resolveCommunityAdmission]);
 
   useEffect(() => {
+    if (!client || publicSurface || !Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    const completeNativeCallback = async (callbackUrl: string) => {
+      const callback = new URL(callbackUrl);
+      const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
+      if (callbackError) throw new Error(`Sign-in could not be completed: ${callbackError}`);
+      const code = callback.searchParams.get("code");
+      if (code) {
+        const { error } = await client.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+      } else {
+        const hash = new URLSearchParams(callback.hash.replace(/^#/, ""));
+        const accessToken = hash.get("access_token");
+        const refreshToken = hash.get("refresh_token");
+        if (!accessToken || !refreshToken) throw new Error("This sign-in link is missing its authentication details. Request a new link and try again.");
+        const { error } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (error) throw error;
+      }
+      if (!cancelled) setMessage("Signed in. Opening Community…");
+    };
+    const listener = App.addListener("appUrlOpen", ({ url: callbackUrl }) => {
+      void completeNativeCallback(callbackUrl).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Sign-in could not be completed."));
+    });
+    void App.getLaunchUrl().then((launch) => {
+      if (launch?.url) void completeNativeCallback(launch.url).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Sign-in could not be completed."));
+    });
+    return () => { cancelled = true; void listener.then((handle) => handle.remove()); };
+  }, [client, publicSurface]);
+
+  useEffect(() => {
     if (!client || session || !publicSurface) return;
     void client.rpc("community_public_directory_snapshot").then(({ data }) => {
       setPublicCommunities(Array.isArray(data) ? data as unknown as PublicCommunity[] : []);
@@ -320,7 +352,7 @@ export default function CommunityHome() {
     try {
       const { error } = await client.auth.signInWithOtp({
         email: formText(form, "email").trim(),
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback`, shouldCreateUser: false },
+        options: { emailRedirectTo: Capacitor.isNativePlatform() ? "com.esh.community://auth/callback" : `${window.location.origin}/auth/callback`, shouldCreateUser: false },
       });
       if (error) throw error;
       setMessage("Check your email and open the newest secure sign-in link once.");

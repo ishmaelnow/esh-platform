@@ -9,7 +9,9 @@ foundations were deployed. The public membership and feedback forms are compact 
 panels, the landing surface has a stronger visual hierarchy, and grounded public search is live.
 Admin-managed, labeled, expirable starter information is deployed. The current follow-up is a
 mobile-first Facebook-inspired Community public-page information-architecture redesign using
-ESH branding, without changing backend contracts.
+ESH branding, without changing backend contracts. The first step toward the native member app is
+also in place: Community now has a thin Capacitor configuration loading the existing member web
+app at `app.community.eshapp.com`.
 Commit `d1d51ba` moved approval into the shared notification endpoint but stopped creating the tenant invitation.
 The first repair restored server-side Community invitation creation, made retry behavior
 duplicate-safe, and resurfaced approved requests that have no invitation for explicit recovery.
@@ -53,8 +55,9 @@ media authorization and install metadata for all six web applications.
 
 ## Exact next action
 
-Owner reviews the mobile-first public-page UI diff, runs the Community lint/typecheck/build and
-browser checks, then stages/commits and deploys it. No Supabase migration is involved. Verify the
+Owner reviews the mobile-first public-page and Community Capacitor configuration diff, runs the
+Community lint/typecheck/build and browser checks, then stages/commits and deploys it. No Supabase
+migration is involved. Verify the
 compact navigation, cover/identity header, horizontal tabs, feed-first mobile layout, desktop
 sidebar/feed expansion, public search, sign-in, membership, feedback, and authenticated return-home
 actions.
