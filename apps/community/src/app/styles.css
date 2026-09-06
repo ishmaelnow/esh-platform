@@ -55,6 +55,33 @@ button:disabled {
   max-width: 1440px;
   width: 100%;
 }
+.policy-shell {
+  max-width: 960px;
+}
+.policy-card {
+  line-height: 1.65;
+}
+.policy-card h1 {
+  margin-bottom: 6px;
+}
+.policy-card h2 {
+  color: #164b38;
+  margin: 28px 0 8px;
+}
+.policy-card a {
+  color: #176447;
+  font-weight: 700;
+}
+.policy-updated {
+  color: #5b6b62;
+  font-size: .9rem;
+}
+.policy-home-link {
+  align-items: center;
+  display: inline-flex;
+  padding: 10px 14px;
+  text-decoration: none;
+}
 .community-top-nav {
   align-items: center;
   background: #fffdf7;
