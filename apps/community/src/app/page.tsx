@@ -263,7 +263,10 @@ export default function CommunityHome() {
     } else setProfileAvatarUrl(null);
   }, [client]);
 
-  useEffect(() => { setPublicSurface(window.location.hostname === "community.eshapp.com"); }, []);
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    setPublicSurface(hostname === "community.eshapp.com" || hostname === "app.community.eshapp.com");
+  }, []);
 
   useEffect(() => {
     if (publicSurface) { setAuthResolved(true); return; }
