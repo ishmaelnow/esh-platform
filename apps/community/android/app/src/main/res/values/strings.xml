@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ESH Community</string>
+    <string name="title_activity_main">ESH Community</string>
+    <string name="package_name">com.esh.community</string>
+    <string name="custom_url_scheme">com.esh.community</string>
+</resources>
