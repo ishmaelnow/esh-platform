@@ -171,6 +171,7 @@ button:disabled {
 .community-cover .hero-copy {
   margin-inline: auto;
   text-align: center;
+  width: 100%;
 }
 .community-cover .eyebrow {
   color: #f1cf77;
@@ -368,6 +369,8 @@ button:disabled {
   display: flex;
   gap: 8px;
   padding: 6px;
+  margin-inline: auto;
+  width: 100%;
 }
 .public-search input {
   background: transparent;
