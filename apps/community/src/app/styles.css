@@ -793,6 +793,16 @@ nav a {
   .community-top-nav {
     top: 4px;
   }
+  .community-top-nav .top-nav-links {
+    display: none;
+  }
+  .community-top-nav {
+    gap: 8px;
+    padding: 7px 8px;
+  }
+  .top-nav-actions {
+    margin-left: auto;
+  }
   .top-nav-links {
     justify-content: flex-start;
   }
@@ -801,11 +811,28 @@ nav a {
   }
   .community-cover {
     border-radius: 16px;
-    min-height: 300px;
-    padding: 24px 16px 18px;
+    min-height: 0;
+    padding: 18px 16px 14px;
   }
   .community-cover h1 {
-    font-size: clamp(2rem, 10vw, 2.8rem);
+    font-size: clamp(1.7rem, 8vw, 2.25rem);
+    line-height: 1;
+    margin-bottom: 9px;
+  }
+  .community-cover .hero-copy > p:last-child {
+    font-size: .9rem;
+  }
+  .community-identity {
+    margin-top: 14px;
+  }
+  .community-identity span {
+    font-size: .76rem;
+  }
+  .community-cover .public-search {
+    margin-top: 14px;
+  }
+  .community-cover .public-search small {
+    font-size: .72rem;
   }
   .community-avatar {
     flex-basis: 54px;
