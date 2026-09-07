@@ -150,9 +150,6 @@ button:disabled {
   background: linear-gradient(135deg, #0b2740 0%, #123b5d 62%, #1f5f8f 100%);
   border-radius: 20px;
   color: #fffdf7;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   min-height: 280px;
   overflow: hidden;
   padding: 28px 20px 20px;
@@ -170,11 +167,6 @@ button:disabled {
 .community-cover .public-search {
   position: relative;
   z-index: 1;
-}
-.community-cover .hero-copy {
-  margin-inline: auto;
-  text-align: center;
-  width: min(100%, 700px);
 }
 .community-cover .eyebrow {
   color: #f1cf77;
@@ -355,8 +347,6 @@ button:disabled {
   gap: 8px;
   margin-top: 24px;
   max-width: 700px;
-  margin-inline: auto;
-  width: min(100%, 700px);
   position: relative;
   z-index: 1;
 }
@@ -364,7 +354,6 @@ button:disabled {
   color: rgb(255 253 247 / 86%);
   font-size: 0.86rem;
   font-weight: 750;
-  text-align: center;
 }
 .public-search > div {
   background: rgb(255 253 247 / 12%);
@@ -373,8 +362,6 @@ button:disabled {
   display: flex;
   gap: 8px;
   padding: 6px;
-  margin-inline: auto;
-  width: 100%;
 }
 .public-search input {
   background: transparent;
