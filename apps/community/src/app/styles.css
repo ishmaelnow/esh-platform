@@ -168,6 +168,10 @@ button:disabled {
   position: relative;
   z-index: 1;
 }
+.community-cover .hero-copy {
+  margin-inline: auto;
+  text-align: center;
+}
 .community-cover .eyebrow {
   color: #f1cf77;
 }
@@ -347,6 +351,7 @@ button:disabled {
   gap: 8px;
   margin-top: 24px;
   max-width: 700px;
+  margin-inline: auto;
   position: relative;
   z-index: 1;
 }
@@ -354,6 +359,7 @@ button:disabled {
   color: rgb(255 253 247 / 86%);
   font-size: 0.86rem;
   font-weight: 750;
+  text-align: center;
 }
 .public-search > div {
   background: rgb(255 253 247 / 12%);
