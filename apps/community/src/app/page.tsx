@@ -660,7 +660,7 @@ export default function CommunityHome() {
           </div>
           {publicSurface ? <form className="public-search" onSubmit={(event) => void searchPublicCommunity(event)}><label htmlFor="public-community-search">Search public Community information</label><div><input id="public-community-search" name="public_search" onChange={(event) => setSearchQuery(event.target.value)} placeholder="Try “local services” or “events”" value={searchQuery} /><button disabled={searchBusy || !searchQuery.trim()} type="submit">{searchBusy ? "Searching…" : "Search"}</button></div><small>Searches public posts and announcements only.</small></form> : null}
         </header>
-        {message ? <p className={message.includes("submitted") || message.includes("Thank you") ? "notice" : "error"}>{message}</p> : null}
+        {message ? <p className={message.includes("submitted") || message.includes("Thank you") || message.includes("Check your email") || message.includes("Signed in") ? "notice" : "error"}>{message}</p> : null}
         {publicSurface ? <div className="community-tabs" role="tablist" aria-label="Community sections"><a className="active" href="#top">Home</a><a href="#about">About</a><a href="#public-updates">Posts</a><a href="#services">Services</a><a href="#member-actions">Join Community</a><a href="https://app.community.eshapp.com/">Member sign in</a></div> : null}
         {publicSurface ? <>
         <div className="public-main-layout">
@@ -677,7 +677,6 @@ export default function CommunityHome() {
           <h2>Member sign in</h2>
           <p>Enter your email and we’ll send a one-time secure sign-in link. No password is required.</p>
           <label>Email<input name="email" type="email" autoComplete="email" required /></label>
-          {message ? <p className="error">{message}</p> : null}
           <button disabled={busy} type="submit">Email me a secure link</button>
         </form> : null}
         {publicSurface ? <div id="member-actions" className="public-actions">
