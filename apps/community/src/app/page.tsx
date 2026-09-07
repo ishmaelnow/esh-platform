@@ -265,7 +265,7 @@ export default function CommunityHome() {
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    setPublicSurface(hostname === "community.eshapp.com");
+    setPublicSurface(hostname === "community.eshapp.com" || hostname === "app.community.eshapp.com");
   }, []);
 
   useEffect(() => {
