@@ -132,6 +132,9 @@ button:disabled {
   overflow-x: auto;
   scrollbar-width: none;
 }
+.mobile-menu-toggle {
+  display: none;
+}
 .top-nav-links::-webkit-scrollbar {
   display: none;
 }
@@ -139,6 +142,9 @@ button:disabled {
 .top-nav-actions a {
   padding: 8px 6px;
   white-space: nowrap;
+}
+.mobile-member-link {
+  display: none;
 }
 .top-nav-actions .nav-join {
   background: #123b5d;
@@ -803,6 +809,34 @@ nav a {
   .top-nav-actions {
     margin-left: auto;
   }
+  .mobile-menu-toggle {
+    background: transparent;
+    color: #123b5d;
+    display: inline-flex;
+    font-size: 1.35rem;
+    line-height: 1;
+    margin-left: auto;
+    padding: 7px 9px;
+  }
+  .community-top-nav .top-nav-links.is-open {
+    background: #fffdf7;
+    border: 1px solid #dcd6c7;
+    border-radius: 12px;
+    display: grid;
+    gap: 2px;
+    left: 8px;
+    padding: 6px;
+    position: absolute;
+    right: 8px;
+    top: calc(100% + 6px);
+    z-index: 20;
+  }
+  .community-top-nav .top-nav-links.is-open a {
+    padding: 10px 12px;
+  }
+  .community-top-nav .top-nav-links.is-open .mobile-member-link {
+    display: block;
+  }
   .top-nav-links {
     justify-content: flex-start;
   }
@@ -812,24 +846,25 @@ nav a {
   .community-cover {
     border-radius: 16px;
     min-height: 0;
-    padding: 18px 16px 14px;
+    padding: 12px 14px 10px;
   }
   .community-cover h1 {
-    font-size: clamp(1.7rem, 8vw, 2.25rem);
+    font-size: clamp(1.45rem, 7vw, 1.9rem);
     line-height: 1;
-    margin-bottom: 9px;
+    margin-bottom: 5px;
   }
   .community-cover .hero-copy > p:last-child {
-    font-size: .9rem;
+    font-size: .78rem;
+    line-height: 1.3;
   }
   .community-identity {
-    margin-top: 14px;
+    margin-top: 9px;
   }
   .community-identity span {
-    font-size: .76rem;
+    font-size: .7rem;
   }
   .community-cover .public-search {
-    margin-top: 14px;
+    margin-top: 9px;
   }
   .community-cover .public-search small {
     font-size: .72rem;
