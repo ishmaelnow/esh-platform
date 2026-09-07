@@ -132,9 +132,6 @@ button:disabled {
   overflow-x: auto;
   scrollbar-width: none;
 }
-.mobile-menu-toggle {
-  display: none;
-}
 .top-nav-links::-webkit-scrollbar {
   display: none;
 }
@@ -142,9 +139,6 @@ button:disabled {
 .top-nav-actions a {
   padding: 8px 6px;
   white-space: nowrap;
-}
-.mobile-member-link {
-  display: none;
 }
 .top-nav-actions .nav-join {
   background: #123b5d;
@@ -389,30 +383,6 @@ button:disabled {
 }
 .public-search small {
   color: rgb(255 253 247 / 65%);
-}
-.hero-actions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
-  position: relative;
-  z-index: 1;
-}
-.hero-actions a {
-  border-radius: 999px;
-  font-size: .86rem;
-  font-weight: 800;
-  padding: 9px 13px;
-  text-decoration: none;
-}
-.hero-member-link {
-  background: #f1cf77;
-  color: #0b2740;
-}
-.hero-join-link {
-  border: 1px solid rgb(255 253 247 / 55%);
-  color: #fffdf7;
 }
 .community-shell h1 {
   font-size: clamp(2.2rem, 5vw, 4rem);
@@ -833,34 +803,6 @@ nav a {
   .top-nav-actions {
     margin-left: auto;
   }
-  .mobile-menu-toggle {
-    background: transparent;
-    color: #123b5d;
-    display: inline-flex;
-    font-size: 1.35rem;
-    line-height: 1;
-    margin-left: auto;
-    padding: 7px 9px;
-  }
-  .community-top-nav .top-nav-links.is-open {
-    background: #fffdf7;
-    border: 1px solid #dcd6c7;
-    border-radius: 12px;
-    display: grid;
-    gap: 2px;
-    left: 8px;
-    padding: 6px;
-    position: absolute;
-    right: 8px;
-    top: calc(100% + 6px);
-    z-index: 20;
-  }
-  .community-top-nav .top-nav-links.is-open a {
-    padding: 10px 12px;
-  }
-  .community-top-nav .top-nav-links.is-open .mobile-member-link {
-    display: block;
-  }
   .top-nav-links {
     justify-content: flex-start;
   }
@@ -870,33 +812,24 @@ nav a {
   .community-cover {
     border-radius: 16px;
     min-height: 0;
-    padding: 12px 14px 10px;
+    padding: 18px 16px 14px;
   }
   .community-cover h1 {
-    font-size: clamp(1.45rem, 7vw, 1.9rem);
+    font-size: clamp(1.7rem, 8vw, 2.25rem);
     line-height: 1;
-    margin-bottom: 5px;
+    margin-bottom: 9px;
   }
   .community-cover .hero-copy > p:last-child {
-    font-size: .78rem;
-    line-height: 1.3;
+    font-size: .9rem;
   }
   .community-identity {
-    margin-top: 9px;
+    margin-top: 14px;
   }
   .community-identity span {
-    font-size: .7rem;
+    font-size: .76rem;
   }
   .community-cover .public-search {
-    margin-top: 9px;
-  }
-  .hero-actions {
-    gap: 7px;
-    margin-top: 9px;
-  }
-  .hero-actions a {
-    font-size: .76rem;
-    padding: 8px 10px;
+    margin-top: 14px;
   }
   .community-cover .public-search small {
     font-size: .72rem;

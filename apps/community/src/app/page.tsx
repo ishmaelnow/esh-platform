@@ -72,7 +72,6 @@ export default function CommunityHome() {
   const [publicSurface, setPublicSurface] = useState(false);
   const [membershipFormOpen, setMembershipFormOpen] = useState(false);
   const [feedbackFormOpen, setFeedbackFormOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const admissionAttempt = useRef(0);
@@ -264,7 +263,10 @@ export default function CommunityHome() {
     } else setProfileAvatarUrl(null);
   }, [client]);
 
-  useEffect(() => { setPublicSurface(window.location.hostname === "community.eshapp.com"); }, []);
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    setPublicSurface(hostname === "community.eshapp.com" || hostname === "app.community.eshapp.com");
+  }, []);
 
   useEffect(() => {
     if (publicSurface) { setAuthResolved(true); return; }
@@ -650,16 +652,15 @@ export default function CommunityHome() {
   if (!session)
     return (
       <main className="community-shell">
-        {publicSurface ? <nav className="community-top-nav" aria-label="Community navigation"><a className="community-wordmark" href="#top"><span aria-hidden="true">C</span><strong>ESH Community</strong></a><button aria-expanded={mobileMenuOpen} aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} className="mobile-menu-toggle" onClick={() => setMobileMenuOpen((open) => !open)} type="button">☰</button><div className={`top-nav-links${mobileMenuOpen ? " is-open" : ""}`}><a href="#top" onClick={() => setMobileMenuOpen(false)}>Home</a><a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a><a href="#public-updates" onClick={() => setMobileMenuOpen(false)}>Updates</a><a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a><a className="mobile-member-link" href="https://app.community.eshapp.com/" onClick={() => setMobileMenuOpen(false)}>Member sign in</a></div><div className="top-nav-actions"><a href="https://app.community.eshapp.com/">Member sign in</a><a className="nav-join" href="#member-actions">Join</a></div></nav> : null}
+        {publicSurface ? <nav className="community-top-nav" aria-label="Community navigation"><a className="community-wordmark" href="#top"><span aria-hidden="true">C</span><strong>ESH Community</strong></a><div className="top-nav-links"><a href="#top">Home</a><a href="#about">About</a><a href="#public-updates">Updates</a><a href="#services">Services</a></div><div className="top-nav-actions"><a href="https://app.community.eshapp.com/">Sign in</a><a className="nav-join" href="#member-actions">Join</a></div></nav> : null}
         <header className={publicSurface ? "community-cover" : undefined} id="top">
           <div className="hero-copy">
             <p className="eyebrow">ESH Community</p>
-            <h1>{publicSurface ? "Your local network" : "Neighbors. Information. Local help."}</h1>
+            <h1>{publicSurface ? "Your local network, made human." : "Neighbors. Information. Local help."}</h1>
             <p>{publicSurface ? "People, services, groups, and useful local updates in one trusted place." : "Sign in to your ESH Community account."}</p>
           </div>
           {publicSurface ? <div className="community-identity"><div className="community-avatar" aria-hidden="true">C</div><div><strong>ESH Community</strong><span>Local information, services, groups, and neighbor-to-neighbor connection.</span></div></div> : null}
           {publicSurface ? <form className="public-search" onSubmit={(event) => void searchPublicCommunity(event)}><label htmlFor="public-community-search">Search public Community information</label><div><input id="public-community-search" name="public_search" onChange={(event) => setSearchQuery(event.target.value)} placeholder="Try “local services” or “events”" value={searchQuery} /><button disabled={searchBusy || !searchQuery.trim()} type="submit">{searchBusy ? "Searching…" : "Search"}</button></div><small>Searches public posts and announcements only.</small></form> : null}
-          {publicSurface ? <div className="hero-actions"><a className="hero-member-link" href="https://app.community.eshapp.com/">Existing member? Sign in</a><a className="hero-join-link" href="#member-actions">New here? Request membership</a></div> : null}
         </header>
         {message ? <p className={message.includes("submitted") || message.includes("Thank you") ? "notice" : "error"}>{message}</p> : null}
         {publicSurface ? <div className="community-tabs" role="tablist" aria-label="Community sections"><a className="active" href="#top">Home</a><a href="#about">About</a><a href="#public-updates">Posts</a><a href="#services">Services</a><a href="#member-actions">Join Community</a></div> : null}
