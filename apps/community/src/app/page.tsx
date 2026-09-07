@@ -656,7 +656,7 @@ export default function CommunityHome() {
         <header className={publicSurface ? "community-cover" : undefined} id="top">
           <div className="hero-copy">
             <p className="eyebrow">ESH Community</p>
-            <h1>{publicSurface ? "Your local network, made human." : "Neighbors. Information. Local help."}</h1>
+            <h1>{publicSurface ? "Your Community" : "Neighbors. Information. Local help."}</h1>
             <p>{publicSurface ? "People, services, groups, and useful local updates in one trusted place." : "Sign in to your ESH Community account."}</p>
           </div>
           {publicSurface ? <div className="community-identity"><div className="community-avatar" aria-hidden="true">C</div><div><strong>ESH Community</strong><span>Local information, services, groups, and neighbor-to-neighbor connection.</span></div></div> : null}
