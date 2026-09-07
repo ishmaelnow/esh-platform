@@ -657,9 +657,7 @@ export default function CommunityHome() {
           <div className="hero-copy">
             <p className="eyebrow">ESH Community</p>
             <h1>{publicSurface ? "Your Community" : "Neighbors. Information. Local help."}</h1>
-            <p>{publicSurface ? "People, services, groups, and useful local updates in one trusted place." : "Sign in to your ESH Community account."}</p>
           </div>
-          {publicSurface ? <div className="community-identity"><div className="community-avatar" aria-hidden="true">C</div><div><strong>ESH Community</strong><span>Local information, services, groups, and neighbor-to-neighbor connection.</span></div></div> : null}
           {publicSurface ? <form className="public-search" onSubmit={(event) => void searchPublicCommunity(event)}><label htmlFor="public-community-search">Search public Community information</label><div><input id="public-community-search" name="public_search" onChange={(event) => setSearchQuery(event.target.value)} placeholder="Try “local services” or “events”" value={searchQuery} /><button disabled={searchBusy || !searchQuery.trim()} type="submit">{searchBusy ? "Searching…" : "Search"}</button></div><small>Searches public posts and announcements only.</small></form> : null}
         </header>
         {message ? <p className={message.includes("submitted") || message.includes("Thank you") ? "notice" : "error"}>{message}</p> : null}
