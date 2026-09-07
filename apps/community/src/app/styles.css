@@ -390,6 +390,30 @@ button:disabled {
 .public-search small {
   color: rgb(255 253 247 / 65%);
 }
+.hero-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  position: relative;
+  z-index: 1;
+}
+.hero-actions a {
+  border-radius: 999px;
+  font-size: .86rem;
+  font-weight: 800;
+  padding: 9px 13px;
+  text-decoration: none;
+}
+.hero-member-link {
+  background: #f1cf77;
+  color: #0b2740;
+}
+.hero-join-link {
+  border: 1px solid rgb(255 253 247 / 55%);
+  color: #fffdf7;
+}
 .community-shell h1 {
   font-size: clamp(2.2rem, 5vw, 4rem);
   letter-spacing: -0.055em;
@@ -865,6 +889,14 @@ nav a {
   }
   .community-cover .public-search {
     margin-top: 9px;
+  }
+  .hero-actions {
+    gap: 7px;
+    margin-top: 9px;
+  }
+  .hero-actions a {
+    font-size: .76rem;
+    padding: 8px 10px;
   }
   .community-cover .public-search small {
     font-size: .72rem;
