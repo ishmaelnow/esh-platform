@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
-import { Geolocation } from "@capacitor/geolocation";
 import Image from "next/image";
 import {
   createIsolatedBrowserSupabaseClient,
@@ -14,9 +13,14 @@ import {
   retrieveAddressSuggestion,
   reverseGeocodeAddress,
   suggestRegionalAddresses,
+  validCoordinates,
   type AddressSuggestion,
 } from "@esh-platform/maps";
-import { LiveTripMap } from "@esh-platform/maps/client";
+import { LiveTripMap, RiderHomeMap } from "@esh-platform/maps/client";
+import { RiderMenu } from "./RiderMenu";
+import { RiderLanding } from "./RiderLanding";
+import { RiderSheet } from "./RiderSheet";
+import { useRiderLocation } from "./useRiderLocation";
 import {
   bookingStatusLabel,
   canCancelBooking,
@@ -208,7 +212,6 @@ export default function RiderHome() {
   const [priceQuote, setPriceQuote] = useState<RiderPriceQuote | null>(null);
   const [pickupSearchSession, setPickupSearchSession] = useState("");
   const [destinationSearchSession, setDestinationSearchSession] = useState("");
-  const [locationBusy, setLocationBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -239,9 +242,40 @@ export default function RiderHome() {
   const [nativePaymentReturnNonce, setNativePaymentReturnNonce] = useState(0);
   const [activePortalTab, setActivePortalTab] = useState<"account" | "book" | "trips" | "payments" | "wallet">("book");
   const [showTripHistory, setShowTripHistory] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [homeDestinationEntry, setHomeDestinationEntry] = useState(false);
+  const riderIdentity = session && tenantSlug ? `${session.user.id}:${tenantSlug}` : null;
+  const locationScope = portal?.profile ? riderIdentity : null;
+  const { position: riderPosition, locate, busy: locationBusy, notice: locationNotice } = useRiderLocation(locationScope);
+  const [recenterVersion, setRecenterVersion] = useState(0);
+  const [homeAddress, setHomeAddress] = useState<{ areaId: string; address: AddressSuggestion } | null>(null);
+  const [homeAreaCenter, setHomeAreaCenter] = useState<ServiceAreaContext | null>(null);
   const [loading, setLoading] = useState(true);
   const serviceAreaContextRequest = useRef(0);
+  const addressRequest = useRef(0);
+  useEffect(() => {
+    ++addressRequest.current; ++serviceAreaContextRequest.current;
+    setHomeAddress(null); setPickupSelection(null); setDestinationSelection(null);
+    setPickupQuery(""); setDestinationQuery(""); setServiceAreaContext(null); setServiceAreaId("");
+  }, [riderIdentity]);
   const processedAuthCallbacks = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (priceQuote || recurringOccurrenceId) setBookingOpen(true);
+  }, [priceQuote, recurringOccurrenceId]);
+
+  const firstHomeAreaId = portal?.profile ? portal.serviceAreas[0]?.serviceAreaId : undefined;
+  useEffect(() => {
+    setHomeAreaCenter(null);
+    if (!firstHomeAreaId || !supabase || !tenantSlug) return;
+    let cancelled = false;
+    void supabase.rpc("my_rider_service_area_context", {
+      target_tenant_slug: tenantSlug, target_service_area_id: firstHomeAreaId,
+    }).then(({ data, error: areaError }) => {
+      if (!cancelled && !areaError && data) setHomeAreaCenter(data as ServiceAreaContext);
+    });
+    return () => { cancelled = true; };
+  }, [firstHomeAreaId, supabase, tenantSlug]);
 
   useEffect(() => {
     if (!mapboxToken || !serviceAreaContext || !pickupSearchSession || pickupSelection) {
@@ -729,6 +763,7 @@ export default function RiderHome() {
   }
 
   async function chooseServiceArea(nextServiceAreaId: string) {
+    ++addressRequest.current;
     const requestId = serviceAreaContextRequest.current + 1;
     serviceAreaContextRequest.current = requestId;
     setServiceAreaId(nextServiceAreaId);
@@ -750,9 +785,10 @@ export default function RiderHome() {
     if (requestId !== serviceAreaContextRequest.current) return;
     if (contextError) {
       setError(contextError.message);
-      return;
+      return null;
     }
     setServiceAreaContext(data as ServiceAreaContext);
+    return data;
   }
 
   async function chooseAddressSuggestion(
@@ -760,6 +796,7 @@ export default function RiderHome() {
     suggestion: AddressSuggestion,
   ) {
     if (!mapboxToken) return;
+    const request = ++addressRequest.current;
     setPriceQuote(null);
     const sessionToken = kind === "pickup" ? pickupSearchSession : destinationSearchSession;
     try {
@@ -768,6 +805,7 @@ export default function RiderHome() {
         mapboxId: suggestion.mapboxId,
         sessionToken,
       });
+      if (request !== addressRequest.current) return;
       if (kind === "pickup") {
         setPickupQuery(selected.label);
         setPickupSelection(selected);
@@ -783,23 +821,26 @@ export default function RiderHome() {
   }
 
   async function useCurrentLocation() {
-    if (!mapboxToken) return;
-    setLocationBusy(true); setError(""); setMessage("");
+    setError(""); setMessage("");
+    const position = await locate();
+    if (!position) return;
+    setRecenterVersion((value) => value + 1);
+    if (!mapboxToken || !serviceAreaContext) {
+      setMessage("Map centered on your location. Select a service area and enter your pickup address to book.");
+      return;
+    }
+    const request = ++addressRequest.current;
     try {
-      if (Capacitor.isNativePlatform()) {
-        const permission = await Geolocation.requestPermissions();
-        if (permission.location === "denied") throw new Error("Location permission is required to use your current pickup location.");
-      }
-      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 12_000, maximumAge: 30_000 });
-      const resolved = await reverseGeocodeAddress(position.coords.latitude, position.coords.longitude, mapboxToken);
+      const resolved = await reverseGeocodeAddress(position.latitude, position.longitude, mapboxToken);
+      if (request !== addressRequest.current) return;
       setPickupQuery(resolved.formattedAddress);
-      setPickupSelection({ mapboxId: `current-location:${resolved.latitude}:${resolved.longitude}`, label: resolved.formattedAddress });
+      setPickupSelection({ mapboxId: `current-location:${resolved.latitude}:${resolved.longitude}`, label: resolved.formattedAddress, latitude: resolved.latitude, longitude: resolved.longitude });
       setPickupSuggestions([]);
       setPriceQuote(null);
-      setMessage(`Pickup set to your current location (accuracy ±${Math.round(position.coords.accuracy)} m). Confirm or edit it before reviewing the fare.`);
+      setMessage(`Pickup set to your current location (accuracy ±${Math.round(position.accuracy)} m). Confirm or edit it before reviewing the fare.`);
     } catch (value) {
       setError(value instanceof Error ? value.message : "Your current location is unavailable. Enter the pickup address manually.");
-    } finally { setLocationBusy(false); }
+    }
   }
 
   async function createBooking(event: FormEvent<HTMLFormElement>) {
@@ -1052,21 +1093,39 @@ export default function RiderHome() {
 
   async function bookAgain(booking: RiderBooking) {
     if (!supabase || !tenantSlug) return;
+    const request = ++addressRequest.current;
     setBusy(true); setError(""); setMessage("");
     try {
       const area = await supabase.rpc("my_rider_service_area_context", {
         target_tenant_slug: tenantSlug, target_service_area_id: booking.serviceAreaId,
       });
       if (area.error || !area.data) throw area.error ?? new Error("Service area is unavailable.");
+      if (request !== addressRequest.current) return;
       setServiceAreaId(booking.serviceAreaId);
       setServiceAreaContext(area.data as ServiceAreaContext);
       setPickupQuery(booking.pickupAddress); setDestinationQuery(booking.destinationAddress);
-      setPickupSelection({ mapboxId: `again:${booking.bookingId}:pickup`, label: booking.pickupAddress });
-      setDestinationSelection({ mapboxId: `again:${booking.bookingId}:destination`, label: booking.destinationAddress });
+      setPickupSelection(validCoordinates(booking.pickupLatitude, booking.pickupLongitude)
+        ? { mapboxId: `again:${booking.bookingId}:pickup`, label: booking.pickupAddress, latitude: booking.pickupLatitude, longitude: booking.pickupLongitude! } : null);
+      setDestinationSelection(validCoordinates(booking.destinationLatitude, booking.destinationLongitude)
+        ? { mapboxId: `again:${booking.bookingId}:destination`, label: booking.destinationAddress, latitude: booking.destinationLatitude, longitude: booking.destinationLongitude! } : null);
+      setPickupSearchSession(crypto.randomUUID()); setDestinationSearchSession(crypto.randomUUID());
       setPriceQuote(null); setPaymentConfirmed(false); setActivePortalTab("book");
-      setMessage("Review this new trip and confirm the fare before requesting it.");
+      setBookingOpen(true);
+      setMessage("Review this new trip, select any unresolved address from search, and confirm the fare before requesting it.");
     } catch (value) { setError(riderErrorMessage(value)); }
     finally { setBusy(false); }
+  }
+
+  async function chooseHome() {
+    setHomeDestinationEntry(true); setBookingOpen(true);
+    if (!homeAddress) {
+      setMessage("Choose a destination, then use Save as Home for this session.");
+      return;
+    }
+    if (serviceAreaId !== homeAddress.areaId && !await chooseServiceArea(homeAddress.areaId)) return;
+    setDestinationQuery(homeAddress.address.label);
+    setDestinationSelection(homeAddress.address);
+    setDestinationSuggestions([]); setPriceQuote(null); setPaymentConfirmed(false);
   }
 
   async function setTripUpdates(enabled: boolean) {
@@ -1139,6 +1198,18 @@ export default function RiderHome() {
   const scheduledBookings = activeBookings.filter((booking) => booking.status === "scheduled");
   const historicalBookings = portal?.bookings.filter((booking) => ["completed", "cancelled"].includes(booking.status)) ?? [];
   const visibleRecurringSeries = recurring.series.filter((series) => series.status === "active");
+  const recentDestinations = historicalBookings.filter((booking, index, bookings) =>
+    bookings.findIndex((other) => other.destinationAddress === booking.destinationAddress) === index).slice(0, 5);
+  const mapBooking = currentBookings[0];
+  const mapDriver = tripLocations.find((location) => location.bookingId === mapBooking?.bookingId);
+  const homePickup = mapBooking?.pickupLatitude != null && mapBooking.pickupLongitude != null
+    ? { latitude: mapBooking.pickupLatitude, longitude: mapBooking.pickupLongitude, label: mapBooking.pickupAddress }
+    : validCoordinates(pickupSelection?.latitude, pickupSelection?.longitude)
+      ? { latitude: pickupSelection.latitude, longitude: pickupSelection.longitude!, label: pickupSelection.label } : null;
+  const homeDestination = mapBooking?.destinationLatitude != null && mapBooking.destinationLongitude != null
+    ? { latitude: mapBooking.destinationLatitude, longitude: mapBooking.destinationLongitude, label: mapBooking.destinationAddress }
+    : validCoordinates(destinationSelection?.latitude, destinationSelection?.longitude)
+      ? { latitude: destinationSelection.latitude, longitude: destinationSelection.longitude!, label: destinationSelection.label } : null;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return (
@@ -1152,24 +1223,30 @@ export default function RiderHome() {
   }
 
   return (
-    <main className="shell">
+    <main className={`shell map-shell view-${activePortalTab}${portal?.profile ? " rider-admitted" : ""}${portal?.profile && activePortalTab === "book" && !bookingOpen ? " rider-home" : ""}`}>
+      <RiderHomeMap accessToken={mapboxToken} center={serviceAreaContext ?? homeAreaCenter} pickup={homePickup} destination={homeDestination}
+        currentLocation={riderPosition}
+        recenterVersion={recenterVersion} locationBusy={locationBusy} locationNotice={locationNotice}
+        onLocate={() => { void locate().then((position) => { if (position) setRecenterVersion((value) => value + 1); }); }}
+        driver={mapDriver ? { latitude: mapDriver.latitude, longitude: mapDriver.longitude, label: mapDriver.fresh ? "Driver live location" : "Driver last known location" } : null} />
       <header className="hero">
         <div className="brand-lockup">
           <Image className="app-logo" src={appIcon} alt="ESH Rider" priority />
           <div>
             <p className="eyebrow">ESH Rider</p>
-            <h1>Where are you going?</h1>
-            <p className="summary">
-              Request a trip and follow your assigned Driver when they share live location.
-            </p>
+            <h1>{portal?.tenant.displayName ?? "Your next ride"}</h1>
           </div>
         </div>
-        {session ? (
-          <button className="button secondary" disabled={busy} onClick={() => void signOut()}>
-            {busy ? "Signing out…" : "Sign out"}
-          </button>
-        ) : null}
+        {portal?.profile ? <RiderMenu activeView={activePortalTab} onSelect={(view) => { setActivePortalTab(view); setBookingOpen(false); }} /> : null}
       </header>
+
+      {portal?.profile && activePortalTab !== "book" ? <button className="button secondary back-to-request" type="button" onClick={() => setActivePortalTab("book")}>← Back to request</button> : null}
+
+      {portal?.profile && activePortalTab === "book" ? <RiderLanding
+        onOrder={() => { setHomeDestinationEntry(false); setBookingOpen(true); }}
+        onHome={() => void chooseHome()}
+        destinations={recentDestinations.map((booking) => ({ id: booking.bookingId, label: booking.destinationAddress, onSelect: () => void bookAgain(booking) }))}
+      /> : null}
 
       {error ? (
         <p className="notice error" role="alert">
@@ -1182,7 +1259,7 @@ export default function RiderHome() {
         </p>
       ) : null}
 
-      <section className="card tenant-card">
+      {!portal?.profile || activePortalTab === "account" ? <section className="card tenant-card">
         <label htmlFor="tenant">Transportation provider</label>
         <select
           id="tenant"
@@ -1197,7 +1274,7 @@ export default function RiderHome() {
             </option>
           ))}
         </select>
-      </section>
+      </section> : null}
 
       {!session ? (
         <section className="card auth-card">
@@ -1269,18 +1346,12 @@ export default function RiderHome() {
         </section>
       ) : (
         <>
-        <nav className="rider-tabs" aria-label="Rider portal sections">
-          <button className={activePortalTab === "account" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("account")} type="button">Account</button>
-          <button className={activePortalTab === "book" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("book")} type="button">Book trip</button>
-          <button className={activePortalTab === "trips" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("trips")} type="button">{currentBookings.length > 0 ? "Current trip" : "My trips"}</button>
-          <button className={activePortalTab === "payments" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("payments")} type="button">Payments</button>
-          <button className={activePortalTab === "wallet" ? "button primary" : "button secondary"} onClick={() => setActivePortalTab("wallet")} type="button">Wallet</button>
-        </nav>
         <div className={activePortalTab === "book" ? "portal-grid booking-only" : "portal-grid trips-only"}>
           {activePortalTab === "account" ? (
           <section className="history sms-account-section">
             <div className="section-heading">
-              <div><p className="kicker">ESH Rider</p><h2>Account and communication settings</h2></div>
+              <div><h2>Account</h2><p>{portal.profile.displayName} · {session.user.email}</p></div>
+              <button className="button secondary compact" disabled={busy} onClick={() => void signOut()} type="button">Sign out</button>
             </div>
             <article className="card sms-consent-card">
               <div>
@@ -1325,10 +1396,13 @@ export default function RiderHome() {
           </section>
           ) : null}
 
-          {activePortalTab === "book" ? (
+          {activePortalTab === "book" && bookingOpen ? (
+          <RiderSheet onClose={() => {
+            setBookingOpen(false);
+            if (message.startsWith("Pickup set to your current location")) setMessage("");
+          }} focusDestination={homeDestinationEntry}>
           <section className="card booking-card">
-            <p className="kicker">{portal.tenant.displayName}</p>
-            <h2>Request a trip</h2>
+            <h2>Where are you going?</h2>
             {blockingBookings.length > 0 ? (
               <div className="card preference-card" role="status">
                 <div>
@@ -1340,6 +1414,8 @@ export default function RiderHome() {
             ) : null}
             <form className="form-grid" onSubmit={(event) => void createBooking(event)}>
               <fieldset className="booking-fields" disabled={blockingBookings.length > 0}>
+              <details className="wide progressive-panel" open={bookingTiming !== "now" ? true : undefined}>
+                <summary>{bookingTiming === "now" ? "Ride now" : bookingTiming === "scheduled" ? "Scheduled ride" : "Repeat rides"}<span>Change time</span></summary>
               <label className="wide">
                 When do you need the ride?
                 <select
@@ -1388,6 +1464,7 @@ export default function RiderHome() {
                   <p className="field-hint">Each occurrence is priced and paid separately before it becomes a scheduled trip. Maximum 50 trips within the provider&apos;s advance-booking window.</p>
                 </div>
               ) : null}
+              </details>
               <label className="wide">
                 Service area
                 <select
@@ -1407,7 +1484,9 @@ export default function RiderHome() {
                   ))}
                 </select>
               </label>
-              <label className="wide">
+              <details className="wide progressive-panel">
+                <summary>{riderServiceTypes.find((type) => type.id === serviceType)?.label ?? "Vehicle type"}<span>Change vehicle</span></summary>
+              <label>
                 Vehicle type
                 <select value={serviceType} onChange={(event) => { setServiceType(event.target.value as "standard" | "larger" | "premium" | "accessible"); setPriceQuote(null); }}>
                   {riderServiceTypes.map((type) => <option key={type.id} value={type.id}>{type.label}</option>)}
@@ -1421,9 +1500,11 @@ export default function RiderHome() {
                 })()}
                 <span className="field-hint">We’ll match you with an eligible vehicle. If none are available, choose another type.</span>
               </label>
+              </details>
               <div className="wide address-field">
                 <label htmlFor="rider-pickup-address">Pickup address</label>
-                <button className="button secondary compact" disabled={locationBusy || !mapboxToken || !serviceAreaContext} onClick={() => void useCurrentLocation()} type="button">
+                {!mapboxToken ? <p role="status">Address search is unavailable. You can explore the live map and locate yourself, but trip booking requires verified addresses. Contact your provider for assistance.</p> : null}
+                <button className="button secondary compact" disabled={locationBusy} onClick={() => void useCurrentLocation()} type="button">
                   {locationBusy ? "Locating…" : "Use my current location"}
                 </button>
                 <input
@@ -1434,13 +1515,14 @@ export default function RiderHome() {
                   disabled={!serviceAreaContext}
                   value={pickupQuery}
                   onChange={(event) => {
+                    ++addressRequest.current;
                     setPickupQuery(event.target.value);
                     setPriceQuote(null);
                     if (pickupSelection) setPickupSearchSession(crypto.randomUUID());
                     setPickupSelection(null);
                     setPickupSearchSession((current) => current || crypto.randomUUID());
                   }}
-                  placeholder="Example: 1200 Main St, Dallas, TX 75202"
+                  placeholder="Pickup address"
                 />
                 {pickupSelection ? <span className="address-selected">Verified address selected</span> : null}
                 {pickupSuggestions.length > 0 ? (
@@ -1468,15 +1550,21 @@ export default function RiderHome() {
                   disabled={!serviceAreaContext}
                   value={destinationQuery}
                   onChange={(event) => {
+                    ++addressRequest.current;
                     setDestinationQuery(event.target.value);
                     setPriceQuote(null);
                     if (destinationSelection) setDestinationSearchSession(crypto.randomUUID());
                     setDestinationSelection(null);
                     setDestinationSearchSession((current) => current || crypto.randomUUID());
                   }}
-                  placeholder="Example: DFW Airport, Terminal A"
+                  placeholder="Drop-off address"
                 />
                 {destinationSelection ? <span className="address-selected">Verified address selected</span> : null}
+                {validCoordinates(destinationSelection?.latitude, destinationSelection?.longitude) ? <button
+                  className="button secondary compact" type="button" onClick={() => {
+                    setHomeAddress({ areaId: serviceAreaId, address: destinationSelection });
+                    setMessage("Home is set for this signed-in session. It clears when you sign out or change provider.");
+                  }}>Save as Home for this session</button> : null}
                 {destinationSuggestions.length > 0 ? (
                   <div className="address-suggestions" role="listbox" aria-label="Destination address suggestions">
                     {destinationSuggestions.map((suggestion) => (
@@ -1492,8 +1580,10 @@ export default function RiderHome() {
                   </div>
                 ) : null}
               </div>
-              <label className="wide">
-                Trip notes
+              <details className="wide progressive-panel" open={portal.profile.accessibilityNotes ? true : undefined}>
+                <summary>Pickup notes <span>Optional</span></summary>
+              <label>
+                Notes for your driver
                 <textarea
                   name="bookingNotes"
                   rows={3}
@@ -1501,6 +1591,7 @@ export default function RiderHome() {
                   placeholder="Example: Please call when you arrive at the north entrance"
                 />
               </label>
+              </details>
               {priceQuote ? (
                 <div className="wide card">
                   <p className="kicker">{priceQuote.farePolicy === "guaranteed_upfront" ? "Guaranteed upfront fare" : priceQuote.farePolicy === "metered_actual" ? "Metered fare estimate" : "Protected flexible estimate"}</p>
@@ -1524,6 +1615,7 @@ export default function RiderHome() {
               </fieldset>
             </form>
           </section>
+          </RiderSheet>
           ) : null}
 
           {activePortalTab === "wallet" ? (
@@ -1542,18 +1634,19 @@ export default function RiderHome() {
               <div className="trip-top"><div><span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span><h3>{booking.pickupAddress}</h3><p className="destination">to {booking.destinationAddress}</p></div><time>{formatDate(booking.createdAt)}</time></div>
               <p className="area"><strong>{booking.farePolicy === "guaranteed_upfront" ? "Guaranteed fare" : booking.farePolicy === "metered_actual" ? "Fare estimate" : booking.farePolicy === "protected_flexible" ? "Protected fare estimate" : "Fare"}:</strong> {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100) : "Pending"}{booking.farePolicy === "protected_flexible" && booking.maximumFareMinor != null && booking.fareCurrencyCode ? ` · maximum ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.maximumFareMinor / 100)}` : ""}</p>
               <p className="area">{booking.serviceAreaName}{booking.driver ? ` · Driver: ${booking.driver.displayName}` : " · Finding an eligible driver"}</p>
+              {booking.vehicle ? <p className="area">{booking.vehicle.color} {booking.vehicle.modelYear} {booking.vehicle.make} {booking.vehicle.model} · {booking.vehicle.licensePlate}</p> : null}
               {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? <LiveTripMap accessToken={mapboxToken} pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }} destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }} driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null} /> : null}
               {canCancelBooking(booking.status) ? <button className="text-button danger" disabled={busy} onClick={() => void cancelBooking(booking.bookingId)}>Cancel trip</button> : null}
             </article>)}
           </section>
           ) : null}
 
-          {activePortalTab === "trips" && currentBookings.length === 0 ? (
+          {activePortalTab === "trips" ? (
           <section className="history">
             <div className="section-heading">
               <div>
                 <p className="kicker">My trips</p>
-                <h2>Booking status</h2>
+                <h2>Upcoming and past trips</h2>
               </div>
               <button
                 className="button secondary compact"
@@ -1563,6 +1656,8 @@ export default function RiderHome() {
                 Refresh
               </button>
             </div>
+            <details className="progressive-panel">
+              <summary>Trip notification settings</summary>
             <div className="card preference-card">
               <div>
                 <strong>Trip update emails</strong>
@@ -1583,16 +1678,7 @@ export default function RiderHome() {
               {pushSupported() ? <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}
             </div>
             {!pushSupported() ? <p className="notice" role="status">{pushUnavailableMessage()}</p> : null}
-            {currentBookings.length > 0 ? <section className="panel-stack">
-              <div className="section-heading"><div><p className="kicker">Current trip</p><h3>Track your active ride</h3></div></div>
-              {currentBookings.map((booking) => <article className="card trip-card" key={`current-${booking.bookingId}`}>
-                <div className="trip-top"><div><span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span><h3>{booking.pickupAddress}</h3><p className="destination">to {booking.destinationAddress}</p></div><time>{formatDate(booking.createdAt)}</time></div>
-                <p className="area">{booking.serviceAreaName}</p>
-                {booking.driver ? <p className="area">Driver: {booking.driver.displayName} · #{booking.driver.driverNumber}</p> : null}
-                {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? <LiveTripMap accessToken={mapboxToken} pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }} destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }} driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null} /> : null}
-                {canCancelBooking(booking.status) ? <button className="text-button danger" disabled={busy} onClick={() => void cancelBooking(booking.bookingId)}>Cancel trip</button> : null}
-              </article>)}
-            </section> : null}
+            </details>
             {visibleRecurringSeries.length > 0 ? <div className="panel-stack">
               <div className="section-heading"><div><p className="kicker">Recurring schedules</p><h3>Upcoming repeat trips</h3></div></div>
               {visibleRecurringSeries.map((series) => {
@@ -1762,8 +1848,9 @@ export default function RiderHome() {
             })}
           </section>
           ) : null}
-          {activePortalTab === "trips" && currentBookings.length === 0 ? (
-          <section className="history reputation-history">
+          {activePortalTab === "trips" && reputationTrips.length > 0 ? (
+          <details className="history reputation-history progressive-panel">
+            <summary>Post-trip ratings</summary>
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
             {reputationTrips.length === 0 ? <div className="card empty"><p>Completed trips eligible for rating will appear here.</p></div> : reputationTrips.map((trip) => {
@@ -1783,7 +1870,7 @@ export default function RiderHome() {
                 ) : !trip.submittedRating ? <p className="area">The 30-day rating window has closed.</p> : null}
               </article>;
             })}
-          </section>
+          </details>
           ) : null}
         </div>
         </>

@@ -144,6 +144,15 @@ deferred from this milestone and were delivered under the later milestones below
 
 ## Current Stabilization Focus
 
+- Rider home redesign is locally validated and owner-aligned, awaiting owner commit/push: a live map above a Request your ride
+  panel and destination shortcuts, a left hamburger with donut navigation, a booking sheet,
+  and progressively expanded scheduling, vehicle, notes,
+  history, and rating controls. Release review passed; the owner performs Git push/deployment.
+  Native authentication and payment-return stabilization remains deferred during this UX pass.
+  Real map integration now retains search coordinates, uses stored recent-trip coordinates,
+  provides session-only Home, and supports foreground consented GPS plus denied-permission
+  fallback. Home persistence across sessions/devices remains a separate storage feature.
+
 - Make evidence review operate only on the newest upload for each document type.
 - Show the exact driver or vehicle document blocking service availability.
 - Verify eligible drivers can move online and offline without weakening database enforcement.

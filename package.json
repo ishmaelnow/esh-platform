@@ -11,6 +11,7 @@
     "dev": "turbo run dev --parallel",
     "dev:admin": "pnpm --filter @esh-platform/admin dev",
     "dev:rider": "pnpm --filter @esh-platform/rider dev",
+    "preview:rider": "node tooling/scripts/rider-preview.cjs",
     "dev:driver": "pnpm --filter @esh-platform/driver dev",
     "dev:community": "pnpm --filter @esh-platform/community dev",
     "format": "prettier --write .",

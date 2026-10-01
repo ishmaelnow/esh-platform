@@ -11,7 +11,15 @@ export type GeocodingContext = {
 export type AddressSuggestion = {
   mapboxId: string;
   label: string;
+  latitude?: number;
+  longitude?: number;
 };
+
+export function validCoordinates(latitude: unknown, longitude: unknown): latitude is number {
+  return typeof latitude === "number" && typeof longitude === "number" &&
+    Number.isFinite(latitude) && Number.isFinite(longitude) &&
+    latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+}
 
 export function regionalBoundingBox(context: GeocodingContext, radiusKm: number) {
   const latitudeDelta = radiusKm / 111.32;
@@ -91,6 +99,7 @@ export async function retrieveAddressSuggestion({
   if (!response.ok) throw new Error("The selected address could not be verified.");
   const payload = (await response.json()) as {
     features?: Array<{
+      geometry?: { coordinates?: number[] };
       properties?: { full_address?: string; name?: string; place_formatted?: string };
     }>;
   };
@@ -99,7 +108,9 @@ export async function retrieveAddressSuggestion({
     properties?.full_address?.trim() ||
     [properties?.name, properties?.place_formatted].filter(Boolean).join(", ");
   if (!label) throw new Error("The selected address could not be verified.");
-  return { mapboxId, label } satisfies AddressSuggestion;
+  const [longitude, latitude] = payload.features?.[0]?.geometry?.coordinates ?? [];
+  if (!validCoordinates(latitude, longitude)) throw new Error("The selected address has no valid map coordinates. Choose another result.");
+  return { mapboxId, label, latitude, longitude: longitude! } satisfies AddressSuggestion;
 }
 
 export async function reverseGeocodeAddress(

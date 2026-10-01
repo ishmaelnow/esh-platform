@@ -52,3 +52,62 @@ build; the marketing version remains explicit in each Xcode project.
 
 No secrets, Supabase service-role keys, Stripe secret keys, or Twilio credentials enter the mobile
 bundle.
+
+## Rider map home (local design draft)
+
+The Rider home uses a persistent live map above a straight-edged bottom panel. At 414 × 896,
+the map ends at y=714; an 80px Request your ride row opens the existing booking form in a dismissible,
+keyboard-accessible sheet. Home selects an address saved for the current signed-in session; when
+unset it opens destination entry. Verified search results can be saved as Home, retaining their
+coordinates and authorized service area in memory. Home clears on sign-out/provider change; no
+cross-device persistence is implemented. Recent destinations reuse booking coordinates through
+the existing book-again flow; legacy records without coordinates require address search again.
+A white hamburger at x=24, y=64 opens a donut menu that
+opens Request, Trips, Payments, Wallet, and Account progressively, with a return-to-request action
+on secondary screens. Provider switching and sign-out live in Account after profile creation;
+provider selection and verified-email onboarding remain visible before admission.
+
+Scheduling, vehicle selection, and optional pickup notes expand inside the request panel. Fare
+policy, maximum fare, tolls, payment state, and the confirmation action remain visible when a quote
+exists. Required scheduled/recurring fields expand when that mode is selected. Stored accessibility
+notes are shown by default. Existing tenant authorization, RPCs, payment, consent, and notification
+contracts remain authoritative. This UI change needs no database migration.
+
+The background map uses the selected service-area center and authorized active-trip coordinates,
+including the existing Driver-location refresh. Its pins
+are display-only and do not determine pricing or booking validity; the existing trusted quote and
+trip maps retain their road-route and ETA contracts. The first authorized service area centers the
+initial map without selecting a booking area. The existing opt-in location action adds a navy
+position marker and accuracy circle. Already-granted permission enables foreground GPS updates
+without another prompt; Center on my location requests permission explicitly if needed. GPS runs
+independently of Mapbox address search. Watches stop on hidden pages, sign-out, provider changes,
+and unmount. Denial/unavailability clears the marker and offers manual pickup entry, using an
+authorized service area or a world overview when none exists. Drag, pinch/wheel zoom, and rotation
+are enabled. Subsequent GPS updates move the marker without continuously resetting gestures.
+Mapbox Streets uses pale roads and shallow building sides;
+without its token, OpenFreeMap Liberty vector tiles provide the background. Provider attribution
+remains accurate. Map failure leaves booking controls usable. No offline tenant-data caching is introduced.
+The fallback uses the [published OpenFreeMap style](https://openfreemap.org/quick_start/).
+
+The mobile layout uses viewport-fit cover, explicit full-width panels, and a ResizeObserver for
+the map canvas. Bottom-panel height reserves both the shortcut row and device safe area. Vector
+street labels use 16px text at neighborhood zoom and white halos; buildings are almost white
+with shallow extrusion on both vector providers. Lower-priority POIs, rail/path lines, and broad
+area labels are hidden to reduce clutter. OpenFreeMap assets are loaded from tiles.openfreemap.org;
+tile requests carry map viewport coordinates, with no Rider identity or business data attached.
+The location dot represents a successful opt-in GPS fix independently of reverse-geocoding success.
+Search retrieval preserves valid geographic coordinates and rejects missing/out-of-range results.
+Draft pickup/destination pins use those coordinates; quote creation still sends address strings
+to the existing trusted server geocoder. Browser GPS and map pins do not determine fares or tenant
+authorization. Address search still needs Rider's own Mapbox public configuration; the no-token
+vector-map fallback does not provide a substitute geocoding backend. No configuration was copied.
+
+Production imports no preview fixtures. Sample identity, historical destinations, GPS permission,
+and offline grid geometry exist only in tooling/scripts/rider-preview.cjs and browser/unit tests.
+
+Manual preview uses the browser's actual resizable viewport so its panel cannot sit below the
+visible desktop window. Reference checks remain 414 × 896; a 414 × 600 check covers shorter windows.
+The home action reads Request your ride and uses a transparent silver sedan illustration.
+
+The owner has aligned on the design; the validated changes remain local pending owner commit/push.
+No production deployment has been performed by Codex.

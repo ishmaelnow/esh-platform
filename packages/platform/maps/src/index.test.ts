@@ -233,7 +233,7 @@ describe("trip route formatting", () => {
         : new URL(typeof input === "string" ? input : input.url);
       expect(url.pathname).toBe("/search/searchbox/v1/retrieve/address.3141");
       expect(url.searchParams.get("session_token")).toBe("session-1");
-      return Promise.resolve(new Response(JSON.stringify({ features: [{ properties: {
+      return Promise.resolve(new Response(JSON.stringify({ features: [{ geometry: { coordinates: [-75.189, 39.953] }, properties: {
         full_address: "3141 Chestnut Street, Philadelphia, Pennsylvania 19104, United States",
       } }] })));
     });
@@ -245,6 +245,15 @@ describe("trip route formatting", () => {
     })).resolves.toEqual({
       mapboxId: "address.3141",
       label: "3141 Chestnut Street, Philadelphia, Pennsylvania 19104, United States",
+      latitude: 39.953,
+      longitude: -75.189,
     });
+  });
+  it("rejects a search result without usable geographic coordinates", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
+      features: [{ geometry: { coordinates: [181, 95] }, properties: { full_address: "Unusable result" } }],
+    })))));
+    await expect(retrieveAddressSuggestion({ accessToken: "public-token", mapboxId: "bad", sessionToken: "session" }))
+      .rejects.toThrow("no valid map coordinates");
   });
 });

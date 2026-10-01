@@ -5,7 +5,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("Google Routes toll estimates", () => {
   it("returns a USD minor-unit estimate", async () => {
-    const fetchMock = vi.fn(() => Promise.resolve(new Response(JSON.stringify({
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(new Response(JSON.stringify({
       routes: [{ travelAdvisory: { tollInfo: { estimatedPrice: [{ currencyCode: "USD", units: "6", nanos: 0 }] } } }],
     }))));
     vi.stubGlobal("fetch", fetchMock);

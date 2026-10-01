@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { formatRouteDistance, formatRouteDuration, type MapPoint } from "./index";
 
+export { RiderHomeMap } from "./RiderHomeMap";
+
 export function LiveTripMap({ accessToken, pickup, destination, driver }: {
   accessToken: string; pickup: MapPoint; destination: MapPoint; driver?: MapPoint | null;
 }) {
