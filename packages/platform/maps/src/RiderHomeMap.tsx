@@ -5,7 +5,7 @@ import mapboxgl from "mapbox-gl";
 import { validCoordinates, type MapPoint } from "./index";
 
 /** Display-only map: location is supplied by the existing consent and trip flows. */
-export function RiderHomeMap({ accessToken, center, pickup, destination, driver, currentLocation, onLocate, locationBusy, locationNotice, recenterVersion = 0 }: {
+export function RiderHomeMap({ accessToken, center, pickup, destination, driver, currentLocation, onLocate, locationBusy, locationNotice, recenterVersion = 0, bottomInset = 0 }: {
   accessToken?: string | undefined;
   center?: { latitude: number; longitude: number } | null;
   pickup?: MapPoint | null;
@@ -16,6 +16,7 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
   locationBusy?: boolean;
   locationNotice?: string;
   recenterVersion?: number;
+  bottomInset?: number;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -93,8 +94,8 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
     const points = [pickup, destination, driver].filter((point): point is MapPoint => Boolean(point && validCoordinates(point.latitude, point.longitude)));
     const explicitRecenter = lastRecenter.current !== recenterVersion;
     lastRecenter.current = recenterVersion;
-    const target = points.length ? JSON.stringify(points.map((point) => [point.latitude, point.longitude]))
-      : currentLocation ? `location:${recenterVersion}` : `area:${center?.latitude}:${center?.longitude}`;
+    const target = `${bottomInset}:` + (points.length ? JSON.stringify(points.map((point) => [point.latitude, point.longitude]))
+      : currentLocation ? `location:${recenterVersion}` : `area:${center?.latitude}:${center?.longitude}`);
     const changeCamera = cameraTarget.current !== target;
     cameraTarget.current = target;
     const markers = points.map((point) => new mapboxgl.Marker({
@@ -103,20 +104,20 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
       .setPopup(new mapboxgl.Popup({ offset: 20 }).setText(point.label)).addTo(map));
     if (currentLocation && explicitRecenter) {
       map.easeTo({ center: [currentLocation.longitude, currentLocation.latitude], zoom: 17,
-        offset: [0, map.getContainer().clientHeight * .112], duration: 0 });
+        offset: [0, bottomInset ? -bottomInset / 2 : map.getContainer().clientHeight * .112], duration: 0 });
     } else if (points.length > 0 && changeCamera) {
       const bounds = new mapboxgl.LngLatBounds();
       points.forEach((point) => bounds.extend([point.longitude, point.latitude]));
       const desktop = window.innerWidth >= 900;
       map.fitBounds(bounds, {
-        padding: desktop ? { top: 100, bottom: 70, left: 100, right: 100 }
-          : { top: 100, bottom: 60, left: 45, right: 45 },
+        padding: desktop ? { top: 100, bottom: bottomInset + 70, left: 100, right: 100 }
+          : { top: 100, bottom: bottomInset + 60, left: 45, right: 45 },
         maxZoom: 17, duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700,
       });
     } else if (!points.length && (currentLocation || center) && changeCamera) {
       const location = currentLocation ?? center;
       if (location) map.easeTo({ center: [location.longitude, location.latitude], zoom: 17, bearing: -32,
-        offset: [0, map.getContainer().clientHeight * .112], duration: 0 });
+        offset: [0, bottomInset ? -bottomInset / 2 : map.getContainer().clientHeight * .112], duration: 0 });
     }
     let locationMarker: mapboxgl.Marker | null = null;
     let updateAccuracy: (() => void) | undefined;
@@ -137,7 +138,7 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
     return () => { if (updateAccuracy) map.off("zoom", updateAccuracy); markers.forEach((marker) => marker.remove()); locationMarker?.remove(); };
   }, [ready, center?.latitude, center?.longitude, pickup?.latitude, pickup?.longitude,
     destination?.latitude, destination?.longitude, driver?.latitude, driver?.longitude,
-    currentLocation?.latitude, currentLocation?.longitude, currentLocation?.accuracy, recenterVersion]);
+    currentLocation?.latitude, currentLocation?.longitude, currentLocation?.accuracy, recenterVersion, bottomInset]);
 
   return <div className="rider-map-background">
     <div className="rider-map-canvas" ref={container} role="region" aria-label="Ride map" />

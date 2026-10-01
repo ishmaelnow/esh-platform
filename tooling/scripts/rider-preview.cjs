@@ -109,18 +109,18 @@ async function main() {
     });
     const page = await context.newPage();
     await page.goto(origin + "/?tenant=rider-preview");
-    await page.getByRole("button", { name: "Request your ride" }).waitFor();
+    await page.getByRole("button", { name: "Request ride" }).waitFor();
     await page.waitForFunction(() => Boolean(document.querySelector(".mapboxgl-canvas")));
     // Only this isolated browser has a pre-approved, fictional GPS position.
     // Center the map without choosing a service area or filling a booking address.
     await page.getByRole("button", { name: "Center on my location" }).click();
     await page.locator(".rider-current-position").waitFor();
     if (headless) {
-      await page.getByRole("button", { name: "Request your ride" }).click();
+      await page.getByRole("button", { name: "Request ride" }).click();
       const pickupInput = page.getByLabel("Pickup address", { exact: true });
       if (await pickupInput.inputValue() !== "" || await pickupInput.getAttribute("placeholder") !== "Pickup address")
         throw new Error("Preview must leave pickup empty with the requested placeholder.");
-      await page.getByRole("button", { name: "Back to map" }).click();
+      await page.getByRole("button", { name: "Home", exact: true }).click();
       await page.getByRole("button", { name: "Open rider menu" }).click();
       await page.getByRole("button", { name: "Account", exact: true }).click();
       await page.getByRole("heading", { name: "Account", exact: true }).waitFor();

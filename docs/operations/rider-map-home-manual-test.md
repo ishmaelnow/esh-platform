@@ -1,93 +1,83 @@
 # Rider map home review
 
-This redesign is validated locally and owner-aligned. The owner performs Git push and deployment.
-No Supabase migration is involved.
+The owner performs Git push/deployment. No Supabase migration or authentication/configuration
+change is involved. Request ride is the approved home action; do not revert it to Order now.
 
-## Manual design preview without sign-in
+## Local design preview
 
-From the repository root, run:
+From the repository root in the owner's PowerShell terminal:
 
 ```powershell
-corepack pnpm preview:rider
+node tooling/scripts/rider-preview.cjs
 ```
 
-This starts Rider at port 3001 and opens a dedicated Chromium window with sample Rider data.
-Use that window: an ordinary browser tab does not have the sample-data interception. Stop any
-existing port-3001 server first. Close the preview browser to stop its server.
+Use the dedicated browser, not an ordinary localhost tab. Close it to stop the server.
+Preview identity/history/GPS/fare responses are fixtures; live OpenFreeMap tiles are used for
+manual design review. It does not modify environment files, send emails or submit payments/trips.
+The empty pickup and Where are you going? placeholders are intentional. Actual account/location
+verification requires the normal Rider server with Rider's own public configuration.
 
-The preview uses process-only dummy configuration and browser-intercepted requests. It does not
-edit `.env.local`, change Auth redirects, send emails, or submit bookings/payments. The provider
-label says **Design preview · sample rides**. The window uses its actual resizable viewport with live
-OpenFreeMap vector tiles; identity, history, fares, and opt-in GPS remain sample data. Restart any older
-preview to load the updated fixtures. Select Request your ride, menu sections, expand booking options,
-and type sample addresses to review the fare card. Payment submission is deliberately blocked.
+## Real Rider review
 
-The isolated preview starts with a clearly fictional GPS fix, navy dot, and accuracy circle.
-Pickup starts empty with “Pickup address”; the harness does not automatically select an area or
-resolve a fictional pickup address. Without an explicit real Mapbox preview token, reverse address
-lookup reports unavailable. Close/restart older preview windows to clear their filled sample values.
-Real Rider location remains opt-in. Both vector providers support road-label styling and shallow
-3D buildings. Do not copy Admin configuration. Offline checks use fixture geography; a separate
-`--live-verify` capture verifies the entire 414 × 896 screen using public live vector tiles.
-The car is a silver sedan illustration and the action reads Request your ride.
+Use `corepack pnpm dev:rider` with Rider's own Supabase public URL/key and Mapbox public token.
+The restored local key/token are currently missing. Do not copy Admin configuration or alter
+authentication redirects. OpenFreeMap still supplies a real map without a Mapbox token, but
+address search, reverse lookup and pricing require the established Mapbox configuration.
 
-This command is for visual review only. The real authentication and live location/payment flows
-still require Rider's own verified environment and the production-test hygiene below.
+1. At 414 × 896 verify the bright interactive map, silver car, Request ride action and full
+   plus/Home/recent shortcut row. Menu is a white circle at the upper left. Check safe area,
+   horizontal swiping, attribution, no right strip and desktop maximum-width controls.
+2. Open booking. Pickup and destination must be visible immediately. A contains Use my current
+   location. B says Where are you going? and focuses search from its circle, padding or text.
+   Select real suggestions and verify the chosen address and geographic pins. No service-area
+   selector or Trip options wrapper remains.
+3. Coverage selects automatically using verified coordinates and authorized provider areas.
+   Test a pickup inside an enabled area, overlapping areas, a pickup outside all areas and a
+   destination outside the existing 800km limit from the area's center. Covered outbound
+   destinations outside pickup radius remain supported. Uncovered trips explain the failure;
+   server coverage/geocoding must gate quoting. Client coordinates alone cannot authorize pricing.
+4. Grant GPS from the A row; confirm actual coordinates resolve pickup without expanding notes.
+   Deny permission or reverse lookup: show a clear manual-entry fallback and do not invent an
+   address. Drag/zoom/rotate the map; GPS must not continuously override the camera. Background
+   stops watches. Sign-out/provider changes clear GPS and session-only Home.
+5. Swipe/select vehicles; unquoted types say Fare after route and a selected actual quote displays
+   its fare. Time/Payment remain accessible. Actual payment methods are chosen in the existing
+   secure checkout; wallet credit remains automatic. Cash is not supported.
+6. Add a note for your driver is the optional control below time/Payment. Expand notes and time
+   together, including scheduled/recurring modes. Scroll to every field. The navy action is in a
+   reserved footer with at least 8px clearance, above safe-area padding. On a physical phone open
+   the keyboard for notes/search; verify footer visibility and X/field clearance. Automated
+   visual-viewport shrink is not a physical keyboard test.
+7. Verify step-accurate Review fare / confirmation labels and fare-policy, toll, maximum and
+   payment disclosures. Do not create another production payment for visual review or disturb
+   the previously recovered successful booking/payment. Native auth/payment-return defects remain
+   deferred.
+8. Home saves selected geography for this signed-in session only; recent shortcuts reuse
+   authorized stored trip coordinates. Old records without coordinates need new address selection.
+   Trips, Payments, Wallet and Account remain in the donut; provider switching/sign-out are in
+   Account. Check onboarding, consent, notification and receipt flows remain accessible.
 
-## Review with Rider's verified configuration
+## Screenshots and isolated checks
 
-Use the normal development server for actual account/location/search tests, rather than
-`preview:rider`. Rider's own `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
-`NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` must be configured by the owner. The current restored local
-environment lacks a populated public key/token. Do not substitute Admin configuration or edit
-authentication URLs. No-token map rendering remains live through OpenFreeMap, but real address
-lookup and quoting require the established provider configuration.
+With the normal configured local Rider server running, the owner can run:
 
-1. Run the Rider application locally (`pnpm dev:rider`, port 3001). Verify the map background and
-   bottom panel at 414 × 896, 320px, and desktop widths. At the reference size the panel starts at
-   y=714, and the 46px white menu sits at x=24, y=64. The map remains pannable outside
-   panels; controls and attribution remain accessible.
-   Check the complete plus/Home/recent row, horizontal scrolling, bottom safe area, and absence of
-   a right-side blank strip. With no history, recent cards are correctly absent.
-2. Sign-in/provider selection and first-time profile creation remain accessible. After admission,
-   only Request your ride and destination shortcuts appear initially; provider switching and sign-out are in Account.
-   Request your ride opens booking; Back to map and Escape dismiss it. Unset Home opens destination
-   entry. Select a real search result, save it as Home for this session, and verify Home restores
-   its address and map pin. Sign-out/provider changes must clear it; no cross-device persistence exists.
-3. Open the donut menu. Verify Request, Trips, Payments, Wallet, and Account. Select each section,
-   confirm the menu closes, then return to Request. Use Tab/Enter, Escape, and outside dismissal.
-4. Expand the ride time, select scheduled and recurring modes, and verify all required date/time
-   inputs remain visible. Expand vehicle selection and pickup notes. Saved accessibility notes
-   remain visible by default. Service-area selection still enables address search.
-5. Review a fare using local test data. Verify the fare policy, maximum where applicable, tolls,
-   payment state, and confirmation action remain visible. Do not create another production payment
-   to review this design or disturb the previously recovered successful booking.
-6. Inspect an authorized active trip: background Driver pin follows existing location refresh,
-   vehicle identification remains visible, cancellation remains gated by trip status, and upcoming
-   trips/history remain accessible. History and ratings expand only when requested.
-7. Verify payment receipts, refund history, wallet history, SMS consent, notification preferences,
-   and native-push-unavailable messaging on their corresponding sections.
-8. Without a Mapbox token, verify live OpenFreeMap vector tiles. With failed map requests, verify an explanatory fallback and usable
-   booking controls. No location permission should be requested until the Rider chooses the
-   location action, unless permission was already granted (then no new prompt occurs).
-9. Grant location: verify centering and actual-coordinate marker updates as the device moves.
-   Drag, wheel/pinch zoom, and rotate; GPS updates must not continuously reset the camera.
-   Center on my location should recenter even with destination pins. Hide/background the app and
-   verify GPS watches stop; foreground resumes after grant. Sign-out must clear location.
-10. Deny/revoke permission or disable location services: verify clear manual-entry fallback,
-    authorized service-area map (world overview without an area), and no invented position dot.
-11. Select real destination suggestions: verify pins track the returned geography. Recent trips
-    must use their stored coordinates; older records without coordinates require a new search
-    selection. No sample addresses or grid geography should appear in the normal app.
+```powershell
+node tooling/scripts/rider-capture.cjs
+```
 
-Automated local fixture checks (no production authentication or writes):
+Sign in inside that browser and follow its terminal prompts. This injects no auth, GPS, map,
+locations or fare data and submits no payments/trips. It saves complete 414 × 896 home, booking
+and expanded screenshots under ignored `test-results/rider-real-*.png`. Keep private captures
+out of Git. Physical keyboard validation requires the phone.
+
+For isolated functional/layout checks:
 
 ```powershell
 $env:RIDER_PREVIEW_PORT='3011'
 node tooling/scripts/rider-preview.cjs --tests
 ```
 
-This command uses process-only dummy configuration and an isolated build directory.
-All authentication, business responses, and map requests are intercepted with preview data.
-Screenshots are written under ignored `test-results/`. Native device validation remains an owner
-review step; this pass does not repair the deferred native authentication/payment-return defects.
+These use process-only dummy configuration and intercepted business/map responses, not production
+writes. Complete collapsed, expanded and simulated-keyboard viewport screenshots are in ignored
+test-results. Do not present them as real-account or real-geography evidence. Run production build
+and preview checks sequentially because build cleans the nested preview output.

@@ -249,6 +249,16 @@ describe("trip route formatting", () => {
       longitude: -75.189,
     });
   });
+  it("supports pickup search across regions without a manual service-area bounding box", async () => {
+    vi.stubGlobal("fetch", vi.fn((input: URL | RequestInfo) => {
+      const url = input instanceof URL ? input : new URL(typeof input === "string" ? input : input.url);
+      expect(url.searchParams.has("bbox")).toBe(false);
+      expect(url.searchParams.get("proximity")).toBe("-75.1652,39.9526");
+      return Promise.resolve(new Response(JSON.stringify({ suggestions: [] })));
+    }));
+    await suggestRegionalAddresses({ accessToken: "public-token", context: { latitude: 39.9526, longitude: -75.1652 },
+      query: "a complete pickup address", sessionToken: "session-1", types: "address" });
+  });
   it("rejects a search result without usable geographic coordinates", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({
       features: [{ geometry: { coordinates: [181, 95] }, properties: { full_address: "Unusable result" } }],

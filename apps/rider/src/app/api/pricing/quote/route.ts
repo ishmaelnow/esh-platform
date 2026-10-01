@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { geocodePermanentAddress, resolveTollsForRoute, routeTripMetrics } from "@esh-platform/maps";
+import { geocodePermanentAddress, resolveTollsForRoute, routeTripMetrics, validCoordinates } from "@esh-platform/maps";
 import { createAuthenticatedSupabaseClient, createServiceSupabaseClient, type Json } from "@esh-platform/supabase";
 import { loadTollCatalog } from "../../../../lib/toll-pricing";
 import { estimateGoogleToll } from "../../../../lib/google-tolls";
+import { resolveRideCoverage, type CoverageArea } from "../../../../lib/service-coverage";
 
 function requiredText(value: unknown, label: string) {
   if (typeof value !== "string" || !value.trim()) throw new Error(`${label} is required.`);
@@ -15,34 +16,47 @@ export async function POST(request: Request) {
     if (!authorization?.startsWith("Bearer ")) throw new Error("Authentication is required.");
     const body = (await request.json()) as Record<string, unknown>;
     const tenantSlug = requiredText(body.tenantSlug, "Tenant");
-    const serviceAreaId = requiredText(body.serviceAreaId, "Service area");
+    const requestedAreaId = typeof body.serviceAreaId === "string" ? body.serviceAreaId : "";
     const pickupAddress = requiredText(body.pickupAddress, "Pickup address");
     const destinationAddress = requiredText(body.destinationAddress, "Destination address");
     const serviceType = ["standard", "larger", "premium", "accessible"].includes(String(body.serviceType)) ? String(body.serviceType) : "standard";
     const authenticated = createAuthenticatedSupabaseClient(authorization.slice(7));
-    const [portalResult, areaResult] = await Promise.all([
-      authenticated.rpc("my_rider_portal", { target_tenant_slug: tenantSlug }),
-      authenticated.rpc("my_rider_service_area_context", {
-        target_tenant_slug: tenantSlug, target_service_area_id: serviceAreaId,
-      }),
-    ]);
+    const portalResult = await authenticated.rpc("my_rider_portal", { target_tenant_slug: tenantSlug });
     if (portalResult.error || !portalResult.data) throw portalResult.error ?? new Error("Rider profile is unavailable.");
-    if (areaResult.error || !areaResult.data) throw areaResult.error ?? new Error("Service area is unavailable.");
-    const portal = portalResult.data as unknown as { profile: { riderProfileId: string } | null };
-    const area = areaResult.data as unknown as { latitude: number; longitude: number; radiusKm: number };
+    const portal = portalResult.data as unknown as { profile: { riderProfileId: string } | null; serviceAreas: Array<{ serviceAreaId: string }> };
     if (!portal.profile) throw new Error("Create your Rider profile before requesting a fare.");
+    const authorizedIds = portal.serviceAreas.map((area) => area.serviceAreaId);
+    if (requestedAreaId && !authorizedIds.includes(requestedAreaId)) throw new Error("Service area is unavailable.");
+    const areas = await Promise.all((requestedAreaId ? [requestedAreaId] : authorizedIds).map(async (id) => {
+      const { data, error } = await authenticated.rpc("my_rider_service_area_context", {
+        target_tenant_slug: tenantSlug, target_service_area_id: id,
+      });
+      if (error || !data) throw error ?? new Error("Service coverage is unavailable.");
+      return { ...(data as unknown as CoverageArea), serviceAreaId: id };
+    }));
+    if (!areas.length) throw new Error("No service coverage is available for this provider.");
     const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
     if (!mapboxToken) throw new Error("Trip pricing maps are temporarily unavailable.");
-    const context = { latitude: area.latitude, longitude: area.longitude };
+    const pickupHint = body.pickupCoordinates as { latitude?: unknown; longitude?: unknown } | undefined;
+    const destinationHint = body.destinationCoordinates as { latitude?: unknown; longitude?: unknown } | undefined;
+    if (!requestedAreaId && (!validCoordinates(pickupHint?.latitude, pickupHint?.longitude) || !validCoordinates(destinationHint?.latitude, destinationHint?.longitude)))
+      throw new Error("Choose verified pickup and destination addresses before reviewing your fare.");
+    // Client coordinates bias disambiguation only. Permanent server geocoding determines coverage.
+    const pickupContext = validCoordinates(pickupHint?.latitude, pickupHint?.longitude)
+      ? { latitude: pickupHint.latitude, longitude: pickupHint.longitude as number } : areas[0]!;
+    const destinationContext = validCoordinates(destinationHint?.latitude, destinationHint?.longitude)
+      ? { latitude: destinationHint.latitude, longitude: destinationHint.longitude as number } : areas[0]!;
     const [pickup, destination] = await Promise.all([
       geocodePermanentAddress(pickupAddress, mapboxToken, {
-        ...context, maxDistanceKm: area.radiusKm, requireVerifiedAddress: true,
+        ...pickupContext, maxDistanceKm: requestedAreaId ? areas[0]!.radiusKm : 800, requireVerifiedAddress: true,
         requestOrigin: request.headers.get("origin") ?? undefined,
       }),
       geocodePermanentAddress(destinationAddress, mapboxToken, {
-        ...context, requestOrigin: request.headers.get("origin") ?? undefined,
+        ...destinationContext, requestOrigin: request.headers.get("origin") ?? undefined,
       }),
     ]);
+    const area = resolveRideCoverage(areas, pickup, destination);
+    const serviceAreaId = area.serviceAreaId;
     const route = await routeTripMetrics({
       accessToken: mapboxToken, pickup, destination,
       requestOrigin: request.headers.get("origin") ?? undefined,
@@ -86,7 +100,7 @@ export async function POST(request: Request) {
       .eq("currency_code", quote.currencyCode).single();
     if (currency.error || !currency.data) throw currency.error ?? new Error("Fare currency is unavailable.");
     const currencyData = currency.data as unknown as { fraction_digits: number };
-    return NextResponse.json({ ...(data as Record<string, unknown>), fractionDigits: currencyData.fraction_digits });
+    return NextResponse.json({ ...(data as Record<string, unknown>), serviceAreaId, fractionDigits: currencyData.fraction_digits });
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Fare quote could not be created." },

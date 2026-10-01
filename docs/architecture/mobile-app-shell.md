@@ -56,7 +56,7 @@ bundle.
 ## Rider map home (local design draft)
 
 The Rider home uses a persistent live map above a straight-edged bottom panel. At 414 × 896,
-the map ends at y=714; an 80px Request your ride row opens the existing booking form in a dismissible,
+the map ends at y=714; an 80px Request ride row opens the existing booking form in a dismissible,
 keyboard-accessible sheet. Home selects an address saved for the current signed-in session; when
 unset it opens destination entry. Verified search results can be saved as Home, retaining their
 coordinates and authorized service area in memory. Home clears on sign-out/provider change; no
@@ -67,10 +67,20 @@ opens Request, Trips, Payments, Wallet, and Account progressively, with a return
 on secondary screens. Provider switching and sign-out live in Account after profile creation;
 provider selection and verified-email onboarding remain visible before admission.
 
-Scheduling, vehicle selection, and optional pickup notes expand inside the request panel. Fare
+Booking uses a bottom-positioned nonmodal panel with a transparent-to-white gradient on mobile
+and desktop. The upper map remains bright and interactive; keyboard focus is not trapped.
+Pickup/drop-off share a compact rounded card, followed by horizontal selectable vehicle cards,
+a Now and Payment row, optional notes and a wide navy fare/confirmation action.
+The two address rows use navy A/B circles. Vehicle cards show car beside name and the current
+selected-route quote; unquoted types say Fare after route. Use my current location is in A;
+Add a note for your driver expands below time/Payment. Payment expands its explanation. Scrollbar
+tracks are hidden, scrolling remains available and the navy action has its own footer above safe-area padding.
+Cash is not offered because the existing backend uses Stripe and wallet credit. Longer schedules and quotes
+scroll within the bottom panel. Escape and Back to map dismiss it.
+Scheduling and optional pickup notes expand inside the request panel. Fare
 policy, maximum fare, tolls, payment state, and the confirmation action remain visible when a quote
 exists. Required scheduled/recurring fields expand when that mode is selected. Stored accessibility
-notes are shown by default. Existing tenant authorization, RPCs, payment, consent, and notification
+notes are retained inside the expandable notes control. Existing tenant authorization, RPCs, payment, consent, and notification
 contracts remain authoritative. This UI change needs no database migration.
 
 The background map uses the selected service-area center and authorized active-trip coordinates,
@@ -107,7 +117,31 @@ and offline grid geometry exist only in tooling/scripts/rider-preview.cjs and br
 
 Manual preview uses the browser's actual resizable viewport so its panel cannot sit below the
 visible desktop window. Reference checks remain 414 × 896; a 414 × 600 check covers shorter windows.
-The home action reads Request your ride and uses a transparent silver sedan illustration.
+The home action reads Request ride and uses a transparent silver sedan illustration.
+Booking uses a visible floating “← Home” button at the upper left and a viewport-wide gradient behind its
+bounded controls. GPS pickup is directly accessible in the A row. Add a note for your driver
+is a collapsed control below time/Payment. Notes remain in the submitted form while collapsed.
+Service-area selection and the Trip options wrapper are removed. The panel measures its
+height to pad the map camera so pickup pins remain above the controls, with attribution placed
+above the gradient. Payment labels reflect quote/wallet/confirmation state; the existing Stripe
+Checkout still owns actual payment-method selection. No payment method is fabricated locally.
+The customer-facing payment row reads Payment until wallet coverage or confirmation is known.
+The action lives outside the scrolling booking fields, with reserved space and safe-area padding;
+expanded fields cannot paint beneath it. VisualViewport events constrain the panel above an open
+keyboard and preserve a separate area for the floating X. Pickup/destination remain in the initial
+view. The entire destination row focuses the search input with Where are you going? wording;
+address lookup uses geographic proximity without a manual area prerequisite. Selected addresses retain the
+existing verified coordinate contract. Focus borders and controls use navy.
 
-The owner has aligned on the design; the validated changes remain local pending owner commit/push.
+Automatic coverage loads authorized service-area contexts with the signed-in tenant RPC. Selected
+coordinates give early browser feedback; new quote requests send pickupCoordinates and
+destinationCoordinates as permanent-geocoding hints. The server re-geocodes both addresses,
+selects the nearest authorized covering center deterministically, then validates pickup radius
+and the existing 800km destination limit before routing and the existing trusted quote RPC.
+Client coordinates never authorize an area or determine fares. Coverage lookup failures block
+pricing; uncovered trips explain that another pickup/destination is needed. Explicit serviceAreaId
+requests remain supported for existing recurring routes. This change needs no database migration.
+
+The owner pushed the map home as `1f0ff5d`; Rider deployment and public production assets were
+verified read-only. The bottom booking-panel refinement remains local pending review.
 No production deployment has been performed by Codex.

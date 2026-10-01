@@ -144,8 +144,16 @@ deferred from this milestone and were delivered under the later milestones below
 
 ## Current Stabilization Focus
 
-- Rider home redesign is locally validated and owner-aligned, awaiting owner commit/push: a live map above a Request your ride
-  panel and destination shortcuts, a left hamburger with donut navigation, a booking sheet,
+- Rider home redesign was owner-pushed as `1f0ff5d` and its Rider deployment verified. A local
+  follow-up integrates bottom booking with a gradient, interactive upper map, horizontal vehicle
+  cards, a floating X and camera padding. Latest home label is Request ride, GPS pickup is in
+  the A row, and optional driver notes sit below time/Payment. Service-area selection is automatic
+  from verified coordinates with server geocoding and authorized coverage checks; no Trip options
+  wrapper remains. Real-account screenshot validation awaits local Rider configuration/sign-in.
+  Payment remains the existing Stripe/wallet flow. The design has a live map above a Request ride
+  panel. Local refinement reserves an action footer below scrolling fields, handles visual-viewport
+  shrink and makes the destination row a prominent search entry. Physical-keyboard validation is pending.
+  The home retains destination shortcuts, a left hamburger with donut navigation, a booking sheet,
   and progressively expanded scheduling, vehicle, notes,
   history, and rating controls. Release review passed; the owner performs Git push/deployment.
   Native authentication and payment-return stabilization remains deferred during this UX pass.

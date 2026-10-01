@@ -45,7 +45,7 @@ export async function suggestRegionalAddresses({
   accessToken: string;
   context: GeocodingContext;
   query: string;
-  radiusKm: number;
+  radiusKm?: number;
   sessionToken: string;
   types: "address" | "address,poi";
   signal?: AbortSignal;
@@ -60,7 +60,7 @@ export async function suggestRegionalAddresses({
   url.searchParams.set("limit", "5");
   url.searchParams.set("types", types);
   url.searchParams.set("proximity", `${context.longitude},${context.latitude}`);
-  url.searchParams.set("bbox", regionalBoundingBox(context, radiusKm));
+  if (radiusKm !== undefined) url.searchParams.set("bbox", regionalBoundingBox(context, radiusKm));
   const response = await fetch(url, signal ? { signal } : undefined);
   if (!response.ok) throw new Error("Address suggestions are temporarily unavailable.");
   const payload = (await response.json()) as {

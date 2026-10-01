@@ -9,7 +9,7 @@ export function RiderLanding({ onOrder, onHome, destinations }: {
   return <section className="rider-landing" aria-label="Book a ride">
     <button className="order-now" type="button" onClick={onOrder}>
       <Image src="/images/rider-silver-car.png" width={62} height={44} sizes="62px" className="order-car" alt="" />
-      <span>Request your ride</span>
+      <span>Request ride</span>
       <svg viewBox="0 0 28 24" aria-hidden="true"><path d="M2 12h23M17 4l8 8-8 8" /></svg>
     </button>
     <div className="destination-shortcuts" aria-label="Destination shortcuts">
