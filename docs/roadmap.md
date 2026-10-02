@@ -319,6 +319,14 @@ deferred from this milestone and were delivered under the later milestones below
 
 ## Mobile delivery
 
+- Driver map-home polish is local: approved Rider palette/shared geographic renderer, daily
+  authorized earnings/counts, accessible side drawer, existing feature screens and a confirmed
+  availability switch. Rider remains approved at owner-pushed `95c8ae2`.
+- Driver advance preorders/offline receipt settings, SOS, daily distance and online-duration
+  aggregates need backend contracts. The new Driver surface explicitly marks unavailable data;
+  it does not invent these behaviors. See `architecture/driver-map-home.md` and
+  `operations/driver-map-home-manual-test.md` for boundaries and verification.
+
 - Current delivery in progress: Capacitor Rider and Driver shells load the existing deployed apps
   with separate native identities and secure defaults.
 - Current delivery: Rider and Driver Android verified HTTPS App Links return authentication email

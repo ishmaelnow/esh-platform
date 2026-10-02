@@ -1,58 +1,63 @@
 # Session Handoff
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 ## Current objective
 
-Preserve the approved light Rider visual design and complete actual geographic integration:
-live vector data, foreground GPS, permission fallback, coordinate-backed search and shortcuts.
-The 414 × 896 layout retains the map above y=714, Request your ride, destination shortcuts,
-left hamburger, and donut menu. Booking opens in a sheet.
-Pickup/drop-off placeholders use plain “Pickup address” and “Drop-off address” wording,
-with no sample addresses, following the owner's latest review. Search behavior is unchanged.
-The preview now centers its fictional GPS independently of booking: no automatic service-area
-selection or sample pickup prefill. Its reverse lookup returns unavailable instead of verifying
-a fictional street address. Restart the owner-launched preview to clear old in-memory values.
-Trips, Payments, Wallet, and Account appear only after selection. Scheduling, vehicle options,
-pickup notes, and ratings expand progressively. The owner has approved the design direction and
-requested exact Git commands after release review. The owner performs staging, commit, and push;
-Codex must not run those mutations. The changes are still local and production is unchanged.
+Polish the existing Driver app while preserving the owner-approved Rider implementation at
+owner-pushed `95c8ae2`. Driver now has a live map home, compact daily totals, ordered left drawer,
+verified map actions, fixed confirmed availability switch, and a separate Preorders screen.
+Existing dispatch/lifecycle/navigation, wallet/payout, ratings, documents, operating areas,
+location sharing and notification controls remain available through secondary screens.
 
-Manual review now uses `corepack pnpm preview:rider`: a separate browser with sample Rider data
-and live OpenFreeMap vector tiles. Automated checks use a simulated street grid. This is a local development harness, not an app auth bypass.
-It leaves Rider's restored environment and original sign-in function unchanged, and intercepts
-business requests; interactive live map tiles are allowed. Only sample fare review is supported; actual booking/payment submission
-is blocked. Close the preview browser to stop its development server.
+Today's count comes from authorized completed trip records; earnings and platform fees use the
+existing locked wallet/statement definitions. Unavailable data is not reported as zero. Daily
+distance/online duration, advance preorder lists/offline receipt preference and Driver SOS have no
+existing backend contract. Those gaps are explicit; no emergency action or guessed preorder data
+was introduced. Map-only foreground GPS never enables server sharing or writes coordinates.
+Traffic is an additive opt-in shared-map feature, off by default for Rider.
 
-The harness smoke check passed. The agent-launched window was not visible to the owner, so that
-preview was stopped. The owner should launch `node tooling/scripts/rider-preview.cjs` from their
-own PowerShell session. Use the resulting dedicated window; ordinary browser tabs do not receive
-the fixture interception. Rider's `.env.local` still matches its original backup and the app
-sign-in function remains original.
+Checkpoint: 10 Driver browser checks, 12 Rider regression checks, 20 Driver unit tests and 16 shared
+map unit tests passed. Driver typecheck, scoped lint and the final production build passed with
+existing Supabase realtime/Next ESLint warnings; whitespace and preview syntax checks passed.
+Complete home offline/online, drawer, Preorders and compact/desktop screenshots were checked.
+The isolated preview uses dummy SDK credentials and unchanged real OpenFreeMap resources cached
+in memory. Street-level tiles and map idle state are required before accepting home captures.
+Real Driver authentication/GPS/traffic and native hardware-back/safe-area checks remain manual.
+Production must use Driver's own valid public configuration; no environment or auth URL changed.
+
+Owner stopped this work briefly, then explicitly requested continuation. Local Driver edits are
+preserved, uncommitted and unpushed. Codex performed no Git mutation, deployment, database mutation,
+emergency, payout or production availability/trip action. Preserve all pre-existing Rider generated
+next-env/tsconfig changes and the owner's local handoff edits.
 
 ## Authoritative checkpoint
 
-- Local main and the recorded origin/main reference are at `86b123d`
-  (`revert: restore Community checkpoint 0bdaf23`, September 7). No fetch was performed.
-- The working tree was clean before Rider edits. Current changes are an uncommitted Rider UI draft,
-  a display-only shared map component, local fixture browser coverage, and related documentation.
-- Community files at HEAD match checkpoint `0bdaf23`. Its Capacitor runtime loads
-  `https://app.community.eshapp.com`. Community Android and iOS project folders already exist.
-- Earlier handoff claims about pending Community commits, passwords, invitations, and deployment
-  contradicted each other. Do not treat those old checkpoints as live operational evidence.
-- Community authorization, workspace separation, conversations/safety, services, public entry,
-  passwordless invitations, profiles, public search, and starter information exist in repository
-  history. Confirm deployed behavior separately before changing or testing their production flows.
-- Latest local migration is `20260904000700_community_starter_content.sql`.
-  Remote applied/pending migration state was not queried. Rider UI work adds no migration.
+- Local main and recorded origin/main are at owner-pushed `95c8ae2`, following `1f0ff5d`.
+  The owner's terminal confirms the push; the new production deployment is not independently verified.
+- Rider is approved. No Rider product source or environment change is part of Driver work.
+- Driver preview/build generate Driver next-env/tsconfig paths; those are not release feature files.
+- Latest local migration remains `20260904000700_community_starter_content.sql`. No migration is
+  added by this Driver work; remote migration state was not queried.
+- The owner performs all Git/deployment/database mutations.
+- Current Driver architecture: `docs/architecture/driver-map-home.md`.
+  Manual verification: `docs/operations/driver-map-home-manual-test.md`.
+- Preserve deferred native Rider sign-in/payment return, successful payment/booking records,
+  SMS/provider approval, and all unrelated Community/Admin work below.
 
 ## Rider draft and validation
 
+- Bottom-panel follow-up passed 8 browser checks, including 414 × 896, 320 × 600 and desktop
+  placement, exposed-map hit testing, vehicle selection, scheduling, GPS and geographic shortcuts.
+  Rider typecheck, scoped lint and production build passed with existing warnings. Screenshots
+  are ignored under `test-results/rider-booking-*.png`. No production writes or payments.
+  A simultaneous build initially removed the nested preview output, causing server errors;
+  sequential build then browser validation passed. Do not run those two jobs concurrently.
 - Final release review passed: 7 browser checks, 30 Rider/maps unit tests, Rider typecheck,
   scoped lint (existing vehicle-image warning), production build, and whitespace checks. The
   review fixed pre-admission clipping; a 320 × 480 onboarding test verifies scrolling.
-- Read-only remote verification confirms origin/main is still `86b123d1217b3bf7928335daeb5aa4bb3124e9d0`,
-  matching local HEAD. No fetch or Git mutation occurred. Preview-generated TypeScript paths
+- Before the owner's push, read-only remote verification confirmed the previous `86b123d` baseline.
+  It is now superseded by owner-pushed `1f0ff5d`. Preview-generated TypeScript paths
   are excluded from the staging list; environment backups and screenshots are ignored.
 - Geographic integration inspection confirmed that production already uses real Mapbox/OpenFreeMap
   vector tiles. No simulated grid, sample Rider history, or fictional GPS is imported by production.
@@ -91,7 +96,7 @@ sign-in function remains original.
   off-screen 896px browser content area. UI sizing accounts for height as well as width.
 - Home uses live Mapbox Streets, or OpenFreeMap vector tiles without a token, and a bottom Request your ride
   panel. Home uses a verified session address; recent destinations use existing book-again functionality.
-  Booking appears in a focus-trapped sheet with Escape/back dismissal. The donut menu opens Request, Trips, Payments,
+  Booking appears in a nonmodal bottom panel with Escape/X dismissal. The donut menu opens Request, Trips, Payments,
   Wallet, and Account with Escape dismissal and focus return.
 - Provider switching and sign-out are in Account after profile creation. Onboarding remains visible.
 - Fare-policy/payment disclosure and server-authoritative booking behavior remain intact.
@@ -130,22 +135,29 @@ sign-in function remains original.
 
 ## Exact next action
 
-For real geographic/manual testing, use the normal Rider dev server with Rider's own verified
-configuration, not the sample preview. Missing local public key/token must be supplied by the
-owner from the correct Rider deployment before real sign-in/search tests. Do not copy Admin
-configuration or change Auth URLs. Test physical-device permission, GPS movement, backgrounding,
-search coordinates, session Home, and real recent trips using the operations checklist.
-The isolated preview remains available for design review; its GPS/search/history are fixtures.
-Release review is complete. Give the owner exact per-file staging, commit, and push commands;
-production deployment/configuration verification remains the owner's responsibility. The original
-environment and sign-in function remain intact. Home remains session-only.
-Do not create production payments for visual review.
-Codex must not stage, commit,
-push, deploy, or run database mutations. Preserve the deferred native sign-in/payment-return
-checkpoint and successful payment/booking record.
+Owner reviews Driver home, drawer, Preorders unavailable state and secondary screens using
+`node tooling/scripts/driver-preview.cjs` from their own PowerShell session. This isolated browser
+uses fixture account/activity/GPS where explicitly supplied, unchanged real OpenFreeMap tiles and
+dummy SDK credentials; external business actions are blocked. Close the browser to stop its server.
 
-Review procedure: `docs/operations/rider-map-home-manual-test.md`.
-Architecture: `docs/architecture/mobile-app-shell.md`.
+For real-account acceptance, use Driver's own verified local public configuration and sign-in.
+Verify real map/traffic authorization, GPS permission/foreground behavior, native hardware back,
+safe areas, confirmed availability and existing dispatch/lifecycle/notifications/wallet flows.
+Do not copy Rider/Admin environment files or change Auth URLs. Do not initiate an emergency or
+production financial/trip action for visual review. If production lifecycle testing is authorized,
+use identifiable data and restore Driver Offline, temporary settings and unfinished bookings.
+
+Unsupported backend work is explicit: Driver SOS, advance reservations/preorder listings and
+offline receipt preferences, daily distance/online-duration aggregates. Do not present ordinary
+dispatch as preorders or invent totals to hide those gaps. Review the local Driver changes before
+the owner performs any Git mutation or deployment. No migration is needed for this UI work.
+
+Screenshots: ignored `test-results/driver-home-offline-414.png`,
+`driver-home-online-414.png`, `driver-home-location-414.png`, `driver-drawer-414.png`,
+`driver-preorders-414.png`, and compact/desktop captures.
+Manual procedure: `docs/operations/driver-map-home-manual-test.md`.
+Architecture: `docs/architecture/driver-map-home.md`.
+Preserve the approved Rider and deferred native Rider callback/payment records.
 
 ## Repository and deployment state
 

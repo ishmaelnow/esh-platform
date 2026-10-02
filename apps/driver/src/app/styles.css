@@ -1,4 +1,6 @@
 :root {
+  --driver-navy: #153258;
+  --driver-shadow: 0 4px 18px #1532581a;
   color-scheme: light;
   background: #f7f8fa;
   color: #111827;
@@ -11,6 +13,101 @@
     "Segoe UI",
     sans-serif;
 }
+
+/* Approved Rider palette, floating surfaces and foreground map patterns. */
+.driver-shell { color: var(--driver-navy); min-height: 100dvh; background: #fff; }
+.driver-shell button { background: var(--driver-navy); min-height: 44px; }
+.driver-shell button:disabled { cursor: default; opacity: .55; }
+.driver-shell :is(button, input, select):focus-visible { outline: 3px solid var(--driver-navy); outline-offset: 3px; }
+.driver-shell input:focus, .driver-shell select:focus { border-color: var(--driver-navy); }
+.driver-shell svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.driver-map-home { position: relative; height: 100dvh; min-height: 480px; overflow: hidden; --driver-bottom: calc(138px + env(safe-area-inset-bottom)); }
+.driver-map { position: absolute; inset: 0 0 var(--driver-bottom); }
+.driver-map .rider-map-background, .driver-map .rider-map-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.driver-map .map-fallback { position: absolute; z-index: 2; top: 300px; left: 80px; right: 80px; padding: 12px; border-radius: 12px; background: #fff; font-size: 13px; box-shadow: var(--driver-shadow); }
+.driver-map .map-traffic-notice { position: absolute; bottom: 180px; left: 80px; right: 80px; border-radius: 10px; background: #fff; padding: 10px; font-size: 12px; }
+.driver-map .rider-current-position { width: 20px; height: 20px; border: 3px solid #fff; border-radius: 50%; background: var(--driver-navy); box-shadow: 0 1px 4px #1c2b3a30; }
+.driver-map .rider-current-position::before { content: ""; position: absolute; width: var(--accuracy-size, 56px); height: var(--accuracy-size, 56px); left: 50%; top: 50%; transform: translate(-50%, -50%); background: #64748226; border: 1px solid #64748215; border-radius: 50%; z-index: -1; }
+.driver-map .mapboxgl-ctrl-bottom-left { max-width: 100%; }
+.driver-map .mapboxgl-ctrl-attrib { max-width: calc(100vw - 20px); font-size: 10px; }
+.driver-shell .driver-circle { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; min-width: 48px; padding: 0; border-radius: 50%; color: var(--driver-navy); background: #fff; box-shadow: var(--driver-shadow); }
+.driver-menu-toggle { position: fixed; top: calc(24px + env(safe-area-inset-top)); left: 24px; z-index: 20; }
+.driver-total { position: absolute; top: calc(88px + env(safe-area-inset-top)); left: 20px; right: 20px; display: flex; gap: 12px; justify-content: space-between; padding: 20px; border-radius: 10px; background: #fff; box-shadow: var(--driver-shadow); }
+.driver-total h2 { margin: 0 0 12px; font-size: 19px; color: #111; }
+.driver-total p { margin: 5px 0; font-size: 12px; color: #5e6877; }
+.driver-total p span { margin-left: 4px; }
+.driver-total-money { display: flex; flex-direction: column; gap: 8px; text-align: right; justify-content: center; min-width: 90px; }
+.driver-total-money strong { font-size: clamp(21px, 6vw, 30px); line-height: 1.15; }
+.driver-total-money span, .driver-total-money small { color: #697482; font-size: 11px; }
+.driver-map-actions { position: absolute; bottom: calc(var(--driver-bottom) + 66px); display: flex; flex-direction: column; gap: 12px; }
+.driver-actions-left { left: 20px; }
+.driver-actions-right { right: 20px; }
+.driver-circle[aria-pressed="true"] { border: 2px solid var(--driver-navy); }
+.driver-home-bottom { position: absolute; bottom: 0; left: 0; right: 0; }
+.driver-shell .driver-preorders-link { display: flex; align-items: center; gap: 5px; width: 100%; height: 58px; padding: 0 24px; border-radius: 0; text-align: left; background: #fff; color: var(--driver-navy); box-shadow: 0 -4px 14px #15325808; font-size: 18px; }
+.driver-preorders-link > span:last-child { margin-left: auto; font-size: 30px; }
+.driver-availability { position: relative; background: #080a0d; min-height: calc(80px + env(safe-area-inset-bottom)); padding: 16px 24px calc(16px + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #fff; }
+.driver-availability.is-online { background: var(--driver-navy); }
+.driver-availability > span { font-size: 14px; font-weight: 800; letter-spacing: .03em; }
+.driver-availability button[role="switch"] { position: relative; width: 104px; height: 48px; padding: 4px; border-radius: 30px; background: #555c66; flex-shrink: 0; }
+.driver-availability button[role="switch"] span { display: block; height: 40px; width: 40px; background: #fff; border-radius: 50%; box-shadow: 0 2px 4px #0002; transition: transform .15s; }
+.driver-availability.is-online button[role="switch"] { background: #377cd5; }
+.driver-availability.is-online button[role="switch"] span { transform: translateX(56px); }
+.driver-availability small { position: absolute; left: 0; right: 0; bottom: calc(2px + env(safe-area-inset-bottom)); text-align: center; font-size: 10px; }
+.driver-home-notice { position: absolute; top: calc(262px + env(safe-area-inset-top)); left: 20px; right: 20px; padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.4; background: #fffffff2; box-shadow: var(--driver-shadow); }
+.driver-shell .driver-trip-banner { position: absolute; top: calc(335px + env(safe-area-inset-top)); left: 80px; right: 80px; border-radius: 12px; box-shadow: var(--driver-shadow); font-size: 13px; }
+.driver-drawer-backdrop { position: fixed; inset: 0; z-index: 50; background: #08152866; }
+.driver-drawer { position: absolute; inset: 0 auto 0 0; width: min(87vw, 400px); background: #fff; padding: calc(68px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); overflow-y: auto; box-shadow: 4px 0 25px #0001; }
+.driver-drawer nav { display: grid; gap: 12px; }
+.driver-drawer nav button { display: flex; align-items: center; gap: 18px; padding: 15px 0; min-height: 60px; background: #fff; color: var(--driver-navy); text-align: left; font-size: 19px; }
+.driver-rating { margin-left: auto; font-size: 15px; white-space: nowrap; }
+.driver-rating > span { color: #e6b347; }
+.driver-drawer .drawer-close { position: absolute; top: calc(16px + env(safe-area-inset-top)); right: 16px; background: #fff; color: var(--driver-navy); font-size: 28px; width: 44px; height: 44px; padding: 0; }
+.driver-secondary .driver-menu-toggle { left: auto; right: 24px; }
+.driver-page, .driver-preorders { max-width: 760px; margin: auto; padding: calc(24px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom)); }
+.driver-page header { display: flex; align-items: center; gap: 16px; padding-right: 58px; margin-bottom: 24px; }
+.driver-page h1 { color: #111; font-size: 28px; line-height: 1.2; }
+.driver-page .portal-card { border: 0; padding: 0; max-width: none; box-shadow: none; }
+.driver-page .status-grid { margin-top: 0; }
+.driver-page .driver-tabs { flex-wrap: wrap; overflow: visible; }
+.driver-page .documents { border: 0; padding-top: 0; }
+.driver-page .secondary { background: #edf1f6; color: var(--driver-navy); }
+.driver-page .document-card { border-color: #e1e6ec; box-shadow: 0 3px 12px #15325808; }
+.driver-preorders h1 { margin: 26px 0; font-size: 34px; color: #101114; }
+.driver-shell .driver-page-back { border: 1px solid #d3dae3; box-shadow: none; }
+.preorder-setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #f1f3f5; border-radius: 16px; padding: 18px; color: #111; font-size: 15px; }
+.preorder-setting input { appearance: none; position: relative; width: 48px; height: 28px; border: 0; border-radius: 20px; background: #ccd1d8; padding: 3px; margin: 0; flex-shrink: 0; }
+.preorder-setting input::before { content: ""; display: block; width: 22px; height: 22px; background: #fff; border-radius: 50%; }
+.preorder-tabs { display: flex; gap: 12px; margin-top: 24px; }
+.preorder-tabs button { flex: 1; border-radius: 28px; padding: 14px 16px; background: #fff; color: #111; box-shadow: var(--driver-shadow); white-space: nowrap; font-size: 14px; }
+.preorder-tabs button span { color: #8d94a0; margin-left: 6px; }
+.preorder-tabs button[aria-selected="true"] { background: var(--driver-navy); color: #fff; }
+.preorder-tabs button[aria-selected="true"] span { color: #fff; }
+.preorder-empty { min-height: 50dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; padding: 40px 8px; }
+.preorder-empty svg { width: 80px; height: 64px; color: #a4acb7; fill: #f1f3f5; }
+.preorder-empty h2 { font-size: 19px; margin: 0; color: #647080; }
+.preorder-empty p { font-size: 14px; line-height: 1.6; color: #697482; max-width: 340px; margin: 0; }
+@media (min-width: 760px) {
+  .driver-total { width: 440px; left: 88px; right: auto; top: calc(24px + env(safe-area-inset-top)); }
+  .driver-home-notice { max-width: 440px; top: 210px; }
+  .driver-trip-banner { max-width: 440px; }
+}
+@media (max-width: 360px), (max-height: 650px) {
+  .driver-total { left: 16px; right: 16px; padding: 14px; top: calc(82px + env(safe-area-inset-top)); }
+  .driver-total h2 { font-size: 17px; margin-bottom: 8px; }
+  .driver-total-money strong { font-size: 21px; }
+  .driver-total p { font-size: 11px; }
+  .driver-map-actions { gap: 8px; bottom: calc(var(--driver-bottom) + 50px); }
+  .driver-actions-left { left: 16px; }
+  .driver-actions-right { right: 16px; }
+  .driver-shell .driver-circle { width: 44px; height: 44px; min-width: 44px; }
+  .driver-home-notice { top: 232px; font-size: 12px; left: 70px; right: 70px; }
+  .driver-shell .driver-trip-banner { top: 315px; left: 70px; right: 70px; }
+  .driver-availability { padding-inline: 16px; gap: 12px; }
+  .driver-availability > span { font-size: 12px; }
+  .driver-page, .driver-preorders { padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .driver-availability button[role="switch"] span { transition: none; } }
 
 .esh-trip-map-shell { margin-top: 1rem; }
 .esh-trip-map { width: 100%; height: 320px; border: 1px solid #d9dedb; border-radius: 14px; overflow: hidden; }

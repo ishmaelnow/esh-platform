@@ -8,6 +8,9 @@ import {
   createIsolatedBrowserSupabaseClient,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
+import { DriverShell, type DriverView } from "./DriverShell";
+import { useDriverMapLocation } from "./useDriverMapLocation";
+import { driverHomeTotals } from "../lib/home-totals";
 import { LiveTripMap } from "@esh-platform/maps/client";
 import { openDriverNavigation } from "../lib/embedded-navigation";
 import {
@@ -154,16 +157,6 @@ type DriverPayoutAccount = { exists: boolean; onboardingStatus: "not_started" | 
 type DriverBankPayout = { payoutId: string; status: "pending" | "in_transit" | "paid" | "failed" | "canceled"; currencyCode: string; amountMinor: number; automatic: boolean; method: string | null; expectedArrivalAt: string | null; failureCode: string | null; failureMessage: string | null; providerCreatedAt: string; paidAt: string | null; failedAt: string | null; reconciliationStatus: "pending" | "matched" | "partial" | "unmatched" | "unsupported_manual" | "failed"; matchedAmountMinor: number; unmatchedAmountMinor: number; reconciliationError: string | null; reconciledAt: string | null; allocations: Array<{ bookingId: string; amountMinor: number; transferredAt: string | null }> };
 type SmsSettings = { enabled: boolean; maskedPhone: string | null; verifiedAt: string | null };
 
-type DriverPortalTab =
-  | "overview"
-  | "dispatch"
-  | "earnings"
-  | "location"
-  | "reputation"
-  | "service_areas"
-  | "documents"
-  | "vehicle";
-
 const tripSoundPreferenceKey = "esh-driver-trip-sounds-enabled";
 
 export default function DriverHome() {
@@ -182,6 +175,7 @@ export default function DriverHome() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("Sign in with the email used for your application.");
   const [summary, setSummary] = useState<DriverSummary | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
@@ -213,9 +207,11 @@ export default function DriverHome() {
   const [serviceAreaMessage, setServiceAreaMessage] = useState<string | null>(null);
   const automaticAreaAttempt = useRef<string | null>(null);
   const [dispatch, setDispatch] = useState<DriverDispatch>({ offers: [], trips: [] });
+  const [dispatchAvailable, setDispatchAvailable] = useState(false);
   const [dispatchBusy, setDispatchBusy] = useState(false);
   const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
+  const [reputationAvailable, setReputationAvailable] = useState(false);
   const [wallet, setWallet] = useState<DriverWallet | null>(null);
   const [payoutAccount, setPayoutAccount] = useState<DriverPayoutAccount | null>(null);
   const [bankPayouts, setBankPayouts] = useState<DriverBankPayout[]>([]);
@@ -223,13 +219,40 @@ export default function DriverHome() {
   const [payoutMessage, setPayoutMessage] = useState<string | null>(null);
   const [statementStartDate, setStatementStartDate] = useState(() => firstDayOfCurrentMonth());
   const [statementEndDate, setStatementEndDate] = useState(() => localDateValue(new Date()));
-  const [activeTab, setActiveTab] = useState<DriverPortalTab>("overview");
+  const [activeTab, setActiveTab] = useState<DriverView>("home");
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
   const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [homeNow, setHomeNow] = useState(() => new Date());
   const knownDispatchOfferIds = useRef<Set<string>>(new Set());
 
+  const mapLocation = useDriverMapLocation(summary?.driverProfileId ?? null);
+  const dailyTotals = driverHomeTotals(wallet, reputationAvailable ? reputationTrips : null, homeNow);
+  useEffect(() => {
+    const clock = window.setInterval(() => setHomeNow(new Date()), 60000);
+    return () => window.clearInterval(clock);
+  }, []);
+  const goView = useCallback((view: DriverView) => {
+    window.history.pushState({ ...window.history.state, driverDrawer: false, driverView: view }, "");
+    setActiveTab(view);
+    window.scrollTo(0, 0);
+  }, []);
+  useEffect(() => {
+    const back = () => setActiveTab((window.history.state as { driverView?: DriverView } | null)?.driverView ?? "home");
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  useEffect(() => {
+    if (!summary || !Capacitor.isNativePlatform()) return;
+    const listener = App.addListener("backButton", () => {
+      const state = window.history.state as { driverDrawer?: boolean; driverView?: DriverView } | null;
+      if (state?.driverDrawer || activeTab !== "home" && state?.driverView) window.history.back();
+      else if (activeTab !== "home") setActiveTab("home");
+      else void App.exitApp();
+    });
+    return () => { void listener.then((handle) => handle.remove()); };
+  }, [activeTab, summary]);
   async function signOut() {
     if (!supabase) return;
     setSigningOut(true);
@@ -263,6 +286,8 @@ export default function DriverHome() {
       setMessage("Driver portal configuration is unavailable.");
       return;
     }
+    setPortalLoading(true);
+    try {
     setMessage("Connecting your approved driver account…");
     const activation = await supabase.rpc("activate_my_driver_account");
     if (activation.error) {
@@ -307,12 +332,14 @@ export default function DriverHome() {
       setServiceAreaMessage(null);
     }
     const dispatchResult = await supabase.rpc("my_driver_dispatch");
+    setDispatchAvailable(!dispatchResult.error && Boolean(dispatchResult.data));
     if (!dispatchResult.error && dispatchResult.data) {
       const nextDispatch = dispatchResult.data as unknown as DriverDispatch;
       setDispatch(nextDispatch);
       knownDispatchOfferIds.current = new Set(nextDispatch.offers.map(({ offerId }) => offerId));
     }
     const reputationResult = await supabase.rpc("my_driver_reputation");
+    setReputationAvailable(!reputationResult.error && Array.isArray(reputationResult.data));
     setReputationTrips(reputationResult.error ? [] : (reputationResult.data as unknown as ReputationTrip[]));
     const walletResult = await supabase.rpc("my_driver_wallet");
     setWallet(walletResult.error || !walletResult.data ? null : (walletResult.data as unknown as DriverWallet));
@@ -329,6 +356,7 @@ export default function DriverHome() {
     setVehiclePhotoError(false);
     setVehiclePhotoMessage(null);
     setMessage("Driver account connected.");
+    } finally { setPortalLoading(false); }
   }, [supabase]);
 
   useEffect(() => {
@@ -460,8 +488,12 @@ export default function DriverHome() {
   useEffect(() => {
     if (!session) {
       setSummary(null);
+      setReputationAvailable(false);
+      setAvailability(null);
+      setActiveTab("home");
       setServiceAreas([]);
       setDispatch({ offers: [], trips: [] });
+      setDispatchAvailable(false);
       setReputationTrips([]);
       setWallet(null);
       setPayoutAccount(null);
@@ -833,45 +865,22 @@ export default function DriverHome() {
   }
 
   async function updateAvailability(targetStatus: "online" | "offline") {
-    if (!supabase) return;
+    if (!supabase || updatingAvailability) return;
     setUpdatingAvailability(true);
-    setAvailabilityMessage(
-      targetStatus === "online" ? "Checking service eligibility…" : "Going offline…",
-    );
-    const result = await supabase.rpc("set_my_driver_availability", {
-      target_status: targetStatus,
-    });
-    if (result.error || !result.data) {
-      setAvailabilityMessage(
-        result.error
-          ? availabilityErrorMessage(result.error.message)
-          : "Availability could not be updated.",
-      );
-      if (targetStatus === "offline") {
-        setLocationSharing((current) =>
-          current
-            ? {
-                ...current,
-                sharingEnabled: false,
-                latitude: null,
-                longitude: null,
-                accuracyMeters: null,
-                recordedAt: null,
-              }
-            : current,
-        );
+    setAvailabilityMessage(targetStatus === "online" ? "Checking service eligibility…" : "Going offline…");
+    try {
+      const result = await supabase.rpc("set_my_driver_availability", { target_status: targetStatus });
+      if (result.error || !result.data) throw new Error(result.error ? availabilityErrorMessage(result.error.message) : "Availability could not be updated.");
+      const confirmed = result.data as unknown as DriverAvailability;
+      setAvailability(confirmed);
+      setAvailabilityMessage(confirmed.effectiveStatus === "online" ? "You are online and ready for service." : "You are offline.");
+      if (confirmed.requestedStatus === "offline") {
+        setLocationSharing((current) => current ? { ...current, sharingEnabled: false, latitude: null, longitude: null, accuracyMeters: null, recordedAt: null } : current);
         setLocationMessage("Location sharing stopped because you went offline.");
       }
-    } else {
-      const next = result.data as unknown as DriverAvailability;
-      setAvailability(next);
-      setAvailabilityMessage(
-        next.effectiveStatus === "online"
-          ? "You are online and ready for service."
-          : "You are offline.",
-      );
-    }
-    setUpdatingAvailability(false);
+    } catch (error) {
+      setAvailabilityMessage(error instanceof Error ? error.message : "Availability could not be updated. Please retry.");
+    } finally { setUpdatingAvailability(false); }
   }
 
   const submitLocation = useCallback(
@@ -997,6 +1006,7 @@ export default function DriverHome() {
     if (!supabase || !session) return;
     const interval = window.setInterval(() => {
       void supabase.rpc("my_driver_dispatch").then((result) => {
+        setDispatchAvailable(!result.error && Boolean(result.data));
         if (!result.error && result.data) {
           const nextDispatch = result.data as unknown as DriverDispatch;
           const newOffers = nextDispatch.offers.filter(
@@ -1149,16 +1159,15 @@ export default function DriverHome() {
     setDispatchBusy(false);
   }
 
-  return (
-    <main className="shell">
+  const content = (
       <section className="portal-card">
-        <div className="brand-lockup">
+        {!summary ? <div className="brand-lockup">
           <Image className="app-logo" src={appIcon} alt="ESH Driver" priority />
           <div>
             <p className="eyebrow">Driver portal</p>
             <h1>ESH Platform</h1>
           </div>
-        </div>
+        </div> : null}
         {!session ? (
           <form onSubmit={(event) => void signIn(event)}>
             <label>
@@ -1176,6 +1185,7 @@ export default function DriverHome() {
         ) : null}
         {summary ? (
           <div className="status-grid">
+            {activeTab === "profile" ? <>
             <h2>{summary.displayName}</h2>
             <p>Driver #{summary.driverNumber}</p>
             <dl>
@@ -1192,9 +1202,10 @@ export default function DriverHome() {
                 <dd>{summary.documentCompliance ? "satisfied" : "pending"}</dd>
               </div>
             </dl>
-            <nav className="driver-tabs" aria-label="Driver portal sections">
+            </> : null}
+            {activeTab === "profile" || activeTab === "overview" ? <nav className="driver-tabs" aria-label="Driver portal sections">
               {[
-                { key: "overview" as const, label: "Overview" },
+                { key: "overview" as const, label: "Availability" },
                 {
                   key: "dispatch" as const,
                   label:
@@ -1213,18 +1224,19 @@ export default function DriverHome() {
                   aria-current={activeTab === tab.key ? "page" : undefined}
                   className={activeTab === tab.key ? "active" : "secondary"}
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => goView(tab.key)}
                   type="button"
                 >
                   {tab.label}
                 </button>
               ))}
-            </nav>
+            </nav> : null}
+            {activeTab === "overview" ? <button className="secondary" type="button" onClick={() => void activateAndLoad()}>Refresh account status</button> : null}
             {dispatch.offers.length > 0 && activeTab !== "dispatch" ? (
               <div className="dispatch-alert" role="status">
                 <strong>New trip offer</strong>
                 <span>A time-sensitive offer is waiting. Open Dispatch before it expires.</span>
-                <button onClick={() => setActiveTab("dispatch")} type="button">
+                <button onClick={() => goView("dispatch")} type="button">
                   View offer
                 </button>
               </div>
@@ -1673,6 +1685,14 @@ export default function DriverHome() {
                 ) : <p className="document-help">Wallet information is not available yet.</p>}
               </section>
             ) : null}
+            {activeTab === "recent" ? <section className="documents">
+              <p className="document-help">Completed trips and their recorded earnings. Current assignments are in Dispatch.</p>
+              {reputationAvailable ? reputationTrips.length ? reputationTrips.map((trip) => <article className="document-card" key={trip.bookingId}>
+                <strong>{trip.pickupAddress}</strong><span>To {trip.destinationAddress}</span><span>{new Date(trip.completedAt).toLocaleString()}</span>
+                {wallet?.trips.find((entry) => entry.bookingId === trip.bookingId) ? <span>{formatCurrency(wallet.trips.find((entry) => entry.bookingId === trip.bookingId)!.earningsAmountMinor, wallet.currencyCode)} recorded earnings</span> : null}
+              </article>) : <p>No completed orders yet.</p> : <p role="status">Recent orders are unavailable. Open Settings and refresh your account.</p>}
+              <button type="button" onClick={() => goView("reputation")}>View post-trip ratings</button>
+            </section> : null}
             {activeTab === "reputation" ? (
               <section className="documents">
                 <div><p className="eyebrow">Reputation</p><h3>Post-trip ratings</h3><p className="document-help">Ratings stay private until both sides submit, or seven days pass.</p></div>
@@ -1918,7 +1938,7 @@ export default function DriverHome() {
                 ))}
               </section>
             ) : null}
-            {activeTab === "documents" ? (
+            {activeTab === "notifications" ? (
               <section className="notification-preferences">
                 <div>
                   <p className="eyebrow">Notifications</p>
@@ -1937,6 +1957,7 @@ export default function DriverHome() {
                 {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
               </section>
             ) : null}
+            {activeTab === "notifications" ? <>
             <section className="notification-preferences">
               <div><p className="eyebrow">Device alerts</p><h3>Browser push notifications</h3></div>
               {pushSupported() ? <label><input checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label> : <strong>Unavailable on this device</strong>}
@@ -1953,20 +1974,31 @@ export default function DriverHome() {
               </>}
               {smsFeedback ? <p className={smsFeedback.kind === "error" ? "form-error" : "upload-message"} role="status">{smsFeedback.message}</p> : null}
             </section>
-            <button
+            </> : null}
+            {activeTab === "overview" ? <button
               className="secondary"
               disabled={signingOut}
               onClick={() => void signOut()}
               type="button"
             >
               {signingOut ? "Signing out…" : "Sign out"}
-            </button>
+            </button> : null}
           </div>
         ) : null}
-        <p className="summary">{message}</p>
+        {!summary ? <p className="summary" role="status">{message}</p> : null}
       </section>
-    </main>
   );
+  const area = serviceAreas.find((item) => item.selected) ?? serviceAreas[0];
+  return summary ? <DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
+    center={area ? { latitude: area.centerLatitude, longitude: area.centerLongitude } : null}
+    location={mapLocation.location} locationNotice={mapLocation.notice} locationBusy={mapLocation.busy}
+    onLocate={mapLocation.locate} recenterVersion={mapLocation.recenterVersion}
+    rating={dailyTotals.rating} totals={dailyTotals} online={availability?.effectiveStatus === "online"}
+    availabilityKnown={Boolean(availability)} availabilityBusy={updatingAvailability}
+    availabilityNotice={!dispatchAvailable ? "Dispatch updates unavailable. Open Settings to refresh; existing offers may be out of date." : availabilityMessage} onAvailability={() => void updateAvailability(availability?.requestedStatus === "online" ? "offline" : "online")}
+    tripCount={dispatch.trips.length} offerCount={dispatch.offers.length} sharing={Boolean(locationSharing?.sharingEnabled)}>
+    {content}
+  </DriverShell> : <main className="shell">{content}</main>;
 }
 
 function currentPosition() {

@@ -5,7 +5,7 @@ import mapboxgl from "mapbox-gl";
 import { validCoordinates, type MapPoint } from "./index";
 
 /** Display-only map: location is supplied by the existing consent and trip flows. */
-export function RiderHomeMap({ accessToken, center, pickup, destination, driver, currentLocation, onLocate, locationBusy, locationNotice, recenterVersion = 0, bottomInset = 0 }: {
+export function RiderHomeMap({ accessToken, center, pickup, destination, driver, currentLocation, onLocate, locationBusy, locationNotice, recenterVersion = 0, bottomInset = 0, showTraffic = false }: {
   accessToken?: string | undefined;
   center?: { latitude: number; longitude: number } | null;
   pickup?: MapPoint | null;
@@ -17,13 +17,16 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
   locationNotice?: string;
   recenterVersion?: number;
   bottomInset?: number;
+  showTraffic?: boolean;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const cameraTarget = useRef("");
   const lastRecenter = useRef(recenterVersion);
   const [ready, setReady] = useState(false);
+  const [settled, setSettled] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
+  const [trafficUnavailable, setTrafficUnavailable] = useState(false);
 
   useEffect(() => {
     if (!container.current) return;
@@ -41,6 +44,8 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
       return;
     }
     mapRef.current = map;
+    map.on("idle", () => setSettled(true));
+    map.on("movestart", () => setSettled(false));
     cameraTarget.current = "";
     const resizeObserver = new ResizeObserver(() => map.resize());
     resizeObserver.observe(container.current);
@@ -84,9 +89,26 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
       }
       setReady(true);
     });
-    map.on("error", () => setUnavailable(true));
+    map.on("error", (event) => {
+      const error = event as typeof event & { sourceId?: string };
+      if (error.sourceId === "driver-traffic" || event.error.message.includes("mapbox-traffic-v1")) setTrafficUnavailable(true);
+      else setUnavailable(true);
+    });
     return () => { resizeObserver.disconnect(); mapRef.current = null; map.remove(); setReady(false); };
   }, [accessToken]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !accessToken) return;
+    if (showTraffic && !map.getSource("driver-traffic")) {
+      map.addSource("driver-traffic", { type: "vector", url: "mapbox://mapbox.mapbox-traffic-v1" });
+      const label = map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
+      map.addLayer({ id: "driver-traffic", type: "line", source: "driver-traffic", "source-layer": "traffic",
+        paint: { "line-color": ["match", ["get", "congestion"], "low", "#49a97b", "moderate", "#edbc46", "heavy", "#ef8052", "severe", "#d94141", "rgba(0,0,0,0)"],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 1, 16, 4], "line-opacity": .8 } }, label);
+    }
+    if (map.getLayer("driver-traffic")) map.setLayoutProperty("driver-traffic", "visibility", showTraffic ? "visible" : "none");
+  }, [accessToken, ready, showTraffic]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -141,8 +163,9 @@ export function RiderHomeMap({ accessToken, center, pickup, destination, driver,
     currentLocation?.latitude, currentLocation?.longitude, currentLocation?.accuracy, recenterVersion, bottomInset]);
 
   return <div className="rider-map-background">
-    <div className="rider-map-canvas" ref={container} role="region" aria-label="Ride map" />
+    <div className="rider-map-canvas" ref={container} role="region" aria-label="Ride map" data-map-ready={ready} data-map-idle={settled} />
     {unavailable ? <p className="map-fallback" role="status">Map unavailable. Your trip controls are still available.</p> : null}
+    {showTraffic && trafficUnavailable ? <p className="map-traffic-notice" role="status">Traffic is temporarily unavailable.</p> : null}
     {locationNotice ? <p className="map-location-notice" role="status">{locationNotice}</p> : null}
     {onLocate ? <button className="map-locate" type="button" aria-label="Center on my location" disabled={locationBusy} onClick={onLocate}>
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /><path d="M12 2v4m0 12v4M2 12h4m12 0h4" /></svg>
