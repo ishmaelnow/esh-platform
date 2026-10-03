@@ -6,6 +6,25 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "dist/**", "!.next/cache/**"]
     },
+    "@esh-platform/transportation-admin#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/admin/src/**",
+        "$TURBO_ROOT$/apps/admin/tsconfig.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "$TURBO_ROOT$/eslint.config.mjs"
+      ],
+      "env": [
+        "NEXT_PUBLIC_ADMIN_SURFACE",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN",
+        "NEXT_PUBLIC_TRANSPORTATION_ADMIN_URL",
+        "TRANSPORTATION_BACKEND_URL"
+      ],
+      "outputs": [".next/**", "dist/**", "!.next/cache/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

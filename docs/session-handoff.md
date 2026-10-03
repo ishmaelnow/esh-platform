@@ -9,7 +9,8 @@ add insurance as one additional document and rename Reference document to Vehicl
 document. Drivers register their own vehicles. No new fleet assignment/manual linking workflow.
 Do not expand this correction into vehicle lifecycle redesign or bypass existing eligibility.
 
-Git main/origin main is `8c8770b`, the committed applicant tab-reset fix. Preserve it.
+Git main/origin main is `b28684a`, the owner-pushed insurance review correction. It includes the
+prior `8c8770b` applicant tab-reset fix; preserve both.
 Owner applied `20261002000100_driver_applicant_portal.sql` and pushed applicant work at `a6700ea`.
 Owner supplied Ready Vercel Production listings for Driver, Rider, Transportation Admin,
 Transportation, Community and Community Admin at that commit. Shell choice remains flexible.
@@ -19,7 +20,7 @@ received. Administrator found the submitted test application under Yahooemail. I
 insurance PDFs are placeholders; do not approve them as valid compliance documents. No need to
 recreate it or sign out the approved phone Driver.
 
-Local correction removes ApplicationInsurance/linking UI. Insurance uses the original Applications
+Committed correction removes ApplicationInsurance/linking UI. Insurance uses the original Applications
 evidence list with Open, Approve evidence, Reject evidence, review notes and expiration controls.
 Application, document-history and replacement-upload labels use Vehicle registration document;
 the legacy `reference_document` key remains unchanged.
@@ -46,20 +47,71 @@ API/browser fixtures and source checks do not prove database execution/RLS/backf
 rollback SQL checks normal insurance review/rejection/future expiry without a vehicle, own status,
 four normal evidence records and revoked linking. Database and live review acceptance not run.
 
-Correction code is local and uncommitted; its migration is applied remotely by the owner.
-Preserve generated Driver/Rider/Transportation files.
+Owner supplied successful push output `8c8770b..b28684a main -> main` and Ready Vercel Production
+listings at `b28684a` for Driver, Rider, Transportation Admin, Transportation, Community and
+Community Admin. The separate Admin backend project was not listed; verify its deployed evidence
+route during actual review. The migration is applied remotely. Preserve the four generated
+Driver/Rider next-env.d.ts and tsconfig.json edits. This checkpoint adds an uncommitted handoff edit.
 Rider product source and Auth URLs/config remain unchanged. Codex performs no Git, deployment,
 database mutation, production file upload/email/review/availability/trip/payout/emergency actions.
 
 ## Exact next action
+
+Owner's build logs conclusively show Transportation at b28684a was a Turbo cache hit with
+replayed logs (all four tasks cached). Owner asked for necessary commands; local scoped cache
+fix is now prepared in turbo.json, tracking shared Admin source/config plus six intended
+Transportation environment names. Dry-run shows 118 inputs, including 103 Admin source files,
+and confirms AdminTenantApp and backend rewrite variable tracked. Direct Transportation production
+build and whitespace checks passed with process-only dummy public configuration. Turbo execution itself
+could not locate a pnpm binary in this Windows session; its graph/input dry-run succeeds.
+Next hand over turbo.json, architecture doc and this handoff for owner commit/push. No migration,
+domain, Auth URL or hosted configuration change required. Verify the next Transportation log
+shows cache miss and live UI has no link control plus the registration label. Retire no URL yet.
+This confirmed cache diagnosis supersedes earlier uncertainty below.
+
+Owner supplied Transportation Vercel settings: Root Directory apps/transportation, Next.js,
+include files outside root enabled, displayed default turbo run build, all command/output overrides
+off. Root/include/framework match intended shell setup. Local read-only Turbo dry-run confirms
+Transportation build resolves to next build, depends only on config/maps/supabase, and hashes 12
+package inputs with zero Admin source inputs and no explicit input globs. The shell imports Admin
+source via TS alias, so this is a verified cache-invalidation gap; whether Vercel actually reused
+that cache still requires Build Logs. Do not change settings/code yet. Obtain Transportation
+cache hit/miss/replaying logs and effective build command. The Overridden badge alone establishes
+no cause. Fix/rebuild plan must account for shared source if Turbo caching is confirmed.
+
+Owner verified Vercel project mapping: transport-platform-admin has admin.eshapp.com and
+apply.eshapp.com; esh-platform-transportation has transportation.eshapp.com. Both show Ready source
+`b28684a`. This is the intended two-project arrangement, not evidence that one should be deleted.
+Cleanup plan retires only legacy Admin product UI routes AFTER Transportation acceptance; preserve
+the Admin domain/project because it hosts governance and Transportation's trusted API backend.
+Deployment-specific URLs are protected by Vercel login, so their shipped bundles could not be
+compared anonymously. Public Transportation still serves the old linking chunk. Inspect the
+Transportation project's root/build command and build logs/cache before attributing a cause.
+It compiles shared Admin source outside apps/transportation via TS alias; root Turbo config may be
+relevant to stale artifact investigation, but cache cause is not verified. Do not move domains,
+retire projects or change Auth/backend origins as a speculative fix.
+
+Owner still sees duplicate insurance and old reference labels at
+`https://transportation.eshapp.com/transportation`. Read-only live public-bundle inspection confirmed:
+Transportation page chunk `page-7cc487d969af1e60.js` contains Link insurance to assigned vehicle and
+Match this policy, but lacks Vehicle registration document. The public Admin Transportation page
+chunk `page-4559c63b5c62031e.js` lacks the linking strings and contains the registration label.
+Therefore the Transportation custom domain is serving the older UI despite supplied Ready listings;
+this is not established as browser cache. Verify which Vercel project/deployment owns that domain
+and whether its production alias points at the corrected build before editing more source or any
+domain/Auth/backend settings. Do not infer the project from its similar display name. No configuration
+or product code was changed during this verification. The old application had three files; vehicle
+compliance insurance existed separately before applicant integration. New normal insurance entry
+comes from the applied correction, while the older UI also renders historical insurance metadata.
 
 Owner supplied a successful authenticated WSL dry run listing only
 `20261003000100_application_insurance_review.sql`. The migration-list gate is satisfied;
 Owner then confirmed the intended migration and supplied successful real-push output:
 Applying migration followed by Finished supabase db push. Migration execution is confirmed,
 but live review acceptance is still pending. Do not repeat the migration push.
-Next owner stages the explicit correction files, commits and pushes; confirm Driver, Admin backend
-and Transportation shared UI deployment before repeating application review.
+Git push and the six listed deployments are confirmed by owner output. Do not repeat staging,
+commit, push or migration. Next repeat application review and confirm the separate Admin backend
+route works with the newly migrated insurance evidence.
 
 Then review the existing application: four evidence entries, no linking/assignment instruction,
 same filenames/reviews, normal private Open and original review controls. Reject placeholder insurance

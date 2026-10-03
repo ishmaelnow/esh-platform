@@ -38,6 +38,12 @@ within its own origin.
 
 ## Deployment
 
+Transportation builds run through the scoped Turbo task in root `turbo.json`. Its cache inputs
+include shared `apps/admin/src` source and root TypeScript/ESLint configuration. The six intended
+Transportation environment names are included in the task hash, including the backend rewrite
+origin. Including outside-root files in Vercel is required but does not itself make Turbo track
+those files. A source-only Admin UI change must invalidate Transportation's build cache.
+
 Create a separate Vercel project from the same repository with Root Directory
 `apps/transportation`. Set `NEXT_PUBLIC_ADMIN_SURFACE=transportation`, set
 `TRANSPORTATION_BACKEND_URL` to the existing Admin project's stable production origin, and configure
