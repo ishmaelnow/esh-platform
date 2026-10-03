@@ -14,7 +14,7 @@ const eq = vi.fn(() => ({ single }));
 function applicationRequest(options: { files?: boolean; slug?: string; extra?: boolean } = {}) {
   const form = new FormData();
   form.set("tenantSlug", options.slug ?? "fixture-company"); form.set("fullName", "Fixture Applicant");
-  if (options.files !== false) for (const field of ["personalPhoto", "vehiclePhoto", "document", "insurance"])
+  if (options.files !== false) for (const field of ["personalPhoto", "driverIdPhoto", "vehiclePhoto", "document", "insurance"])
     form.set(field, new File([new Uint8Array([255, 216, 255, 224, 0])], `${field}.jpg`, { type: "image/jpeg" }));
   if (options.extra) { form.set("applicant_user_id", "victim"); form.set("tenant_id", "victim-tenant"); form.set("email", "victim@example.invalid"); }
   return new Request("http://driver.test/api/applications/driver", { method: "POST", body: form, headers: { Authorization: "Bearer fixture-token" } });
@@ -73,7 +73,7 @@ describe("Driver applicant API authorization and submission", () => {
     const [name, input] = serviceRpc.mock.calls[0]! as [string, { applicant_user_id: string; uploaded_evidence: Array<{ storage_path: string }> }];
     expect(name).toBe("submit_driver_application_with_evidence_internal");
     expect(input.applicant_user_id).toBe("verified-applicant"); expect(input).not.toHaveProperty("email");
-    expect(input.uploaded_evidence).toHaveLength(4);
+    expect(input.uploaded_evidence).toHaveLength(5);
     expect(input.uploaded_evidence.every((file: { storage_path: string }) => file.storage_path.startsWith("authorized-tenant/verified-applicant/"))).toBe(true);
   });
   it("cleans successful uploads when a later upload fails, without creating an application", async () => {
@@ -83,7 +83,7 @@ describe("Driver applicant API authorization and submission", () => {
   });
   it("removes uploaded files after a confirmed database rollback", async () => {
     serviceRpc.mockResolvedValue({ data: null, error: { code: "P0001", message: "application reviewed" } });
-    expect((await POST(applicationRequest())).status).toBe(409); expect(remove.mock.calls[0]![0]).toHaveLength(4);
+    expect((await POST(applicationRequest())).status).toBe(409); expect(remove.mock.calls[0]![0]).toHaveLength(5);
   });
   it("retains files when a network failure makes the transaction outcome unknown", async () => {
     serviceRpc.mockResolvedValue({ data: null, error: { code: "", message: "network unavailable" } });
@@ -91,6 +91,6 @@ describe("Driver applicant API authorization and submission", () => {
   });
   it("cleans unused uploads after an idempotent duplicate succeeds", async () => {
     serviceRpc.mockResolvedValue({ data: { applicationId: "application", acceptedPaths: [] }, error: null });
-    expect((await POST(applicationRequest())).status).toBe(200); expect(remove.mock.calls[0]![0]).toHaveLength(4);
+    expect((await POST(applicationRequest())).status).toBe(200); expect(remove.mock.calls[0]![0]).toHaveLength(5);
   });
 });

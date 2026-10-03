@@ -66,6 +66,8 @@ export async function POST(request: Request) {
       throw new Error("An evidence file is required.");
     if (file.size > 5_000_000 || !allowedMimeTypes.has(file.type))
       throw new Error("Files must be JPEG, PNG, or PDF and 5MB or smaller.");
+    if (evidenceType === "driver_id_photo" && !["image/jpeg", "image/png"].includes(file.type))
+      throw new Error("Driver ID photo must be JPEG or PNG.");
 
     const { supabase } = await authorizedClient(request);
     const { data: canManage, error: permissionError } = await supabase.rpc(

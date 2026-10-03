@@ -20,7 +20,7 @@ import {
 } from "@/lib/tenant-admin/mutations";
 import { createDriver, transitionDriver, updateDriver } from "@/lib/driver-management/mutations";
 import { updateDriverOnboarding } from "@/lib/driver-management/onboarding";
-import { driverDocumentLabel } from "@/lib/driver-management/evidence";
+import { driverDocumentLabel, driverDocumentRank } from "@/lib/driver-management/evidence";
 import {
   countActiveMemberships,
   countPendingInvitations,
@@ -1082,7 +1082,7 @@ function DriverApplicationsPanel({
               const evidence = summary.driverEvidence.filter(
                 ({ driver_application_id }) =>
                   driver_application_id === application.driver_application_id,
-              );
+              ).sort((a, b) => driverDocumentRank(a.evidence_type) - driverDocumentRank(b.evidence_type));
               return (
                 <tr key={application.driver_application_id}>
                   <td>{application.full_name}</td>
@@ -1379,7 +1379,7 @@ function DriversPanel({
 
   async function uploadEvidence(
     driverProfileId: string,
-    evidenceType: "personal_photo" | "reference_document" | "vehicle_photo" | "insurance",
+    evidenceType: "personal_photo" | "driver_id_photo" | "reference_document" | "vehicle_photo" | "insurance",
     file: File,
   ) {
     const form = new FormData();
@@ -1773,6 +1773,7 @@ function DriversPanel({
                                 ({ driver_profile_id }) =>
                                   driver_profile_id === driver.driver_profile_id,
                               )
+                              .sort((a, b) => driverDocumentRank(a.evidence_type) - driverDocumentRank(b.evidence_type))
                               .map((evidence) => {
                                 const currentReviewStatus =
                                   evidenceReviewOverrides[evidence.evidence_id] ??
@@ -1906,16 +1907,17 @@ function DriversPanel({
                             {evidenceUploadDriverId === driver.driver_profile_id
                               ? (
                                   [
-                                    ["personal_photo", "Upload personal photo"],
+                                    ["personal_photo", "Upload profile photo"],
+                                    ["driver_id_photo", "Upload driver ID photo"],
+                                    ["vehicle_photo", "Upload vehicle photo"],
                                     ["reference_document", "Upload vehicle registration document"],
                                     ["insurance", "Upload vehicle insurance document"],
-                                    ["vehicle_photo", "Upload vehicle photo"],
                                   ] as const
                                 ).map(([evidenceType, label]) => (
                                   <label key={evidenceType}>
                                     {label}
                                     <input
-                                      accept="image/jpeg,image/png,application/pdf"
+                                      accept={evidenceType === "driver_id_photo" ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                                       disabled={!canManageTenant || !enabled}
                                       onChange={(event) => {
                                         const file = event.target.files?.[0];

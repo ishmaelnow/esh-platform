@@ -46,8 +46,8 @@ Then, from the repository root, the owner runs:
 corepack pnpm exec supabase db push --dry-run
 ```
 
-The owner already applied `20261002000100_driver_applicant_portal.sql`. For the review correction,
-confirm the only pending migration is `20261003000100_application_insurance_review.sql` before applying
+The owner already applied the applicant and insurance-review migrations. For the ID-photo addition,
+confirm the only pending migration is `20261003000200_driver_id_photo.sql` before applying
 with `corepack pnpm exec supabase db push`. If anything else is listed, stop and reconcile remote
 migration history. Remote migration state has not been queried by Codex. Deploy Driver only after
 this gate. Also deploy the Admin backend evidence route and Transportation Admin shared UI.
@@ -58,23 +58,30 @@ No Rider deployment, API rewrite or hosted Auth change is required.
 1. Open Driver signed out. Existing sign-in still works. Apply to drive accepts a new identifiable
    test email and returns its verification link to Driver, including installed iOS/Android app
    return. Check actual hosted allowlist/templates without changing them speculatively.
-2. After verification, choose a company. Enter name/optional phone and actual JPEG/PNG photos plus
+2. After verification, choose a company. Enter name/optional phone and actual JPEG/PNG Profile photo,
+   Driver ID photo of any ID, Vehicle photo, plus
    separate JPEG/PNG/PDF vehicle registration and insurance documents. Check camera/library/file picking and image resizing. Invalid
    types and over-limit documents show actionable errors. Scroll the complete form with keyboard
    open; all fields and submission remain accessible without horizontal overflow.
-   Before submitting, switch to another browser tab and back. Company, name, phone and all four
+   Verify this order in form/status/Admin: Profile photo, Driver ID photo, Vehicle photo,
+   Vehicle registration document, Vehicle insurance document. Required new submission files are
+   five distinct entries; the portrait must not fulfill ID. ID photos use JPEG/PNG; type of ID is
+   decided by the administrator. There is no license-only or automatic approval rule.
+   Before submitting, switch to another browser tab and back. Company, name, phone and all five
    selected files must remain. A same-user auth refresh must not clear the form. Sign-out/change
    of identity must discard it; a full page reload does not preserve an unsubmitted draft.
 3. Submit once. Confirm receipt and each filename, reload and refresh status. No Driver home,
    availability or dispatch is admitted before approval. Status/network failure must not offer a
    duplicate application or claim submission succeeded. Interrupt an upload and retry safely.
 4. In the authorized company's existing Admin application/evidence screens, verify the same
-   application and four private files are available. Insurance is in the same evidence review list.
+   application and five private files are available in the agreed order. Insurance and ID use the
+   same original evidence review list. Change review dates and verify order does not change.
    Before approval, open the insurance file as an authorized administrator; verify the policy
    identifies the actual vehicle. Another company/applicant cannot access
    these records or execute the internal submit RPC. No private storage URL is exposed to applicants.
 5. Test under-review, rejected and withdrawn statuses. Reviewed evidence cannot be overwritten.
-   For a legacy incomplete submitted record, upload only missing files; confirm the original
+   For a legacy four-file submitted record, upload only ID and verify prior names/reviews stay.
+   For other legacy incomplete submitted records, upload only missing files; confirm the original
    application ID and existing reviews remain. No automatic claim of unlinked legacy email records.
 6. With an authorized administrator, approve a clearly identified test application through the
    existing workflow. Refresh in Driver and Continue. Confirm account activation and remaining
@@ -85,7 +92,8 @@ No Rider deployment, API rewrite or hosted Auth change is required.
    filenames and reviews must survive the correction. Verify old linking HTTP requests return 410
    and authenticated RPC linking permission is revoked. Do not approve placeholder test PDFs.
    The added requirement defaults to optional for activation, preserving existing Driver gates;
-   submitting a new Driver application still requires all four files. Existing tenant requirement
+   submitting a new Driver application now requires all five files. ID does not impose a new
+   retrospective activation/expiration gate on approved Drivers. Existing tenant requirement
    settings and unrelated fleet compliance remain authoritative.
 8. Verify existing activation/evidence emails and replacement-document flows still work. Do not
    initiate a payout, emergency or production trip just to test onboarding. Leave test Driver Offline.

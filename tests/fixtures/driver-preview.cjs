@@ -50,7 +50,7 @@ async function setupDriverPreview(page, options = {}) {
     if (options.applicant && new URL(route.request().url()).pathname === "/api/applications/driver") {
       if (route.request().method() === "POST") {
         const form = await new Response(route.request().postDataBuffer(), { headers: { "Content-Type": route.request().headers()["content-type"] } }).formData();
-        const fields = [["personalPhoto", "personal_photo"], ["vehiclePhoto", "vehicle_photo"], ["document", "reference_document"], ["insurance", "insurance"]];
+        const fields = [["personalPhoto", "personal_photo"], ["driverIdPhoto", "driver_id_photo"], ["vehiclePhoto", "vehicle_photo"], ["document", "reference_document"], ["insurance", "insurance"]];
         applicantRecord = { applicationId: "preview-application", tenantSlug: "preview-company", companyName: "Application preview company",
           fullName: String(form.get("fullName") || "Preview applicant"), phone: String(form.get("phone") || ""), status: "submitted", submittedAt: new Date().toISOString(),
           documents: fields.map(([field, type]) => ({ type, status: "pending", fileName: form.get(field)?.name || "Preview upload", reviewNotes: null })) };

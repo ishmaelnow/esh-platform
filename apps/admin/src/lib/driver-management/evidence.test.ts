@@ -3,9 +3,24 @@ import {
   isEvidenceCurrentlyApproved,
   parseDriverEvidenceReview,
   validateEvidenceExpiration,
+  driverDocumentRank,
+  driverDocumentLabel,
 } from "./evidence";
 
 describe("driver evidence", () => {
+  it("groups shuffled evidence in agreed order without changing newest-first records within a type", () => {
+    const records = [
+      { type: "insurance", id: "policy" }, { type: "reference_document", id: "registration" },
+      { type: "personal_photo", id: "new-profile" }, { type: "driver_id_photo", id: "id" },
+      { type: "vehicle_photo", id: "car" }, { type: "personal_photo", id: "old-profile" },
+    ];
+    const sorted = [...records].sort((a, b) => driverDocumentRank(a.type) - driverDocumentRank(b.type));
+    expect(sorted.map((record) => record.id)).toEqual(["new-profile", "old-profile", "id", "car", "registration", "policy"]);
+    expect(sorted.map((record) => driverDocumentLabel(record.type))).toEqual([
+      "Profile photo", "Profile photo", "Driver ID photo", "Vehicle photo", "Vehicle registration document", "Vehicle insurance document",
+    ]);
+    expect(records[0]!.id).toBe("policy");
+  });
   it("normalizes an approval with an expiration date", () => {
     expect(
       parseDriverEvidenceReview({

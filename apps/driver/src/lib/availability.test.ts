@@ -30,7 +30,7 @@ describe("driver availability messaging", () => {
         [],
       ),
     ).toEqual([
-      "Personal photo: waiting for administrator approval",
+      "Profile photo: waiting for administrator approval",
       "Vehicle registration document: approved, but a future expiration date is required",
     ]);
   });

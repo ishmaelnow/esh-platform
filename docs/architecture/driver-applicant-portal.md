@@ -13,9 +13,14 @@ Sign-out or identity changes discard that form. Reloading the page still require
 unsubmitted application; private documents are not persisted in local/session storage.
 
 The applicant chooses from the existing active Transportation company directory. Driver collects
-name, optional phone, personal photo, vehicle photo, vehicle registration document and vehicle insurance.
+name, optional phone and five ordered files: Profile photo, Driver ID photo, Vehicle photo,
+Vehicle registration document and Vehicle insurance document. The Profile photo uses the existing
+personal_photo key; it is not reclassified into ID evidence. Driver ID photo accepts a JPEG/PNG
+photo of any ID, with the administrator deciding approval or rejection. No license-only rule,
+OCR or automatic verification is added.
 Images are resized in browser memory; each uploaded file is limited to 1 MB, multipart bodies to 4.4 MB even without a
-Content-Length header. Server validation checks supported MIME types and signatures. Camera/file
+Content-Length header. The form caps selected file bytes at 4 MB to leave multipart overhead within
+the existing 4.4 MB request limit. Server validation checks supported MIME types and signatures. Camera/file
 selection uses the ordinary mobile file picker. Unsupported image formats must be converted to
 JPEG/PNG by the user/device. Files are private and never given public URLs.
 
@@ -40,7 +45,7 @@ existing table RLS, administrator review, activation, notifications or operation
 
 An advisory lock serializes company/identity retries and row locking serializes with administrator
 approval. Existing submitted applications can receive missing evidence only; reviewed evidence is
-never overwritten. Reviewed/approved applications reject uploads. Four files must exist before a
+never overwritten. Reviewed/approved applications reject uploads. Five files must exist before a
 transaction succeeds. A retry of a completed submitted application cannot duplicate evidence.
 Legacy Admin submission remains supported, including completion of an incomplete submitted record.
 Legacy records without applicant_auth_user_id are not claimed merely by matching email.
@@ -69,6 +74,16 @@ Deploy the additive migration before deploying Driver; old Driver/Admin clients 
 
 ## Application insurance review
 
+The ordered document extension uses forward migration `20261003000200_driver_id_photo.sql`.
+It adds driver_id_photo to the normal evidence and replacement contracts, required for new Driver
+application submissions. Existing four-file submitted applicants can supply only the missing ID.
+Old uploads/reviews are unchanged, and a portrait is never treated as an ID. Already approved
+applications do not lose approval. ID defaults to optional for activation and does not require an
+expiration date; established tenant requirement settings and reviewer decisions remain authoritative.
+Applications and Driver document history group evidence by Profile, ID, Vehicle photo, Registration,
+Insurance while preserving newest-first ordering within each type. Thus changing upload/review time
+cannot scramble the slots or choose an older upload as current.
+
 Owner clarified that the original application/review workflow must remain intact: insurance is
 one additional document, with no new fleet assignment or manual linking step. Forward migration
 `20261003000100_application_insurance_review.sql` moves the review metadata into driver_evidence
@@ -77,7 +92,7 @@ historical provenance. Any existing linked review, reviewer, review notes, expir
 time are preserved. Unreviewed uploads become pending application evidence. The deployed earlier
 migration remains unchanged.
 
-New uploads use the same atomic application evidence transaction for all four documents. Admin
+New uploads use the same atomic application evidence transaction for all five documents. Admin
 Applications uses its existing Open, Approve evidence, Reject evidence, expiration and review-notes
 controls. Existing RLS, attributed review audits, approval-to-draft evidence attachment, notification
 triggers, self-service replacements and latest-evidence rules apply unchanged. Insurance approval

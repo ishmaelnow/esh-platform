@@ -4,125 +4,72 @@ Last updated: 2026-10-03
 
 ## Current objective and checkpoint
 
-Owner authorized removing the extra insurance step: preserve original application/review,
-add insurance as one additional document and rename Reference document to Vehicle registration
-document. Drivers register their own vehicles. No new fleet assignment/manual linking workflow.
-Do not expand this correction into vehicle lifecycle redesign or bypass existing eligibility.
+Owner authorized a separate Driver ID photo accepting any ID for manual administrator approval
+or rejection. Keep the original portrait as Profile photo. Local implementation is complete;
+owner applied the database migration successfully; application code remains uncommitted/unpushed.
 
-Git main/origin main is `b28684a`, the owner-pushed insurance review correction. It includes the
-prior `8c8770b` applicant tab-reset fix; preserve both.
-Owner applied `20261002000100_driver_applicant_portal.sql` and pushed applicant work at `a6700ea`.
-Owner supplied Ready Vercel Production listings for Driver, Rider, Transportation Admin,
-Transportation, Community and Community Admin at that commit. Shell choice remains flexible.
+Document order across Driver intake/status/history and Admin application/history/replacement:
+Profile photo, Driver ID photo, Vehicle photo, Vehicle registration document, Vehicle insurance
+document. Existing personal_photo and reference_document keys remain; ID uses driver_id_photo.
+No license-only validation, OCR, automatic approval or added vehicle linking/assignment step.
 
-Live laptop private-browser testing verified email, submitted all four files and reached Application
-received. Administrator found the submitted test application under Yahooemail. Its registration and
-insurance PDFs are placeholders; do not approve them as valid compliance documents. No need to
-recreate it or sign out the approved phone Driver.
+Git main/origin main remains owner-pushed f0aa537. Both prior applicant migrations are owner-applied:
+20261002000100_driver_applicant_portal.sql and 20261003000100_application_insurance_review.sql.
+Owner dry-run listed only 20261003000200_driver_id_photo.sql and the subsequent db push applied
+it successfully. No further database push is needed for this addition.
 
-Committed correction removes ApplicationInsurance/linking UI. Insurance uses the original Applications
-evidence list with Open, Approve evidence, Reject evidence, review notes and expiration controls.
-Application, document-history and replacement-upload labels use Vehicle registration document;
-the legacy `reference_document` key remains unchanged.
+The migration extends existing evidence constraints and trusted atomic submission/self-service
+RPCs. New submissions require all five documents. Older submitted four-file applications can add
+only the missing ID without replacing reviewed files. ID accepts JPEG/PNG and defaults to optional
+for activation with no required expiration; existing approved Drivers are not retroactively gated.
+Tenant requirement controls, verified identity, private storage, tenant isolation, review audit,
+notifications and original application approval remain authoritative. RPC signatures and existing
+text-based manual client types remain compatible. No historical evidence is deleted or relabeled
+as ID. The legacy Admin-hosted three-file application remains compatible; the Driver intake is five.
 
-Owner-applied migration: `20261003000100_application_insurance_review.sql`. It adds insurance to normal
-driver_evidence, imports existing application insurance with original private paths/timestamps and
-any actual linked review/reviewer/notes/expiration intact, and preserves old rows/vehicle evidence
-for audit. No files or historical records are deleted. Old linking RPC is revoked for client/service
-roles; HTTP POST returns 410. Authorized historical GET remains. Four-file submission/own status
-use normal evidence. Original approval attaches insurance automatically to the draft Driver;
-normal RLS, review audit/notifications, latest-evidence and replacement workflows are reused.
-Manual client types accept text evidence types and unchanged RPC signatures.
+Client compressed files must total at most 4 MB; existing streamed request cap stays 4.4 MB.
+Each file remains at most 1 MB. Registration/insurance retain PDF support. ID is a separate photo.
 
-Insurance remains required for new Driver application submission and approval requires future
-expiration. Its added tenant requirement defaults to optional for activation to preserve established
-gates for already-approved Drivers. Existing administrator requirement controls remain authoritative.
-No vehicle is created/assigned; separate existing fleet compliance is untouched.
+Validation: 58 scoped unit/API/source-contract tests and 20 isolated browser tests passed.
+Driver/Admin typechecks and Driver/Admin/Transportation production builds passed. Scoped lint,
+preview syntax and whitespace checks passed; baseline Supabase/Next build warnings remain.
+Browser coverage includes five-file submission, tab-switch persistence and adding only missing ID
+to an older application while preserving reviews. Mobile form screenshot was visually inspected.
+Fixtures/source checks do not prove live authentication, database execution, RLS or production
+upload/review. Owner local rollback SQL was extended for five-file and missing-ID cases but not run.
+Native picking and physical-device acceptance remain pending.
 
-Validation: 55 scoped Driver/Admin unit/API/source-contract tests and 19 isolated browser tests
-passed. Driver/Admin typechecks and production builds passed. Transportation Admin build passed
-with process-only dummy public configuration. Scoped lint, preview syntax and whitespace checks
-passed. Existing Supabase/Next warnings remain.
-API/browser fixtures and source checks do not prove database execution/RLS/backfill. Owner local
-rollback SQL checks normal insurance review/rejection/future expiry without a vehicle, own status,
-four normal evidence records and revoked linking. Database and live review acceptance not run.
+Prior production checkpoint: cache fix f0aa537 resolved stale Transportation UI. Owner confirmed
+one insurance entry, registration label and original review controls without linking. Owner then
+approved OCTODRIVER TEST; vehicle photo, registration and insurance were approved with dates,
+while profile photo remained pending. Test PDFs are placeholders, not valid compliance documents;
+reject them with a reason during controlled acceptance and leave test Drivers Offline. Codex did
+not change production review state.
 
-Owner supplied successful push output `8c8770b..b28684a main -> main` and Ready Vercel Production
-listings at `b28684a` for Driver, Rider, Transportation Admin, Transportation, Community and
-Community Admin. The separate Admin backend project was not listed; verify its deployed evidence
-route during actual review. The migration is applied remotely. Preserve the four generated
-Driver/Rider next-env.d.ts and tsconfig.json edits. This checkpoint adds an uncommitted handoff edit.
-Rider product source and Auth URLs/config remain unchanged. Codex performs no Git, deployment,
-database mutation, production file upload/email/review/availability/trip/payout/emergency actions.
+Preserve the four existing generated Driver/Rider next-env.d.ts and tsconfig.json edits and exclude
+them from feature staging. Rider product source, auth URLs, populated env files, domains and hosted
+configuration remain unchanged. Owner performs every Git mutation, deployment and database change.
 
 ## Exact next action
 
-Owner's build logs conclusively show Transportation at b28684a was a Turbo cache hit with
-replayed logs (all four tasks cached). Owner asked for necessary commands; local scoped cache
-fix is now prepared in turbo.json, tracking shared Admin source/config plus six intended
-Transportation environment names. Dry-run shows 118 inputs, including 103 Admin source files,
-and confirms AdminTenantApp and backend rewrite variable tracked. Direct Transportation production
-build and whitespace checks passed with process-only dummy public configuration. Turbo execution itself
-could not locate a pnpm binary in this Windows session; its graph/input dry-run succeeds.
-Next hand over turbo.json, architecture doc and this handoff for owner commit/push. No migration,
-domain, Auth URL or hosted configuration change required. Verify the next Transportation log
-shows cache miss and live UI has no link control plus the registration label. Retire no URL yet.
-This confirmed cache diagnosis supersedes earlier uncertainty below.
+Owner stages the explicit feature files, commits and pushes the application changes. Exclude the
+four generated Driver/Rider configuration edits. Do not rerun applied migrations. After deployment,
+verify new five-file intake,
+missing-ID-only completion, private viewing, ID approve/reject and stable evidence order in live
+Transportation Admin. Restore test state and do not approve placeholder identity/compliance files.
 
-Owner supplied Transportation Vercel settings: Root Directory apps/transportation, Next.js,
-include files outside root enabled, displayed default turbo run build, all command/output overrides
-off. Root/include/framework match intended shell setup. Local read-only Turbo dry-run confirms
-Transportation build resolves to next build, depends only on config/maps/supabase, and hashes 12
-package inputs with zero Admin source inputs and no explicit input globs. The shell imports Admin
-source via TS alias, so this is a verified cache-invalidation gap; whether Vercel actually reused
-that cache still requires Build Logs. Do not change settings/code yet. Obtain Transportation
-cache hit/miss/replaying logs and effective build command. The Overridden badge alone establishes
-no cause. Fix/rebuild plan must account for shared source if Turbo caching is confirmed.
+Keep both projects: transport-platform-admin serves admin.eshapp.com and the trusted API backend;
+esh-platform-transportation serves transportation.eshapp.com and /transportation operations.
+Only legacy admin.eshapp.com/transportation UI is eventually redirected after full acceptance.
+Do not retire either domain or backend. f0aa537 scoped Turbo inputs include shared Admin sources;
+the earlier stale cached UI issue is resolved and requires no new hosted settings change.
 
-Owner verified Vercel project mapping: transport-platform-admin has admin.eshapp.com and
-apply.eshapp.com; esh-platform-transportation has transportation.eshapp.com. Both show Ready source
-`b28684a`. This is the intended two-project arrangement, not evidence that one should be deleted.
-Cleanup plan retires only legacy Admin product UI routes AFTER Transportation acceptance; preserve
-the Admin domain/project because it hosts governance and Transportation's trusted API backend.
-Deployment-specific URLs are protected by Vercel login, so their shipped bundles could not be
-compared anonymously. Public Transportation still serves the old linking chunk. Inspect the
-Transportation project's root/build command and build logs/cache before attributing a cause.
-It compiles shared Admin source outside apps/transportation via TS alias; root Turbo config may be
-relevant to stale artifact investigation, but cache cause is not verified. Do not move domains,
-retire projects or change Auth/backend origins as a speculative fix.
-
-Owner still sees duplicate insurance and old reference labels at
-`https://transportation.eshapp.com/transportation`. Read-only live public-bundle inspection confirmed:
-Transportation page chunk `page-7cc487d969af1e60.js` contains Link insurance to assigned vehicle and
-Match this policy, but lacks Vehicle registration document. The public Admin Transportation page
-chunk `page-4559c63b5c62031e.js` lacks the linking strings and contains the registration label.
-Therefore the Transportation custom domain is serving the older UI despite supplied Ready listings;
-this is not established as browser cache. Verify which Vercel project/deployment owns that domain
-and whether its production alias points at the corrected build before editing more source or any
-domain/Auth/backend settings. Do not infer the project from its similar display name. No configuration
-or product code was changed during this verification. The old application had three files; vehicle
-compliance insurance existed separately before applicant integration. New normal insurance entry
-comes from the applied correction, while the older UI also renders historical insurance metadata.
-
-Owner supplied a successful authenticated WSL dry run listing only
-`20261003000100_application_insurance_review.sql`. The migration-list gate is satisfied;
-Owner then confirmed the intended migration and supplied successful real-push output:
-Applying migration followed by Finished supabase db push. Migration execution is confirmed,
-but live review acceptance is still pending. Do not repeat the migration push.
-Git push and the six listed deployments are confirmed by owner output. Do not repeat staging,
-commit, push or migration. Next repeat application review and confirm the separate Admin backend
-route works with the newly migrated insurance evidence.
-
-Then review the existing application: four evidence entries, no linking/assignment instruction,
-same filenames/reviews, normal private Open and original review controls. Reject placeholder insurance
-with a clear reason; refresh Driver status to confirm it. Valid insurance approval requires future
-expiration. Preserve applicant tab persistence and leave test Drivers Offline.
-
-Architecture: `docs/architecture/driver-applicant-portal.md`, `docs/architecture/driver-map-home.md`.
-Manual checks: `docs/operations/driver-application-manual-test.md`,
-`docs/operations/driver-map-home-manual-test.md`. Owner local SQL:
-`tooling/sql/driver-applicant-portal-test.sql`.
-Preserve deferred Rider/native/payment, provider approval, Community and control-plane work below.
+Architecture: docs/architecture/driver-applicant-portal.md,
+docs/architecture/transportation-admin-application.md and docs/architecture/driver-map-home.md.
+Manual checks: docs/operations/driver-application-manual-test.md,
+docs/operations/transportation-admin-application-manual-test.md and
+docs/operations/driver-map-home-manual-test.md. Owner local SQL:
+tooling/sql/driver-applicant-portal-test.sql.
 
 ## Rider draft and validation
 

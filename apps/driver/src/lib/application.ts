@@ -1,9 +1,15 @@
 export const applicationFiles = [
-  { field: "personalPhoto", type: "personal_photo", label: "Personal photo", accept: "image/jpeg,image/png" },
+  { field: "personalPhoto", type: "personal_photo", label: "Profile photo", accept: "image/jpeg,image/png" },
+  { field: "driverIdPhoto", type: "driver_id_photo", label: "Driver ID photo", accept: "image/jpeg,image/png" },
   { field: "vehiclePhoto", type: "vehicle_photo", label: "Vehicle photo", accept: "image/jpeg,image/png" },
   { field: "document", type: "reference_document", label: "Vehicle registration document", accept: "image/jpeg,image/png,application/pdf" },
   { field: "insurance", type: "insurance", label: "Vehicle insurance document", accept: "image/jpeg,image/png,application/pdf" },
 ] as const;
+
+export function applicationDocumentRank(type: string) {
+  const rank = applicationFiles.findIndex((file) => file.type === type);
+  return rank < 0 ? applicationFiles.length : rank;
+}
 
 export type DriverApplicationStatus = {
   applicationId: string;

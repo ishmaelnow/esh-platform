@@ -2,12 +2,12 @@ import { expect, test, type Page } from "@playwright/test";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { setupDriverPreview } = require("../fixtures/driver-preview.cjs") as { setupDriverPreview: (page: Page, options?: { applicant?: boolean }) => Promise<void> };
 
-const files = ["personalPhoto", "vehiclePhoto", "document", "insurance"];
+const files = ["personalPhoto", "driverIdPhoto", "vehiclePhoto", "document", "insurance"];
 const jpeg = Buffer.from("/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAABAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCFAB//2Q==", "base64");
 const application = (status = "submitted", missing = false) => ({
   applicationId: "fixture-application", tenantSlug: "fixture-company", companyName: "Fixture transport company",
   fullName: "Fixture applicant", phone: null, status, submittedAt: "2026-10-02T12:00:00Z",
-  documents: missing ? [] : ["personal_photo", "vehicle_photo", "reference_document", "insurance"].map((type) => ({ type, status: "pending", fileName: `${type}.jpg`, reviewNotes: null })),
+  documents: missing ? [] : ["personal_photo", "driver_id_photo", "vehicle_photo", "reference_document", "insurance"].map((type) => ({ type, status: "pending", fileName: `${type}.jpg`, reviewNotes: null })),
 });
 
 async function setupApplicant(page: Page, records: ReturnType<typeof application>[] = []) {
@@ -49,6 +49,10 @@ test("application entry uploads files, shows confirmed status and survives reloa
     return route.fulfill({ json: { applications: submitted ? [application()] : [] } });
   });
   await page.getByLabel("Full name").fill("Fixture applicant");
+  await expect(page.locator("input[type=file]")).toHaveCount(5);
+  expect(await page.locator("input[type=file]").evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).name))).toEqual(files);
+  await expect(page.getByLabel("Profile photo")).toBeVisible();
+  await expect(page.getByLabel("Driver ID photo")).toHaveAttribute("accept", "image/jpeg,image/png");
   await expect(page.getByLabel("Vehicle registration document")).toBeVisible();
   await expect(page.getByLabel("Reference document", { exact: true })).toHaveCount(0);
   for (const field of files) await page.locator(`input[name="${field}"]`).setInputFiles({ name: `${field}.jpg`, mimeType: "image/jpeg", buffer: jpeg });
@@ -97,7 +101,7 @@ test("switching tabs and same-user auth recovery preserve all application inputs
   await otherTab.close();
 });
 
-test("insurance is required and a legacy three-file application requests only the missing insurance", async ({ page }) => {
+test("insurance is required and a legacy four-file application requests only the missing insurance", async ({ page }) => {
   const legacy = application(); legacy.documents = legacy.documents.filter((item) => item.type !== "insurance");
   await setupApplicant(page, [legacy]);
   await expect(page.getByRole("heading", { name: "Finish your application" })).toBeVisible();
@@ -115,6 +119,33 @@ test("review and declined states do not grant Driver access or invite duplicate 
   await expect(page.getByRole("heading", { name: "Application declined" })).toBeVisible();
   await expect(page.getByText("Contact the company about its decision and your next steps.")).toBeVisible();
   await expect(page.getByRole("switch", { name: "Driver availability" })).toHaveCount(0);
+});
+
+test("an existing four-document application requests only ID and preserves its reviewed files", async ({ page }) => {
+  const legacy = application();
+  legacy.documents = legacy.documents.filter((document) => document.type !== "driver_id_photo");
+  legacy.documents[0]!.status = "approved";
+  await setupApplicant(page, [legacy]);
+  await expect(page.getByRole("heading", { name: "Finish your application" })).toBeVisible();
+  await expect(page.locator("input[type=file]")).toHaveCount(1);
+  await expect(page.getByLabel("Driver ID photo")).toHaveAttribute("required", "");
+  let fields: string[] = [];
+  await page.route("**/api/applications/driver", async (route) => {
+    if (route.request().method() === "POST") {
+      const form = await new Response(route.request().postDataBuffer(), { headers: { "Content-Type": route.request().headers()["content-type"]! } }).formData();
+      fields = [...form.keys()].filter((key) => form.get(key) instanceof File);
+      legacy.documents.push({ type: "driver_id_photo", status: "pending", fileName: "any-id.jpg", reviewNotes: null });
+      await route.fulfill({ json: { ok: true } });
+    } else await route.fulfill({ json: { applications: [legacy] } });
+  });
+  await page.getByLabel("Driver ID photo").setInputFiles({ name: "any-id.jpg", mimeType: "image/jpeg", buffer: jpeg });
+  await page.getByRole("button", { name: "Complete application" }).click();
+  await expect(page.getByRole("heading", { name: "Application received" })).toBeVisible();
+  expect(fields).toEqual(["driverIdPhoto"]);
+  await expect(page.locator(".application-status li").first()).toContainText("approved");
+  expect(await page.locator(".application-status li strong").allTextContents()).toEqual([
+    "Profile photo", "Driver ID photo", "Vehicle photo", "Vehicle registration document", "Vehicle insurance document",
+  ]);
 });
 
 test("status failure fails closed and retry restores the application form", async ({ page }) => {

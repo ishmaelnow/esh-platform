@@ -10,6 +10,7 @@ import {
 } from "@esh-platform/supabase";
 import { DriverShell, type DriverView } from "./DriverShell";
 import { DriverApplication } from "./DriverApplication";
+import { applicationDocumentRank } from "../lib/application";
 import { useDriverMapLocation } from "./useDriverMapLocation";
 import { driverHomeTotals } from "../lib/home-totals";
 import { LiveTripMap } from "@esh-platform/maps/client";
@@ -1859,7 +1860,7 @@ export default function DriverHome() {
                   and PDF files up to 5MB are accepted.
                 </p>
                 {uploadMessage ? <p className="upload-message">{uploadMessage}</p> : null}
-                {(summary.documents ?? []).map((document) => (
+                {[...(summary.documents ?? [])].sort((a, b) => applicationDocumentRank(a.evidenceType) - applicationDocumentRank(b.evidenceType)).map((document) => (
                   <article className="document-card" key={document.evidenceType}>
                     <div className="document-heading">
                       <strong>{evidenceLabel(document.evidenceType)}</strong>
@@ -1885,7 +1886,7 @@ export default function DriverHome() {
                             : "Choose replacement"}
                         </span>
                         <input
-                          accept="image/jpeg,image/png,application/pdf"
+                          accept={document.evidenceType === "driver_id_photo" ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                           disabled={uploadingType !== null}
                           onChange={(event) => {
                             const file = event.target.files?.[0];

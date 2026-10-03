@@ -27,6 +27,12 @@ describe("Insurance uses the existing application evidence review", () => {
     expect((await review({ status: "approved" })).status).toBe(400);
     expect(update).not.toHaveBeenCalled();
   });
+  it("reviews any ID through the same controls without inventing an expiration requirement", async () => {
+    single.mockResolvedValue({ data: { evidence_type: "driver_id_photo", evidence_id: evidenceId }, error: null });
+    requirement.mockResolvedValue({ data: { expiration_required: false }, error: null });
+    expect((await review({ status: "approved" })).status).toBe(200);
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ review_status: "approved", expires_on: null }));
+  });
   it("approves insurance without a vehicle or assignment", async () => {
     expect((await review({ status: "approved", expiresOn: "2099-01-01" })).status).toBe(200);
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ review_status: "approved", expires_on: "2099-01-01", reviewed_by_person_id: "fixture-reviewer" }));

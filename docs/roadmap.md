@@ -15,15 +15,21 @@ remain independent of transportation-specific workflows.
 - Driver-owned new-applicant entry, verified-email form, private file submission and own review
   status shipped at `a6700ea`; the owner applied migration `20261002000100_driver_applicant_portal.sql`
   and supplied Ready Driver/Transportation Admin deployment listings. Real-account/database
-  acceptance remains pending. A local follow-up preserves all form inputs and selected files on
-  same-user tab-return authentication recovery; it awaits owner commit/deployment. Existing administrator approval
+  acceptance is in progress. Deployed tab-return recovery preserves all form inputs and selected files on
+  same-user authentication recovery. Existing administrator approval
   and Driver activation/compliance gates remain unchanged. See `architecture/driver-applicant-portal.md`
   and `operations/driver-application-manual-test.md`.
-- The Driver application requires insurance as one additional document. The local correction
+- The Driver application requires insurance as one additional document. The deployed correction
   restores it to the original application evidence Open/Approve/Reject workflow, removing the
   added vehicle-assignment/linking step. Forward migration `20261003000100_application_insurance_review.sql`
-  preserves existing files/reviews and awaits owner dry-run/apply/deployment. Existing approval,
+  preserves existing files/reviews and is owner-applied and deployed. Existing approval,
   expiration, notification and activation requirements stay authoritative.
+- Local Driver ID addition separates Profile photo from Driver ID photo, accepting any ID for
+  manual administrator review. Driver intake/status and Admin evidence use the order Profile photo,
+  Driver ID photo, Vehicle photo, Vehicle registration document, Vehicle insurance document.
+  Migration `20261003000200_driver_id_photo.sql` is owner-applied after a clean dry-run; code awaits
+  owner commit/push/deployment. Existing
+  approved Drivers are not retroactively gated; existing files and reviews remain intact.
 
 ## Next Product Domain: Community Platform
 

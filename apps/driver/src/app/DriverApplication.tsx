@@ -65,6 +65,11 @@ export function DriverApplication({ client, session, onApproved, activationMessa
         if (reduced.size > 1_000_000) throw new Error(`Choose a ${file.label.toLowerCase()} smaller than 1 MB.`);
         form.set(file.field, reduced);
       }
+      const totalFileBytes = applicationFiles.reduce((total, file) => {
+        const selected = form.get(file.field);
+        return total + (selected instanceof File ? selected.size : 0);
+      }, 0);
+      if (totalFileBytes > 4_000_000) throw new Error("Choose smaller files; the selected application files must total 4 MB or less.");
       const response = await fetch("/api/applications/driver", {
         method: "POST", headers: { Authorization: `Bearer ${session.access_token}` }, body: form,
       });
@@ -108,7 +113,7 @@ export function DriverApplication({ client, session, onApproved, activationMessa
       {tenantSlug && canSubmit ? <form key={tenantSlug} onSubmit={(event) => void submit(event)}>
         {!application ? <><label>Full name<input autoComplete="name" name="fullName" required minLength={2} maxLength={120} disabled={busy} /></label>
           <label>Phone (optional)<input autoComplete="tel" type="tel" name="phone" maxLength={40} disabled={busy} /></label></> : null}
-        <p className="application-help">Photos are resized securely in your browser. Vehicle registration and insurance documents must each be under 1 MB. Your files remain private to the company’s authorized reviewers.</p>
+        <p className="application-help">Your profile photo is separate from your ID. Upload a photo of any ID for the company to approve or reject. Photos are resized securely in your browser. Each file must be under 1 MB, with all selected files totaling 4 MB or less. Your files remain private to the company’s authorized reviewers.</p>
         {missing.map((file) => <label key={file.field}>{file.label}<input name={file.field} type="file" accept={file.accept} required disabled={busy} /></label>)}
         <button disabled={busy || loading} type="submit">{busy ? "Sending application…" : application ? "Complete application" : "Submit application"}</button>
         <p className="application-help">Submitting an application does not grant access to trips. Company approval and the existing onboarding checks are required.</p>

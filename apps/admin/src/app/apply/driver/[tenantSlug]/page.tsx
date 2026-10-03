@@ -184,7 +184,7 @@ export default function DriverApplicationPage({
               <input name="phone" />
             </label>
             <label>
-              Personal photo
+              Profile photo
               <input
                 accept="image/jpeg,image/png"
                 capture="user"

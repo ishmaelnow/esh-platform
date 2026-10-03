@@ -20,10 +20,11 @@ type VehicleAvailabilityDocument = {
 
 export function evidenceLabel(evidenceType: string) {
   const labels: Record<string, string> = {
-    personal_photo: "Personal photo",
+    personal_photo: "Profile photo",
+    driver_id_photo: "Driver ID photo",
     reference_document: "Vehicle registration document",
     insurance: "Vehicle insurance document",
-    vehicle_photo: "Onboarding vehicle evidence",
+    vehicle_photo: "Vehicle photo",
   };
   return labels[evidenceType] ?? evidenceType.replaceAll("_", " ");
 }

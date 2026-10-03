@@ -42,14 +42,14 @@ begin
   insert into storage.objects (bucket_id, name)
   select 'driver-application-files', tenant_id_value || '/' || u || '/fixture/' || kind || '.jpg'
     from unnest(array[user_a, user_b]) u
-    cross join unnest(array['personal_photo', 'vehicle_photo', 'reference_document', 'insurance']) kind;
+    cross join unnest(array['personal_photo', 'driver_id_photo', 'vehicle_photo', 'reference_document', 'insurance']) kind;
 end; $$;
 
 create function pg_temp.driver_test_files(target_user uuid) returns jsonb language sql as $$
   select jsonb_agg(jsonb_build_object('evidence_type', kind,
     'storage_path', current_setting('app.driver_test_tenant') || '/' || target_user || '/fixture/' || kind || '.jpg',
     'original_file_name', kind || '.jpg', 'mime_type', 'image/jpeg', 'size_bytes', 10))
-  from unnest(array['personal_photo', 'vehicle_photo', 'reference_document', 'insurance']) kind;
+  from unnest(array['personal_photo', 'driver_id_photo', 'vehicle_photo', 'reference_document', 'insurance']) kind;
 $$;
 
 set local role anon;
@@ -82,6 +82,15 @@ do $$ begin
   exception when raise_exception then null; end;
   perform pg_temp.driver_assert('Incomplete submission rolls back its application',
     not exists (select 1 from public.driver_applications where applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid));
+  begin
+    perform public.submit_driver_application_with_evidence_internal(
+      current_setting('app.driver_test_user_a')::uuid, current_setting('app.driver_test_slug'), 'Driver test applicant', '',
+      (select jsonb_agg(document) from jsonb_array_elements(pg_temp.driver_test_files(current_setting('app.driver_test_user_a')::uuid)) document
+        where document ->> 'evidence_type' <> 'driver_id_photo'));
+    raise exception 'Application without ID unexpectedly committed' using errcode = 'XX000';
+  exception when raise_exception then null; end;
+  perform pg_temp.driver_assert('ID is separate from the profile photo and required atomically',
+    not exists (select 1 from public.driver_applications where applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid));
 end; $$;
 
 select public.submit_driver_application_with_evidence_internal(
@@ -99,7 +108,7 @@ do $$ declare result jsonb; begin
   perform pg_temp.driver_assert('One application per identity/company',
     (select count(*) = 1 from public.driver_applications where applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid));
   perform pg_temp.driver_assert('All evidence exists and stays pending',
-    (select count(*) = 4 and bool_and(e.review_status = 'pending') from public.driver_evidence e
+    (select count(*) = 5 and bool_and(e.review_status = 'pending') from public.driver_evidence e
       join public.driver_applications a on a.driver_application_id = e.driver_application_id
       where a.applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid));
   perform pg_temp.driver_assert('Submitted applicant not auto-approved',

@@ -1,14 +1,22 @@
 export const driverEvidenceTypes = [
   "personal_photo",
-  "reference_document",
+  "driver_id_photo",
   "vehicle_photo",
+  "reference_document",
   "insurance",
 ] as const;
 
 export type DriverEvidenceType = (typeof driverEvidenceTypes)[number];
 export function driverDocumentLabel(type: string) {
-  return type === "reference_document" ? "Vehicle registration document"
+  return type === "personal_photo" ? "Profile photo"
+    : type === "driver_id_photo" ? "Driver ID photo"
+    : type === "vehicle_photo" ? "Vehicle photo"
+    : type === "reference_document" ? "Vehicle registration document"
     : type === "insurance" ? "Vehicle insurance document" : type.replaceAll("_", " ");
+}
+export function driverDocumentRank(type: string) {
+  const rank = driverEvidenceTypes.findIndex((entry) => entry === type);
+  return rank < 0 ? driverEvidenceTypes.length : rank;
 }
 export type DriverEvidenceReviewStatus = "approved" | "rejected";
 export type DriverEvidenceReview = {
