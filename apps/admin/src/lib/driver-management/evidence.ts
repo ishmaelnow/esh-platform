@@ -18,6 +18,29 @@ export function driverDocumentRank(type: string) {
   const rank = driverEvidenceTypes.findIndex((entry) => entry === type);
   return rank < 0 ? driverEvidenceTypes.length : rank;
 }
+
+export function applicationReviewEvidence<T extends {
+  tenant_id: string;
+  driver_application_id: string | null;
+  driver_profile_id: string | null;
+  evidence_type: string;
+  submitted_at: string;
+  created_at: string;
+}>(application: {
+  tenant_id: string;
+  driver_application_id: string;
+  driver_profile_id: string | null;
+}, records: readonly T[]): T[] {
+  return records.filter((record) =>
+    record.tenant_id === application.tenant_id &&
+    (record.driver_application_id === application.driver_application_id ||
+      (application.driver_profile_id !== null && record.driver_profile_id === application.driver_profile_id)),
+  ).sort((a, b) =>
+    driverDocumentRank(a.evidence_type) - driverDocumentRank(b.evidence_type) ||
+    Date.parse(b.submitted_at) - Date.parse(a.submitted_at) ||
+    Date.parse(b.created_at) - Date.parse(a.created_at),
+  );
+}
 export type DriverEvidenceReviewStatus = "approved" | "rejected";
 export type DriverEvidenceReview = {
   status: DriverEvidenceReviewStatus;

@@ -20,7 +20,7 @@ import {
 } from "@/lib/tenant-admin/mutations";
 import { createDriver, transitionDriver, updateDriver } from "@/lib/driver-management/mutations";
 import { updateDriverOnboarding } from "@/lib/driver-management/onboarding";
-import { driverDocumentLabel, driverDocumentRank } from "@/lib/driver-management/evidence";
+import { applicationReviewEvidence, driverDocumentLabel, driverDocumentRank } from "@/lib/driver-management/evidence";
 import {
   countActiveMemberships,
   countPendingInvitations,
@@ -1079,10 +1079,7 @@ function DriverApplicationsPanel({
           </thead>
           <tbody>
             {summary.driverApplications.map((application) => {
-              const evidence = summary.driverEvidence.filter(
-                ({ driver_application_id }) =>
-                  driver_application_id === application.driver_application_id,
-              ).sort((a, b) => driverDocumentRank(a.evidence_type) - driverDocumentRank(b.evidence_type));
+              const evidence = applicationReviewEvidence(application, summary.driverEvidence);
               return (
                 <tr key={application.driver_application_id}>
                   <td>{application.full_name}</td>

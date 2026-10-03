@@ -28,8 +28,10 @@ remain independent of transportation-specific workflows.
   manual administrator review. Driver intake/status and Admin evidence use the order Profile photo,
   Driver ID photo, Vehicle photo, Vehicle registration document, Vehicle insurance document.
   Migration `20261003000200_driver_id_photo.sql` is owner-applied after a clean dry-run; code awaits
-  owner commit/push/deployment. Existing
+  owner code is pushed at `69ff8ab`. Existing
   approved Drivers are not retroactively gated; existing files and reviews remain intact.
+- Local follow-up makes application review include later uploads from its explicitly linked
+  driver profile. Original history and shared review state are preserved; no migration is needed.
 
 ## Next Product Domain: Community Platform
 

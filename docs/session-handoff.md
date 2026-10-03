@@ -4,16 +4,27 @@ Last updated: 2026-10-03
 
 ## Current objective and checkpoint
 
+Latest objective: owner verified a later Driver ID upload in Admin Drivers but not Applications,
+and authorized showing linked Driver evidence in application review. Local fix combines original
+application evidence with explicitly linked driver-profile evidence in the same tenant, preserves
+history and uses the existing file/review controls. No duplicate metadata, storage copy, matching
+by email, new workflow or migration. Latest uploads sort first within each document type; older
+history remains visible with review controls disabled. This supersedes the earlier next action.
+Scoped evidence/API tests (13), Admin typecheck, scoped lint, Transportation production build and
+whitespace checks pass. Existing Next/ESLint warnings remain. Live combined-view acceptance is
+pending. The fix is uncommitted/unpushed; owner performs Git mutations. Driver/Rider source untouched.
+
 Owner authorized a separate Driver ID photo accepting any ID for manual administrator approval
 or rejection. Keep the original portrait as Profile photo. Local implementation is complete;
-owner applied the database migration successfully; application code remains uncommitted/unpushed.
+owner applied the database migration successfully and committed/pushed application code as 69ff8ab.
+Owner output confirms f0aa537..69ff8ab main -> main. Vercel Ready/live acceptance is pending.
 
 Document order across Driver intake/status/history and Admin application/history/replacement:
 Profile photo, Driver ID photo, Vehicle photo, Vehicle registration document, Vehicle insurance
 document. Existing personal_photo and reference_document keys remain; ID uses driver_id_photo.
 No license-only validation, OCR, automatic approval or added vehicle linking/assignment step.
 
-Git main/origin main remains owner-pushed f0aa537. Both prior applicant migrations are owner-applied:
+Git main/origin main is owner-pushed 69ff8ab. Both prior applicant migrations are owner-applied:
 20261002000100_driver_applicant_portal.sql and 20261003000100_application_insurance_review.sql.
 Owner dry-run listed only 20261003000200_driver_id_photo.sql and the subsequent db push applied
 it successfully. No further database push is needed for this addition.
@@ -52,9 +63,12 @@ configuration remain unchanged. Owner performs every Git mutation, deployment an
 
 ## Exact next action
 
-Owner stages the explicit feature files, commits and pushes the application changes. Exclude the
-four generated Driver/Rider configuration edits. Do not rerun applied migrations. After deployment,
-verify new five-file intake,
+Owner commits/pushes the verified fix and confirms Admin and
+Transportation deployments Ready. Verify later ID and replacement uploads show in Applications
+and Drivers with the same review status, older history preserved and other-driver evidence excluded.
+No new migration is needed. Owner already saw the 69ff8ab ID upload in the live Driver/Drivers UI.
+The four generated Driver/Rider configuration edits remain unstaged; this checkpoint adds a local
+handoff edit. The linked-evidence fix needs a code push, but no migration. After deployment, verify new five-file intake,
 missing-ID-only completion, private viewing, ID approve/reject and stable evidence order in live
 Transportation Admin. Restore test state and do not approve placeholder identity/compliance files.
 

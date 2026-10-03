@@ -97,6 +97,11 @@ No Rider deployment, API rewrite or hosted Auth change is required.
    settings and unrelated fleet compliance remain authoritative.
 8. Verify existing activation/evidence emails and replacement-document flows still work. Do not
    initiate a payout, emergency or production trip just to test onboarding. Leave test Driver Offline.
+9. For an existing approved application, upload ID through Driver Profile > Documents. Refresh
+   Admin Applications and Drivers: both must show the same filename and pending status. Review
+   it once, then refresh both views and Driver to confirm the same decision. Replace a rejected
+   profile photo and confirm the new upload is current while the original remains older history
+   with disabled review controls. Verify another driver's uploads never appear in this application.
 
 Real authentication/native upload picking, administrator review/notification delivery and database
 transaction/RLS behavior require owner-controlled acceptance. No production applicant was created

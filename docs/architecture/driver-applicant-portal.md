@@ -67,6 +67,14 @@ Replacement evidence after approval uses the existing Driver documents screen. R
 explicitly refreshed by the applicant; existing notification contracts are unchanged. No promise
 of new submission/rejection email delivery is introduced.
 
+Admin application review includes original application evidence and later evidence belonging to
+the application's explicitly linked driver_profile_id, within the same tenant. It uses the same
+evidence rows and review endpoints as Drivers: no copied files, email-based matching or separate
+approval. History remains visible, ordered by document type then newest submission/creation time.
+Only the newest upload within each type has active review controls. Unlinked applications show
+only their own evidence. Existing authorization, private viewing, review audit and notifications
+remain unchanged; no schema change is required for this combined view.
+
 Driver already has a server-only SUPABASE_SERVICE_ROLE_KEY contract for payouts; application uploads
 also need it in the Driver deployment. Never expose it through a NEXT_PUBLIC variable or copy an
 environment file from another app. Missing server configuration fails closed with a generic error.
