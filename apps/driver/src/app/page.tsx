@@ -9,6 +9,7 @@ import {
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import { DriverShell, type DriverView } from "./DriverShell";
+import { DriverApplication } from "./DriverApplication";
 import { useDriverMapLocation } from "./useDriverMapLocation";
 import { driverHomeTotals } from "../lib/home-totals";
 import { LiveTripMap } from "@esh-platform/maps/client";
@@ -173,6 +174,8 @@ export default function DriverHome() {
   }, [supabaseAnonKey, supabaseUrl]);
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
   const [email, setEmail] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [signInPending, setSignInPending] = useState(false);
   const [message, setMessage] = useState("Sign in with the email used for your application.");
   const [summary, setSummary] = useState<DriverSummary | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -583,11 +586,15 @@ export default function DriverHome() {
           url.hash = "";
           return url.toString();
         })();
+    setSignInPending(true);
+    try {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: redirectUrl, shouldCreateUser: false },
+      options: { emailRedirectTo: redirectUrl, shouldCreateUser: applying },
     });
     setMessage(error ? error.message : "Check your email for the secure sign-in link.");
+    } catch { setMessage("Unable to send the sign-in link. Please try again."); }
+    finally { setSignInPending(false); }
   }
 
   async function openPayoutRoute(path: "onboarding" | "dashboard") {
@@ -1169,9 +1176,12 @@ export default function DriverHome() {
           </div>
         </div> : null}
         {!session ? (
+          <>
+          <h2>{applying ? "Apply to drive" : "Welcome back"}</h2>
+          {applying ? <p>Verify your email to complete your application here in ESH Driver.</p> : null}
           <form onSubmit={(event) => void signIn(event)}>
             <label>
-              Application email
+              {applying ? "Email address" : "Application email"}
               <input
                 autoComplete="email"
                 onChange={(event) => setEmail(event.target.value)}
@@ -1180,9 +1190,14 @@ export default function DriverHome() {
                 value={email}
               />
             </label>
-            <button type="submit">Email me a sign-in link</button>
+            <button disabled={signInPending} type="submit">{signInPending ? "Sending link…" : applying ? "Verify email to apply" : "Email me a sign-in link"}</button>
           </form>
+          <button className="secondary application-entry" disabled={signInPending} type="button" onClick={() => { setApplying(!applying); setMessage(applying ? "Sign in with the email used for your application." : "Check your email after requesting a verification link."); }}>
+            {applying ? "Back to Driver sign-in" : "New driver? Apply to drive"}
+          </button>
+          </>
         ) : null}
+        {session && supabase && !summary && !portalLoading ? <DriverApplication key={session.user.id} client={supabase} session={session} onApproved={activateAndLoad} activationMessage={message} /> : null}
         {summary ? (
           <div className="status-grid">
             {activeTab === "profile" ? <>
@@ -1985,7 +2000,7 @@ export default function DriverHome() {
             </button> : null}
           </div>
         ) : null}
-        {!summary ? <p className="summary" role="status">{message}</p> : null}
+        {!summary && (!session || portalLoading) ? <p className="summary" role="status">{message}</p> : null}
       </section>
   );
   const area = serviceAreas.find((item) => item.selected) ?? serviceAreas[0];

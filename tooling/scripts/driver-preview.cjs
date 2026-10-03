@@ -29,7 +29,7 @@ async function main() {
     }
     if (!ready) throw new Error("Driver preview did not start.");
     if (testMode) {
-      const tests = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", "tests/e2e/driver-home.spec.ts", "--workers=1"], {
+      const tests = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", "tests/e2e/driver-home.spec.ts", "tests/e2e/driver-application.spec.ts", "--workers=1"], {
         cwd: root, stdio: "inherit", env: { ...process.env, PLAYWRIGHT_BASE_URL: origin },
       });
       const code = await new Promise((resolve) => tests.once("exit", resolve));
@@ -39,9 +39,10 @@ async function main() {
       const context = await browser.newContext({ viewport: null, serviceWorkers: "block" });
       const { setupDriverPreview } = require("../../tests/fixtures/driver-preview.cjs");
       const page = await context.newPage();
-      await setupDriverPreview(page);
+      await setupDriverPreview(page, { applicant: process.argv.includes("--applicant") });
       await page.goto(origin);
       console.log("Driver preview: sample account/activity, real OpenFreeMap tiles. No production writes. Close this browser to stop.");
+      if (process.argv.includes("--applicant")) console.log("Application preview: already verified fixture identity; uploads and review status are simulated locally.");
       await new Promise((resolve) => browser.once("disconnected", resolve));
     }
   } finally { if (browser?.isConnected()) await browser.close(); server.kill(); }

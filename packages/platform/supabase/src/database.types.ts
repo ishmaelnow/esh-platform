@@ -641,6 +641,36 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_application_insurance: {
+        Row: {
+          insurance_id: string
+          tenant_id: string
+          driver_application_id: string
+          storage_bucket: string
+          storage_path: string
+          original_file_name: string
+          mime_type: string
+          size_bytes: number
+          submitted_at: string
+          vehicle_evidence_id: string | null
+        }
+        Insert: {
+          insurance_id?: string
+          tenant_id: string
+          driver_application_id: string
+          storage_bucket?: string
+          storage_path: string
+          original_file_name: string
+          mime_type: string
+          size_bytes: number
+          submitted_at?: string
+          vehicle_evidence_id?: string | null
+        }
+        Update: {
+          vehicle_evidence_id?: string | null
+        }
+        Relationships: []
+      }
       driver_evidence: {
         Row: {
           created_at: string
@@ -3148,6 +3178,24 @@ export type Database = {
           target_storage_path: string
         }
         Returns: string
+      }
+      my_driver_applications: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      link_driver_application_insurance: {
+        Args: { target_application_id: string; target_vehicle_id: string }
+        Returns: string
+      }
+      submit_driver_application_with_evidence_internal: {
+        Args: {
+          applicant_user_id: string
+          application_tenant_slug: string
+          applicant_name: string
+          applicant_phone: string
+          uploaded_evidence: Json
+        }
+        Returns: Json
       }
       submit_my_vehicle_photo: {
         Args: {

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ApplicationInsurance } from "./ApplicationInsurance";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { type SupabaseAuthSession } from "@esh-platform/supabase";
@@ -1082,6 +1083,8 @@ function DriverApplicationsPanel({
                 ({ driver_application_id }) =>
                   driver_application_id === application.driver_application_id,
               );
+              const assignment = summary.driverVehicleAssignments.find((item) => item.driver_profile_id === application.driver_profile_id && item.ended_at === null);
+              const assignedVehicle = summary.vehicles.find((item) => item.vehicle_id === assignment?.vehicle_id);
               return (
                 <tr key={application.driver_application_id}>
                   <td>{application.full_name}</td>
@@ -1092,6 +1095,10 @@ function DriverApplicationsPanel({
                   <td>{application.application_status}</td>
                   <td>
                     <div className="row-actions">
+                      <ApplicationInsurance accessToken={session.access_token} tenantId={summary.tenant.tenant_id}
+                        applicationId={application.driver_application_id} vehicleId={assignment?.vehicle_id ?? null}
+                        vehicleLabel={assignedVehicle ? `${assignedVehicle.make} ${assignedVehicle.model} · ${assignedVehicle.license_plate}` : null}
+                        canManage={canManageTenant} onOpen={(url) => setPreview({ title: "Vehicle insurance document", url })} onRefresh={onRefresh} />
                       {evidence.map((item) => {
                         const currentReviewStatus =
                           reviewOverrides[item.evidence_id] ?? item.review_status;

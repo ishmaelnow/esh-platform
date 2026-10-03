@@ -12,6 +12,14 @@ remain independent of transportation-specific workflows.
 - Resend invitation delivery and signed delivery webhooks.
 - Driver Management V1 with tenant lifecycle, authorization, and audit.
 - Driver applications, file submission, draft-profile creation, and onboarding checklists.
+- Driver-owned new-applicant entry, verified-email form, private file submission and own review
+  status are implemented locally. Additive migration `20261002000100_driver_applicant_portal.sql`
+  and real-account/database acceptance remain owner release gates. Existing administrator approval
+  and Driver activation/compliance gates remain unchanged. See `architecture/driver-applicant-portal.md`
+  and `operations/driver-application-manual-test.md`.
+- The local application now requires a distinct vehicle insurance upload. Authorized company
+  administrators explicitly hand it to the actual assigned vehicle's existing pending insurance
+  review; approval, expiration, notifications and service compliance remain authoritative.
 
 ## Next Product Domain: Community Platform
 
@@ -319,7 +327,7 @@ deferred from this milestone and were delivered under the later milestones below
 
 ## Mobile delivery
 
-- Driver map-home polish is local: approved Rider palette/shared geographic renderer, daily
+- Driver map-home polish is owner-pushed at `ba115a1`: approved Rider palette/shared geographic renderer, daily
   authorized earnings/counts, accessible side drawer, existing feature screens and a confirmed
   availability switch. Rider remains approved at owner-pushed `95c8ae2`.
 - Driver advance preorders/offline receipt settings, SOS, daily distance and online-duration

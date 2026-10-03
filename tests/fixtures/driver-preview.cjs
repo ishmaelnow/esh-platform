@@ -13,6 +13,7 @@ function publicMapResource(url) {
 }
 async function setupDriverPreview(page, options = {}) {
   let requestedStatus = options.online ? "online" : "offline";
+  let applicantRecord = null;
   await page.addInitScript(() => localStorage.setItem("esh-driver-portal-auth", JSON.stringify({
     access_token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmV2aWV3In0.preview", refresh_token: "preview-only",
     token_type: "bearer", expires_at: Math.floor(Date.now() / 1000) + 3600,
@@ -22,6 +23,7 @@ async function setupDriverPreview(page, options = {}) {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith("/auth/")) return route.fulfill({ json: { user: { id: "preview-driver", email: "driver-preview@example.invalid" } } });
     const rpc = url.pathname.split("/").pop();
+    if (options.applicant && rpc === "activate_my_driver_account") return route.fulfill({ status: 400, json: { message: "An approved application is required." } });
     const availability = { requestedStatus, effectiveStatus: requestedStatus, eligible: true, blockers: [], statusChangedAt: new Date().toISOString(), selectedServiceAreaId: "preview-area", selectedServiceAreaName: "Preview area" };
     if (rpc === "set_my_driver_availability") {
       requestedStatus = route.request().postDataJSON().target_status;
@@ -39,11 +41,23 @@ async function setupDriverPreview(page, options = {}) {
       my_driver_payout_account: { exists: false, onboardingStatus: "not_started", requirementsCurrentlyDue: [] },
       my_driver_bank_payouts: [], my_driver_earnings_notification_preferences: { earningsUpdatesEnabled: true },
       my_driver_sms_notification_settings: { enabled: false, maskedPhone: null, verifiedAt: null },
+      list_transport_application_tenants: [{ tenant_slug: "preview-company", display_name: "Application preview company" }],
     };
     return route.fulfill({ json: responses[rpc] ?? [] });
   });
-  await page.route("**/api/**", (route) => {
+  await page.route("**/api/**", async (route) => {
     if (new URL(route.request().url()).hostname.endsWith("mapbox.com")) return route.continue();
+    if (options.applicant && new URL(route.request().url()).pathname === "/api/applications/driver") {
+      if (route.request().method() === "POST") {
+        const form = await new Response(route.request().postDataBuffer(), { headers: { "Content-Type": route.request().headers()["content-type"] } }).formData();
+        const fields = [["personalPhoto", "personal_photo"], ["vehiclePhoto", "vehicle_photo"], ["document", "reference_document"], ["insurance", "insurance"]];
+        applicantRecord = { applicationId: "preview-application", tenantSlug: "preview-company", companyName: "Application preview company",
+          fullName: String(form.get("fullName") || "Preview applicant"), phone: String(form.get("phone") || ""), status: "submitted", submittedAt: new Date().toISOString(),
+          documents: fields.map(([field, type]) => ({ type, status: type === "insurance" ? "awaiting_vehicle" : "pending", fileName: form.get(field)?.name || "Preview upload", reviewNotes: null })) };
+        return route.fulfill({ json: { ok: true } });
+      }
+      return route.fulfill({ json: { applications: applicantRecord ? [applicantRecord] : [] } });
+    }
     return route.fulfill({ status: 400, json: { message: "Preview only: external actions are blocked." } });
   });
   // Real OpenFreeMap style/tiles with a dummy SDK token, exactly as the Rider preview.

@@ -4,44 +4,68 @@ Last updated: 2026-10-02
 
 ## Current objective
 
-Polish the existing Driver app while preserving the owner-approved Rider implementation at
-owner-pushed `95c8ae2`. Driver now has a live map home, compact daily totals, ordered left drawer,
-verified map actions, fixed confirmed availability switch, and a separate Preorders screen.
-Existing dispatch/lifecycle/navigation, wallet/payout, ratings, documents, operating areas,
-location sharing and notification controls remain available through secondary screens.
+Let a new Driver complete an application, including the requested insurance document, and check its review status inside Driver. The owner
+authorized this after approving and pushing Driver map polish at `ba115a1`. Rider remains approved
+at `95c8ae2`; Rider product source is untouched. No environment or authentication URL changed.
+The scoped Admin/Transportation extension lets company administrators view and hand off application
+insurance to the actual assigned vehicle's existing review/compliance workflow.
 
-Today's count comes from authorized completed trip records; earnings and platform fees use the
-existing locked wallet/statement definitions. Unavailable data is not reported as zero. Daily
-distance/online duration, advance preorder lists/offline receipt preference and Driver SOS have no
-existing backend contract. Those gaps are explicit; no emergency action or guessed preorder data
-was introduced. Map-only foreground GPS never enables server sharing or writes coordinates.
-Traffic is an additive opt-in shared-map feature, off by default for Rider.
+Local implementation adds New driver? Apply to drive, verified-email account creation, company
+selection, name/optional phone, private photos/registration/insurance document uploads, persistent own-status,
+missing-file completion for submitted legacy records and Continue after approval. Existing Driver
+sign-in still disallows identity creation. Existing administrator review, activation, compliance,
+trip/availability, document replacement and notification contracts stay authoritative.
 
-Checkpoint: 10 Driver browser checks, 12 Rider regression checks, 20 Driver unit tests and 16 shared
-map unit tests passed. Driver typecheck, scoped lint and the final production build passed with
-existing Supabase realtime/Next ESLint warnings; whitespace and preview syntax checks passed.
-Complete home offline/online, drawer, Preorders and compact/desktop screenshots were checked.
-The isolated preview uses dummy SDK credentials and unchanged real OpenFreeMap resources cached
-in memory. Street-level tiles and map idle state are required before accepting home captures.
-Real Driver authentication/GPS/traffic and native hardware-back/safe-area checks remain manual.
-Production must use Driver's own valid public configuration; no environment or auth URL changed.
+Migration `20261002000100_driver_applicant_portal.sql` adds verified own-status and a server-only
+atomic application/evidence transaction. Company/identity retries and approval are serialized;
+reviewed evidence cannot be overwritten. Upload failures clean confirmed unused files, while an
+ambiguous RPC outcome retains files and asks the applicant to refresh. No automatic admission,
+public evidence URLs or client table-write permission was added.
 
-Owner stopped this work briefly, then explicitly requested continuation. Local Driver edits are
-preserved, uncommitted and unpushed. Codex performed no Git mutation, deployment, database mutation,
-emergency, payout or production availability/trip action. Preserve all pre-existing Rider generated
-next-env/tsconfig changes and the owner's local handoff edits.
+Checkpoint: 40 Driver unit/API/source-contract checks and 6 Admin insurance authorization/API checks
+passed. Driver/Admin typechecks, scoped lint, preview syntax and Driver/Admin production builds
+passed with existing Supabase/Next ESLint warnings. Transportation Admin production build also
+passed with isolated, process-only dummy public configuration; its initial build lacked local
+public Supabase configuration. No environment file was changed and actual deployment configuration
+was not verified. All 18 browser checks passed (8 application plus 10 existing Driver map regressions), including
+manual applicant-preview upload receipt and a reduced viewport approximating keyboard occlusion.
+Complete 414 mobile form/status and compact captures were visually checked.
+Browser auth/upload/review responses are fixtures; map regressions use unchanged real street tiles.
+Live database/RLS, insurance linkage/review/concurrency, real email/native camera/file selection
+and administrator acceptance are pending. The rollback SQL acceptance script includes insurance
+storage/ownership, wrong-vehicle/self-link denial, idempotent linkage and pending compliance checks.
+
+Insurance is required independently of the generic reference document. It is stored privately
+before vehicle assignment. The administrator must match the policy and explicitly link it after
+application approval/assignment; linking creates pending vehicle_evidence insurance and does not
+approve it. Existing review, future expiration, notifications/reminders and online eligibility
+remain authoritative. Reviewed evidence and existing vehicle policies are not overwritten.
+
+Owner subsequently requested replacing Driver's unclear Reference document application label with
+Vehicle registration document. The form/help/status label now asks for registration; multipart
+`document` and legacy `reference_document` storage/review remain unchanged. Historical files are
+not rewritten or reclassified. Assigned-vehicle registration compliance is still a separate existing
+upload/review; this label change adds no automatic registration handoff. Insurance remains separate.
+The registration-label follow-up passed scoped lint and all 18 isolated mobile/browser checks.
+
+All application changes are uncommitted/unpushed. Codex performed no Git mutation, deployment,
+database mutation, production application/file upload, email, emergency, payout or trip action.
+Preserve Rider generated changes and Driver preview/build generated TypeScript paths.
 
 ## Authoritative checkpoint
 
-- Local main and recorded origin/main are at owner-pushed `95c8ae2`, following `1f0ff5d`.
+- Local main and recorded origin/main are at owner-pushed `ba115a1`, following `95c8ae2` and `1f0ff5d`.
   The owner's terminal confirms the push; the new production deployment is not independently verified.
 - Rider is approved. No Rider product source or environment change is part of Driver work.
 - Driver preview/build generate Driver next-env/tsconfig paths; those are not release feature files.
-- Latest local migration remains `20260904000700_community_starter_content.sql`. No migration is
-  added by this Driver work; remote migration state was not queried.
+- Latest local migration is the new, unapplied `20261002000100_driver_applicant_portal.sql`.
+  Prior baseline is `20260904000700_community_starter_content.sql`; remote state was not queried.
 - The owner performs all Git/deployment/database mutations.
 - Current Driver architecture: `docs/architecture/driver-map-home.md`.
   Manual verification: `docs/operations/driver-map-home-manual-test.md`.
+- Application architecture: `docs/architecture/driver-applicant-portal.md`.
+  Release/acceptance: `docs/operations/driver-application-manual-test.md`.
+  Owner-run local transactional database checks: `tooling/sql/driver-applicant-portal-test.sql`.
 - Preserve deferred native Rider sign-in/payment return, successful payment/booking records,
   SMS/provider approval, and all unrelated Community/Admin work below.
 
@@ -135,29 +159,34 @@ next-env/tsconfig changes and the owner's local handoff edits.
 
 ## Exact next action
 
-Owner reviews Driver home, drawer, Preorders unavailable state and secondary screens using
-`node tooling/scripts/driver-preview.cjs` from their own PowerShell session. This isolated browser
-uses fixture account/activity/GPS where explicitly supplied, unchanged real OpenFreeMap tiles and
-dummy SDK credentials; external business actions are blocked. Close the browser to stop its server.
+Owner reviews the applicant form with `node tooling/scripts/driver-preview.cjs --applicant`
+from their PowerShell session. It supplies an already verified fixture identity and simulates
+uploads/review status locally, sending no real email or application. Normal preview without the
+flag still opens approved Driver map home. Close the browser to stop its server.
 
-For real-account acceptance, use Driver's own verified local public configuration and sign-in.
-Verify real map/traffic authorization, GPS permission/foreground behavior, native hardware back,
-safe areas, confirmed availability and existing dispatch/lifecycle/notifications/wallet flows.
-Do not copy Rider/Admin environment files or change Auth URLs. Do not initiate an emergency or
-production financial/trip action for visual review. If production lifecycle testing is authorized,
-use identifiable data and restore Driver Offline, temporary settings and unfinished bookings.
+Before production release, owner runs the rollback SQL acceptance script on a disposable local
+Supabase database with the repository schema. Database behavior has not been executed by Codex;
+migration source assertions and API/browser mocks are not live RLS/transaction evidence. Then the
+owner runs `corepack pnpm exec supabase db push --dry-run`, confirms only the intended new migration,
+and only then applies it. Deploy Driver, the Admin backend route and Transportation Admin shared UI
+after the migration. Transportation's existing API rewrite stays unchanged. Existing Driver server-only
+SUPABASE_SERVICE_ROLE_KEY is also required for uploads; never expose or copy secrets across apps.
 
-Unsupported backend work is explicit: Driver SOS, advance reservations/preorder listings and
-offline receipt preferences, daily distance/online-duration aggregates. Do not present ordinary
-dispatch as preorders or invent totals to hide those gaps. Review the local Driver changes before
-the owner performs any Git mutation or deployment. No migration is needed for this UI work.
+Complete real email/native callback, camera/library/PDF upload, authorized Admin review/private-file
+viewing, under-review/rejected states, approval/activation, explicit insurance linkage and vehicle
+insurance review/expiration/compliance acceptance using the new
+manual procedure. Do not change hosted Auth settings based on assumptions. Do not use a production
+payout/emergency/trip for onboarding review; leave identifiable test Drivers Offline.
 
-Screenshots: ignored `test-results/driver-home-offline-414.png`,
-`driver-home-online-414.png`, `driver-home-location-414.png`, `driver-drawer-414.png`,
-`driver-preorders-414.png`, and compact/desktop captures.
-Manual procedure: `docs/operations/driver-map-home-manual-test.md`.
-Architecture: `docs/architecture/driver-map-home.md`.
-Preserve the approved Rider and deferred native Rider callback/payment records.
+New screenshots are ignored `test-results/driver-apply-verify-414.png`, `driver-apply-form-414.png`,
+`driver-apply-status-414.png`, `driver-apply-incomplete-320.png` and `driver-apply-short-414.png`.
+The form scrolls naturally; the reduced viewport is a keyboard approximation, not a physical-device
+keyboard proof. Unreferenced storage objects after ambiguous failures may need owner reconciliation.
+Do not delete referenced evidence. Unlinked legacy email-only applications are not automatically
+claimed; rejected/withdrawn cases receive company-contact guidance rather than automatic reapply.
+
+Preserve previously documented map-home backend gaps (SOS, advance preorders/offline preference,
+daily distance/online duration) and all approved Rider/deferred callback/payment work.
 
 ## Repository and deployment state
 

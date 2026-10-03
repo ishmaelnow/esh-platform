@@ -163,6 +163,27 @@ h1 {
   width: 100%;
 }
 
+.application-entry { margin-top: 20px; width: 100%; min-height: 48px; }
+.driver-application { margin-top: 28px; color: #153258; }
+.driver-application h2 { font-size: 26px; margin: 0; }
+.driver-application h3 { margin-top: 0; }
+.driver-application p { line-height: 1.6; overflow-wrap: anywhere; }
+.driver-application label { margin-top: 16px; font-weight: 600; }
+.driver-application input, .driver-application select { width: 100%; min-width: 0; color: #153258; }
+.driver-application :is(input, select, button):focus-visible { outline: 2px solid #153258; outline-offset: 3px; }
+.driver-application button { background: #153258; min-height: 48px; }
+.driver-application button.secondary { background: #edf1f6; color: #153258; }
+.application-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.application-status { background: #f3f6fa; padding: 20px; border-radius: 16px; margin-top: 20px; }
+.application-status ul { padding-left: 20px; line-height: 1.6; overflow-wrap: anywhere; }
+.application-status li + li { margin-top: 12px; }
+.application-help { font-size: 14px; color: #536277; }
+.application-error { color: #9d2431; background: #fff1f2; padding: 12px; border-radius: 10px; }
+@media (max-width: 600px) {
+  .shell:has(.driver-application), .shell:has(.application-entry) { align-items: flex-start; padding: calc(20px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); min-height: 100dvh; }
+  .shell:has(.driver-application) .portal-card, .shell:has(.application-entry) .portal-card { padding: 20px; }
+}
+
 .brand-lockup {
   align-items: center;
   display: flex;
