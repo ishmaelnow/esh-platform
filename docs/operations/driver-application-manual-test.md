@@ -61,6 +61,9 @@ No Rider deployment, API rewrite or hosted Auth change is required.
    separate JPEG/PNG/PDF vehicle registration and insurance documents. Check camera/library/file picking and image resizing. Invalid
    types and over-limit documents show actionable errors. Scroll the complete form with keyboard
    open; all fields and submission remain accessible without horizontal overflow.
+   Before submitting, switch to another browser tab and back. Company, name, phone and all four
+   selected files must remain. A same-user auth refresh must not clear the form. Sign-out/change
+   of identity must discard it; a full page reload does not preserve an unsubmitted draft.
 3. Submit once. Confirm receipt and each filename, reload and refresh status. No Driver home,
    availability or dispatch is admitted before approval. Status/network failure must not offer a
    duplicate application or claim submission succeeded. Interrupt an upload and retry safely.

@@ -488,8 +488,9 @@ export default function DriverHome() {
     };
   }, []);
 
+  const authenticatedUserId = session?.user.id;
   useEffect(() => {
-    if (!session) {
+    if (!authenticatedUserId) {
       setSummary(null);
       setReputationAvailable(false);
       setAvailability(null);
@@ -505,7 +506,7 @@ export default function DriverHome() {
       return;
     }
     void activateAndLoad();
-  }, [activateAndLoad, session]);
+  }, [activateAndLoad, authenticatedUserId]);
 
   useEffect(() => {
     const bucket = summary?.vehicle?.photoStorageBucket;
@@ -1197,7 +1198,7 @@ export default function DriverHome() {
           </button>
           </>
         ) : null}
-        {session && supabase && !summary && !portalLoading ? <DriverApplication key={session.user.id} client={supabase} session={session} onApproved={activateAndLoad} activationMessage={message} /> : null}
+        {session && supabase && !summary ? <div hidden={portalLoading}><DriverApplication key={session.user.id} client={supabase} session={session} onApproved={activateAndLoad} activationMessage={message} /></div> : null}
         {summary ? (
           <div className="status-grid">
             {activeTab === "profile" ? <>

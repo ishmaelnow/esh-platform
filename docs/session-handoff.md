@@ -1,8 +1,18 @@
 # Session Handoff
 
-Last updated: 2026-10-02
+Last updated: 2026-10-03
 
 ## Current objective
+
+Production applicant testing reached the correct verified Driver page, but all unsubmitted inputs
+and selected files reset when the owner switches browser tabs. Local follow-up fixes the repeated
+same-user auth recovery/account activation and keeps the applicant component mounted during account
+checks. Entries/files remain in memory only; reload/sign-out does not preserve an unsubmitted draft.
+Rider and Auth URLs remain untouched. Driver typecheck, scoped lint and production build passed;
+all 19 sequential browser checks passed (9 applicant including tab-return, 10 existing map/home
+regressions). Earlier runs hit restricted map access and a preview/build interruption; the final
+run after the build passed with real map access. This fix is uncommitted/unpushed; production still
+runs `a6700ea`. No migration or environment/auth change is needed for this fix.
 
 Let a new Driver complete an application, including the requested insurance document, and check its review status inside Driver. The owner
 authorized this after approving and pushing Driver map polish at `ba115a1`. Rider remains approved
@@ -48,18 +58,60 @@ not rewritten or reclassified. Assigned-vehicle registration compliance is still
 upload/review; this label change adds no automatic registration handoff. Insurance remains separate.
 The registration-label follow-up passed scoped lint and all 18 isolated mobile/browser checks.
 
-All application changes are uncommitted/unpushed. Codex performed no Git mutation, deployment,
+Owner committed the application work as `a6700ea`. Subsequent WSL `git ls-remote` confirmed GitHub
+still had `ba115a1`: the earlier reported push had not occurred. After applying the migration,
+the owner pushed from authenticated PowerShell and supplied successful output:
+`ba115a1..a6700ea main -> main`. GitHub receipt is now confirmed by that output; production
+Owner supplied Vercel Production listings showing Ready at `a6700ea` for Driver, Rider,
+Transportation Admin, Transportation, Community and Community Admin. These listed deployments
+are confirmed by the supplied dashboard output; the separate Admin backend deployment was not
+listed, and real application acceptance remains pending.
+Shell choice is flexible. WSL's Supabase authentication worked for this migration; PowerShell's
+Git authentication worked for this push. These are observed session details, not shell requirements.
+Codex performed no Git mutation, deployment,
 database mutation, production application/file upload, email, emergency, payout or trip action.
 Preserve Rider generated changes and Driver preview/build generated TypeScript paths.
 
+## Immediate release checkpoint — recover here first
+
+Owner ran `corepack pnpm exec supabase db push --dry-run` in PowerShell at 2026-10-02 22:30:30.
+It stopped during login-role initialization: Access token not provided; run supabase login or set
+SUPABASE_ACCESS_TOKEN. This attempt applied no migration and did not verify remote pending history.
+The telemetry prompt and deprecated inbucket warning are not the blocking error.
+
+Owner clarified that the authenticated Supabase connection is in WSL, not PowerShell. From
+`/mnt/c/Users/koshi/esh-platform`, the owner successfully reran
+`corepack pnpm exec supabase db push --dry-run`. It connected to the remote database and listed
+only `20261002000100_driver_applicant_portal.sql`. The dry-run migration-list gate is satisfied.
+Owner then ran `corepack pnpm exec supabase db push` in the same WSL session, confirmed the
+single intended migration, and supplied output showing it applied successfully and finished.
+Remote migration application is confirmed by the owner's CLI output. Do not repeat the push.
+Do not request another login or move credentials into
+PowerShell. Never ask the owner to paste an access token into chat, documentation or Git.
+Local rollback SQL and real-account/native acceptance remain unexecuted release checks; the
+successful push verifies migration execution, not application acceptance or authorization behavior.
+
+The preview is fixture-based and does not prove a deployed database contract. The owner applied
+the migration before the confirmed Git push. Existing approved Driver/Rider runtime
+has not been production-tested after this commit. Confirm the separate Admin backend and complete
+the documented local rollback SQL and real-account acceptance gates; do not claim release readiness
+from a successful Git push or dry run. Registration is still a label-only change with its legacy
+generic document contract; a true vehicle-registration handoff remains unfinished.
+
+Owner requested this durable checkpoint because their usage is running low. Resume from this
+checkpoint, preserve completed UI work, and do not restart the implementation or alter Auth URLs.
+
 ## Authoritative checkpoint
 
-- Local main and recorded origin/main are at owner-pushed `ba115a1`, following `95c8ae2` and `1f0ff5d`.
-  The owner's terminal confirms the push; the new production deployment is not independently verified.
+- Owner's PowerShell push confirmed GitHub main advanced from `ba115a1` to `a6700ea`.
+  Owner supplied Ready Production listings at `a6700ea` for Driver, Rider, Transportation Admin,
+  Transportation, Community and Community Admin. Separate Admin backend status and live acceptance
+  remain unverified.
 - Rider is approved. No Rider product source or environment change is part of Driver work.
 - Driver preview/build generate Driver next-env/tsconfig paths; those are not release feature files.
-- Latest local migration is the new, unapplied `20261002000100_driver_applicant_portal.sql`.
-  Prior baseline is `20260904000700_community_starter_content.sql`; remote state was not queried.
+- Latest local migration is `20261002000100_driver_applicant_portal.sql`, applied remotely by the owner.
+  Prior baseline is `20260904000700_community_starter_content.sql`. Owner's authenticated WSL dry
+  run listed only this migration; the subsequent real push reported successful application.
 - The owner performs all Git/deployment/database mutations.
 - Current Driver architecture: `docs/architecture/driver-map-home.md`.
   Manual verification: `docs/operations/driver-map-home-manual-test.md`.
@@ -159,6 +211,19 @@ Preserve Rider generated changes and Driver preview/build generated TypeScript p
 
 ## Exact next action
 
+Recover the Immediate release checkpoint above first: the owner successfully applied the intended
+migration through authenticated WSL. Listed Vercel deployments are Ready at `a6700ea`.
+Next complete real-account application acceptance and verify the separate Admin backend route
+deployment when testing administrator insurance access. Do not repeat login or migration push.
+Hand over the validated local applicant tab-reset fix for owner commit/push.
+After deployment, repeat filling company/name/phone/four files, switching tabs and returning before
+submission. The owner's approved Driver stays signed in on the phone; a separate laptop private
+browser and distinct test email are used for applicant acceptance.
+The owner's PowerShell output confirms pushing `a6700ea`;
+do not repeat staging/commit commands or assume database deployment happened with Git.
+Only four generated Driver/Rider TypeScript files were dirty before this handoff update; this
+handoff is now an additional local edit. Preserve them all; Codex does not stage or commit it.
+
 Owner reviews the applicant form with `node tooling/scripts/driver-preview.cjs --applicant`
 from their PowerShell session. It supplies an already verified fixture identity and simulates
 uploads/review status locally, sending no real email or application. Normal preview without the
@@ -167,9 +232,9 @@ flag still opens approved Driver map home. Close the browser to stop its server.
 Before production release, owner runs the rollback SQL acceptance script on a disposable local
 Supabase database with the repository schema. Database behavior has not been executed by Codex;
 migration source assertions and API/browser mocks are not live RLS/transaction evidence. Then the
-owner runs `corepack pnpm exec supabase db push --dry-run`, confirms only the intended new migration,
-and only then applies it. Deploy Driver, the Admin backend route and Transportation Admin shared UI
-after the migration. Transportation's existing API rewrite stays unchanged. Existing Driver server-only
+owner has already completed the dry run and successful remote migration push. Confirm deployment
+of Driver, the Admin backend route and Transportation Admin shared UI against the migrated database.
+Transportation's existing API rewrite stays unchanged. Existing Driver server-only
 SUPABASE_SERVICE_ROLE_KEY is also required for uploads; never expose or copy secrets across apps.
 
 Complete real email/native callback, camera/library/PDF upload, authorized Admin review/private-file

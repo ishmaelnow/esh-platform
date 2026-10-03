@@ -65,6 +65,37 @@ test("application entry uploads files, shows confirmed status and survives reloa
   await page.screenshot({ path: "test-results/driver-apply-status-414.png", fullPage: true });
 });
 
+test("switching tabs and same-user auth recovery preserve all application inputs", async ({ page, context }) => {
+  await setupApplicant(page);
+  await page.getByLabel("Full name").fill("Tab return applicant");
+  await page.getByLabel("Phone (optional)").fill("2025550123");
+  for (const field of files) await page.locator(`input[name="${field}"]`).setInputFiles({ name: `${field}.jpg`, mimeType: "image/jpeg", buffer: jpeg });
+  const otherTab = await context.newPage();
+  await otherTab.goto("about:blank");
+  await otherTab.bringToFront();
+  await page.bringToFront();
+  // Supabase recovers the existing session on visibility return and emits SIGNED_IN.
+  // Wait for a delayed activation if the page mistakenly re-runs that check.
+  let repeatedActivations = 0;
+  await page.route("**/rest/v1/rpc/activate_my_driver_account", async (route) => {
+    repeatedActivations++;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await route.fulfill({ status: 400, json: { message: "An approved application is required" } });
+  });
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.getByLabel("Full name")).toHaveValue("Tab return applicant");
+  await expect.poll(async () => {
+    // Allow auth recovery and React's resulting effects to finish before checking file inputs.
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 300)));
+    return page.locator('input[name="insurance"]').evaluate((input: HTMLInputElement) => input.files?.[0]?.name);
+  }).toBe("insurance.jpg");
+  await expect(page.getByLabel("Phone (optional)")).toHaveValue("2025550123");
+  await expect(page.getByLabel("Transportation company")).toHaveValue("fixture-company");
+  for (const field of files) expect(await page.locator(`input[name="${field}"]`).evaluate((input: HTMLInputElement) => input.files?.[0]?.name)).toBe(`${field}.jpg`);
+  expect(repeatedActivations).toBe(0);
+  await otherTab.close();
+});
+
 test("insurance is required and a legacy three-file application requests only the missing insurance", async ({ page }) => {
   const legacy = application(); legacy.documents = legacy.documents.filter((item) => item.type !== "insurance");
   await setupApplicant(page, [legacy]);

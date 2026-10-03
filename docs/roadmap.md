@@ -13,8 +13,10 @@ remain independent of transportation-specific workflows.
 - Driver Management V1 with tenant lifecycle, authorization, and audit.
 - Driver applications, file submission, draft-profile creation, and onboarding checklists.
 - Driver-owned new-applicant entry, verified-email form, private file submission and own review
-  status are implemented locally. Additive migration `20261002000100_driver_applicant_portal.sql`
-  and real-account/database acceptance remain owner release gates. Existing administrator approval
+  status shipped at `a6700ea`; the owner applied migration `20261002000100_driver_applicant_portal.sql`
+  and supplied Ready Driver/Transportation Admin deployment listings. Real-account/database
+  acceptance remains pending. A local follow-up preserves all form inputs and selected files on
+  same-user tab-return authentication recovery; it awaits owner commit/deployment. Existing administrator approval
   and Driver activation/compliance gates remain unchanged. See `architecture/driver-applicant-portal.md`
   and `operations/driver-application-manual-test.md`.
 - The local application now requires a distinct vehicle insurance upload. Authorized company

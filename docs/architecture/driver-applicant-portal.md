@@ -7,6 +7,10 @@ browser/native return URL. No Admin/Rider environment, hosted Auth setting, doma
 configuration changes. The native callback returns to Driver's root, where authenticated
 unapproved applicants can complete or view their application. Company selection can be repeated
 after verification; private details/files are not persisted in browser drafts.
+Same-user authentication recovery on tab return does not restart account activation. The applicant
+component remains mounted during account checks so entered details and selected files stay in memory.
+Sign-out or identity changes discard that form. Reloading the page still requires reentering an
+unsubmitted application; private documents are not persisted in local/session storage.
 
 The applicant chooses from the existing active Transportation company directory. Driver collects
 name, optional phone, personal photo, vehicle photo, vehicle registration document and vehicle insurance.
@@ -87,7 +91,7 @@ uses existing assigned-vehicle uploads. Applicant status discloses received/awai
 linked, then the original linked evidence's review status; current vehicle compliance remains the
 existing portal's authoritative latest-evidence view.
 
-This extension updates the still-unapplied applicant migration. Deploy the Admin backend route,
+This extension shipped with the owner-applied applicant migration. Deploy the Admin backend route,
 the Transportation Admin shared UI and Driver after the migration. Transportation's existing
 same-origin API rewrite remains unchanged. No domain, environment file or authentication URL changed.
 
