@@ -10,7 +10,6 @@ const select = vi.fn();
 const query = { eq: vi.fn(), maybeSingle: record };
 const tenant = "10000000-0000-4000-8000-000000000001";
 const app = "20000000-0000-4000-8000-000000000001";
-const vehicle = "30000000-0000-4000-8000-000000000001";
 const url = `http://admin.test/api/tenant-admin/drivers/application-insurance?tenantId=${tenant}&applicationId=${app}`;
 const insurance = { original_file_name: "fixture-insurance.pdf", storage_bucket: "driver-application-files", storage_path: "tenant/fixture/insurance.pdf", vehicle_evidence_id: null };
 
@@ -24,7 +23,7 @@ beforeEach(() => {
   mocks.service.mockReturnValue({ storage: { from: () => ({ createSignedUrl: signed }) } });
 });
 
-describe("Application insurance administrator handoff", () => {
+describe("Historical application insurance access", () => {
   it("requires authentication and tenant permission before storage access", async () => {
     expect((await GET(new Request(url))).status).toBe(403); expect(mocks.service).not.toHaveBeenCalled();
     rpc.mockResolvedValue({ data: false, error: null });
@@ -47,15 +46,10 @@ describe("Application insurance administrator handoff", () => {
     const response = await GET(new Request(`${url}&open=1`, { headers: { Authorization: "Bearer fixture" } }));
     expect(await response.json()).toEqual({ insurance: null }); expect(mocks.service).not.toHaveBeenCalled();
   });
-  it("uses the authenticated vehicle-link RPC and propagates assignment denial", async () => {
-    rpc.mockImplementation((name: string) => Promise.resolve(name === "can_manage_driver_management" ? { data: true, error: null } : { data: null, error: { message: "This vehicle is not assigned to this applicant" } }));
-    const response = await POST(new Request(url, { method: "POST", headers: { Authorization: "Bearer fixture", "Content-Type": "application/json" }, body: JSON.stringify({ tenantId: tenant, applicationId: app, vehicleId: vehicle }) }));
-    expect(response.status).toBe(400);
-    expect(rpc).toHaveBeenCalledWith("link_driver_application_insurance", { target_application_id: app, target_vehicle_id: vehicle });
+  it("retires linking without changing or approving evidence", () => {
+    const response = POST();
+    expect(response.status).toBe(410);
+    expect(rpc).not.toHaveBeenCalled();
     expect(mocks.service).not.toHaveBeenCalled();
-  });
-  it("reports successful linkage without directly approving or writing vehicle evidence", async () => {
-    const response = await POST(new Request(url, { method: "POST", headers: { Authorization: "Bearer fixture", "Content-Type": "application/json" }, body: JSON.stringify({ tenantId: tenant, applicationId: app, vehicleId: vehicle }) }));
-    expect(response.status).toBe(200); expect(await response.json()).toEqual({ ok: true }); expect(mocks.service).not.toHaveBeenCalled();
   });
 });

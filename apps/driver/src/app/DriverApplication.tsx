@@ -101,7 +101,7 @@ export function DriverApplication({ client, session, onApproved, activationMessa
         </> : terminal ? <p>Contact the company about its decision and your next steps.</p> : <p>{canSubmit ? "Upload the missing files below to finish your application." : missing.length ? "Review has started. Contact the company about the missing files before continuing." : "The company is reviewing your application. Refresh here to check its progress."}</p>}
         {application.documents.length ? <ul>{applicationFiles.map((file) => {
           const document = application.documents.find((item) => item.type === file.type);
-          return <li key={file.type}><strong>{file.label}</strong>: {document ? `${document.status === "pending" ? "Awaiting review" : document.status === "awaiting_vehicle" ? "Received; awaiting vehicle assignment and review" : document.status} — ${document.fileName}` : "Not uploaded"}
+          return <li key={file.type}><strong>{file.label}</strong>: {document ? `${document.status === "pending" || document.status === "awaiting_vehicle" ? "Awaiting review" : document.status} — ${document.fileName}` : "Not uploaded"}
             {document?.reviewNotes ? <p>{document.reviewNotes}</p> : null}</li>;
         })}</ul> : null}
       </div> : null}

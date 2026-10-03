@@ -46,10 +46,11 @@ Then, from the repository root, the owner runs:
 corepack pnpm exec supabase db push --dry-run
 ```
 
-Confirm the only pending migration is `20261002000100_driver_applicant_portal.sql` before applying
+The owner already applied `20261002000100_driver_applicant_portal.sql`. For the review correction,
+confirm the only pending migration is `20261003000100_application_insurance_review.sql` before applying
 with `corepack pnpm exec supabase db push`. If anything else is listed, stop and reconcile remote
 migration history. Remote migration state has not been queried by Codex. Deploy Driver only after
-this gate. Also deploy the Admin backend insurance route and Transportation Admin shared UI.
+this gate. Also deploy the Admin backend evidence route and Transportation Admin shared UI.
 No Rider deployment, API rewrite or hosted Auth change is required.
 
 ## Real-account acceptance (414 × 896, then compact phone and native)
@@ -68,7 +69,7 @@ No Rider deployment, API rewrite or hosted Auth change is required.
    availability or dispatch is admitted before approval. Status/network failure must not offer a
    duplicate application or claim submission succeeded. Interrupt an upload and retry safely.
 4. In the authorized company's existing Admin application/evidence screens, verify the same
-   application and four private files are available. Insurance has its own entry in Applications.
+   application and four private files are available. Insurance is in the same evidence review list.
    Before approval, open the insurance file as an authorized administrator; verify the policy
    identifies the actual vehicle. Another company/applicant cannot access
    these records or execute the internal submit RPC. No private storage URL is exposed to applicants.
@@ -78,14 +79,14 @@ No Rider deployment, API rewrite or hosted Auth change is required.
 6. With an authorized administrator, approve a clearly identified test application through the
    existing workflow. Refresh in Driver and Continue. Confirm account activation and remaining
    document/vehicle/operating-area requirements. Approval alone must not bypass online eligibility.
-7. Assign the actual vehicle to the approved draft Driver. In Applications, select Link insurance
-   to assigned vehicle. Confirm the policy matches the displayed make/model/plate. Link remains
-   unavailable without assignment; wrong-tenant/vehicle and unauthorized linking must fail. Open
-   Vehicles and review the resulting pending insurance through the existing approval/expiration
-   controls. Uploading/linking alone must not satisfy insurance compliance. Repeating the link
-   cannot duplicate evidence or overwrite a newer policy. Review emits existing notifications;
-   replacements and expiration reminders remain in the existing vehicle workflow. Test concurrency
-   between linkage and an ordinary insurance upload on the owner-controlled local database.
+7. Review insurance directly in Applications using Open, Approve evidence and Reject evidence.
+   No assignment/linking control should appear. Require rejection notes and a future expiration
+   for approval. Refresh Driver status to confirm the same decision. Existing submitted uploads,
+   filenames and reviews must survive the correction. Verify old linking HTTP requests return 410
+   and authenticated RPC linking permission is revoked. Do not approve placeholder test PDFs.
+   The added requirement defaults to optional for activation, preserving existing Driver gates;
+   submitting a new Driver application still requires all four files. Existing tenant requirement
+   settings and unrelated fleet compliance remain authoritative.
 8. Verify existing activation/evidence emails and replacement-document flows still work. Do not
    initiate a payout, emergency or production trip just to test onboarding. Leave test Driver Offline.
 

@@ -22,7 +22,7 @@ JPEG/PNG by the user/device. Files are private and never given public URLs.
 ## Authorization and transaction
 
 Migration `20261002000100_driver_applicant_portal.sql` adds own-status, atomic submission and
-explicit insurance-handoff RPCs plus private application-insurance metadata, preserving
+the initial insurance storage contract, preserving
 existing table RLS, administrator review, activation, notifications or operational permissions:
 
 - `my_driver_applications` requires a confirmed identity and reads only that auth user's matching
@@ -67,33 +67,33 @@ also need it in the Driver deployment. Never expose it through a NEXT_PUBLIC var
 environment file from another app. Missing server configuration fails closed with a generic error.
 Deploy the additive migration before deploying Driver; old Driver/Admin clients remain compatible.
 
-## Application insurance handoff
+## Application insurance review
 
-Insurance is a distinct required JPEG/PNG/PDF upload, separate from vehicle registration.
-It is stored in tenant-scoped driver_application_insurance, with composite tenant/application and
-tenant/vehicle-evidence foreign keys. Applicant direct reads/writes are denied. Authorized company
-administrators can open it privately from Applications, including before application approval.
-The original Admin-hosted application form remains compatible and does not suddenly require a new
-field; existing submitted records can add missing insurance in Driver without repeating other files.
+Owner clarified that the original application/review workflow must remain intact: insurance is
+one additional document, with no new fleet assignment or manual linking step. Forward migration
+`20261003000100_application_insurance_review.sql` moves the review metadata into driver_evidence
+without moving/deleting private files. Original legacy insurance rows and vehicle links remain
+historical provenance. Any existing linked review, reviewer, review notes, expiration and submission
+time are preserved. Unreviewed uploads become pending application evidence. The deployed earlier
+migration remains unchanged.
 
-After approval and actual vehicle assignment, an administrator explicitly matches the uploaded
-policy to that vehicle and selects Link insurance to assigned vehicle. The controlled RPC requires
-both Driver and Vehicle management permission, an approved application and the exact current
-tenant-scoped assignment. It does not infer a vehicle from a photo or invent a vehicle record.
-Linking creates pending vehicle_evidence of type insurance, preserving file provenance and adding
-a tenant audit record. Approval and expiration are supplied only through the existing Vehicles
-review workflow, with its existing notifications, reminders and service eligibility gates.
+New uploads use the same atomic application evidence transaction for all four documents. Admin
+Applications uses its existing Open, Approve evidence, Reject evidence, expiration and review-notes
+controls. Existing RLS, attributed review audits, approval-to-draft evidence attachment, notification
+triggers, self-service replacements and latest-evidence rules apply unchanged. Insurance approval
+requires a future expiration date. Insurance is not automatically approved upon submission.
 
-Repeated linkage is idempotent; reuse for another vehicle is rejected. Existing vehicle insurance
-is not overwritten or superseded by an older application upload. Insurance insert serialization
-also prevents a concurrent upload from being superseded by the handoff. Later policy replacement
-uses existing assigned-vehicle uploads. Applicant status discloses received/awaiting vehicle until
-linked, then the original linked evidence's review status; current vehicle compliance remains the
-existing portal's authoritative latest-evidence view.
+The added insurance requirement is optional for activation by default, preserving established
+activation requirements for already approved Drivers. It is still required to submit a new Driver
+application. Administrators retain the existing requirement configuration controls; this correction
+does not impose a new universal activation gate. Existing fleet/vehicle eligibility and separate
+vehicle compliance contracts are not rewritten or bypassed.
 
-This extension shipped with the owner-applied applicant migration. Deploy the Admin backend route,
-the Transportation Admin shared UI and Driver after the migration. Transportation's existing
-same-origin API rewrite remains unchanged. No domain, environment file or authentication URL changed.
+The old linking RPC is revoked for client/service roles; its HTTP POST returns 410 without mutation.
+The legacy read endpoint remains for private historical access, but no linking UI is rendered.
+Applicant status now reads all documents from the normal evidence list and reports Awaiting review.
+No vehicle is created, inferred or assigned by this application correction.
+Apply the forward migration before deploying Driver, Admin backend and Transportation shared UI.
 
 ## Application registration label
 
@@ -102,6 +102,6 @@ document and asks for JPEG/PNG/PDF vehicle registration, separately from insuran
 `document` multipart field and `reference_document` storage/review contract remain intact for
 compatibility. No historical document is rewritten, migrated or automatically approved as vehicle
 registration. This is an application-label change, not an insurance-style automatic handoff to
-vehicle_evidence. The actual assigned vehicle's separate registration upload/review and compliance
-requirements still apply. The original Admin-hosted form and existing Driver document history retain
-their legacy labels; do not assume every historical generic document was registration.
+vehicle_evidence. Existing fleet compliance requirements remain intact. Application review and
+Driver document history now use the requested registration label; no historical generic document
+is reclassified into vehicle registration evidence.

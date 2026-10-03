@@ -30,14 +30,7 @@ export async function GET(request: Request) {
   } catch (error) { return NextResponse.json({ message: error instanceof Error ? error.message : "Insurance is unavailable." }, { status: 403 }); }
 }
 
-export async function POST(request: Request) {
-  try {
-    const input = await request.json() as { tenantId?: string; applicationId?: string; vehicleId?: string };
-    const applicationId = validateTenantId(input.applicationId);
-    const { client, insurance } = await applicantInsurance(request, validateTenantId(input.tenantId), applicationId);
-    if (!insurance) throw new Error("Application insurance is missing.");
-    const result = await client.rpc("link_driver_application_insurance", { target_application_id: applicationId, target_vehicle_id: validateTenantId(input.vehicleId) });
-    if (result.error) throw new Error(result.error.message);
-    return NextResponse.json({ ok: true });
-  } catch (error) { return NextResponse.json({ message: error instanceof Error ? error.message : "Unable to link insurance." }, { status: 400 }); }
+// Compatibility read endpoint remains for historical uploads. New reviews use driver evidence.
+export function POST() {
+  return NextResponse.json({ message: "Review insurance with the application documents. Vehicle linking is no longer required." }, { status: 410 });
 }

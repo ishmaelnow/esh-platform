@@ -99,15 +99,15 @@ do $$ declare result jsonb; begin
   perform pg_temp.driver_assert('One application per identity/company',
     (select count(*) = 1 from public.driver_applications where applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid));
   perform pg_temp.driver_assert('All evidence exists and stays pending',
-    (select count(*) = 3 and bool_and(e.review_status = 'pending') from public.driver_evidence e
+    (select count(*) = 4 and bool_and(e.review_status = 'pending') from public.driver_evidence e
       join public.driver_applications a on a.driver_application_id = e.driver_application_id
       where a.applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid));
   perform pg_temp.driver_assert('Submitted applicant not auto-approved',
     (select bool_and(application_status = 'submitted' and driver_profile_id is null) from public.driver_applications
       where tenant_id = current_setting('app.driver_test_tenant')::uuid));
-  perform pg_temp.driver_assert('Application insurance is retained separately without vehicle approval',
-    (select count(*) = 2 and bool_and(vehicle_evidence_id is null) from public.driver_application_insurance
-      where tenant_id = current_setting('app.driver_test_tenant')::uuid));
+  perform pg_temp.driver_assert('Insurance is a normal application document',
+    (select count(*) = 2 and bool_and(review_status = 'pending') from public.driver_evidence
+      where tenant_id = current_setting('app.driver_test_tenant')::uuid and evidence_type = 'insurance'));
   perform pg_temp.driver_assert('Audit records one successful evidence transaction per applicant',
     (select count(*) = 2 from public.tenant_audit_events where tenant_id = current_setting('app.driver_test_tenant')::uuid
       and event_name = 'driver.application_evidence_submitted'));
@@ -156,56 +156,46 @@ do $$ begin
 end; $$;
 reset role;
 
--- Fixture-only approved profile and actual assignment for the explicit insurance handoff.
+-- Existing application evidence review: no vehicle record or assignment is needed.
 select set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('app.driver_test_owner'),
   'role', 'authenticated', 'email', 'driver-test-owner-' || current_setting('app.driver_test_owner') || '@example.invalid')::text, true);
-do $$ declare profile uuid := gen_random_uuid(); vehicle uuid := gen_random_uuid(); begin
-  perform set_config('app.driver_test_vehicle', vehicle::text, true);
-  insert into public.driver_profiles (driver_profile_id, tenant_id, driver_number, display_name, created_by_person_id, updated_by_person_id)
-  values (profile, current_setting('app.driver_test_tenant')::uuid, 'TEST-INSURANCE', 'Driver test insurance applicant',
-    current_setting('app.driver_test_owner')::uuid, current_setting('app.driver_test_owner')::uuid);
-  update public.driver_applications set application_status = 'approved', driver_profile_id = profile
-    where applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid;
-  insert into public.vehicles (vehicle_id, tenant_id, vehicle_number, make, model, model_year, color, license_plate, vin,
-    status, photo_storage_bucket, photo_storage_path, photo_original_file_name, photo_mime_type, photo_size_bytes,
-    created_by_person_id, updated_by_person_id)
-  values (vehicle, current_setting('app.driver_test_tenant')::uuid, 'TEST-INSURANCE', 'Fixture', 'Vehicle', 2020, 'Silver',
-    'TEST-INSURANCE', '1HGCM82633A004352', 'active', 'driver-application-files', 'fixture/vehicle.jpg', 'fixture.jpg', 'image/jpeg', 10,
-    current_setting('app.driver_test_owner')::uuid, current_setting('app.driver_test_owner')::uuid);
-  insert into public.driver_vehicle_assignments (tenant_id, driver_profile_id, vehicle_id, created_by_person_id)
-  values (current_setting('app.driver_test_tenant')::uuid, profile, vehicle, current_setting('app.driver_test_owner')::uuid);
-end; $$;
-
 set local role authenticated;
-do $$ declare application uuid; result_evidence uuid; begin
-  select driver_application_id into application from public.driver_applications
-    where applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid;
+do $$ declare insurance uuid; begin
+  select e.evidence_id into insurance from public.driver_evidence e
+  join public.driver_applications a on a.driver_application_id = e.driver_application_id
+  where a.applicant_auth_user_id = current_setting('app.driver_test_user_a')::uuid and e.evidence_type = 'insurance';
+  perform pg_temp.driver_assert('Administrator sees application insurance without assignment', insurance is not null);
   begin
-    perform public.link_driver_application_insurance(application, gen_random_uuid());
-    raise exception 'Wrong-vehicle linkage unexpectedly succeeded' using errcode = 'XX000';
+    update public.driver_evidence set review_status = 'approved', reviewed_at = now(),
+      reviewed_by_person_id = public.current_person_id()
+    where evidence_id = insurance;
+    raise exception 'Insurance approval without expiration unexpectedly succeeded' using errcode = 'XX000';
   exception when raise_exception then null; end;
-  result_evidence := public.link_driver_application_insurance(application, current_setting('app.driver_test_vehicle')::uuid);
-  perform pg_temp.driver_assert('Insurance link retries preserve the same evidence ID',
-    result_evidence = public.link_driver_application_insurance(application, current_setting('app.driver_test_vehicle')::uuid));
-  perform pg_temp.driver_assert('Insurance enters existing vehicle review pending and without expiration',
-    exists (select 1 from public.vehicle_evidence where evidence_id = result_evidence
-      and evidence_type = 'insurance' and review_status = 'pending' and expires_on is null));
-  perform pg_temp.driver_assert('Upload/link does not satisfy vehicle compliance',
-    public.vehicle_compliance_satisfied(current_setting('app.driver_test_vehicle')::uuid) = false);
+  update public.driver_evidence set review_status = 'rejected', review_notes = 'Fixture policy does not match.',
+    reviewed_at = now(), reviewed_by_person_id = public.current_person_id() where evidence_id = insurance;
+  perform pg_temp.driver_assert('Existing rejection records insurance review',
+    exists (select 1 from public.driver_evidence where evidence_id = insurance and review_status = 'rejected'));
+  update public.driver_evidence set review_status = 'approved', review_notes = 'Fixture policy verified.',
+    expires_on = current_date + 365, reviewed_at = now(), reviewed_by_person_id = public.current_person_id()
+    where evidence_id = insurance;
+  perform pg_temp.driver_assert('Existing approval records insurance and expiration without a vehicle',
+    exists (select 1 from public.driver_evidence where evidence_id = insurance
+      and review_status = 'approved' and expires_on = current_date + 365));
+  perform pg_temp.driver_assert('Old manual linking is not callable',
+    not has_function_privilege('authenticated', 'public.link_driver_application_insurance(uuid,uuid)', 'EXECUTE'));
 end; $$;
 reset role;
 
 select set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('app.driver_test_user_a'),
   'role', 'authenticated', 'email', 'driver-test-' || current_setting('app.driver_test_user_a') || '@example.invalid')::text, true);
 set local role authenticated;
-do $$ declare application uuid; begin
-  application := (public.my_driver_applications() -> 0 ->> 'applicationId')::uuid;
-  begin
-    perform public.link_driver_application_insurance(application, current_setting('app.driver_test_vehicle')::uuid);
-    raise exception 'Applicant self-linkage unexpectedly succeeded' using errcode = 'XX000';
-  exception when raise_exception then null; end;
-  perform pg_temp.driver_assert('Applicant insurance table reads remain denied by RLS',
-    (select count(*) = 0 from public.driver_application_insurance));
+do $$ declare result jsonb; begin
+  result := public.my_driver_applications();
+  perform pg_temp.driver_assert('Applicant sees reviewed insurance through own status',
+    exists (select 1 from jsonb_array_elements(result -> 0 -> 'documents') document
+      where document ->> 'type' = 'insurance' and document ->> 'status' = 'approved'));
+  perform pg_temp.driver_assert('Applicant cannot directly read application evidence',
+    (select count(*) = 0 from public.driver_evidence where tenant_id = current_setting('app.driver_test_tenant')::uuid));
 end; $$;
 reset role;
 

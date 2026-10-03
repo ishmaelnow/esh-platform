@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { ApplicationInsurance } from "./ApplicationInsurance";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { type SupabaseAuthSession } from "@esh-platform/supabase";
@@ -21,6 +20,7 @@ import {
 } from "@/lib/tenant-admin/mutations";
 import { createDriver, transitionDriver, updateDriver } from "@/lib/driver-management/mutations";
 import { updateDriverOnboarding } from "@/lib/driver-management/onboarding";
+import { driverDocumentLabel } from "@/lib/driver-management/evidence";
 import {
   countActiveMemberships,
   countPendingInvitations,
@@ -1083,8 +1083,6 @@ function DriverApplicationsPanel({
                 ({ driver_application_id }) =>
                   driver_application_id === application.driver_application_id,
               );
-              const assignment = summary.driverVehicleAssignments.find((item) => item.driver_profile_id === application.driver_profile_id && item.ended_at === null);
-              const assignedVehicle = summary.vehicles.find((item) => item.vehicle_id === assignment?.vehicle_id);
               return (
                 <tr key={application.driver_application_id}>
                   <td>{application.full_name}</td>
@@ -1095,10 +1093,6 @@ function DriverApplicationsPanel({
                   <td>{application.application_status}</td>
                   <td>
                     <div className="row-actions">
-                      <ApplicationInsurance accessToken={session.access_token} tenantId={summary.tenant.tenant_id}
-                        applicationId={application.driver_application_id} vehicleId={assignment?.vehicle_id ?? null}
-                        vehicleLabel={assignedVehicle ? `${assignedVehicle.make} ${assignedVehicle.model} · ${assignedVehicle.license_plate}` : null}
-                        canManage={canManageTenant} onOpen={(url) => setPreview({ title: "Vehicle insurance document", url })} onRefresh={onRefresh} />
                       {evidence.map((item) => {
                         const currentReviewStatus =
                           reviewOverrides[item.evidence_id] ?? item.review_status;
@@ -1123,7 +1117,7 @@ function DriverApplicationsPanel({
                           )?.evidence_id === item.evidence_id;
                         return (
                           <div className="onboarding-checklist" key={item.evidence_id}>
-                            <strong>{item.evidence_type.replaceAll("_", " ")}</strong>
+                            <strong>{driverDocumentLabel(item.evidence_type)}</strong>
                             <span>
                               {currentReviewStatus}
                               {required ? " · required" : " · optional"}
@@ -1157,7 +1151,7 @@ function DriverApplicationsPanel({
                               onClick={() =>
                                 void viewEvidence(
                                   item.evidence_id,
-                                  item.evidence_type.replaceAll("_", " "),
+                                  driverDocumentLabel(item.evidence_type),
                                 )
                               }
                               type="button"
@@ -1385,7 +1379,7 @@ function DriversPanel({
 
   async function uploadEvidence(
     driverProfileId: string,
-    evidenceType: "personal_photo" | "reference_document" | "vehicle_photo",
+    evidenceType: "personal_photo" | "reference_document" | "vehicle_photo" | "insurance",
     file: File,
   ) {
     const form = new FormData();
@@ -1803,7 +1797,7 @@ function DriversPanel({
                                 return (
                                   <div className="row-actions" key={evidence.evidence_id}>
                                     <span>
-                                      {evidence.evidence_type.replaceAll("_", " ")} ·{" "}
+                                      {driverDocumentLabel(evidence.evidence_type)} ·{" "}
                                       {currentReviewStatus}
                                       {isLatestEvidence ? " · current upload" : " · older upload"}
                                       {expirationRequired ? " · expiration required" : ""}
@@ -1834,7 +1828,7 @@ function DriversPanel({
                                       onClick={() =>
                                         void openDriverEvidence(
                                           evidence.evidence_id,
-                                          evidence.evidence_type.replaceAll("_", " "),
+                                          driverDocumentLabel(evidence.evidence_type),
                                         )
                                       }
                                       type="button"
@@ -1913,7 +1907,8 @@ function DriversPanel({
                               ? (
                                   [
                                     ["personal_photo", "Upload personal photo"],
-                                    ["reference_document", "Upload reference document"],
+                                    ["reference_document", "Upload vehicle registration document"],
+                                    ["insurance", "Upload vehicle insurance document"],
                                     ["vehicle_photo", "Upload vehicle photo"],
                                   ] as const
                                 ).map(([evidenceType, label]) => (

@@ -19,9 +19,11 @@ remain independent of transportation-specific workflows.
   same-user tab-return authentication recovery; it awaits owner commit/deployment. Existing administrator approval
   and Driver activation/compliance gates remain unchanged. See `architecture/driver-applicant-portal.md`
   and `operations/driver-application-manual-test.md`.
-- The local application now requires a distinct vehicle insurance upload. Authorized company
-  administrators explicitly hand it to the actual assigned vehicle's existing pending insurance
-  review; approval, expiration, notifications and service compliance remain authoritative.
+- The Driver application requires insurance as one additional document. The local correction
+  restores it to the original application evidence Open/Approve/Reject workflow, removing the
+  added vehicle-assignment/linking step. Forward migration `20261003000100_application_insurance_review.sql`
+  preserves existing files/reviews and awaits owner dry-run/apply/deployment. Existing approval,
+  expiration, notification and activation requirements stay authoritative.
 
 ## Next Product Domain: Community Platform
 

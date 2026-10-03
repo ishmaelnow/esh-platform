@@ -2,124 +2,75 @@
 
 Last updated: 2026-10-03
 
-## Current objective
+## Current objective and checkpoint
 
-Production applicant testing reached the correct verified Driver page, but all unsubmitted inputs
-and selected files reset when the owner switches browser tabs. Local follow-up fixes the repeated
-same-user auth recovery/account activation and keeps the applicant component mounted during account
-checks. Entries/files remain in memory only; reload/sign-out does not preserve an unsubmitted draft.
-Rider and Auth URLs remain untouched. Driver typecheck, scoped lint and production build passed;
-all 19 sequential browser checks passed (9 applicant including tab-return, 10 existing map/home
-regressions). Earlier runs hit restricted map access and a preview/build interruption; the final
-run after the build passed with real map access. This fix is uncommitted/unpushed; production still
-runs `a6700ea`. No migration or environment/auth change is needed for this fix.
+Owner authorized removing the extra insurance step: preserve original application/review,
+add insurance as one additional document and rename Reference document to Vehicle registration
+document. Drivers register their own vehicles. No new fleet assignment/manual linking workflow.
+Do not expand this correction into vehicle lifecycle redesign or bypass existing eligibility.
 
-Let a new Driver complete an application, including the requested insurance document, and check its review status inside Driver. The owner
-authorized this after approving and pushing Driver map polish at `ba115a1`. Rider remains approved
-at `95c8ae2`; Rider product source is untouched. No environment or authentication URL changed.
-The scoped Admin/Transportation extension lets company administrators view and hand off application
-insurance to the actual assigned vehicle's existing review/compliance workflow.
+Git main/origin main is `8c8770b`, the committed applicant tab-reset fix. Preserve it.
+Owner applied `20261002000100_driver_applicant_portal.sql` and pushed applicant work at `a6700ea`.
+Owner supplied Ready Vercel Production listings for Driver, Rider, Transportation Admin,
+Transportation, Community and Community Admin at that commit. Shell choice remains flexible.
 
-Local implementation adds New driver? Apply to drive, verified-email account creation, company
-selection, name/optional phone, private photos/registration/insurance document uploads, persistent own-status,
-missing-file completion for submitted legacy records and Continue after approval. Existing Driver
-sign-in still disallows identity creation. Existing administrator review, activation, compliance,
-trip/availability, document replacement and notification contracts stay authoritative.
+Live laptop private-browser testing verified email, submitted all four files and reached Application
+received. Administrator found the submitted test application under Yahooemail. Its registration and
+insurance PDFs are placeholders; do not approve them as valid compliance documents. No need to
+recreate it or sign out the approved phone Driver.
 
-Migration `20261002000100_driver_applicant_portal.sql` adds verified own-status and a server-only
-atomic application/evidence transaction. Company/identity retries and approval are serialized;
-reviewed evidence cannot be overwritten. Upload failures clean confirmed unused files, while an
-ambiguous RPC outcome retains files and asks the applicant to refresh. No automatic admission,
-public evidence URLs or client table-write permission was added.
+Local correction removes ApplicationInsurance/linking UI. Insurance uses the original Applications
+evidence list with Open, Approve evidence, Reject evidence, review notes and expiration controls.
+Application, document-history and replacement-upload labels use Vehicle registration document;
+the legacy `reference_document` key remains unchanged.
 
-Checkpoint: 40 Driver unit/API/source-contract checks and 6 Admin insurance authorization/API checks
-passed. Driver/Admin typechecks, scoped lint, preview syntax and Driver/Admin production builds
-passed with existing Supabase/Next ESLint warnings. Transportation Admin production build also
-passed with isolated, process-only dummy public configuration; its initial build lacked local
-public Supabase configuration. No environment file was changed and actual deployment configuration
-was not verified. All 18 browser checks passed (8 application plus 10 existing Driver map regressions), including
-manual applicant-preview upload receipt and a reduced viewport approximating keyboard occlusion.
-Complete 414 mobile form/status and compact captures were visually checked.
-Browser auth/upload/review responses are fixtures; map regressions use unchanged real street tiles.
-Live database/RLS, insurance linkage/review/concurrency, real email/native camera/file selection
-and administrator acceptance are pending. The rollback SQL acceptance script includes insurance
-storage/ownership, wrong-vehicle/self-link denial, idempotent linkage and pending compliance checks.
+Owner-applied migration: `20261003000100_application_insurance_review.sql`. It adds insurance to normal
+driver_evidence, imports existing application insurance with original private paths/timestamps and
+any actual linked review/reviewer/notes/expiration intact, and preserves old rows/vehicle evidence
+for audit. No files or historical records are deleted. Old linking RPC is revoked for client/service
+roles; HTTP POST returns 410. Authorized historical GET remains. Four-file submission/own status
+use normal evidence. Original approval attaches insurance automatically to the draft Driver;
+normal RLS, review audit/notifications, latest-evidence and replacement workflows are reused.
+Manual client types accept text evidence types and unchanged RPC signatures.
 
-Insurance is required independently of the generic reference document. It is stored privately
-before vehicle assignment. The administrator must match the policy and explicitly link it after
-application approval/assignment; linking creates pending vehicle_evidence insurance and does not
-approve it. Existing review, future expiration, notifications/reminders and online eligibility
-remain authoritative. Reviewed evidence and existing vehicle policies are not overwritten.
+Insurance remains required for new Driver application submission and approval requires future
+expiration. Its added tenant requirement defaults to optional for activation to preserve established
+gates for already-approved Drivers. Existing administrator requirement controls remain authoritative.
+No vehicle is created/assigned; separate existing fleet compliance is untouched.
 
-Owner subsequently requested replacing Driver's unclear Reference document application label with
-Vehicle registration document. The form/help/status label now asks for registration; multipart
-`document` and legacy `reference_document` storage/review remain unchanged. Historical files are
-not rewritten or reclassified. Assigned-vehicle registration compliance is still a separate existing
-upload/review; this label change adds no automatic registration handoff. Insurance remains separate.
-The registration-label follow-up passed scoped lint and all 18 isolated mobile/browser checks.
+Validation: 55 scoped Driver/Admin unit/API/source-contract tests and 19 isolated browser tests
+passed. Driver/Admin typechecks and production builds passed. Transportation Admin build passed
+with process-only dummy public configuration. Scoped lint, preview syntax and whitespace checks
+passed. Existing Supabase/Next warnings remain.
+API/browser fixtures and source checks do not prove database execution/RLS/backfill. Owner local
+rollback SQL checks normal insurance review/rejection/future expiry without a vehicle, own status,
+four normal evidence records and revoked linking. Database and live review acceptance not run.
 
-Owner committed the application work as `a6700ea`. Subsequent WSL `git ls-remote` confirmed GitHub
-still had `ba115a1`: the earlier reported push had not occurred. After applying the migration,
-the owner pushed from authenticated PowerShell and supplied successful output:
-`ba115a1..a6700ea main -> main`. GitHub receipt is now confirmed by that output; production
-Owner supplied Vercel Production listings showing Ready at `a6700ea` for Driver, Rider,
-Transportation Admin, Transportation, Community and Community Admin. These listed deployments
-are confirmed by the supplied dashboard output; the separate Admin backend deployment was not
-listed, and real application acceptance remains pending.
-Shell choice is flexible. WSL's Supabase authentication worked for this migration; PowerShell's
-Git authentication worked for this push. These are observed session details, not shell requirements.
-Codex performed no Git mutation, deployment,
-database mutation, production application/file upload, email, emergency, payout or trip action.
-Preserve Rider generated changes and Driver preview/build generated TypeScript paths.
+Correction code is local and uncommitted; its migration is applied remotely by the owner.
+Preserve generated Driver/Rider/Transportation files.
+Rider product source and Auth URLs/config remain unchanged. Codex performs no Git, deployment,
+database mutation, production file upload/email/review/availability/trip/payout/emergency actions.
 
-## Immediate release checkpoint — recover here first
+## Exact next action
 
-Owner ran `corepack pnpm exec supabase db push --dry-run` in PowerShell at 2026-10-02 22:30:30.
-It stopped during login-role initialization: Access token not provided; run supabase login or set
-SUPABASE_ACCESS_TOKEN. This attempt applied no migration and did not verify remote pending history.
-The telemetry prompt and deprecated inbucket warning are not the blocking error.
+Owner supplied a successful authenticated WSL dry run listing only
+`20261003000100_application_insurance_review.sql`. The migration-list gate is satisfied;
+Owner then confirmed the intended migration and supplied successful real-push output:
+Applying migration followed by Finished supabase db push. Migration execution is confirmed,
+but live review acceptance is still pending. Do not repeat the migration push.
+Next owner stages the explicit correction files, commits and pushes; confirm Driver, Admin backend
+and Transportation shared UI deployment before repeating application review.
 
-Owner clarified that the authenticated Supabase connection is in WSL, not PowerShell. From
-`/mnt/c/Users/koshi/esh-platform`, the owner successfully reran
-`corepack pnpm exec supabase db push --dry-run`. It connected to the remote database and listed
-only `20261002000100_driver_applicant_portal.sql`. The dry-run migration-list gate is satisfied.
-Owner then ran `corepack pnpm exec supabase db push` in the same WSL session, confirmed the
-single intended migration, and supplied output showing it applied successfully and finished.
-Remote migration application is confirmed by the owner's CLI output. Do not repeat the push.
-Do not request another login or move credentials into
-PowerShell. Never ask the owner to paste an access token into chat, documentation or Git.
-Local rollback SQL and real-account/native acceptance remain unexecuted release checks; the
-successful push verifies migration execution, not application acceptance or authorization behavior.
+Then review the existing application: four evidence entries, no linking/assignment instruction,
+same filenames/reviews, normal private Open and original review controls. Reject placeholder insurance
+with a clear reason; refresh Driver status to confirm it. Valid insurance approval requires future
+expiration. Preserve applicant tab persistence and leave test Drivers Offline.
 
-The preview is fixture-based and does not prove a deployed database contract. The owner applied
-the migration before the confirmed Git push. Existing approved Driver/Rider runtime
-has not been production-tested after this commit. Confirm the separate Admin backend and complete
-the documented local rollback SQL and real-account acceptance gates; do not claim release readiness
-from a successful Git push or dry run. Registration is still a label-only change with its legacy
-generic document contract; a true vehicle-registration handoff remains unfinished.
-
-Owner requested this durable checkpoint because their usage is running low. Resume from this
-checkpoint, preserve completed UI work, and do not restart the implementation or alter Auth URLs.
-
-## Authoritative checkpoint
-
-- Owner's PowerShell push confirmed GitHub main advanced from `ba115a1` to `a6700ea`.
-  Owner supplied Ready Production listings at `a6700ea` for Driver, Rider, Transportation Admin,
-  Transportation, Community and Community Admin. Separate Admin backend status and live acceptance
-  remain unverified.
-- Rider is approved. No Rider product source or environment change is part of Driver work.
-- Driver preview/build generate Driver next-env/tsconfig paths; those are not release feature files.
-- Latest local migration is `20261002000100_driver_applicant_portal.sql`, applied remotely by the owner.
-  Prior baseline is `20260904000700_community_starter_content.sql`. Owner's authenticated WSL dry
-  run listed only this migration; the subsequent real push reported successful application.
-- The owner performs all Git/deployment/database mutations.
-- Current Driver architecture: `docs/architecture/driver-map-home.md`.
-  Manual verification: `docs/operations/driver-map-home-manual-test.md`.
-- Application architecture: `docs/architecture/driver-applicant-portal.md`.
-  Release/acceptance: `docs/operations/driver-application-manual-test.md`.
-  Owner-run local transactional database checks: `tooling/sql/driver-applicant-portal-test.sql`.
-- Preserve deferred native Rider sign-in/payment return, successful payment/booking records,
-  SMS/provider approval, and all unrelated Community/Admin work below.
+Architecture: `docs/architecture/driver-applicant-portal.md`, `docs/architecture/driver-map-home.md`.
+Manual checks: `docs/operations/driver-application-manual-test.md`,
+`docs/operations/driver-map-home-manual-test.md`. Owner local SQL:
+`tooling/sql/driver-applicant-portal-test.sql`.
+Preserve deferred Rider/native/payment, provider approval, Community and control-plane work below.
 
 ## Rider draft and validation
 
@@ -208,50 +159,6 @@ checkpoint, preserve completed UI work, and do not restart the implementation or
   not been inspected. Do not change hosted settings during this rollback.
 - Rider imports Mapbox CSS through the shared maps package, which owns the Mapbox dependency;
   this fixes stylesheet resolution with the strict pnpm installation.
-
-## Exact next action
-
-Recover the Immediate release checkpoint above first: the owner successfully applied the intended
-migration through authenticated WSL. Listed Vercel deployments are Ready at `a6700ea`.
-Next complete real-account application acceptance and verify the separate Admin backend route
-deployment when testing administrator insurance access. Do not repeat login or migration push.
-Hand over the validated local applicant tab-reset fix for owner commit/push.
-After deployment, repeat filling company/name/phone/four files, switching tabs and returning before
-submission. The owner's approved Driver stays signed in on the phone; a separate laptop private
-browser and distinct test email are used for applicant acceptance.
-The owner's PowerShell output confirms pushing `a6700ea`;
-do not repeat staging/commit commands or assume database deployment happened with Git.
-Only four generated Driver/Rider TypeScript files were dirty before this handoff update; this
-handoff is now an additional local edit. Preserve them all; Codex does not stage or commit it.
-
-Owner reviews the applicant form with `node tooling/scripts/driver-preview.cjs --applicant`
-from their PowerShell session. It supplies an already verified fixture identity and simulates
-uploads/review status locally, sending no real email or application. Normal preview without the
-flag still opens approved Driver map home. Close the browser to stop its server.
-
-Before production release, owner runs the rollback SQL acceptance script on a disposable local
-Supabase database with the repository schema. Database behavior has not been executed by Codex;
-migration source assertions and API/browser mocks are not live RLS/transaction evidence. Then the
-owner has already completed the dry run and successful remote migration push. Confirm deployment
-of Driver, the Admin backend route and Transportation Admin shared UI against the migrated database.
-Transportation's existing API rewrite stays unchanged. Existing Driver server-only
-SUPABASE_SERVICE_ROLE_KEY is also required for uploads; never expose or copy secrets across apps.
-
-Complete real email/native callback, camera/library/PDF upload, authorized Admin review/private-file
-viewing, under-review/rejected states, approval/activation, explicit insurance linkage and vehicle
-insurance review/expiration/compliance acceptance using the new
-manual procedure. Do not change hosted Auth settings based on assumptions. Do not use a production
-payout/emergency/trip for onboarding review; leave identifiable test Drivers Offline.
-
-New screenshots are ignored `test-results/driver-apply-verify-414.png`, `driver-apply-form-414.png`,
-`driver-apply-status-414.png`, `driver-apply-incomplete-320.png` and `driver-apply-short-414.png`.
-The form scrolls naturally; the reduced viewport is a keyboard approximation, not a physical-device
-keyboard proof. Unreferenced storage objects after ambiguous failures may need owner reconciliation.
-Do not delete referenced evidence. Unlinked legacy email-only applications are not automatically
-claimed; rejected/withdrawn cases receive company-contact guidance rather than automatic reapply.
-
-Preserve previously documented map-home backend gaps (SOS, advance preorders/offline preference,
-daily distance/online duration) and all approved Rider/deferred callback/payment work.
 
 ## Repository and deployment state
 

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { applicationStatusLabel, missingApplicationFiles, validateApplicationFile, type DriverApplicationStatus } from "./application";
 
-const migration = readFileSync(new URL("../../../../supabase/migrations/20261002000100_driver_applicant_portal.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../../../../supabase/migrations/20261003000100_application_insurance_review.sql", import.meta.url), "utf8");
 const application: DriverApplicationStatus = { applicationId: "fixture", tenantSlug: "fixture", companyName: "Fixture company", fullName: "Fixture applicant", phone: null, submittedAt: "2026-10-02", status: "submitted", documents: [] };
 
 describe("Applicant evidence and status", () => {
@@ -31,7 +31,7 @@ describe("Applicant evidence and status", () => {
 // an owner-controlled local Supabase database to verify database behavior before release.
 describe("Driver applicant migration contracts", () => {
   it("scopes status to verified auth identity and omits private storage and internal reviewer identifiers", () => {
-    const status = migration.slice(0, migration.indexOf("-- Trusted Driver server only"));
+    const status = migration.slice(migration.indexOf("create or replace function public.my_driver_applications()"), migration.indexOf("-- Trusted Driver server only"));
     expect(status).toContain("a.applicant_auth_user_id = applicant_id"); expect(status).toContain("u.email_confirmed_at is not null");
     expect(status).not.toContain("'storage_path'"); expect(status).not.toContain("'reviewed_by_person_id'");
     expect(status).toContain("from public, anon");
@@ -46,15 +46,16 @@ describe("Driver applicant migration contracts", () => {
     expect(migration).toContain("app.application_status <> 'submitted'"); expect(migration).toContain("All four application files are required");
     expect(migration).toContain("'driver.application_evidence_submitted'"); expect(migration).toContain("storage.objects");
   });
-  it("requires application insurance but hands it to vehicle review without copying approval", () => {
-    expect(migration).toContain("Vehicle insurance document is required");
-    expect(migration).toContain("foreign key (tenant_id, driver_application_id)");
-    expect(migration).toContain("foreign key (tenant_id, vehicle_evidence_id)");
-    expect(migration).toContain("public.can_manage_vehicle_management(app.tenant_id)");
-    expect(migration).toContain("This vehicle is not assigned to this applicant");
-    expect(migration).toContain("Insurance is already linked to a different vehicle");
-    const link = migration.slice(migration.indexOf("create or replace function public.link_driver_application_insurance"));
-    expect(link).not.toContain("'approved',"); expect(link).toContain("'driver.application_insurance_linked'");
-    expect(link).toContain("vehicle_insurance_serialize_upload");
+  it("restores insurance to original evidence review and preserves files and existing reviews", () => {
+    expect(migration).toContain("array['personal_photo', 'vehicle_photo', 'reference_document', 'insurance']");
+    expect(migration).toContain("i.storage_bucket, i.storage_path, i.original_file_name");
+    expect(migration).toContain("coalesce(v.review_status, 'pending')");
+    expect(migration).toContain("a.driver_profile_id");
+    expect(migration).toContain("from public, anon, authenticated, service_role");
+    expect(migration).not.toContain("insert into public.vehicle_evidence");
+    expect(migration).not.toContain("drop table");
+    const submission = migration.slice(migration.indexOf("-- Trusted Driver server only"));
+    expect(submission).not.toContain("insert into public.driver_application_insurance");
+    expect(submission).toContain("insert into public.driver_evidence");
   });
 });

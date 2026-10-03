@@ -2,9 +2,14 @@ export const driverEvidenceTypes = [
   "personal_photo",
   "reference_document",
   "vehicle_photo",
+  "insurance",
 ] as const;
 
 export type DriverEvidenceType = (typeof driverEvidenceTypes)[number];
+export function driverDocumentLabel(type: string) {
+  return type === "reference_document" ? "Vehicle registration document"
+    : type === "insurance" ? "Vehicle insurance document" : type.replaceAll("_", " ");
+}
 export type DriverEvidenceReviewStatus = "approved" | "rejected";
 export type DriverEvidenceReview = {
   status: DriverEvidenceReviewStatus;

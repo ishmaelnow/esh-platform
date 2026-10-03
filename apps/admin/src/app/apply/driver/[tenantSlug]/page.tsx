@@ -96,7 +96,7 @@ export default function DriverApplicationPage({
       );
       if (totalFileBytes > 4_000_000) {
         throw new Error(
-          "The selected files are still too large. Use a reference document smaller than 1 MB.",
+          "The selected files are still too large. Use a vehicle registration document smaller than 1 MB.",
         );
       }
       if (!session) throw new Error("Verify your email before submitting.");
@@ -204,7 +204,7 @@ export default function DriverApplicationPage({
               />
             </label>
             <label>
-              Reference document
+              Vehicle registration document
               <input
                 accept="image/jpeg,image/png,application/pdf"
                 capture="environment"

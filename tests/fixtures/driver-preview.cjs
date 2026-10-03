@@ -53,7 +53,7 @@ async function setupDriverPreview(page, options = {}) {
         const fields = [["personalPhoto", "personal_photo"], ["vehiclePhoto", "vehicle_photo"], ["document", "reference_document"], ["insurance", "insurance"]];
         applicantRecord = { applicationId: "preview-application", tenantSlug: "preview-company", companyName: "Application preview company",
           fullName: String(form.get("fullName") || "Preview applicant"), phone: String(form.get("phone") || ""), status: "submitted", submittedAt: new Date().toISOString(),
-          documents: fields.map(([field, type]) => ({ type, status: type === "insurance" ? "awaiting_vehicle" : "pending", fileName: form.get(field)?.name || "Preview upload", reviewNotes: null })) };
+          documents: fields.map(([field, type]) => ({ type, status: "pending", fileName: form.get(field)?.name || "Preview upload", reviewNotes: null })) };
         return route.fulfill({ json: { ok: true } });
       }
       return route.fulfill({ json: { applications: applicantRecord ? [applicantRecord] : [] } });

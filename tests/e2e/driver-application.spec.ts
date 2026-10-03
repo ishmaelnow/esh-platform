@@ -7,7 +7,7 @@ const jpeg = Buffer.from("/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAP////////////////////
 const application = (status = "submitted", missing = false) => ({
   applicationId: "fixture-application", tenantSlug: "fixture-company", companyName: "Fixture transport company",
   fullName: "Fixture applicant", phone: null, status, submittedAt: "2026-10-02T12:00:00Z",
-  documents: missing ? [] : ["personal_photo", "vehicle_photo", "reference_document", "insurance"].map((type) => ({ type, status: type === "insurance" ? "awaiting_vehicle" : "pending", fileName: `${type}.jpg`, reviewNotes: null })),
+  documents: missing ? [] : ["personal_photo", "vehicle_photo", "reference_document", "insurance"].map((type) => ({ type, status: "pending", fileName: `${type}.jpg`, reviewNotes: null })),
 });
 
 async function setupApplicant(page: Page, records: ReturnType<typeof application>[] = []) {
@@ -56,7 +56,8 @@ test("application entry uploads files, shows confirmed status and survives reloa
   await page.screenshot({ path: "test-results/driver-apply-form-414.png", fullPage: true });
   await page.getByRole("button", { name: "Submit application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Application received" })).toBeVisible();
-  await expect(page.getByText(/Received; awaiting vehicle assignment and review/)).toBeVisible();
+  await expect(page.getByText(/Vehicle insurance document/)).toBeVisible();
+  await expect(page.getByText(/awaiting vehicle assignment/i)).toHaveCount(0);
   expect(submitted).toBe(true);
   await expect(page.getByRole("switch", { name: "Driver availability" })).toHaveCount(0);
   await expect(page.getByLabel("Full name")).toHaveCount(0);
