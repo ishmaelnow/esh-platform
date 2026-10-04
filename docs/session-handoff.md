@@ -4,6 +4,19 @@ Last updated: 2026-10-03
 
 ## Current objective and checkpoint
 
+Current follow-up: owner confirmed Driver 1.0.2 (1791080231) is assigned to the internal TestFlight
+group, saved testing instructions and accepted the invitation after the app initially was absent.
+Owner now reports Admin current Driver ID DL.jpeg rejected with note NOT CLEAR, while installed
+Driver still shows Pending and only View. Repository summary reads latest reviewed evidence but
+the client previously refreshed it only during full account loading/upload. Added Documents-entry,
+foreground/focus, visible 15-second polling and manual refresh with error feedback. Reads reuse
+the own-only summary RPC; no activation, availability or review mutation. Driver identity/profile
+changes and leaving Documents discard late reads and stop polling. All 23 mobile browser checks,
+Driver typecheck, scoped lint and production build passed with existing Supabase/Next warnings.
+Owner commit/push, Driver deployment and live rejected-ID replacement acceptance are next.
+This hosted change needs no migration/native rebuild. Preserve generated config edits and the
+prior local handoff. Owner performs staging, commit, push and deployment. Rider is untouched.
+
 Owner authorized Driver private own-document viewing and live photo capture while preserving
 library/file uploads, original Admin review, tenant isolation and the approved Rider product.
 Local work adds View document to uploaded application status and current Driver Documents,
@@ -27,7 +40,9 @@ requires image/* on the capture input; corrected that while ordinary selectors k
 Added a narrow IMAGE_CAPTURE queries declaration for bridge resolveActivity camera discovery.
 Both native shell declarations require rebuilds. No new Camera plugin, Android camera/storage
 permission or broad package query. Browser capture fixtures do not prove a real camera launched.
-These new changes are uncommitted/unpushed; Codex performs no Git/database/deployment mutation.
+Owner committed/pushed the feature and release files as fd0f2dd. Supplied push output confirms
+49a6f87..fd0f2dd main -> main; read-only Git inspection agrees. Vercel Ready and signed native
+builds remain pending. Codex performs no Git/database/deployment mutation.
 
 Validation: 27 scoped unit/API/security/upload tests, Driver typecheck, scoped lint and production
 build pass with existing Supabase/Next warnings. Final browser run passed all 22 checks, including
@@ -41,7 +56,7 @@ not prove live storage/RPC authorization, native PDF rendering or actual camera 
 
 ## Production and preserved state
 
-Git main/origin main is owner-pushed 49a6f87, which makes Admin Applications include original
+Git main/origin main is owner-pushed fd0f2dd. It includes 49a6f87, which makes Admin Applications include original
 application evidence plus explicitly linked Driver-profile uploads in the same tenant. Original
 history remains visible, newest within each type is current, and the same existing review controls
 operate on the same rows. Owner had verified the later ID in Admin Drivers; combined-view live
@@ -65,16 +80,31 @@ Owner performs every Git mutation, native build deployment and database mutation
 
 ## Exact next action
 
+App Store Connect recovery: owner had removed the app records and found ESH Driver, ESH Rider,
+ESH Community and FairfareTransportation Rider under Removed Apps. Guided restoration of the
+original ESH Driver record with Limited Access; owner confirmed "restored" after the Driver dialog.
+Driver restoration is confirmed by owner; Rider/Community restoration is not separately confirmed.
+Keep original bundle IDs/signing; no replacement app records or keys.
+Owner Android build succeeded: ESH Driver Android, main/fd0f2dd, Codemagic ID
+6ac1b54b7394575b200adc94, started 2026-10-03 21:09 CDT, duration 3m19s, signed APK artifact shown.
+Owner iOS build: ESH Driver iOS, main/fd0f2dd, ID 6ac1b6f37394575b200adcc5, started 21:16 CDT,
+duration 2m36s, finished with post-processing failed after successful App Store Connect upload.
+Build 1791080231 corresponds to 2026-10-03 21:17:11 CDT. Owner answered export-compliance
+None and sees Ready to Submit. Owner subsequently confirmed version 1.0.2, assigned build
+1791080231 to ESH Driver Internal Testers (two testers), saved What to Test and accepted the missing
+invitation to make the app visible. The old 1.0.1 listing was a separate older version section.
+Do not rebuild solely for post-processing/compliance. Exact post-processing failure remains unknown;
+physical camera capture and document-viewing acceptance remain pending the rejected-ID refresh fix.
+
 Owner requested beginning builds. Prepared Driver-only version 1.0.2: Android versionCode 3 and
 iOS marketing version 1.0.2 (workflow already generates unique iOS build numbers). No workflow or
-Rider version change. Owner must first commit/push the local feature/release files and wait for
-hosted Driver Ready at that commit; Codemagic main currently would build old 49a6f87 without the fix.
-Then owner starts ESH Driver Android and ESH Driver iOS from the new main commit. Android workflow
+Rider version change. Commit/push is complete. Wait for hosted Driver Ready at fd0f2dd, then owner
+starts ESH Driver Android and ESH Driver iOS from main, confirming fd0f2dd as build source. Android workflow
 produces signed APK/AAB without auto Play upload; iOS submits to TestFlight. Use existing signing
 and protected Mapbox credentials, never new keys or secrets in logs. Verify Android code 3 exceeds
 the latest Play upload before publishing. Native builds have not been started by Codex.
 
-Owner commits/pushes the verified Driver viewing/capture work.
+No further feature commit/push is needed; this deployment-checkpoint handoff edit is local.
 No database migration is needed. Deploy hosted Driver to test private viewing and upload controls.
 Build/install Driver iOS via the existing TestFlight workflow and Android via the signed release workflow to verify live photo capture,
 permission denial, cancellation, file fallback and safe areas. Android still needs device testing.

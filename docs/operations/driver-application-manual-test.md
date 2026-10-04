@@ -103,6 +103,11 @@ No Rider deployment, API rewrite or hosted Auth change is required.
    profile photo and confirm the new upload is current while the original remains older history
    with disabled review controls. Verify another driver's uploads never appear in this application.
 10. In Driver Profile > Documents, open pending ID, an approved photo and a rejected document.
+    Reject the current pending ID in Admin with a review note, then return to Driver Documents.
+    Confirm Rejected, the same note, Choose replacement and Take photo appear without signing out.
+    While Documents stays visible, confirm review changes appear within 15 seconds. Manual Refresh
+    document status must also update it; a failed read must show an error and allow retry. Pending
+    and approved evidence must not offer replacement solely because it has a View document action.
     Confirm images/PDFs display privately inside the app, Close/Escape/back dismiss the preview
     and focus returns. Missing files have no view action. Repeat from applicant status before
     approval. A signed link expires after five minutes; close/reopen to refresh it. Another user's

@@ -34,6 +34,10 @@ remain independent of transportation-specific workflows.
   driver profile. Owner pushed it as `49a6f87`; original history and shared review state are preserved.
   No migration is needed. Live combined-view acceptance remains pending.
 - Driver private own-document previews and separate Take photo inputs are implemented locally.
+  Follow-up adds foreground, Documents-entry, visible polling and manual review-status refresh so
+  administrator rejection enables replacement without stale pending status. All 23 mobile browser
+  checks, typecheck and scoped lint pass; owner deployment/live acceptance remain pending. No
+  migration or new native build is needed for this hosted update.
   Application and current Driver evidence use verified ownership and five-minute private links.
   Driver iOS camera purpose descriptions require a new native build and physical-device acceptance.
   Android capture now uses the MIME type expected by the installed bridge and declares narrow

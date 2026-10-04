@@ -118,6 +118,36 @@ test("drivers can view pending, approved and rejected documents without exposing
   await page.screenshot({ path: "test-results/driver-documents-414.png", fullPage: true });
 });
 
+test("document review refresh unlocks rejected ID replacement and reports refresh failures", async ({ page }) => {
+  let status = "pending";
+  let unavailable = false;
+  await page.route("**/rest/v1/rpc/my_driver_portal_summary", (route) => route.fulfill(unavailable
+    ? { status: 503, json: { message: "Unavailable" } }
+    : { json: { driverProfileId: "preview-driver", driverNumber: "PREVIEW", displayName: "Design preview driver",
+      status: "active", onboardingStatus: "approved", documentCompliance: false, vehicle: null,
+      documents: [{ evidenceType: "driver_id_photo", reviewStatus: status, originalFileName: "ID.jpg", reviewNotes: status === "rejected" ? "Not clear" : null }],
+      notificationPreferences: { expirationRemindersEnabled: true } } }));
+  await page.reload();
+  await page.getByRole("button", { name: "Open driver menu" }).click();
+  await page.getByRole("dialog", { name: "Driver menu" }).getByRole("button", { name: /^Profile/ }).click();
+  await page.getByRole("button", { name: "Documents", exact: true }).click();
+  const refresh = page.getByRole("button", { name: "Refresh document status", exact: true });
+  await expect(refresh).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Take photo for Driver ID photo", exact: true })).toHaveCount(0);
+  status = "rejected";
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByText("Not clear", { exact: false })).toBeVisible();
+  await expect(page.getByLabel("Choose replacement for Driver ID photo", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Take photo for Driver ID photo", exact: true })).toBeVisible();
+  unavailable = true;
+  await refresh.click();
+  await expect(page.getByRole("alert").filter({ hasText: "Document status could not be refreshed" })).toBeVisible();
+  unavailable = false; status = "pending";
+  await refresh.click();
+  await expect(page.getByRole("alert").filter({ hasText: "Document status could not be refreshed" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Take photo for Driver ID photo", exact: true })).toHaveCount(0);
+});
+
 test("preorders distinguish unsupported data from an empty result, with usable tabs and return", async ({ page }) => {
   await page.getByRole("button", { name: /Preorders/ }).click();
   await expect(page.getByRole("heading", { name: "Preorders", exact: true })).toBeVisible();

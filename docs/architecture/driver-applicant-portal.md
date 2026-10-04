@@ -69,6 +69,12 @@ of new submission/rejection email delivery is introduced.
 
 ## Driver document viewing and photo capture
 
+Activated Driver Documents refreshes the existing own-only portal summary when opened, on foreground/
+window focus, and every 15 seconds while visible. A manual Refresh document status action retries
+failed reads with explicit feedback. Leaving Documents stops polling; late responses are discarded.
+The reviewed server status controls replacement eligibility; refresh does not activate the account,
+change availability, copy evidence or mutate review state.
+
 Applicants can view uploaded application documents; activated drivers can view their current
 documents from Profile > Documents, including pending, approved and rejected uploads. Missing
 uploads have no View document action. Images and PDFs open in a dismissible in-app dialog with

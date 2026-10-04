@@ -184,6 +184,9 @@ export default function DriverHome() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [documentRefresh, setDocumentRefresh] = useState(0);
+  const [documentsRefreshing, setDocumentsRefreshing] = useState(false);
+  const [documentRefreshError, setDocumentRefreshError] = useState<string | null>(null);
   const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [earningsUpdatesEnabled, setEarningsUpdatesEnabled] = useState(true);
@@ -510,6 +513,45 @@ export default function DriverHome() {
     }
     void activateAndLoad();
   }, [activateAndLoad, authenticatedUserId]);
+
+  const documentDriverId = summary?.driverProfileId;
+  useEffect(() => {
+    if (!supabase || !authenticatedUserId || !documentDriverId || activeTab !== "documents") return;
+    let active = true;
+    let pending = false;
+    const refresh = async () => {
+      if (pending || document.visibilityState !== "visible") return;
+      pending = true;
+      setDocumentsRefreshing(true);
+      try {
+        const result = await supabase.rpc("my_driver_portal_summary");
+        if (!active) return;
+        const next = result.data as unknown as DriverSummary | null;
+        if (result.error || !next || next.driverProfileId !== documentDriverId) {
+          setDocumentRefreshError("Document status could not be refreshed. Try again before replacing a document.");
+          return;
+        }
+        setSummary(next);
+        setDocumentRefreshError(null);
+      } catch {
+        if (active) setDocumentRefreshError("Document status could not be refreshed. Try again before replacing a document.");
+      } finally {
+        pending = false;
+        if (active) setDocumentsRefreshing(false);
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 15000);
+    const resume = () => void refresh();
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [supabase, authenticatedUserId, documentDriverId, activeTab, documentRefresh]);
 
   useEffect(() => {
     const bucket = summary?.vehicle?.photoStorageBucket;
@@ -1857,6 +1899,11 @@ export default function DriverHome() {
                   <p className="eyebrow">Documents</p>
                   <h3>Evidence status</h3>
                 </div>
+                <button className="secondary" type="button" disabled={documentsRefreshing}
+                  onClick={() => setDocumentRefresh((value) => value + 1)}>
+                  {documentsRefreshing ? "Refreshing document status…" : "Refresh document status"}
+                </button>
+                {documentRefreshError ? <p role="alert">{documentRefreshError}</p> : null}
                 <p className="document-help">
                   Upload a replacement when evidence is missing, rejected, or expired. JPEG, PNG,
                   and PDF files up to 5MB are accepted.
