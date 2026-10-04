@@ -119,8 +119,13 @@ No Rider deployment, API rewrite or hosted Auth change is required.
     Browser fixture capture does not establish native camera support. Hosted deployment alone does
     not add iOS camera purpose declarations or Android camera intent discovery. Use the existing
     Driver TestFlight and signed Android build procedures. On Android, Take photo must launch the
-    system camera, not just the file picker. Verify portrait/landscape return, cancellation without
-    losing an existing selection, readable photo previews and successful upload; library/PDF picking
+    system camera, not just the file picker.
+    For Android 1.0.3/code 4, Take photo uses the native Camera plugin. Confirm it opens the camera
+    directly, retains a prior selection on cancellation, and displays actionable errors on denied/
+    unavailable capture without silently showing the library. Library/PDF selection is a separate
+    action. Old APKs without the plugin must request an update. If Android terminates the app while
+    the camera is open, reopen/refresh and retake; no document should be silently auto-submitted.
+    Verify portrait/landscape return, readable photo previews and successful upload; library/PDF picking
     must remain available separately. Devices without a camera must retain the file fallback.
 
 Real authentication/native upload picking, administrator review/notification delivery and database

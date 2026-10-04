@@ -11,8 +11,8 @@ android {
         applicationId "com.esh.driver"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.2"
+        versionCode 4
+        versionName "1.0.3"
         resValue "string", "mapbox_access_token", mapboxPublicToken
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

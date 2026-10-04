@@ -54,11 +54,16 @@ No secrets, Supabase service-role keys, Stripe secret keys, or Twilio credential
 bundle.
 
 Driver document capture uses separate HTML photo capture (image/* for Capacitor Android's capture
-branch) and ordinary file/library inputs with existing document-type restrictions. Android declares
+branch in 1.0.2, owner-reported picker fallback) and ordinary file/library inputs. Driver Android
+1.0.3/code 4 replaces Take photo with explicit @capacitor/camera 8.0.0 CameraSource.Camera capture,
+without gallery saving or new storage permissions. The plugin is synchronized into Android only;
+iOS retains its owner-verified HTML capture and native 1.0.2. Older Android shells request an update
+instead of silently substituting files. No Rider change. Ordinary file/library inputs retain
+existing document-type restrictions. Android declares
 an IMAGE_CAPTURE query for the bridge's camera-discovery check; its manifest change requires a rebuild.
 Driver iOS includes camera/photo-library purpose descriptions for deliberate document selection;
-these declarations require rebuilding and installing the native shell. No Camera plugin or video/
-microphone access is added. Drivers view private current evidence inside the hosted app through an
+these declarations require rebuilding and installing the native shell. No video/microphone
+capture is requested. Drivers view private current evidence inside the hosted app through an
 ownership-checked, short-lived signed link. See driver-applicant-portal.md for authorization and
 operations/driver-application-manual-test.md for physical-device acceptance.
 

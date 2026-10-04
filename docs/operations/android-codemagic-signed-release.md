@@ -30,10 +30,11 @@ the runtime access token, expose either value in build logs, or commit either va
 ## Build the signed bundles
 
 For the Driver document-viewing/camera release, build only ESH Driver Android after the owner pushes
-the intended commit and its hosted Driver deployment is Ready. Driver is 1.0.2 / version code 3;
-Rider remains unchanged at 1.0.1 / version code 2. Verify code 3 is greater than the latest uploaded
+the intended commit and its hosted Driver deployment is Ready. Driver is 1.0.3 / version code 4;
+Rider remains unchanged at 1.0.1 / version code 2. Verify code 4 is greater than the latest uploaded
 Driver code in Play Console before uploading; reconcile if a later release already exists.
-The new build includes IMAGE_CAPTURE camera discovery. Verify Take photo launches the camera,
+The new build includes the native Camera plugin for explicit camera capture instead of WebView
+file-picker fallback. iOS stays unchanged at its verified 1.0.2 build. Verify Take photo launches the camera,
 capture/cancel/file selection and private image/PDF viewing on the installed release. Do not
 reuse an old APK or rebuild Rider for this Driver-only change.
 
@@ -44,7 +45,7 @@ reuse an old APK or rebuild Rider for this Driver-only change.
    device installation and `app-release.aab` for a future Google Play release.
 4. Repeat with **ESH Driver Android** and download its separate APK and AAB artifacts.
 5. Keep the files clearly separated by application. Verify Rider is `com.esh.rider`, Driver is
-   `com.esh.driver`, and both report version `1.0.1` / version code `2` before upload.
+   `com.esh.driver`; Driver reports `1.0.3` / code `4`, Rider `1.0.1` / code `2` before upload.
 
 The workflows produce signed artifacts but deliberately do not upload them to Google Play. Upload
 each bundle to its matching internal-testing release in Play Console, review the release summary,

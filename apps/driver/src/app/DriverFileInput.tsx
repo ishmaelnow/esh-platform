@@ -2,6 +2,7 @@
 
 import { useRef, useState, type InputHTMLAttributes } from "react";
 import { reduceApplicationImage } from "../lib/application";
+import { captureAndroidDocument, usesAndroidDocumentCamera } from "../lib/document-camera";
 
 export function DriverFileInput({ label, onFile, ...props }: InputHTMLAttributes<HTMLInputElement> & {
   label: string;
@@ -11,6 +12,19 @@ export function DriverFileInput({ label, onFile, ...props }: InputHTMLAttributes
   const cameraInput = useRef<HTMLInputElement>(null);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState("");
+  async function takePhoto() {
+    if (!usesAndroidDocumentCamera()) {
+      cameraInput.current?.click();
+      return;
+    }
+    setProcessing(true); setMessage("");
+    try {
+      const photo = await captureAndroidDocument();
+      if (photo) await preparePhoto(photo);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Camera could not take a photo. Choose a file instead.");
+    } finally { setProcessing(false); }
+  }
   async function preparePhoto(file: File) {
     setProcessing(true); setMessage("");
     try {
@@ -31,7 +45,7 @@ export function DriverFileInput({ label, onFile, ...props }: InputHTMLAttributes
       props.onChange?.(event);
     }} />
     <button type="button" className="secondary" disabled={props.disabled || processing}
-      aria-label={`Take photo for ${label}`} onClick={() => cameraInput.current?.click()}>Take photo</button>
+      aria-label={`Take photo for ${label}`} onClick={() => void takePhoto()}>Take photo</button>
     <input ref={cameraInput} type="file" accept="image/*" capture="environment"
       aria-label={`Camera for ${label}`} hidden disabled={props.disabled || processing} onChange={(event) => {
         const file = event.target.files?.[0];

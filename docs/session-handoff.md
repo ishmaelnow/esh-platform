@@ -1,20 +1,40 @@
 # Session Handoff
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Current objective and checkpoint
 
 Current follow-up: owner confirmed Driver 1.0.2 (1791080231) is assigned to the internal TestFlight
 group, saved testing instructions and accepted the invitation after the app initially was absent.
-Owner now reports Admin current Driver ID DL.jpeg rejected with note NOT CLEAR, while installed
-Driver still shows Pending and only View. Repository summary reads latest reviewed evidence but
+Owner initially compared OCTODRIVER TEST's rejected ID with a different existing approved Driver
+signed into iOS. Owner confirmed the account mismatch, rejected the correct Driver's ID, and verified
+replacement controls, live camera capture, successful upload and return to Pending on iOS.
+Do not retain the earlier Pending/Rejected mismatch as an unresolved backend defect.
+Current issue: owner confirms installed Android 1.0.2 Take photo opens existing files. Native
+WebView capture can silently substitute the picker; precise device-specific failure is not known.
+Local correction installs pinned official @capacitor/camera 8.0.0 in Driver only and synchronizes
+Android. Take photo uses CameraSource.Camera, orientation-corrected bounded JPEG/DataUrl, no edits,
+no gallery saving. Returned File uses existing in-memory reduction and upload/review contracts.
+Cancellation leaves selection intact; camera denial/unavailability shows errors, never substitutes
+files. Older shells missing the plugin request an update. iOS/browser retain verified HTML capture.
+Android release is 1.0.3/code 4; iOS remains 1.0.2 and Rider untouched. No migration, new storage/
+camera permission, auth change or production mutation. If Android kills the app during camera
+capture, refresh and retake; no restored result is automatically uploaded to a potentially changed
+identity. Local checks: six camera contract tests, all 23 mobile browser checks, typecheck and lint
+pass. Camera Java compilation and merged manifest pass after fetching missing AndroidX artifacts;
+offline attempt was cache-blocked. Driver production build passed with baseline Supabase/Next
+warnings; whitespace check passed. Physical camera acceptance and
+full signed APK build remain owner actions. Preserve existing generated TypeScript config edits.
+Repository summary reads latest reviewed evidence but
 the client previously refreshed it only during full account loading/upload. Added Documents-entry,
 foreground/focus, visible 15-second polling and manual refresh with error feedback. Reads reuse
 the own-only summary RPC; no activation, availability or review mutation. Driver identity/profile
 changes and leaving Documents discard late reads and stop polling. All 23 mobile browser checks,
 Driver typecheck, scoped lint and production build passed with existing Supabase/Next warnings.
-Owner commit/push, Driver deployment and live rejected-ID replacement acceptance are next.
-This hosted change needs no migration/native rebuild. Preserve generated config edits and the
+Owner committed/pushed refresh as fdcde75; local main/origin main agree. Owner saw the new manual
+refresh button in the installed app. iOS rejected-ID replacement/upload acceptance is confirmed.
+The earlier status-refresh change needed no migration/native rebuild; the new Camera plugin requires
+an Android-only rebuild/install. Preserve generated config edits and the
 prior local handoff. Owner performs staging, commit, push and deployment. Rider is untouched.
 
 Owner authorized Driver private own-document viewing and live photo capture while preserving
@@ -56,7 +76,7 @@ not prove live storage/RPC authorization, native PDF rendering or actual camera 
 
 ## Production and preserved state
 
-Git main/origin main is owner-pushed fd0f2dd. It includes 49a6f87, which makes Admin Applications include original
+Git main/origin main is owner-pushed fdcde75, following fd0f2dd. It includes 49a6f87, which makes Admin Applications include original
 application evidence plus explicitly linked Driver-profile uploads in the same tenant. Original
 history remains visible, newest within each type is current, and the same existing review controls
 operate on the same rows. Owner had verified the later ID in Admin Drivers; combined-view live
@@ -80,6 +100,12 @@ Owner performs every Git mutation, native build deployment and database mutation
 
 ## Exact next action
 
+Local validation is complete; owner stages the scoped Android-camera files,
+commits/pushes and waits for Driver hosted Ready. Run only ESH Driver Android on that pushed commit,
+install 1.0.3/code 4 over the existing signed app and verify live camera capture/cancel/error/library
+fallback/upload-to-Pending. Do not rebuild iOS/Rider or alter reviews for a different Driver identity.
+Confirm the installed Driver's name/number matches Admin before any rejection/replacement test.
+
 App Store Connect recovery: owner had removed the app records and found ESH Driver, ESH Rider,
 ESH Community and FairfareTransportation Rider under Removed Apps. Guided restoration of the
 original ESH Driver record with Limited Access; owner confirmed "restored" after the Driver dialog.
@@ -94,7 +120,9 @@ None and sees Ready to Submit. Owner subsequently confirmed version 1.0.2, assig
 1791080231 to ESH Driver Internal Testers (two testers), saved What to Test and accepted the missing
 invitation to make the app visible. The old 1.0.1 listing was a separate older version section.
 Do not rebuild solely for post-processing/compliance. Exact post-processing failure remains unknown;
-physical camera capture and document-viewing acceptance remain pending the rejected-ID refresh fix.
+physical iOS camera capture/replacement upload is owner-confirmed after selecting the correct Driver.
+Private viewing acceptance is not separately reconfirmed. Android live capture now has a reported
+failure; verify installed version and exact behavior before selecting a repair or rebuild.
 
 Owner requested beginning builds. Prepared Driver-only version 1.0.2: Android versionCode 3 and
 iOS marketing version 1.0.2 (workflow already generates unique iOS build numbers). No workflow or

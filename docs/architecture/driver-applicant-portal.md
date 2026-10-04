@@ -88,7 +88,20 @@ bearer capabilities until expiry; do not log, share or persist them. Errors omit
 No new RLS grant, schema migration, evidence copy or review mutation is introduced.
 
 Application and Driver replacement inputs offer a separate Take photo capture input alongside
-ordinary file/library selection. Captured photos are reduced in memory to JPEG under the existing
+ordinary file/library selection. On installed Android, Take photo uses the pinned official
+@capacitor/camera 8.0.0 plugin with CameraSource.Camera, bounded JPEG dimensions, orientation
+correction, no edits and saveToGallery false. It never silently opens the library. Cancellation
+preserves existing selection; unavailable camera/denial gives an error and the separate file input
+remains usable. Older shells without the plugin request an Android update. Android-only sync and
+release 1.0.3/code 4 are required; iOS retains the owner-verified HTML capture path and version.
+The WebView capture branch used by Android 1.0.2 silently fell back to existing files on the
+owner's device despite MIME/query declarations. Its precise device-specific failure is unknown.
+No new camera/storage permission or gallery saving is introduced. If Android kills the app during
+capture, no returned photo is automatically uploaded after restart; refresh and deliberately retake.
+Normal live capture returns through the existing image reduction and evidence submission pipeline.
+
+Browser and iOS Take photo continue through the dedicated HTML capture input. Captured photos are
+reduced in memory to JPEG under the existing
 application limit. Cancelled capture preserves the prior selection; unreadable photos explain the
 file fallback. HTML capture is a device/browser request, not proof that a real camera launched.
 See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture.

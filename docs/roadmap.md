@@ -34,6 +34,9 @@ remain independent of transportation-specific workflows.
   driver profile. Owner pushed it as `49a6f87`; original history and shared review state are preserved.
   No migration is needed. Live combined-view acceptance remains pending.
 - Driver private own-document previews and separate Take photo inputs are implemented locally.
+  Owner confirmed iOS rejection/replacement, live photo capture and successful upload. Android
+  1.0.2 still opened existing files; follow-up uses explicit native Camera capture with cancellation/
+  error handling. Android-only 1.0.3/code 4 rebuild and device acceptance are pending. iOS is preserved.
   Follow-up adds foreground, Documents-entry, visible polling and manual review-status refresh so
   administrator rejection enables replacement without stale pending status. All 23 mobile browser
   checks, typecheck and scoped lint pass; owner deployment/live acceptance remain pending. No
