@@ -4,86 +4,95 @@ Last updated: 2026-10-03
 
 ## Current objective and checkpoint
 
-Latest objective: owner verified a later Driver ID upload in Admin Drivers but not Applications,
-and authorized showing linked Driver evidence in application review. Local fix combines original
-application evidence with explicitly linked driver-profile evidence in the same tenant, preserves
-history and uses the existing file/review controls. No duplicate metadata, storage copy, matching
-by email, new workflow or migration. Latest uploads sort first within each document type; older
-history remains visible with review controls disabled. This supersedes the earlier next action.
-Scoped evidence/API tests (13), Admin typecheck, scoped lint, Transportation production build and
-whitespace checks pass. Existing Next/ESLint warnings remain. Live combined-view acceptance is
-pending. The fix is uncommitted/unpushed; owner performs Git mutations. Driver/Rider source untouched.
+Owner authorized Driver private own-document viewing and live photo capture while preserving
+library/file uploads, original Admin review, tenant isolation and the approved Rider product.
+Local work adds View document to uploaded application status and current Driver Documents,
+including pending, approved and rejected files. Missing files have no view action. Images/PDFs
+open inside a dialog with Close, Escape, back dismissal and focus return.
 
-Owner authorized a separate Driver ID photo accepting any ID for manual administrator approval
-or rejection. Keep the original portrait as Profile photo. Local implementation is complete;
-owner applied the database migration successfully and committed/pushed application code as 69ff8ab.
-Owner output confirms f0aa537..69ff8ab main -> main. Vercel Ready/live acceptance is pending.
+New Driver POST /api/documents verifies Auth getUser and confirmed email, then uses existing
+own-only my_driver_applications or my_driver_portal_summary to establish ownership. It derives
+tenant and latest evidence from the owned record before privileged signing. Client-supplied tenant,
+driver, bucket or path never grants access. Private URLs expire in five minutes and no-store
+responses contain no raw paths; do not log or persist signed links. No RLS grant, migration,
+document copy or review mutation. Driver's existing server-only service-role configuration is reused.
 
-Document order across Driver intake/status/history and Admin application/history/replacement:
-Profile photo, Driver ID photo, Vehicle photo, Vehicle registration document, Vehicle insurance
-document. Existing personal_photo and reference_document keys remain; ID uses driver_id_photo.
-No license-only validation, OCR, automatic approval or added vehicle linking/assignment step.
+Application and Driver replacement uploads offer separate Take photo and ordinary file selection.
+Camera photos are resized to JPEG in memory. The iPhone installed app was verified by owner to
+receive the deployed design and upload from library/files, but live camera was unavailable.
+Driver iOS Info.plist now includes camera/photo-library purpose descriptions. Native declarations
+require a new Driver iOS build/install; hosted deployment cannot fix the old binary's permission
+declarations. Android physical-camera result remains unknown. Android bridge inspection found it
+requires image/* on the capture input; corrected that while ordinary selectors keep restrictions.
+Added a narrow IMAGE_CAPTURE queries declaration for bridge resolveActivity camera discovery.
+Both native shell declarations require rebuilds. No new Camera plugin, Android camera/storage
+permission or broad package query. Browser capture fixtures do not prove a real camera launched.
+These new changes are uncommitted/unpushed; Codex performs no Git/database/deployment mutation.
 
-Git main/origin main is owner-pushed 69ff8ab. Both prior applicant migrations are owner-applied:
-20261002000100_driver_applicant_portal.sql and 20261003000100_application_insurance_review.sql.
-Owner dry-run listed only 20261003000200_driver_id_photo.sql and the subsequent db push applied
-it successfully. No further database push is needed for this addition.
+Validation: 27 scoped unit/API/security/upload tests, Driver typecheck, scoped lint and production
+build pass with existing Supabase/Next warnings. Final browser run passed all 22 checks, including
+capture-file transfer, application persistence, previews of pending/approved/rejected documents,
+image/PDF rendering, denied viewing, back/focus and live map regressions. Earlier live map readiness
+timeout passed on the final run. Initial preview focus timing was corrected. Mobile Documents
+screenshot was inspected and replacement controls refined to preserve white/navy appearance.
+Driver Info.plist and Android manifest parse as XML. Offline Android processDebugMainManifest
+passed and merged the IMAGE_CAPTURE query. Native iOS build/permission acceptance is not run here. Mocks do
+not prove live storage/RPC authorization, native PDF rendering or actual camera launch.
 
-The migration extends existing evidence constraints and trusted atomic submission/self-service
-RPCs. New submissions require all five documents. Older submitted four-file applications can add
-only the missing ID without replacing reviewed files. ID accepts JPEG/PNG and defaults to optional
-for activation with no required expiration; existing approved Drivers are not retroactively gated.
-Tenant requirement controls, verified identity, private storage, tenant isolation, review audit,
-notifications and original application approval remain authoritative. RPC signatures and existing
-text-based manual client types remain compatible. No historical evidence is deleted or relabeled
-as ID. The legacy Admin-hosted three-file application remains compatible; the Driver intake is five.
+## Production and preserved state
 
-Client compressed files must total at most 4 MB; existing streamed request cap stays 4.4 MB.
-Each file remains at most 1 MB. Registration/insurance retain PDF support. ID is a separate photo.
+Git main/origin main is owner-pushed 49a6f87, which makes Admin Applications include original
+application evidence plus explicitly linked Driver-profile uploads in the same tenant. Original
+history remains visible, newest within each type is current, and the same existing review controls
+operate on the same rows. Owner had verified the later ID in Admin Drivers; combined-view live
+acceptance after 49a6f87 deployment is still pending. No migration for that display correction.
 
-Validation: 58 scoped unit/API/source-contract tests and 20 isolated browser tests passed.
-Driver/Admin typechecks and Driver/Admin/Transportation production builds passed. Scoped lint,
-preview syntax and whitespace checks passed; baseline Supabase/Next build warnings remain.
-Browser coverage includes five-file submission, tab-switch persistence and adding only missing ID
-to an older application while preserving reviews. Mobile form screenshot was visually inspected.
-Fixtures/source checks do not prove live authentication, database execution, RLS or production
-upload/review. Owner local rollback SQL was extended for five-file and missing-ID cases but not run.
-Native picking and physical-device acceptance remain pending.
+Owner pushed Driver ID addition at 69ff8ab and applied 20261003000200_driver_id_photo.sql after a
+dry-run listing only that migration. Earlier applicant and insurance review migrations are applied.
+New submissions require Profile photo, Driver ID photo (any ID for manual review), Vehicle photo,
+Vehicle registration document and Vehicle insurance document, in that order. Legacy personal_photo
+and reference_document keys remain. Existing approved Drivers are not retroactively gated.
+Original review, private files, authorization, audit and activation requirements are preserved.
 
-Prior production checkpoint: cache fix f0aa537 resolved stale Transportation UI. Owner confirmed
-one insurance entry, registration label and original review controls without linking. Owner then
-approved OCTODRIVER TEST; vehicle photo, registration and insurance were approved with dates,
-while profile photo remained pending. Test PDFs are placeholders, not valid compliance documents;
-reject them with a reason during controlled acceptance and leave test Drivers Offline. Codex did
-not change production review state.
+Older OCTODRIVER TEST was approved with placeholder PDFs; owner later rejected Profile photo,
+registration and insurance as placeholder documents. Codex did not change production reviews.
+Do not treat test files as valid identity/compliance evidence. Keep test Drivers Offline.
 
-Preserve the four existing generated Driver/Rider next-env.d.ts and tsconfig.json edits and exclude
-them from feature staging. Rider product source, auth URLs, populated env files, domains and hosted
-configuration remain unchanged. Owner performs every Git mutation, deployment and database change.
+Preserve the four pre-existing generated Driver/Rider next-env.d.ts and tsconfig.json edits and
+exclude them from feature staging. Rider product source, auth URLs, domains, hosted configuration
+and populated env files are untouched. Session handoff is also a local edit.
+Owner performs every Git mutation, native build deployment and database mutation.
 
 ## Exact next action
 
-Owner commits/pushes the verified fix and confirms Admin and
-Transportation deployments Ready. Verify later ID and replacement uploads show in Applications
-and Drivers with the same review status, older history preserved and other-driver evidence excluded.
-No new migration is needed. Owner already saw the 69ff8ab ID upload in the live Driver/Drivers UI.
-The four generated Driver/Rider configuration edits remain unstaged; this checkpoint adds a local
-handoff edit. The linked-evidence fix needs a code push, but no migration. After deployment, verify new five-file intake,
-missing-ID-only completion, private viewing, ID approve/reject and stable evidence order in live
-Transportation Admin. Restore test state and do not approve placeholder identity/compliance files.
+Owner requested beginning builds. Prepared Driver-only version 1.0.2: Android versionCode 3 and
+iOS marketing version 1.0.2 (workflow already generates unique iOS build numbers). No workflow or
+Rider version change. Owner must first commit/push the local feature/release files and wait for
+hosted Driver Ready at that commit; Codemagic main currently would build old 49a6f87 without the fix.
+Then owner starts ESH Driver Android and ESH Driver iOS from the new main commit. Android workflow
+produces signed APK/AAB without auto Play upload; iOS submits to TestFlight. Use existing signing
+and protected Mapbox credentials, never new keys or secrets in logs. Verify Android code 3 exceeds
+the latest Play upload before publishing. Native builds have not been started by Codex.
 
-Keep both projects: transport-platform-admin serves admin.eshapp.com and the trusted API backend;
-esh-platform-transportation serves transportation.eshapp.com and /transportation operations.
-Only legacy admin.eshapp.com/transportation UI is eventually redirected after full acceptance.
-Do not retire either domain or backend. f0aa537 scoped Turbo inputs include shared Admin sources;
-the earlier stale cached UI issue is resolved and requires no new hosted settings change.
+Owner commits/pushes the verified Driver viewing/capture work.
+No database migration is needed. Deploy hosted Driver to test private viewing and upload controls.
+Build/install Driver iOS via the existing TestFlight workflow and Android via the signed release workflow to verify live photo capture,
+permission denial, cancellation, file fallback and safe areas. Android still needs device testing.
+Verify another account cannot open these documents, and Admin reviews remain shared after refresh.
+Confirm Admin/Transportation Ready at 49a6f87 and later uploads visible in Applications/Drivers.
+Do not initiate trips, emergency actions, payouts or approve placeholder files during testing.
 
-Architecture: docs/architecture/driver-applicant-portal.md,
+Keep transport-platform-admin/admin.eshapp.com as control plane and trusted API backend, and
+esh-platform-transportation/transportation.eshapp.com for operations. Only the legacy Admin
+/transportation UI is eventually redirected after acceptance. No domain retirement now.
+
+Architecture: docs/architecture/driver-applicant-portal.md, docs/architecture/mobile-app-shell.md,
 docs/architecture/transportation-admin-application.md and docs/architecture/driver-map-home.md.
 Manual checks: docs/operations/driver-application-manual-test.md,
+docs/operations/mobile-app-shell-manual-test.md, docs/operations/ios-codemagic-testflight-release.md,
 docs/operations/transportation-admin-application-manual-test.md and
-docs/operations/driver-map-home-manual-test.md. Owner local SQL:
-tooling/sql/driver-applicant-portal-test.sql.
+docs/operations/driver-map-home-manual-test.md. Owner local rollback SQL remains
+tooling/sql/driver-applicant-portal-test.sql and has not been run by Codex.
 
 ## Rider draft and validation
 

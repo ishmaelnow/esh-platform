@@ -73,6 +73,10 @@
 			<array><string>com.esh.driver</string></array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>ESH Driver uses the camera when you choose to take a profile, ID, vehicle or document photo for company review.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ESH Driver lets you choose photos to submit your driver application and replace your documents.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ESH uses your location during an active trip to share your position and verify pickup and destination arrival.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

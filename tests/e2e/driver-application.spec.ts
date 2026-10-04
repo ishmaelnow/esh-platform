@@ -41,6 +41,33 @@ test("new applicant verifies email within Driver with the existing Driver return
   await page.screenshot({ path: "test-results/driver-apply-verify-414.png" });
 });
 
+test("camera photo enters the ordinary application upload and own preview handles errors and back", async ({ page }) => {
+  await setupApplicant(page);
+  const camera = page.getByLabel("Camera for Driver ID photo", { exact: true });
+  await expect(camera).toHaveAttribute("capture", "environment");
+  await expect(camera).toHaveAttribute("accept", "image/*");
+  await camera.setInputFiles({ name: "live-id.jpg", mimeType: "image/jpeg", buffer: jpeg });
+  await expect.poll(() => page.locator('input[name="driverIdPhoto"]').evaluate((input: HTMLInputElement) => input.files?.[0]?.name)).toBe("live-id.jpg");
+  await page.route("**/api/applications/driver", (route) => route.fulfill({ json: { applications: [application()] } }));
+  await page.getByRole("button", { name: "Refresh status" }).click();
+  let deny = true;
+  await page.route("**/api/documents", (route) => {
+    expect(route.request().postDataJSON()).toEqual({ applicationId: "fixture-application", evidenceType: "driver_id_photo" });
+    return deny ? route.fulfill({ status: 404, json: { message: "Document not found." } })
+      : route.fulfill({ json: { url: `data:image/jpeg;base64,${jpeg.toString("base64")}`, fileName: "ID.jpg", mimeType: "image/jpeg" } });
+  });
+  await page.getByRole("button", { name: "View Driver ID photo", exact: true }).click();
+  await expect(page.locator(".driver-document-view").getByRole("alert")).toHaveText("Document not found.");
+  deny = false;
+  await page.getByRole("button", { name: "View Driver ID photo", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Driver ID photo", exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Driver ID photo", exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/driver-own-document-414.png", fullPage: true });
+  await page.goBack();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "View Driver ID photo", exact: true })).toBeFocused();
+});
+
 test("application entry uploads files, shows confirmed status and survives reload", async ({ page }) => {
   await setupApplicant(page);
   let submitted = false;
@@ -49,11 +76,11 @@ test("application entry uploads files, shows confirmed status and survives reloa
     return route.fulfill({ json: { applications: submitted ? [application()] : [] } });
   });
   await page.getByLabel("Full name").fill("Fixture applicant");
-  await expect(page.locator("input[type=file]")).toHaveCount(5);
-  expect(await page.locator("input[type=file]").evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).name))).toEqual(files);
-  await expect(page.getByLabel("Profile photo")).toBeVisible();
-  await expect(page.getByLabel("Driver ID photo")).toHaveAttribute("accept", "image/jpeg,image/png");
-  await expect(page.getByLabel("Vehicle registration document")).toBeVisible();
+  await expect(page.locator("input[type=file][name]")).toHaveCount(5);
+  expect(await page.locator("input[type=file][name]").evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).name))).toEqual(files);
+  await expect(page.getByLabel("Profile photo", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Driver ID photo", { exact: true })).toHaveAttribute("accept", "image/jpeg,image/png");
+  await expect(page.getByLabel("Vehicle registration document", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Reference document", { exact: true })).toHaveCount(0);
   for (const field of files) await page.locator(`input[name="${field}"]`).setInputFiles({ name: `${field}.jpg`, mimeType: "image/jpeg", buffer: jpeg });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(414);
@@ -105,8 +132,8 @@ test("insurance is required and a legacy four-file application requests only the
   const legacy = application(); legacy.documents = legacy.documents.filter((item) => item.type !== "insurance");
   await setupApplicant(page, [legacy]);
   await expect(page.getByRole("heading", { name: "Finish your application" })).toBeVisible();
-  await expect(page.getByLabel("Vehicle insurance document")).toHaveAttribute("required", "");
-  await expect(page.locator("input[type=file]")).toHaveCount(1);
+  await expect(page.getByLabel("Vehicle insurance document", { exact: true })).toHaveAttribute("required", "");
+  await expect(page.locator("input[type=file][name]")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Complete application" })).toBeVisible();
 });
 
@@ -127,8 +154,8 @@ test("an existing four-document application requests only ID and preserves its r
   legacy.documents[0]!.status = "approved";
   await setupApplicant(page, [legacy]);
   await expect(page.getByRole("heading", { name: "Finish your application" })).toBeVisible();
-  await expect(page.locator("input[type=file]")).toHaveCount(1);
-  await expect(page.getByLabel("Driver ID photo")).toHaveAttribute("required", "");
+  await expect(page.locator("input[type=file][name]")).toHaveCount(1);
+  await expect(page.getByLabel("Driver ID photo", { exact: true })).toHaveAttribute("required", "");
   let fields: string[] = [];
   await page.route("**/api/applications/driver", async (route) => {
     if (route.request().method() === "POST") {
@@ -138,7 +165,7 @@ test("an existing four-document application requests only ID and preserves its r
       await route.fulfill({ json: { ok: true } });
     } else await route.fulfill({ json: { applications: [legacy] } });
   });
-  await page.getByLabel("Driver ID photo").setInputFiles({ name: "any-id.jpg", mimeType: "image/jpeg", buffer: jpeg });
+  await page.getByLabel("Driver ID photo", { exact: true }).setInputFiles({ name: "any-id.jpg", mimeType: "image/jpeg", buffer: jpeg });
   await page.getByRole("button", { name: "Complete application" }).click();
   await expect(page.getByRole("heading", { name: "Application received" })).toBeVisible();
   expect(fields).toEqual(["driverIdPhoto"]);

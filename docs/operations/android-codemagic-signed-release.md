@@ -29,6 +29,14 @@ the runtime access token, expose either value in build logs, or commit either va
 
 ## Build the signed bundles
 
+For the Driver document-viewing/camera release, build only ESH Driver Android after the owner pushes
+the intended commit and its hosted Driver deployment is Ready. Driver is 1.0.2 / version code 3;
+Rider remains unchanged at 1.0.1 / version code 2. Verify code 3 is greater than the latest uploaded
+Driver code in Play Console before uploading; reconcile if a later release already exists.
+The new build includes IMAGE_CAPTURE camera discovery. Verify Take photo launches the camera,
+capture/cancel/file selection and private image/PDF viewing on the installed release. Do not
+reuse an old APK or rebuild Rider for this Driver-only change.
+
 1. Confirm the intended native release commit is on `main` and its hosted Rider/Driver deployments
    are Ready.
 2. In Codemagic, open the `esh-platform` application and start **ESH Rider Android** from `main`.

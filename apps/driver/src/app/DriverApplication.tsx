@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { PlatformSupabaseClient, SupabaseAuthSession } from "@esh-platform/supabase";
+import { DriverFileInput } from "./DriverFileInput";
+import { DriverDocumentView } from "./DriverDocumentView";
 import { applicationFiles, applicationStatusLabel, missingApplicationFiles, reduceApplicationImage,
   type DriverApplicationStatus } from "../lib/application";
 
@@ -107,14 +109,17 @@ export function DriverApplication({ client, session, onApproved, activationMessa
         {application.documents.length ? <ul>{applicationFiles.map((file) => {
           const document = application.documents.find((item) => item.type === file.type);
           return <li key={file.type}><strong>{file.label}</strong>: {document ? `${document.status === "pending" || document.status === "awaiting_vehicle" ? "Awaiting review" : document.status} — ${document.fileName}` : "Not uploaded"}
-            {document?.reviewNotes ? <p>{document.reviewNotes}</p> : null}</li>;
+            {document?.reviewNotes ? <p>{document.reviewNotes}</p> : null}
+            {document ? <DriverDocumentView token={session.access_token} applicationId={application.applicationId}
+              evidenceType={file.type} label={file.label} /> : null}</li>;
         })}</ul> : null}
       </div> : null}
       {tenantSlug && canSubmit ? <form key={tenantSlug} onSubmit={(event) => void submit(event)}>
         {!application ? <><label>Full name<input autoComplete="name" name="fullName" required minLength={2} maxLength={120} disabled={busy} /></label>
           <label>Phone (optional)<input autoComplete="tel" type="tel" name="phone" maxLength={40} disabled={busy} /></label></> : null}
         <p className="application-help">Your profile photo is separate from your ID. Upload a photo of any ID for the company to approve or reject. Photos are resized securely in your browser. Each file must be under 1 MB, with all selected files totaling 4 MB or less. Your files remain private to the company’s authorized reviewers.</p>
-        {missing.map((file) => <label key={file.field}>{file.label}<input name={file.field} type="file" accept={file.accept} required disabled={busy} /></label>)}
+        {missing.map((file) => <div key={file.field}><span>{file.label}</span>
+          <DriverFileInput label={file.label} aria-label={file.label} name={file.field} accept={file.accept} required disabled={busy} /></div>)}
         <button disabled={busy || loading} type="submit">{busy ? "Sending application…" : application ? "Complete application" : "Submit application"}</button>
         <p className="application-help">Submitting an application does not grant access to trips. Company approval and the existing onboarding checks are required.</p>
       </form> : null}

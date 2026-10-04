@@ -102,6 +102,21 @@ No Rider deployment, API rewrite or hosted Auth change is required.
    it once, then refresh both views and Driver to confirm the same decision. Replace a rejected
    profile photo and confirm the new upload is current while the original remains older history
    with disabled review controls. Verify another driver's uploads never appear in this application.
+10. In Driver Profile > Documents, open pending ID, an approved photo and a rejected document.
+    Confirm images/PDFs display privately inside the app, Close/Escape/back dismiss the preview
+    and focus returns. Missing files have no view action. Repeat from applicant status before
+    approval. A signed link expires after five minutes; close/reopen to refresh it. Another user's
+    application ID must be denied, and sign-out must remove access. Do not copy private links.
+11. On a rebuilt Driver iPhone app, tap Take photo in intake and a missing/rejected Driver document.
+    Confirm camera permission wording, live capture, resized photo selection and successful upload.
+    Cancel without losing a prior selection; deny permission and use Choose file/library instead.
+    Keep normal PDF/file selection working. Repeat on Android and at a short keyboard viewport.
+    Browser fixture capture does not establish native camera support. Hosted deployment alone does
+    not add iOS camera purpose declarations or Android camera intent discovery. Use the existing
+    Driver TestFlight and signed Android build procedures. On Android, Take photo must launch the
+    system camera, not just the file picker. Verify portrait/landscape return, cancellation without
+    losing an existing selection, readable photo previews and successful upload; library/PDF picking
+    must remain available separately. Devices without a camera must retain the file fallback.
 
 Real authentication/native upload picking, administrator review/notification delivery and database
 transaction/RLS behavior require owner-controlled acceptance. No production applicant was created

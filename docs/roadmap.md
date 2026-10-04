@@ -31,7 +31,14 @@ remain independent of transportation-specific workflows.
   owner code is pushed at `69ff8ab`. Existing
   approved Drivers are not retroactively gated; existing files and reviews remain intact.
 - Local follow-up makes application review include later uploads from its explicitly linked
-  driver profile. Original history and shared review state are preserved; no migration is needed.
+  driver profile. Owner pushed it as `49a6f87`; original history and shared review state are preserved.
+  No migration is needed. Live combined-view acceptance remains pending.
+- Driver private own-document previews and separate Take photo inputs are implemented locally.
+  Application and current Driver evidence use verified ownership and five-minute private links.
+  Driver iOS camera purpose descriptions require a new native build and physical-device acceptance.
+  Android capture now uses the MIME type expected by the installed bridge and declares narrow
+  camera intent discovery; the Android manifest build passed. Rebuild/test both native shells.
+  No migration or Rider product change is included.
 
 ## Next Product Domain: Community Platform
 

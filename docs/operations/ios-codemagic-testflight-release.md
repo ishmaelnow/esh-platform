@@ -94,6 +94,13 @@ Only stage files that actually changed. Check `git status --short --branch` befo
 
 ## 4. Start a Codemagic build
 
+For the Driver document-viewing/camera release, select only ESH Driver iOS after the owner pushes
+the intended commit and its hosted Driver deployment is Ready. Driver marketing version is 1.0.2;
+the existing workflow generates a unique build number. Rider remains unchanged. Install the newest
+Driver 1.0.2 build through TestFlight and verify camera permission/capture, cancellation, library/
+file uploads and private image/PDF viewing. Hosted updates alone do not add the new Info.plist
+camera purpose declarations to an older installed binary.
+
 In Codemagic:
 
 1. Open the `esh-platform` project.

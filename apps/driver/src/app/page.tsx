@@ -10,6 +10,8 @@ import {
 } from "@esh-platform/supabase";
 import { DriverShell, type DriverView } from "./DriverShell";
 import { DriverApplication } from "./DriverApplication";
+import { DriverFileInput } from "./DriverFileInput";
+import { DriverDocumentView } from "./DriverDocumentView";
 import { applicationDocumentRank } from "../lib/application";
 import { useDriverMapLocation } from "./useDriverMapLocation";
 import { driverHomeTotals } from "../lib/home-totals";
@@ -1869,6 +1871,8 @@ export default function DriverHome() {
                       </span>
                     </div>
                     {document.originalFileName ? <span>{document.originalFileName}</span> : null}
+                    {document.originalFileName && session ? <DriverDocumentView token={session.access_token}
+                      evidenceType={document.evidenceType} label={evidenceLabel(document.evidenceType)} /> : null}
                     {document.expiresOn ? <span>Expires {document.expiresOn}</span> : null}
                     {document.expirationRequired && !document.expiresOn ? (
                       <span>Expiration date required after approval</span>
@@ -1879,23 +1883,21 @@ export default function DriverHome() {
                     {["missing", "rejected", "expired", "expiration_missing"].includes(
                       document.reviewStatus,
                     ) ? (
-                      <label className="upload-control">
+                      <div className="driver-document-upload">
                         <span>
                           {uploadingType === document.evidenceType
                             ? "Uploading…"
                             : "Choose replacement"}
                         </span>
-                        <input
+                        <DriverFileInput
+                          label={evidenceLabel(document.evidenceType)}
+                          aria-label={`Choose replacement for ${evidenceLabel(document.evidenceType)}`}
                           accept={document.evidenceType === "driver_id_photo" ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                           disabled={uploadingType !== null}
-                          onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (file) void uploadEvidence(document, file);
-                            event.target.value = "";
-                          }}
+                          onFile={(file) => void uploadEvidence(document, file)}
                           type="file"
                         />
-                      </label>
+                      </div>
                     ) : null}
                   </article>
                 ))}

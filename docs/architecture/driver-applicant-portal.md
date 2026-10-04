@@ -67,6 +67,33 @@ Replacement evidence after approval uses the existing Driver documents screen. R
 explicitly refreshed by the applicant; existing notification contracts are unchanged. No promise
 of new submission/rejection email delivery is introduced.
 
+## Driver document viewing and photo capture
+
+Applicants can view uploaded application documents; activated drivers can view their current
+documents from Profile > Documents, including pending, approved and rejected uploads. Missing
+uploads have no View document action. Images and PDFs open in a dismissible in-app dialog with
+focus return, Escape and history-back dismissal; no external popup or persistent preview cache.
+
+Driver POST /api/documents verifies the authenticated email session, uses the own-only application
+or Driver summary RPC to establish ownership, then derives tenant and latest evidence from that
+owned record. Client-supplied driver/tenant IDs, bucket and paths do not authorize access. Existing
+private storage creates a five-minute signed link with no-store responses. Links expire but remain
+bearer capabilities until expiry; do not log, share or persist them. Errors omit private diagnostics.
+No new RLS grant, schema migration, evidence copy or review mutation is introduced.
+
+Application and Driver replacement inputs offer a separate Take photo capture input alongside
+ordinary file/library selection. Captured photos are reduced in memory to JPEG under the existing
+application limit. Cancelled capture preserves the prior selection; unreadable photos explain the
+file fallback. HTML capture is a device/browser request, not proof that a real camera launched.
+See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture.
+Driver iOS Info.plist supplies camera and photo-library purpose descriptions. Existing installed
+iPhone binaries do not receive these native declarations from hosted updates: rebuild/install the
+Driver iOS shell and physically verify camera launch, denial, cancellation and upload. Android
+capture still needs a physical-device check. The installed Capacitor bridge requires image/* on
+the capture input; ordinary selectors keep JPEG/PNG/PDF restrictions. Android declares only the
+IMAGE_CAPTURE intent query so its resolveActivity check can discover the camera. No Camera plugin
+or new Android camera/storage permission is added. The manifest change requires an Android rebuild.
+
 Admin application review includes original application evidence and later evidence belonging to
 the application's explicitly linked driver_profile_id, within the same tenant. It uses the same
 evidence rows and review endpoints as Drivers: no copied files, email-based matching or separate

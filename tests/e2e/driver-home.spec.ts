@@ -85,6 +85,39 @@ test("drawer entries preserve profile, notifications, wallet, recent orders and 
   }
 });
 
+test("drivers can view pending, approved and rejected documents without exposing a missing upload", async ({ page }) => {
+  const documents = [
+    { evidenceType: "personal_photo", reviewStatus: "approved", originalFileName: "profile.jpg" },
+    { evidenceType: "driver_id_photo", reviewStatus: "pending", originalFileName: "ID.jpg" },
+    { evidenceType: "reference_document", reviewStatus: "rejected", originalFileName: "registration.pdf" },
+    { evidenceType: "insurance", reviewStatus: "missing", originalFileName: null },
+  ];
+  await page.route("**/rest/v1/rpc/my_driver_portal_summary", (route) => route.fulfill({ json: {
+    driverProfileId: "preview-driver", driverNumber: "PREVIEW", displayName: "Design preview driver",
+    status: "active", onboardingStatus: "approved", documentCompliance: false,
+    documents, notificationPreferences: { expirationRemindersEnabled: true }, vehicle: null,
+  } }));
+  await page.reload();
+  await page.getByRole("button", { name: "Open driver menu" }).click();
+  await page.getByRole("dialog", { name: "Driver menu" }).getByRole("button", { name: /^Profile/ }).click();
+  await page.getByRole("button", { name: "Documents", exact: true }).click();
+  await expect(page.getByRole("button", { name: "View Vehicle insurance document", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Take photo for Vehicle registration document", exact: true })).toBeVisible();
+  for (const label of ["Profile photo", "Driver ID photo", "Vehicle registration document"]) {
+    await page.route("**/api/documents", (route) => {
+      expect(route.request().postDataJSON()).not.toHaveProperty("applicationId");
+      return route.fulfill({ json: { url: "data:application/pdf;base64,JVBERi0xLjQKJSVFT0Y=", fileName: "fixture.pdf", mimeType: "application/pdf" } });
+    });
+    await page.getByRole("button", { name: `View ${label}`, exact: true }).click();
+    await expect(page.getByRole("dialog", { name: label, exact: true })).toBeVisible();
+    await expect(page.locator(".driver-document-dialog iframe")).toBeVisible();
+    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(414);
+  await page.screenshot({ path: "test-results/driver-documents-414.png", fullPage: true });
+});
+
 test("preorders distinguish unsupported data from an empty result, with usable tabs and return", async ({ page }) => {
   await page.getByRole("button", { name: /Preorders/ }).click();
   await expect(page.getByRole("heading", { name: "Preorders", exact: true })).toBeVisible();

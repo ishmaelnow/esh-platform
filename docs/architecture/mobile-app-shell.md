@@ -53,6 +53,15 @@ build; the marketing version remains explicit in each Xcode project.
 No secrets, Supabase service-role keys, Stripe secret keys, or Twilio credentials enter the mobile
 bundle.
 
+Driver document capture uses separate HTML photo capture (image/* for Capacitor Android's capture
+branch) and ordinary file/library inputs with existing document-type restrictions. Android declares
+an IMAGE_CAPTURE query for the bridge's camera-discovery check; its manifest change requires a rebuild.
+Driver iOS includes camera/photo-library purpose descriptions for deliberate document selection;
+these declarations require rebuilding and installing the native shell. No Camera plugin or video/
+microphone access is added. Drivers view private current evidence inside the hosted app through an
+ownership-checked, short-lived signed link. See driver-applicant-portal.md for authorization and
+operations/driver-application-manual-test.md for physical-device acceptance.
+
 ## Rider map home (local design draft)
 
 The Rider home uses a persistent live map above a straight-edged bottom panel. At 414 × 896,
