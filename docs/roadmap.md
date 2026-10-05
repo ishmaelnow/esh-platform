@@ -6,6 +6,16 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider Account profile editing and optional private photo are implemented locally. Name, optional
+  contact phone and notes use the existing tenant-owned profile; verified email remains read-only.
+  Photo selection/preview/removal uses private storage and controlled audited RPCs. Migration
+  `20261005000100_rider_profile_account.sql` is owner-applied after a dry-run listing only it;
+  code awaits owner push/deployment. 32 unit/API and 14
+  mobile browser tests, Rider production build and shared types pass. Real SQL/RLS and physical
+  device acceptance remain pending. Authentication/session duration stays deferred; approved
+  map/booking and SMS consent are preserved. See `architecture/rider-profile-account.md` and
+  `operations/rider-profile-account-manual-test.md`.
+
 - Modular pnpm/Turborepo workspace and shared platform packages.
 - Tenant foundation, memberships, roles, capabilities, audit, RLS, and tenant selection.
 - Platform tenant provisioning and invitation acceptance.
@@ -35,8 +45,9 @@ remain independent of transportation-specific workflows.
   No migration is needed. Live combined-view acceptance remains pending.
 - Driver private own-document previews and separate Take photo inputs are implemented locally.
   Owner confirmed iOS rejection/replacement, live photo capture and successful upload. Android
-  1.0.2 still opened existing files; follow-up uses explicit native Camera capture with cancellation/
-  error handling. Android-only 1.0.3/code 4 rebuild and device acceptance are pending. iOS is preserved.
+  1.0.2 opened existing files; follow-up uses explicit native Camera capture with cancellation/
+  error handling. Owner confirms Android 1.0.3/code 4 installation and camera/upload work after
+  removing the older debug-signed installation. Release signing was retained. iOS is preserved.
   Follow-up adds foreground, Documents-entry, visible polling and manual review-status refresh so
   administrator rejection enables replacement without stale pending status. All 23 mobile browser
   checks, typecheck and scoped lint pass; owner deployment/live acceptance remain pending. No
