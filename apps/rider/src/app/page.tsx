@@ -20,6 +20,7 @@ import { LiveTripMap, RiderHomeMap } from "@esh-platform/maps/client";
 import { RiderMenu } from "./RiderMenu";
 import { RiderLanding } from "./RiderLanding";
 import { RiderSheet } from "./RiderSheet";
+import { RiderProfileEditor } from "./RiderProfileEditor";
 import { useRiderLocation } from "./useRiderLocation";
 import { resolveRideCoverage, type CoverageArea } from "../lib/service-coverage";
 import {
@@ -1351,6 +1352,9 @@ export default function RiderHome() {
               <div><h2>Account</h2><p>{portal.profile.displayName} · {session.user.email}</p></div>
               <button className="button secondary compact" disabled={busy} onClick={() => void signOut()} type="button">Sign out</button>
             </div>
+            {supabase ? <RiderProfileEditor key={`${session.user.id}:${portal.profile.riderProfileId}`}
+              profile={portal.profile} client={supabase} token={session.access_token}
+              tenantSlug={tenantSlug} onSaved={loadPortal} /> : null}
             <article className="card sms-consent-card">
               <div>
                 <p className="kicker">Optional SMS</p>

@@ -481,6 +481,8 @@ export type Database = {
       }
       rider_profiles: {
         Row: {
+          photo_storage_path: string | null
+          photo_mime_type: string | null
           accessibility_notes: string | null
           created_at: string
           display_name: string
@@ -493,6 +495,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          photo_storage_path?: string | null
+          photo_mime_type?: string | null
           accessibility_notes?: string | null
           created_at?: string
           display_name: string
@@ -505,6 +509,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          photo_storage_path?: string | null
+          photo_mime_type?: string | null
           accessibility_notes?: string | null
           created_at?: string
           display_name?: string
@@ -3167,6 +3173,14 @@ export type Database = {
           target_tenant_slug: string
         }
         Returns: string
+      }
+      update_my_rider_profile: {
+        Args: { target_tenant_slug: string; display_name_value: string; phone_value?: string; accessibility_notes_value?: string }
+        Returns: string
+      }
+      set_my_rider_profile_photo: {
+        Args: { target_tenant_slug: string; storage_path_value?: string | null; mime_type_value?: string | null }
+        Returns: Json
       }
       submit_my_driver_evidence: {
         Args: {

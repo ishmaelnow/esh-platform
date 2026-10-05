@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const tenant = { tenantId: "11111111-1111-4111-8111-111111111111", tenantSlug: "rider-preview", displayName: "Preview rides" };
-const profile = { riderProfileId: "preview-rider", displayName: "Preview Rider", email: "rider-preview@example.invalid", phone: null, accessibilityNotes: null, status: "active" };
+const profile = { riderProfileId: "preview-rider", displayName: "Preview Rider", email: "rider-preview@example.invalid", phone: null as string | null, accessibilityNotes: null as string | null, status: "active" };
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 414, height: 896 });
@@ -14,6 +14,7 @@ test.beforeEach(async ({ page }) => {
     }));
   });
   await page.route("**/auth/v1/**", (route) => route.fulfill({ json: { user: { id: "preview", email: profile.email } } }));
+  await page.route("**/api/profile/photo?*", (route) => route.fulfill({ json: { url: null } }));
   await page.route("https://api.mapbox.com/**", (route) => route.fulfill({ json: { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#f7f7f2" } }] } }));
   await page.route("**/rest/v1/**", (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -84,6 +85,91 @@ test("mobile home shows only the request panel, with secondary sections in the d
     await page.keyboard.press("Escape");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
+});
+
+test("Account edits owned profile, persists reload and keeps mobile controls and booking usable", async ({ page }) => {
+  let savedProfile = { ...profile };
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: {
+    tenant, profile: savedProfile, serviceAreas: [{ serviceAreaId: "preview-area", name: "City", description: null }], bookings: [],
+  } }));
+  const updates: Record<string, string>[] = [];
+  await page.route("**/rest/v1/rpc/update_my_rider_profile", (route) => {
+    const body = route.request().postDataJSON() as Record<string, string>;
+    updates.push(body);
+    savedProfile = { ...savedProfile, displayName: body.display_name_value!, phone: body.phone_value ?? null,
+      accessibilityNotes: body.accessibility_notes_value ?? null };
+    return route.fulfill({ json: "preview-rider" });
+  });
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  const editor = page.locator(".rider-profile-card");
+  await expect(editor.getByLabel("Verified email")).toHaveAttribute("readonly", "");
+  await editor.getByLabel("Full name", { exact: true }).fill("Updated Rider");
+  await editor.getByLabel("Contact phone", { exact: false }).fill("+1 215 555 0123");
+  await editor.getByLabel("Accessibility or pickup notes").fill("Please wait by the entrance.");
+  await editor.getByRole("button", { name: "Save profile", exact: true }).click();
+  await expect(editor.getByText("Profile saved.", { exact: true })).toBeVisible();
+  expect(updates).toEqual([{ target_tenant_slug: tenant.tenantSlug, display_name_value: "Updated Rider",
+    phone_value: "+1 215 555 0123", accessibility_notes_value: "Please wait by the entrance." }]);
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await expect(editor.getByLabel("Full name", { exact: true })).toHaveValue("Updated Rider");
+  await expect(editor.getByLabel("Contact phone", { exact: false })).toHaveValue("+1 215 555 0123");
+  await page.screenshot({ path: "test-results/rider-profile-account-414.png", fullPage: true });
+  for (const viewport of [{ width: 414, height: 480 }, { width: 320, height: 600 }]) {
+    await page.setViewportSize(viewport);
+    await editor.getByLabel("Accessibility or pickup notes").focus();
+    await editor.getByRole("button", { name: "Save profile", exact: true }).scrollIntoViewIfNeeded();
+    await expect(editor.getByRole("button", { name: "Save profile", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.getByRole("button", { name: "Back to request" }).click();
+  await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
+});
+
+test("optional profile photo uploads, survives reload, removes and reports failure without blocking edits", async ({ page }) => {
+  const pixel = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 16;
+    canvas.getContext("2d")!.fillRect(0, 0, 16, 16);
+    return canvas.toDataURL("image/png").split(",")[1]!;
+  });
+  let hasPhoto = false, failUpload = false;
+  const methods: string[] = [];
+  await page.route("**/api/profile/photo?*", (route) => {
+    const method = route.request().method(); methods.push(method);
+    expect(new URL(route.request().url()).searchParams.get("tenantSlug")).toBe(tenant.tenantSlug);
+    if (method === "POST") {
+      if (failUpload) return route.fulfill({ status: 503, json: { message: "Photo upload unavailable. Try again." } });
+      expect(route.request().postDataBuffer()?.toString()).toContain("image/jpeg");
+      hasPhoto = true; return route.fulfill({ json: { saved: true } });
+    }
+    if (method === "DELETE") { hasPhoto = false; return route.fulfill({ json: { removed: true } }); }
+    return route.fulfill({ json: { url: hasPhoto ? `data:image/png;base64,${pixel}` : null } });
+  });
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  const editor = page.locator(".rider-profile-card"), input = editor.getByLabel("Choose profile photo", { exact: true });
+  await expect(input).toBeEnabled();
+  await input.setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(pixel, "base64") });
+  await expect(editor.getByText("Profile photo updated.")).toBeVisible();
+  await expect(editor.getByRole("img", { name: "Your rider profile" })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await expect(editor.getByRole("img", { name: "Your rider profile" })).toBeVisible();
+  await editor.getByRole("button", { name: "Remove photo", exact: true }).click();
+  await expect(editor.getByText("Profile photo removed.")).toBeVisible();
+  await expect(editor.getByRole("img", { name: "Your rider profile" })).toHaveCount(0);
+  failUpload = true;
+  await expect(input).toBeEnabled();
+  await input.setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(pixel, "base64") });
+  await expect(editor.getByRole("alert")).toHaveText("Photo upload unavailable. Try again.");
+  await expect(editor.getByRole("button", { name: "Save profile", exact: true })).toBeEnabled();
+  expect(methods).toContain("DELETE");
+  await page.getByRole("button", { name: "Back to request" }).click();
+  await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
 });
 
 test("onboarding remains scrollable in a short mobile viewport", async ({ page }) => {
