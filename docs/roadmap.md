@@ -10,11 +10,16 @@ remain independent of transportation-specific workflows.
   contact phone and notes use the existing tenant-owned profile; verified email remains read-only.
   Photo selection/preview/removal uses private storage and controlled audited RPCs. Migration
   `20261005000100_rider_profile_account.sql` is owner-applied after a dry-run listing only it;
-  code awaits owner push/deployment. 32 unit/API and 14
+  code is owner-pushed/deployed as `8e05193`. 32 unit/API and 14
   mobile browser tests, Rider production build and shared types pass. Real SQL/RLS and physical
   device acceptance remain pending. Authentication/session duration stays deferred; approved
   map/booking and SMS consent are preserved. See `architecture/rider-profile-account.md` and
   `operations/rider-profile-account-manual-test.md`.
+
+- Rider native follow-up adds missing iOS camera permission descriptions, image-decoding fallback,
+  and Android encrypted session storage/foreground recovery. Rider 1.0.2 builds/install are pending
+  owner release and device acceptance; no migration, session-limit or iOS authentication change.
+  See `architecture/rider-native-session-recovery.md`.
 
 - Modular pnpm/Turborepo workspace and shared platform packages.
 - Tenant foundation, memberships, roles, capabilities, audit, RLS, and tenant selection.

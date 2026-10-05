@@ -5,17 +5,20 @@ Last updated: 2026-10-05
 ## Current objective and checkpoint
 
 Owner approved Rider profile work: editable name, optional contact phone and optional personal photo.
-Authentication/session-duration changes are deferred. Preserve approved Rider map/home/booking.
+Session-duration policy changes are deferred. Owner authorized repairing iOS camera crashes and
+Android session persistence after profile deployment. Preserve approved Rider map/home/booking.
 Existing onboarding already stored name/phone/notes; Account now edits those details with read-only
 verified email and an optional private JPEG/PNG photo. Photo selection uploads immediately; text
 edits require Save profile. Preview/removal is own-account only with five-minute signed links.
-No new Driver sharing, booking gate, notification, SMS consent/verification, native plugin or
-session policy is added. Provider changes scope the editor to that provider's Rider profile.
+The original profile release added no Driver sharing, booking gate, notification, SMS consent or
+session policy. Provider changes scope the editor to that provider's Rider profile.
 
-Implementation is local and uncommitted; main/origin main agree at c4c34ef.
+Owner pushed the full feature as 8e05193 after documentation-only 63017b3. Main/origin main
+agree at 8e05193; owner supplied the Rider Production Ready deployment. Only the preexisting
+Driver/Rider tsconfig edits remain outside the feature commit.
 Owner applied 20261005000100_rider_profile_account.sql successfully after a dry-run listing only
-that migration. Owner supplied the successful remote db push output. Code remains local and awaits
-owner commit/push/deployment. Existing server-only Supabase service configuration is reused.
+that migration. Owner supplied the successful remote db push output. Existing server-only Supabase
+service configuration is reused.
 
 Checks passed: 32 Rider unit/API tests; all 14 mobile browser tests including profile save/reload,
 photo upload/removal/failure and approved map/booking regressions; Rider production build and shared
@@ -26,8 +29,34 @@ picker and real-account persistence/tenant isolation remain owner acceptance.
 Rollback-only SQL fixture tooling/sql/rider-profile-account-test.sql is prepared but NOT executed:
 local Docker daemon is stopped. API/browser mocks are not proof of real database/RLS execution.
 
-Next action: owner commits/pushes the scoped feature, verifies Rider deployment Ready, and completes
-real-account/device checks. Disposable SQL tests remain unexecuted. Read docs/architecture/rider-profile-account.md
+Current device follow-up: owner reports Rider iOS live-camera photo upload fails; iOS sign-in
+persists without repeated verification. Android Rider repeatedly asks for email verification.
+Owner clarified iOS crashes immediately on selecting Camera, before upload. Rider Info.plist
+lacked camera/photo-library purpose descriptions. Local correction adds both and an image-element
+decode fallback for older WebViews. iOS authentication and existing location declarations are
+preserved. Android adds a Rider-only Capacitor session vault: AES-GCM/Android Keystore, ciphertext
+in app-private preferences excluded from backup/device transfer, own isolated Auth key plus PKCE
+verifier only. Existing WebView session migrates only after successful native save; explicit
+sign-out clears both copies. Failed vault operations report errors without silently clearing it.
+Older Android shells/browser/iOS retain existing storage. Shared client storage option is additive.
+Android foreground return restores/refreshes session; successful callback closes external browser.
+Initial portal reads cannot overwrite a newer auth event. Supabase session limits/revocation remain
+authoritative. Exact original Android device failure is not confirmed; real acceptance is required.
+
+Checks for this follow-up: 37 Rider unit/API tests, 15 mobile browser tests (simulated native restart,
+expired-token refresh, foreground return and sign-out plus profile/photo/map/booking regressions),
+Rider/shared type checks and scoped lint pass with existing vehicle-image warning. Android Java
+compilation and merged manifest pass; first offline attempt lacked aapt2, online retry fetched it.
+Native plist and backup XML parse; whitespace check passes. Final Rider production build passes
+with existing Supabase/Next warnings. No signed iOS build or device acceptance was run here.
+
+Next action: owner pushes scoped fixes, waits for Rider hosted Ready, builds both ESH Rider iOS
+and ESH Rider Android and installs the newer releases. Rider iOS marketing 1.0.2 with Codemagic's
+unique build number; Android 1.0.2/code 3. Preserve signing/bundle IDs. No additional migration.
+Verify camera prompt/capture/upload/cancel/denial, iOS sign-in regression and Android background,
+relaunch, reboot, valid token refresh and explicit sign-out. Read
+docs/architecture/rider-native-session-recovery.md and the updated manual acceptance guide.
+Disposable SQL tests remain unexecuted. Read docs/architecture/rider-profile-account.md
 and docs/operations/rider-profile-account-manual-test.md. No Git mutation, production mutation or
 deployment was performed. Preserve preexisting apps/driver/tsconfig.json, apps/rider/next-env.d.ts
 and apps/rider/tsconfig.json edits; exclude generated/local configuration from feature staging.

@@ -53,6 +53,11 @@ build; the marketing version remains explicit in each Xcode project.
 No secrets, Supabase service-role keys, Stripe secret keys, or Twilio credentials enter the mobile
 bundle.
 
+Rider native release 1.0.2 adds iOS camera/photo-library purpose descriptions and Android encrypted
+session persistence/foreground recovery. Android session migration and sign-out remain Rider-only;
+iOS authentication is preserved. Both require a new shell build. See
+`rider-native-session-recovery.md` for security and release acceptance.
+
 Driver document capture uses separate HTML photo capture (image/* for Capacitor Android's capture
 branch in 1.0.2, owner-reported picker fallback) and ordinary file/library inputs. Driver Android
 1.0.3/code 4 replaces Take photo with explicit @capacitor/camera 8.0.0 CameraSource.Camera capture,

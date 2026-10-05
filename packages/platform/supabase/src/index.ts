@@ -40,6 +40,11 @@ export type PublicSupabaseClientConfig = {
   anonKey: string;
   auth?: {
     detectSessionInUrl?: boolean;
+    storage?: {
+      getItem: (key: string) => string | null | Promise<string | null>;
+      setItem: (key: string, value: string) => void | Promise<void>;
+      removeItem: (key: string) => void | Promise<void>;
+    };
   };
 };
 
@@ -160,6 +165,7 @@ export function createIsolatedBrowserSupabaseClient(
       detectSessionInUrl: config?.auth?.detectSessionInUrl ?? true,
       persistSession: true,
       storageKey,
+      ...(config?.auth?.storage ? { storage: config.auth.storage } : {}),
     },
   });
 }

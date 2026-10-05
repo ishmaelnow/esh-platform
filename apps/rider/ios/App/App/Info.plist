@@ -73,6 +73,10 @@
 			<array><string>com.esh.rider</string></array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>ESH Rider uses the camera when you choose to take your optional profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ESH Rider lets you choose an optional profile photo from your photo library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ESH uses location to show authorized live trip progress when location sharing is enabled.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

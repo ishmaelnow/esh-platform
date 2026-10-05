@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createIsolatedBrowserSupabaseClient } from "@esh-platform/supabase";
+import { riderAndroidStorage } from "../../../lib/android-session-storage";
 
 export default function RiderAuthCallbackPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function RiderAuthCallbackPage() {
         ? createIsolatedBrowserSupabaseClient("esh-rider-portal-auth", {
           url: supabaseUrl,
           anonKey: supabaseAnonKey,
-          auth: { detectSessionInUrl: false },
+          auth: { detectSessionInUrl: false, ...(riderAndroidStorage() ? { storage: riderAndroidStorage()! } : {}) },
         })
         : null,
     [supabaseAnonKey, supabaseUrl],

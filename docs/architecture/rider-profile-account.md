@@ -16,8 +16,10 @@ Optional photos use the private `rider-profile-photos` bucket. The browser selec
 library/files, resizes to at most 1200 pixels and re-encodes JPEG without retaining source metadata.
 Selection uploads immediately; text edits require Save profile. The server bounds multipart input
 and checks MIME/signature and a 1 MB file limit. Unsupported images/PDFs are rejected. No new native
-camera permission, plugin or native rebuild is introduced; device picker acceptance remains a
-manual release check.
+plugin was introduced in the profile release. Follow-up adds Rider iOS camera/photo-library purpose
+descriptions after the owner reported a crash when selecting Camera. Those declarations require
+a new native iOS build; hosted deployment cannot repair an old binary. Device capture/upload,
+cancellation and denial remain manual release checks.
 
 The photo API verifies the bearer token with Auth and resolves its active owned profile through
 `my_rider_portal`. Client-provided profile IDs, tenant IDs and storage paths do not determine

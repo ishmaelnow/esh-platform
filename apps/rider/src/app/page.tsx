@@ -22,6 +22,7 @@ import { RiderLanding } from "./RiderLanding";
 import { RiderSheet } from "./RiderSheet";
 import { RiderProfileEditor } from "./RiderProfileEditor";
 import { useRiderLocation } from "./useRiderLocation";
+import { riderAndroidStorage } from "../lib/android-session-storage";
 import { resolveRideCoverage, type CoverageArea } from "../lib/service-coverage";
 import {
   bookingStatusLabel,
@@ -181,6 +182,7 @@ export default function RiderHome() {
         ? createIsolatedBrowserSupabaseClient("esh-rider-portal-auth", {
             url: supabaseUrl,
             anonKey: supabaseAnonKey,
+            auth: { ...(riderAndroidStorage() ? { storage: riderAndroidStorage()! } : {}) },
           })
         : null,
     [supabaseAnonKey, supabaseUrl],
@@ -546,10 +548,18 @@ export default function RiderHome() {
       return;
     }
     let active = true;
+    let authChanged = false;
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authChanged = true;
+      if (!active) return;
+      setSession(nextSession);
+      if (!nextSession) setPortal(null);
+    });
     void Promise.all([supabase.auth.getSession(), supabase.rpc("list_rider_booking_tenants")]).then(
       ([authResult, tenantResult]) => {
         if (!active) return;
-        setSession(authResult.data.session);
+        if (!authChanged) setSession(authResult.data.session);
+        if (authResult.error) setError("Saved sign-in could not be restored. Check your connection and reopen Rider.");
         const available = (tenantResult.data ?? []) as BookingTenant[];
         setTenants(available);
         const requested =
@@ -564,15 +574,37 @@ export default function RiderHome() {
         if (tenantResult.error) setError(tenantResult.error.message);
         setLoading(false);
       },
-    );
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      if (!nextSession) setPortal(null);
+    ).catch(() => {
+      if (active) { setLoading(false); setError("Rider could not reconnect. Check your connection and reopen the app."); }
     });
     return () => {
       active = false;
       data.subscription.unsubscribe();
     };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase || Capacitor.getPlatform() !== "android") return;
+    let active = true;
+    let handle: { remove: () => Promise<void> } | null = null;
+    let recovering = false;
+    const recover = async () => {
+      if (!active || recovering) return;
+      recovering = true;
+      try {
+        const { data, error: recoveryError } = await supabase.auth.getSession();
+        if (active && recoveryError) setError("Sign-in could not reconnect. Check your connection and try again.");
+        if (active && data.session) setSession(data.session);
+      } catch {
+        if (active) setError("Sign-in could not reconnect. Check your connection and try again.");
+      } finally { recovering = false; }
+    };
+    void App.addListener("appStateChange", ({ isActive }) => {
+      if (!active) return;
+      if (isActive) { void supabase.auth.startAutoRefresh(); void recover(); }
+      else void supabase.auth.stopAutoRefresh();
+    }).then((listener) => { if (!active) void listener.remove(); else handle = listener; });
+    return () => { active = false; if (handle) void handle.remove(); };
   }, [supabase]);
 
   useEffect(() => {
@@ -602,6 +634,7 @@ export default function RiderHome() {
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) setError(`Sign-in could not be completed: ${exchangeError.message}`);
+        else if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
         return;
       }
       const hash = new URLSearchParams(callback.hash.replace(/^#/, ""));
@@ -613,6 +646,7 @@ export default function RiderHome() {
         refresh_token: refreshToken,
       });
       if (sessionError) setError(`Sign-in could not be completed: ${sessionError.message}`);
+      else if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
     };
     void App.addListener("appUrlOpen", ({ url }) => void handleCallback(url)).then((handle) => {
       listener = handle;
