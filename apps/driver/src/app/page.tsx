@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import Image from "next/image";
 import {
@@ -14,6 +15,7 @@ import { DriverFileInput } from "./DriverFileInput";
 import { DriverDocumentView } from "./DriverDocumentView";
 import { applicationDocumentRank } from "../lib/application";
 import { useDriverMapLocation } from "./useDriverMapLocation";
+import { driverAndroidStorage } from "../lib/android-session-storage";
 import { driverHomeTotals } from "../lib/home-totals";
 import { LiveTripMap } from "@esh-platform/maps/client";
 import { openDriverNavigation } from "../lib/embedded-navigation";
@@ -173,6 +175,7 @@ export default function DriverHome() {
     return createIsolatedBrowserSupabaseClient("esh-driver-portal-auth", {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
+      auth: { ...(driverAndroidStorage() ? { storage: driverAndroidStorage()! } : {}) },
     });
   }, [supabaseAnonKey, supabaseUrl]);
   const [session, setSession] = useState<SupabaseAuthSession | null>(null);
@@ -385,6 +388,7 @@ export default function DriverHome() {
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) setMessage(`Sign-in could not be completed: ${exchangeError.message}`);
+        else if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
         return;
       }
       const hash = new URLSearchParams(callback.hash.replace(/^#/, ""));
@@ -396,6 +400,7 @@ export default function DriverHome() {
         refresh_token: refreshToken,
       });
       if (sessionError) setMessage(`Sign-in could not be completed: ${sessionError.message}`);
+      else if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
     };
     void App.addListener("appUrlOpen", ({ url }) => void handleCallback(url)).then((handle) => {
       listener = handle;
@@ -457,11 +462,46 @@ export default function DriverHome() {
       setMessage("Driver portal configuration is unavailable.");
       return;
     }
-    void supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    let active = true;
+    let authChanged = false;
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
-    return () => subscription.unsubscribe();
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authChanged = true;
+      if (active) setSession(nextSession);
+    });
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (!authChanged) setSession(data.session);
+      if (error) setMessage("Saved sign-in could not be restored. Check your connection and reopen Driver.");
+    }).catch(() => {
+      if (active) setMessage("Driver could not reconnect. Check your connection and reopen the app.");
+    });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase || Capacitor.getPlatform() !== "android") return;
+    let active = true;
+    let handle: { remove: () => Promise<void> } | null = null;
+    let recovering = false;
+    const recover = async () => {
+      if (!active || recovering) return;
+      recovering = true;
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (active && error) setMessage("Sign-in could not reconnect. Check your connection and try again.");
+        if (active && data.session) setSession(data.session);
+      } catch {
+        if (active) setMessage("Sign-in could not reconnect. Check your connection and try again.");
+      } finally { recovering = false; }
+    };
+    void App.addListener("appStateChange", ({ isActive }) => {
+      if (!active) return;
+      if (isActive) { void supabase.auth.startAutoRefresh(); void recover(); }
+      else void supabase.auth.stopAutoRefresh();
+    }).then((listener) => { if (!active) void listener.remove(); else handle = listener; });
+    return () => { active = false; if (handle) void handle.remove(); };
   }, [supabase]);
 
   useEffect(() => {

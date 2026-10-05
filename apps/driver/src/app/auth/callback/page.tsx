@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createIsolatedBrowserSupabaseClient } from "@esh-platform/supabase";
+import { driverAndroidStorage } from "../../../lib/android-session-storage";
 
 export default function DriverAuthCallbackPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function DriverAuthCallbackPage() {
         ? createIsolatedBrowserSupabaseClient("esh-driver-portal-auth", {
             url: supabaseUrl,
             anonKey: supabaseAnonKey,
-            auth: { detectSessionInUrl: false },
+            auth: { detectSessionInUrl: false, ...(driverAndroidStorage() ? { storage: driverAndroidStorage()! } : {}) },
           })
         : null,
     [supabaseAnonKey, supabaseUrl],

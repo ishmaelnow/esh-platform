@@ -21,6 +21,11 @@ remain independent of transportation-specific workflows.
   owner release and device acceptance; no migration, session-limit or iOS authentication change.
   See `architecture/rider-native-session-recovery.md`.
 
+- Driver Android session follow-up applies the same recovery pattern in a separate Driver-only
+  encrypted vault. Android 1.0.4/code 5 awaits owner release/device acceptance; camera/navigation
+  and iOS sign-in are preserved. No migration or session-policy extension. See
+  `architecture/driver-native-session-recovery.md`.
+
 - Modular pnpm/Turborepo workspace and shared platform packages.
 - Tenant foundation, memberships, roles, capabilities, audit, RLS, and tenant selection.
 - Platform tenant provisioning and invitation acceptance.

@@ -4,6 +4,32 @@ Last updated: 2026-10-05
 
 ## Current objective and checkpoint
 
+Owner clarified the camera crash is Rider iOS, while repeated session loss affects BOTH Android
+apps. Rider correction is owner-pushed as 3bf1fbb (main/origin main agree). Current work is the
+missing Driver Android session correction. Driver-only encrypted session/PKCE storage and native
+foreground recovery are implemented locally, using Driver keys/origin/preferences/Keystore alias.
+Legacy WebView values migrate only after durable save; explicit sign-out clears both stores.
+Home/callback share the adapter; initial reads cannot overwrite newer Auth events. iOS auth,
+working camera and EmbeddedNavigation are preserved. No Auth limits, domain settings, tenant
+permissions, Driver availability or review states are changed. No migration.
+
+Release target: Driver Android 1.0.4/code 5; owner must push, verify hosted Driver Ready, build
+ESH Driver Android and install the signed update. Driver iOS is unchanged. Physical-device
+restart/reboot/refresh/sign-out acceptance remains pending; exact original Android failure was not
+established from device logs. Rider Android 1.0.2/code 3 and Rider iOS 1.0.2 builds remain separate.
+Read docs/architecture/driver-native-session-recovery.md and
+docs/operations/driver-android-session-manual-test.md. Preserve generated tsconfig edits.
+
+Local validation: 58 Driver unit/API tests (including six camera tests), Driver typecheck and scoped
+lint pass. Android Java compilation and merged manifest pass, including camera/navigation.
+Initial native attempts needed the installed SDK path and a missing Kotlin cache dependency;
+online retry succeeded. Backup XML and whitespace checks pass. All 24 mobile browser tests pass,
+including native restart/expired-token refresh/sign-out, application/document/camera/map regressions.
+Driver production build passes with existing Supabase/Next warnings. Tests use bridge/business
+fixtures; signed-device Keystore durability and the original symptom remain owner acceptance.
+
+## Rider release checkpoint
+
 Owner approved Rider profile work: editable name, optional contact phone and optional personal photo.
 Session-duration policy changes are deferred. Owner authorized repairing iOS camera crashes and
 Android session persistence after profile deployment. Preserve approved Rider map/home/booking.
@@ -13,9 +39,9 @@ edits require Save profile. Preview/removal is own-account only with five-minute
 The original profile release added no Driver sharing, booking gate, notification, SMS consent or
 session policy. Provider changes scope the editor to that provider's Rider profile.
 
-Owner pushed the full feature as 8e05193 after documentation-only 63017b3. Main/origin main
-agree at 8e05193; owner supplied the Rider Production Ready deployment. Only the preexisting
-Driver/Rider tsconfig edits remain outside the feature commit.
+Owner pushed the full profile feature as 8e05193 after documentation-only 63017b3 and supplied
+the Rider Production Ready deployment. Subsequent native fix is 3bf1fbb. Preserve the preexisting
+Driver/Rider tsconfig edits outside feature staging.
 Owner applied 20261005000100_rider_profile_account.sql successfully after a dry-run listing only
 that migration. Owner supplied the successful remote db push output. Existing server-only Supabase
 service configuration is reused.
@@ -50,7 +76,7 @@ compilation and merged manifest pass; first offline attempt lacked aapt2, online
 Native plist and backup XML parse; whitespace check passes. Final Rider production build passes
 with existing Supabase/Next warnings. No signed iOS build or device acceptance was run here.
 
-Next action: owner pushes scoped fixes, waits for Rider hosted Ready, builds both ESH Rider iOS
+Rider fixes were owner-pushed as 3bf1fbb. Owner waits for Rider hosted Ready, builds both ESH Rider iOS
 and ESH Rider Android and installs the newer releases. Rider iOS marketing 1.0.2 with Codemagic's
 unique build number; Android 1.0.2/code 3. Preserve signing/bundle IDs. No additional migration.
 Verify camera prompt/capture/upload/cancel/denial, iOS sign-in regression and Android background,

@@ -58,6 +58,9 @@ session persistence/foreground recovery. Android session migration and sign-out 
 iOS authentication is preserved. Both require a new shell build. See
 `rider-native-session-recovery.md` for security and release acceptance.
 
+Driver Android 1.0.4/code 5 follows with its own encrypted session vault and foreground recovery,
+preserving camera/navigation and iOS authentication. See `driver-native-session-recovery.md`.
+
 Driver document capture uses separate HTML photo capture (image/* for Capacitor Android's capture
 branch in 1.0.2, owner-reported picker fallback) and ordinary file/library inputs. Driver Android
 1.0.3/code 4 replaces Take photo with explicit @capacitor/camera 8.0.0 CameraSource.Camera capture,

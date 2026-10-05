@@ -16,6 +16,65 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".rider-map-canvas")).toHaveAttribute("data-map-idle", "true", { timeout: 25000 });
 });
 
+test("Android recovers native session after WebView clearing, refreshes expired tokens and signs out", async ({ page }) => {
+  await page.addInitScript(() => {
+    const key = "esh-driver-portal-auth";
+    if (!sessionStorage.getItem("native-vault-initialized")) {
+      sessionStorage.setItem("native-vault", localStorage.getItem(key)!);
+      sessionStorage.setItem("native-vault-initialized", "true");
+    }
+    localStorage.removeItem(key);
+    const callbacks: Array<(event: { isActive: boolean }) => void> = [];
+    Object.assign(window, { CapacitorCustomPlatform: { name: "android" },
+      driverTestForeground: () => callbacks.forEach((callback) => callback({ isActive: true })),
+      Capacitor: {
+        PluginHeaders: [
+          { name: "DriverSessionStorage", methods: ["get", "set", "remove"].map((name) => ({ name, rtype: "promise" })) },
+          { name: "App", methods: [{ name: "addListener", rtype: "callback" }, { name: "removeListener", rtype: "promise" }, { name: "getLaunchUrl", rtype: "promise" }] },
+          { name: "Geolocation", methods: [{ name: "checkPermissions", rtype: "promise" }] },
+        ],
+        nativePromise: async (plugin: string, method: string, options: { key?: string; value?: string }) => {
+          await Promise.resolve();
+          if (plugin !== "DriverSessionStorage") return {};
+          if (method === "get") return { value: options.key === key ? sessionStorage.getItem("native-vault") : null };
+          if (method === "set") sessionStorage.setItem("native-vault", options.value!);
+          if (method === "remove") sessionStorage.removeItem("native-vault");
+          return {};
+        },
+        nativeCallback: (_plugin: string, _method: string, _options: object, callback: (event: { isActive: boolean }) => void) => {
+          callbacks.push(callback); return "fixture-listener";
+        },
+      },
+    });
+  });
+  await page.reload();
+  await expect(page.getByRole("switch", { name: "Driver availability" })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("esh-driver-portal-auth"))).toBeNull();
+  let refreshes = 0;
+  await page.route("**/auth/v1/token?grant_type=refresh_token", (route) => {
+    refreshes++;
+    return route.fulfill({ json: {
+      access_token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmV2aWV3In0.rotated",
+      refresh_token: "rotated-fixture", token_type: "bearer", expires_in: 3600,
+      user: { id: "preview-driver", email: "driver-preview@example.invalid", aud: "authenticated", role: "authenticated" },
+    } });
+  });
+  await page.evaluate(() => {
+    const saved = JSON.parse(sessionStorage.getItem("native-vault")!) as { expires_at: number };
+    saved.expires_at = 1; sessionStorage.setItem("native-vault", JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.getByRole("switch", { name: "Driver availability" })).toBeVisible();
+  await expect.poll(() => refreshes).toBeGreaterThan(0);
+  expect(await page.evaluate(() => (JSON.parse(sessionStorage.getItem("native-vault")!) as { refresh_token: string }).refresh_token)).toBe("rotated-fixture");
+  await page.evaluate(() => (window as unknown as { driverTestForeground: () => void }).driverTestForeground());
+  await page.getByRole("button", { name: "Open driver menu" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Email me a sign-in link" })).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem("native-vault"))).toBeNull();
+});
+
 test("home uses live geographic tiles, full-width map, totals and unobscured bottom controls", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Today’s total" })).toBeVisible();
   await expect(page.locator(".driver-total-money strong")).toHaveText(/0\.00/);
