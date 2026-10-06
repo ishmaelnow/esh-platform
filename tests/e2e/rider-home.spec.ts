@@ -95,6 +95,71 @@ test("Android recovers native session after WebView clearing, refreshes expired 
   expect(await page.evaluate(() => sessionStorage.getItem("native-vault"))).toBeNull();
 });
 
+test("native payment handoff page offers the correct Rider link without claiming payment", async ({ page }) => {
+  const quote = "11111111-1111-4111-8111-111111111111";
+  await page.goto(`/payments/return?tenant=rider-preview&payment=success&quote=${quote}`);
+  await expect(page.getByRole("link", { name: "Return to ESH Rider", exact: true })).toHaveAttribute("href", `com.esh.rider://auth/callback?tenant=rider-preview&payment=success&quote=${quote}`);
+  await expect(page.getByRole("link", { name: "Continue in browser" })).toHaveAttribute("href", `/?tenant=rider-preview&payment=success&quote=${quote}`);
+  await expect(page.getByText("This page does not confirm payment.", { exact: false })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/rider-payment-return-414.png", fullPage: true });
+  await page.goto("/payments/return?tenant=rider-preview&payment=success&quote=invalid");
+  await expect(page.locator("main").getByRole("alert")).toContainText("incomplete");
+  await expect(page.getByRole("link", { name: "Return to ESH Rider", exact: true })).toHaveCount(0);
+});
+
+test("iOS payment callback closes Browser, recovers an existing booking once, and rejects other apps", async ({ page }) => {
+  await page.addInitScript(() => {
+    let closeCalls = 0;
+    const callbacks: Array<(event: { url: string }) => void> = [];
+    Object.assign(window, { CapacitorCustomPlatform: { name: "ios" },
+      riderPaymentFixture: { return: (url: string) => callbacks.forEach((callback) => callback({ url })), closes: () => closeCalls },
+      Capacitor: {
+        PluginHeaders: [
+          { name: "App", methods: [{ name: "addListener", rtype: "callback" }, { name: "removeListener", rtype: "promise" }, { name: "getLaunchUrl", rtype: "promise" }] },
+          { name: "Browser", methods: [{ name: "close", rtype: "promise" }] },
+          { name: "Geolocation", methods: [{ name: "checkPermissions", rtype: "promise" }] },
+        ],
+        nativePromise: async (plugin: string, method: string) => {
+          await Promise.resolve(); if (plugin === "Browser" && method === "close") closeCalls++;
+          return plugin === "Geolocation" ? { location: "denied" } : {};
+        },
+        nativeCallback: (_plugin: string, _method: string, options: { eventName?: string }, callback: (event: { url: string }) => void) => {
+          if (options.eventName === "appUrlOpen") callbacks.push(callback); return "payment-listener";
+        },
+      },
+    });
+  });
+  const quote = "11111111-1111-4111-8111-111111111111";
+  let reads = 0, bookings = 0;
+  await page.route("**/api/payments/checkout?*", (route) => {
+    reads++;
+    expect(new URL(route.request().url()).searchParams.get("tenantSlug")).toBe(tenant.tenantSlug);
+    return route.fulfill({ json: { paymentStatus: "paid", quote: { quoteId: quote, bookingId: "already-booked", serviceAreaId: "preview-area" } } });
+  });
+  await page.route("**/rest/v1/rpc/create_my_rider_priced_booking*", (route) => { bookings++; return route.fulfill({ status: 400 }); });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
+  const valid = `com.esh.rider://auth/callback?tenant=rider-preview&payment=success&quote=${quote}`;
+  await page.evaluate((url) => (window as unknown as { riderPaymentFixture: { return: (url: string) => void } }).riderPaymentFixture.return(url), valid.replace("com.esh.rider", "com.esh.driver"));
+  await expect(page.locator("main").getByRole("alert")).toContainText("payment-return link is invalid");
+  expect(reads).toBe(0);
+  await page.evaluate((url) => (window as unknown as { riderPaymentFixture: { return: (url: string) => void } }).riderPaymentFixture.return(url), valid);
+  await expect(page.getByText("Payment received and trip requested. Dispatch can now find an eligible driver.", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { riderPaymentFixture: { closes: () => number } }).riderPaymentFixture.closes())).toBe(1);
+  expect(new URL(page.url()).searchParams.has("payment")).toBe(false);
+  expect(new URL(page.url()).protocol).toBe("http:");
+  const completedReads = reads;
+  await page.evaluate(async (url) => {
+    (window as unknown as { riderPaymentFixture: { return: (url: string) => void } }).riderPaymentFixture.return(url);
+    await new Promise(requestAnimationFrame);
+  }, valid);
+  expect(reads).toBe(completedReads); expect(bookings).toBe(0);
+  await page.evaluate((url) => (window as unknown as { riderPaymentFixture: { return: (url: string) => void } }).riderPaymentFixture.return(url), valid.replace("success", "cancelled"));
+  await expect(page.getByText("Checkout cancelled. You can review your trip and try again.", { exact: true })).toBeVisible();
+  expect(reads).toBe(completedReads);
+});
+
 test("mobile home shows only the request panel, with secondary sections in the donut", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Ride map" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Rider sections" })).toHaveCount(0);

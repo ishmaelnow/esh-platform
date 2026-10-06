@@ -1,13 +1,84 @@
 # Session Handoff
 
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 ## Current objective and checkpoint
 
+Owner authorized the next sequence: first stabilize Rider iOS payment return, then connect native
+Rider/Driver push. The payment-return correction is implemented locally, NOT committed/pushed or
+deployed. No migration, native project, signing, app domain or authentication/session change.
+Preserve the two preexisting generated tsconfig edits and earlier local roadmap/handoff updates.
+
+Native checkout now returns through a dedicated HTTPS /payments/return page with an explicit
+existing-scheme Return to ESH Rider link and browser fallback. Native callback validation normalizes
+only allowed fields into a same-origin relative URL, requests Browser.close without awaiting its
+animation/promise, and checks owned server payment state. Provider/profile binding is checked for
+new status requests. Already-booked recovery now uses the nested quote.bookingId field; duplicate
+callbacks/cancellation do not create another booking. Browser checkout, recurring/wallet/Stripe
+idempotency and verified webhook lifecycle remain authoritative. No payment or production test
+mutation was performed. Existing Stripe sessions retain their previously created return URLs.
+
+Checks: 82 Rider unit/API tests, typecheck and scoped lint pass (existing vehicle-image warning).
+All 19 mobile browser tests pass, including mocked iOS callback, invalid/duplicate/cancelled returns,
+owned status and prior map/profile/saved-address/booking/native-session regressions. The complete
+414 x 896 return-page screenshot was inspected. Production build passes with existing
+Supabase/Next/vehicle-image warnings. Actual iPhone
+Safari dismissal and controlled payment acceptance remain unverified; fixtures are not device proof.
+Read docs/architecture/rider-payment-return.md and
+docs/operations/rider-payment-return-manual-test.md.
+
+Native push is implemented locally but NOT deployed or operational on devices.
+Owner completed Firebase project esh-platform-609d3 with both Android client downloads, server
+service-account download and FCM HTTP v1 Enabled. Both Apple App IDs have Push Notifications enabled;
+owner downloaded a Production Topic Specific APNs key covering Rider and Driver. Keys stay outside
+Git/chat. Remote credential values were not inspected or installed by Codex.
+Local native-build preparation now adds iOS APNs entitlements/registration forwarding and Codemagic
+esh_native_push group injection of separate base64 Android client configurations. Build validation
+rejects wrong projects/packages and server credentials; public client files and .p8/server-key
+patterns are ignored. Ten focused validation tests and Node syntax checks pass. Repository ESLint
+project service does not cover these tooling files; that scoped lint command fails before checking
+the code, so no lint pass is claimed for them. Swift signing/physical delivery remain
+unverified on this Windows host. Existing UI correctly continues to show native alerts unavailable.
+Owner reports saving both Codemagic client variables in esh_native_push and the four sensitive
+sender variables only in transport-platform-admin: FIREBASE_SERVICE_ACCOUNT_JSON, APNS_PRIVATE_KEY,
+APNS_KEY_ID, APNS_TEAM_ID. Values were not inspected. Clipboard clearing uses a space because the
+owner's PowerShell rejects an empty string. Formatting in variable/folder names has been corrected.
+
+Local integration adds explicit device consent, account/tenant/session-owned private registrations,
+immutable generations on rebinding, disable-before-signout/provider-change, permission/rotation
+refresh on resume, privacy-safe taps, production APNs and FCM HTTP v1 senders. Independent native
+attempts survive email success, use locked claims/CAS completion, bounded retries and actual offer
+expiry. Native delivery requires active Driver profiles. The additive migration
+20261006000100_native_push_notifications.sql is owner-applied. Owner supplied a WSL dry run listing
+only this migration, then successful Applying migration / Finished supabase db push output.
+Do not reapply it. No production mutation was performed by Codex.
+Shell versions are Rider 1.0.3 and Driver 1.0.5; public rollout flag
+NEXT_PUBLIC_NATIVE_PUSH_ENABLED defaults false. Older shells remain unavailable/update-gated.
+
+Checks: 192 unit/API tests and all 19 Rider / 24 Driver mobile browser tests pass. Scoped lint,
+type checks and Admin/Rider/Driver production builds pass with existing warnings. The new migration
+and rollback fixtures pass an embedded PostgreSQL minimal-schema smoke check, including private
+tokens/actor ownership, independent retry, stale claims, rebinding and expiry. This is not full
+Supabase schema, RLS or concurrent-worker proof. Local Docker is unavailable.
+
+Open release issue: no native cron schedule is committed. Existing event delivery sends native
+alerts, but independent timely retry needs scheduling. Asked owner whether Vercel is Hobby or Pro;
+no answer received. Hobby rejects minute cron, so do not add one blindly. Signed production APNs
+entitlement, real iPhone/Android delivery and full database acceptance remain pending.
+Next: reviewed owner Git/deployment (migration already applied),
+scheduler decision, four Codemagic builds, then enable the rollout flag and perform physical
+acceptance. Read docs/architecture/native-push-notifications.md,
+docs/operations/native-push-setup.md and docs/operations/native-push-notifications-manual-test.md.
+Prior owner payment-return release/acceptance is still pending.
+Do not alter working native sessions or Driver icon; push will require its own reviewed migration,
+credentials and signed shell releases before it can be considered operational.
+
+## Previous Home/Work release checkpoint
+
 Owner approved adding persistent Rider Home and Work addresses after confirming both installed
-apps now meet expectations and E2E passed. Code is implemented locally; NOT staged, committed,
-pushed or deployed. The owner applied the Supabase migration successfully. Main/origin main still
-agree at 577d645. Preserve preexisting
+apps now meet expectations and E2E passed. Owner committed and pushed the feature as e13935c;
+main/origin main agree. The Supabase migration is owner-applied. Vercel Ready confirmation and
+real-account saved-address acceptance remain pending. Preserve preexisting
 apps/driver/tsconfig.json and apps/rider/tsconfig.json. Rider next-env.d.ts can be generated by preview;
 exclude generated configuration from feature staging.
 
@@ -20,7 +91,7 @@ No Driver, authentication, session policy, native permission, payment or dispatc
 
 Migration 20261005000200_rider_saved_places.sql is owner-applied. The owner supplied a WSL dry run
 listing only this migration, followed by successful Applying migration / Finished supabase db push
-output. Do not reapply it. Code commit/push and hosted deployment remain pending.
+output. Do not reapply it. Code is pushed as e13935c; hosted deployment confirmation remains pending.
 No Codemagic rebuild is required for this hosted feature.
 
 Checks so far: 57 Rider unit/API tests, typecheck, scoped lint, shared Supabase type build and
@@ -32,8 +103,8 @@ The rollback-only database fixture is prepared but NOT executed: local Docker da
 Mocked API/browser tests are not proof of real database/RLS or physical-device acceptance.
 
 Read docs/architecture/rider-saved-places.md and
-docs/operations/rider-saved-places-manual-test.md. Next action: owner code commit/push,
-disposable SQL isolation check, deployment
+docs/operations/rider-saved-places-manual-test.md. Next action: confirm Rider Vercel Ready at e13935c,
+disposable SQL isolation check
 and real-account/device saved-address acceptance. Preserve existing map and booking design.
 The Driver icon showing E instead of ESH is explicitly deferred; owner requested no change.
 
@@ -112,9 +183,10 @@ Mobile payment testing is paused. The Rider payment backend is functioning, veri
 webhooks finalize ordinary paid bookings, and wallet-covered ordinary trips finalize directly. Do
 not create another payment merely to resume investigation.
 
-The earlier payment-return follow-up remains deferred; Android sign-in recovery is now owner-accepted:
+The payment-return follow-up is now the authorized local work described above;
+Android sign-in recovery is owner-accepted:
 
-- iOS can leave the Stripe browser sheet visible after returning to Rider.
+- iOS previously left the Stripe browser sheet visible; device acceptance of the new handoff is pending.
 - Future payment-return work should reliably dismiss the external browser sheet while preserving
   the now-working native authentication callback and session recovery.
 
@@ -145,8 +217,9 @@ payloads, payment credentials, or secrets.
 
 ### Native notifications
 
-Rider and Driver native release `1.0.1` was operationally validated. Web Push is deployed, but native
-APNs/FCM delivery remains unimplemented. Keep Android and Apple signing credentials outside Git and
+Rider and Driver native release `1.0.1` was operationally validated. Web Push is deployed; native
+APNs/FCM delivery is the next authorized feature but remains unimplemented pending setup/integration.
+See docs/operations/native-push-setup.md. Keep Android and Apple signing credentials outside Git and
 independently backed up.
 
 ### Admin control-plane cleanup

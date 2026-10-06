@@ -51,8 +51,8 @@ address search, reverse lookup and pricing require the established Mapbox config
    visual-viewport shrink is not a physical keyboard test.
 7. Verify step-accurate Review fare / confirmation labels and fare-policy, toll, maximum and
    payment disclosures. Do not create another production payment for visual review or disturb
-   the previously recovered successful booking/payment. Native auth/payment-return defects remain
-   deferred.
+   the previously recovered successful booking/payment. Native auth is owner-accepted; follow
+   `rider-payment-return-manual-test.md` for the local payment-return correction and device acceptance.
 8. Home/Work save permanently verified geography for the owning account/provider; Account
    supports Add/Edit/Remove. Follow `rider-saved-places-manual-test.md`. Recent shortcuts reuse
    authorized stored trip coordinates. Old records without coordinates need new address selection.

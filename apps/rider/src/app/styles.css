@@ -732,4 +732,8 @@ textarea:focus {
 .saved-place-editor .primary { background: #153258; border-color: #153258; }
 .saved-places-card .secondary { background: #edf2f8; color: #153258; border-color: #d5dfec; }
 .saved-places-card button:focus-visible { outline: 2px solid #153258; outline-offset: 2px; }
+.payment-return-page { min-height: 100dvh; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); color: #153258; }
+.payment-return-page .card { width: 100%; max-width: 440px; display: grid; gap: 20px; }
+.payment-return-page .primary { background: #153258; border-color: #153258; }
+.payment-return-page a { min-height: 48px; text-align: center; }
 @media (max-width: 480px) { .saved-place-row { align-items: flex-start; flex-direction: column; } }

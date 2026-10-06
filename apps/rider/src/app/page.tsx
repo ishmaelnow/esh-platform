@@ -21,9 +21,12 @@ import { RiderMenu } from "./RiderMenu";
 import { RiderLanding } from "./RiderLanding";
 import { RiderSheet } from "./RiderSheet";
 import { RiderProfileEditor } from "./RiderProfileEditor";
+import { NativePushControl } from "./NativePushControl";
+import type { NativePushController, NativePushViewState } from "./NativePushControl";
 import { RiderSavedPlaces } from "./RiderSavedPlaces";
 import { useSavedPlaces } from "./useSavedPlaces";
 import { placeName, type PlaceKey } from "../lib/saved-places";
+import { paymentReturnPath, readRiderPaymentReturn } from "../lib/payment-return";
 import { useRiderLocation } from "./useRiderLocation";
 import { riderAndroidStorage } from "../lib/android-session-storage";
 import { resolveRideCoverage, type CoverageArea } from "../lib/service-coverage";
@@ -225,12 +228,15 @@ export default function RiderHome() {
   const [busy, setBusy] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  const nativePush = useRef<NativePushController | null>(null);
+  const [nativePushState, setNativePushState] = useState<NativePushViewState>({ ready: false, enabled: false, busy: false, message: "Checking device alerts…" });
 
   async function signOut() {
     if (!supabase) return;
     setBusy(true);
     setError("");
     try {
+      await nativePush.current?.beforeSignOut();
       const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
       if (signOutError) throw signOutError;
       window.location.replace("/");
@@ -491,7 +497,16 @@ export default function RiderHome() {
     const params = new URLSearchParams(window.location.search);
     const returnedQuoteId = params.get("quote");
     const returnedOccurrenceId = params.get("occurrence");
+    if (params.get("tenant") !== tenantSlug) return;
+    if (params.get("payment") === "cancelled") {
+      setMessage("Checkout cancelled. You can review your trip and try again.");
+      params.delete("payment"); params.delete("quote"); params.delete("occurrence");
+      window.history.replaceState({}, "", `/?${params}`);
+      return;
+    }
     if (params.get("payment") !== "success" || !returnedQuoteId) return;
+    let cancelled = false;
+    const controller = new AbortController();
     const clearPaymentReturnParams = () => {
       const recoveredUrl = new URL(window.location.href);
       recoveredUrl.searchParams.delete("payment");
@@ -500,27 +515,34 @@ export default function RiderHome() {
       window.history.replaceState({}, "", recoveredUrl);
     };
     setBusy(true);
-    setMessage("Payment received. Confirming your trip…");
+    setMessage("Checking your payment and trip status…");
     void (async () => {
-      type PaymentReturn = { paymentStatus?: string; bookingId?: string | null; quote?: PaidRiderPriceQuote; message?: string };
+      type PaymentReturn = { paymentStatus?: string; bookingId?: string | null; quote?: PaidRiderPriceQuote & { bookingId?: string | null }; message?: string };
       let result: PaymentReturn | null = null;
       for (let attempt = 0; attempt < 15; attempt += 1) {
-        const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}`, {
+        const response = await fetch(`/api/payments/checkout?quote=${encodeURIComponent(returnedQuoteId)}&tenantSlug=${encodeURIComponent(tenantSlug)}`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
+          signal: controller.signal,
         });
         const next = await response.json() as PaymentReturn;
+        if (cancelled) return;
         if (response.ok && next?.paymentStatus === "paid" && next.quote) {
           result = next;
           break;
         }
         if (attempt < 14) await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        if (cancelled) return;
       }
       if (!result?.quote) throw new Error("Payment confirmation is taking longer than expected. Please refresh shortly.");
-      if (result.bookingId && !returnedOccurrenceId) {
+      if (result.bookingId || result.quote.bookingId) {
         clearPaymentReturnParams();
         setPaymentConfirmed(false);
         setPriceQuote(null);
+        setRecurringOccurrenceId(null);
         await loadPortal();
+        if (cancelled) return;
+        if (returnedOccurrenceId) await loadRecurring();
+        if (cancelled) return;
         setActivePortalTab("trips");
         setMessage("Payment received and trip requested. Dispatch can now find an eligible driver.");
         return;
@@ -530,7 +552,8 @@ export default function RiderHome() {
       const area = await supabase.rpc("my_rider_service_area_context", {
         target_tenant_slug: tenantSlug,
         target_service_area_id: result.quote.serviceAreaId,
-      });
+      }).abortSignal(controller.signal);
+      if (cancelled) return;
       if (area.error || !area.data) throw area.error ?? new Error("Paid trip service area is unavailable.");
       setServiceAreaContext(area.data as ServiceAreaContext);
       setPickupQuery(result.quote.pickupAddress);
@@ -542,8 +565,9 @@ export default function RiderHome() {
       setActivePortalTab("book");
       clearPaymentReturnParams();
       setMessage(returnedOccurrenceId ? "Payment received. This recurring occurrence is ready to request." : "Payment received. Review the trip, then request it once.");
-    })().catch((value) => setError(value instanceof Error ? value.message : "We could not confirm the payment."))
-      .finally(() => setBusy(false));
+    })().catch((value) => { if (!cancelled) setError(value instanceof Error ? value.message : "We could not confirm the payment."); })
+      .finally(() => { if (!cancelled) setBusy(false); });
+    return () => { cancelled = true; controller.abort(); setBusy(false); };
   }, [session, supabase, tenantSlug, nativePaymentReturnNonce]);
 
   useEffect(() => {
@@ -620,13 +644,18 @@ export default function RiderHome() {
       processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
       if (callback.searchParams.get("payment")) {
+        const returned = readRiderPaymentReturn(url, window.location.origin);
+        if (!returned) { setError("This payment-return link is invalid. Check your trips and payments in Rider."); return; }
         // The HTTPS payment return is also an iOS Universal Link. Redirecting
         // to it from the native callback handler re-opens this app repeatedly.
         // Update the in-app URL and let the payment effect process it without
         // reloading the hosted page or losing the current session.
-        await Browser.close().catch(() => undefined);
-        window.history.replaceState({}, "", callback.toString());
+        window.history.replaceState({}, "", paymentReturnPath(returned));
+        setTenantSlug(returned.tenant);
+        setError("");
         setNativePaymentReturnNonce((current) => current + 1);
+        // Status recovery must not wait on a Safari dismissal animation/promise.
+        void Browser.close().catch(() => undefined);
         return;
       }
       const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
@@ -938,7 +967,7 @@ export default function RiderHome() {
         const response = await fetch("/api/payments/checkout", {
           method: "POST",
           headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug, occurrenceId: recurringOccurrenceId, bookingNotes: formValue(form, "bookingNotes"), serviceType, scheduledPickupAt: bookingTiming === "scheduled" ? zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") : undefined }),
+          body: JSON.stringify({ quoteId: priceQuote.quoteId, tenantSlug, nativeReturn: Capacitor.isNativePlatform(), occurrenceId: recurringOccurrenceId, bookingNotes: formValue(form, "bookingNotes"), serviceType, scheduledPickupAt: bookingTiming === "scheduled" ? zonedDateTimeToIso(formValue(form, "scheduledPickupAt"), scheduling?.timeZone ?? "UTC") : undefined }),
         });
         const result = await response.json() as { url?: string; walletOnly?: boolean; booked?: boolean; bookingId?: string; walletAmountMinor?: number; message?: string };
         if (!response.ok) throw new Error(result.message ?? "Payment checkout could not be opened.");
@@ -1027,7 +1056,7 @@ export default function RiderHome() {
       setBookingTiming("scheduled"); setActivePortalTab("book");
       const checkoutResponse = await fetch("/api/payments/checkout", { method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ quoteId: quote.quoteId, tenantSlug, occurrenceId: occurrence.occurrenceId }) });
+        body: JSON.stringify({ quoteId: quote.quoteId, tenantSlug, nativeReturn: Capacitor.isNativePlatform(), occurrenceId: occurrence.occurrenceId }) });
       const checkout = await checkoutResponse.json() as { url?: string; walletOnly?: boolean; message?: string };
       if (!checkoutResponse.ok) throw new Error(checkout.message ?? "Payment checkout could not be opened.");
       if (checkout.walletOnly) {
@@ -1307,7 +1336,11 @@ export default function RiderHome() {
           id="tenant"
           value={tenantSlug}
           disabled={loading || tenants.length === 0}
-          onChange={(event) => setTenantSlug(event.target.value)}
+          onChange={(event) => {
+            const next = event.target.value;
+            void (async () => { await nativePush.current?.beforeSignOut(); setTenantSlug(next); })()
+              .catch(() => setError("Device alerts could not be disabled. Check your connection before changing provider."));
+          }}
         >
           {tenants.length === 0 ? <option value="">No provider available</option> : null}
           {tenants.map((tenant) => (
@@ -1701,10 +1734,10 @@ export default function RiderHome() {
               </label>
             </div>
             <div className="card preference-card">
-              <div><strong>Device alerts</strong><p>Receive privacy-safe browser alerts for urgent trip and payment updates. Permission applies only to this browser.</p></div>
-              {pushSupported() ? <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}
+              <div><strong>Device alerts</strong><p>Receive privacy-safe trip and payment updates. Permission applies only to this device.</p></div>
+              {Capacitor.isNativePlatform() ? <div>{nativePushState.ready ? <label className="switch"><input type="checkbox" checked={nativePushState.enabled} disabled={nativePushState.busy} onChange={(event) => { void nativePush.current?.setEnabled(event.target.checked).catch(() => undefined); }} /><span>{nativePushState.enabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}<p role="status">{nativePushState.message}</p></div> : pushSupported() ? <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}
             </div>
-            {!pushSupported() ? <p className="notice" role="status">{pushUnavailableMessage()}</p> : null}
+            {!Capacitor.isNativePlatform() && !pushSupported() ? <p className="notice" role="status">{pushUnavailableMessage()}</p> : null}
             </details>
             {visibleRecurringSeries.length > 0 ? <div className="panel-stack">
               <div className="section-heading"><div><p className="kicker">Recurring schedules</p><h3>Upcoming repeat trips</h3></div></div>
@@ -1902,6 +1935,7 @@ export default function RiderHome() {
         </div>
         </>
       )}
+      {Capacitor.isNativePlatform() && supabase && session && portal?.profile && portal.tenant.tenantSlug === tenantSlug ? <NativePushControl key={`${session.user.id}:${tenantSlug}`} client={supabase} userId={session.user.id} tenantSlug={tenantSlug} controllerRef={nativePush} onState={setNativePushState} onOpen={() => { setActivePortalTab("trips"); void loadPortal().catch(() => setError("Trip updates could not be refreshed.")); }} /> : null}
     </main>
   );
 }

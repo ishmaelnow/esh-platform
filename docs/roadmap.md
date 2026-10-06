@@ -6,10 +6,27 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
-- Rider Home and Work saved addresses are implemented locally: private tenant/Rider persistence,
+- Rider native payment-return correction is implemented locally: dedicated HTTPS handoff with
+  explicit Return to ESH Rider, validated same-origin/custom-scheme callbacks, owned server status,
+  cancellation and nested existing-booking recovery. No migration/native build or auth change.
+  82 unit/API and 19 mobile browser tests, typecheck, scoped lint and production build pass;
+  actual iPhone dismissal remains owner acceptance. See `architecture/rider-payment-return.md`
+  and `operations/rider-payment-return-manual-test.md`.
+- Native Rider/Driver push is implemented locally, not deployed: explicit device consent,
+  tenant/account/session-owned private registrations, immutable token generations, independent
+  expiring delivery attempts, production APNs and FCM HTTP v1 senders, and validated client builds.
+  Owner reports saving Codemagic client variables and Admin-only server credentials. Migration
+  `20261006000100_native_push_notifications.sql` is owner-applied after a dry run listing only it.
+  Code remains local/unpushed. 192 unit/API tests and
+  43 mobile browser regressions pass; an embedded PostgreSQL minimal-schema check passes.
+  Full Supabase verification, retry scheduling, signed builds and physical delivery remain release
+  gates. See `architecture/native-push-notifications.md`, `operations/native-push-setup.md`, and
+  `operations/native-push-notifications-manual-test.md`.
+
+- Rider Home and Work saved addresses are owner-pushed as `e13935c`: private tenant/Rider persistence,
   permanent server geocoding, existing horizontal shortcuts and progressive Account Add/Edit/Remove.
   Migration `20261005000200_rider_saved_places.sql` is owner-applied after a dry run listing only it;
-  code commit/push and deployment remain pending. Booking coverage,
+  Vercel Ready confirmation remains pending. Booking coverage,
   pricing, authentication and native shells are preserved. See `architecture/rider-saved-places.md`
   and `operations/rider-saved-places-manual-test.md`. Disposable SQL/RLS execution and owner
   real-account acceptance remain pending. 57 unit/API and 17 mobile browser tests, type checks,

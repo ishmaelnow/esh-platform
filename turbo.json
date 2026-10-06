@@ -1,6 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["vitest.config.ts"],
+  "globalEnv": ["NEXT_PUBLIC_NATIVE_PUSH_ENABLED"],
+  "globalPassThroughEnv": ["FIREBASE_SERVICE_ACCOUNT_JSON", "APNS_PRIVATE_KEY", "APNS_KEY_ID", "APNS_TEAM_ID"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -1,3 +1,4 @@
+import type { NativePushRegistration, NativePushAttempt } from "./native-push.types";
 export type Json =
   | string
   | number
@@ -39,6 +40,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      native_push_registrations: {
+        Row: NativePushRegistration
+        Insert: Pick<NativePushRegistration, "tenant_id" | "person_id" | "auth_user_id" | "auth_session_id" | "installation_id" | "product" | "platform" | "device_token"> & Partial<NativePushRegistration>
+        Update: Partial<NativePushRegistration>
+        Relationships: []
+      }
+      native_push_attempts: {
+        Row: NativePushAttempt
+        Insert: Pick<NativePushAttempt, "tenant_id" | "notification_id" | "registration_id" | "expires_at"> & Partial<NativePushAttempt>
+        Update: Partial<NativePushAttempt>
+        Relationships: []
+      }
       active_tenant_preferences: {
         Row: {
           membership_id: string
@@ -2556,6 +2569,10 @@ export type Database = {
     }
     Functions: {
       can_operate_community: { Args: { target_tenant_id: string }; Returns: boolean }
+      set_my_native_push: { Args: { product_value: string; installation_value: string; platform_value: string; enabled_value: boolean; token_value?: string | null; tenant_slug_value?: string | null; owner_auth_user_value?: string | null }; Returns: boolean }
+      my_native_push_enabled: { Args: { product_value: string; installation_value: string; tenant_slug_value?: string | null }; Returns: boolean }
+      claim_native_push_attempts: { Args: { tenant_value?: string | null; notification_value?: string | null; limit_value?: number; platforms_value?: string[] }; Returns: Json }
+      finish_native_push_attempt: { Args: { attempt_value: string; claim_value: string; status_value: string; response_value?: number | null; failure_value?: string | null; expire_registration?: boolean }; Returns: boolean }
       can_read_community_content: { Args: { target_tenant_id: string; target_content_id: string }; Returns: boolean }
       community_feed_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }
       community_service_directory_snapshot: { Args: { target_tenant_id: string; result_limit?: number }; Returns: Json }

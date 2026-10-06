@@ -13,6 +13,8 @@ import { DriverShell, type DriverView } from "./DriverShell";
 import { DriverApplication } from "./DriverApplication";
 import { DriverFileInput } from "./DriverFileInput";
 import { DriverDocumentView } from "./DriverDocumentView";
+import { NativePushControl } from "./NativePushControl";
+import type { NativePushController, NativePushViewState } from "./NativePushControl";
 import { applicationDocumentRank } from "../lib/application";
 import { useDriverMapLocation } from "./useDriverMapLocation";
 import { driverAndroidStorage } from "../lib/android-session-storage";
@@ -195,6 +197,8 @@ export default function DriverHome() {
   const [earningsUpdatesEnabled, setEarningsUpdatesEnabled] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  const nativePush = useRef<NativePushController | null>(null);
+  const [nativePushState, setNativePushState] = useState<NativePushViewState>({ ready: false, enabled: false, busy: false, message: "Checking device alerts…" });
   const [smsSettings, setSmsSettings] = useState<SmsSettings>({ enabled: false, maskedPhone: null, verifiedAt: null });
   const [smsPhone, setSmsPhone] = useState("");
   const [smsCode, setSmsCode] = useState("");
@@ -269,6 +273,7 @@ export default function DriverHome() {
     if (!supabase) return;
     setSigningOut(true);
     try {
+      await nativePush.current?.beforeSignOut();
       const { error } = await supabase.auth.signOut({ scope: "local" });
       if (error) throw error;
       window.location.replace("/");
@@ -2065,10 +2070,10 @@ export default function DriverHome() {
             ) : null}
             {activeTab === "notifications" ? <>
             <section className="notification-preferences">
-              <div><p className="eyebrow">Device alerts</p><h3>Browser push notifications</h3></div>
-              {pushSupported() ? <label><input checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label> : <strong>Unavailable on this device</strong>}
+              <div><p className="eyebrow">Device alerts</p><h3>{Capacitor.isNativePlatform() ? "Mobile notifications" : "Browser push notifications"}</h3></div>
+              {Capacitor.isNativePlatform() ? <div>{nativePushState.ready ? <label><input checked={nativePushState.enabled} disabled={nativePushState.busy} onChange={(event) => { void nativePush.current?.setEnabled(event.target.checked).catch(() => undefined); }} type="checkbox" /> Alert this device about trip and account updates</label> : <strong>Unavailable on this device</strong>}<p role="status">{nativePushState.message}</p></div> : pushSupported() ? <label><input checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label> : <strong>Unavailable on this device</strong>}
               <p>Lock-screen alerts use privacy-safe summaries and never include Rider addresses or financial account details.</p>
-              {!pushSupported() ? <p className="upload-message" role="status">{pushUnavailableMessage()}</p> : null}
+              {!Capacitor.isNativePlatform() && !pushSupported() ? <p className="upload-message" role="status">{pushUnavailableMessage()}</p> : null}
               {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
             </section>
             <section className="notification-preferences">
@@ -2095,7 +2100,7 @@ export default function DriverHome() {
       </section>
   );
   const area = serviceAreas.find((item) => item.selected) ?? serviceAreas[0];
-  return summary ? <DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
+  return summary ? <>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={() => goView("dispatch")} /> : null}<DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
     center={area ? { latitude: area.centerLatitude, longitude: area.centerLongitude } : null}
     location={mapLocation.location} locationNotice={mapLocation.notice} locationBusy={mapLocation.busy}
     onLocate={mapLocation.locate} recenterVersion={mapLocation.recenterVersion}
@@ -2104,7 +2109,7 @@ export default function DriverHome() {
     availabilityNotice={!dispatchAvailable ? "Dispatch updates unavailable. Open Settings to refresh; existing offers may be out of date." : availabilityMessage} onAvailability={() => void updateAvailability(availability?.requestedStatus === "online" ? "offline" : "online")}
     tripCount={dispatch.trips.length} offerCount={dispatch.offers.length} sharing={Boolean(locationSharing?.sharingEnabled)}>
     {content}
-  </DriverShell> : <main className="shell">{content}</main>;
+  </DriverShell></> : <main className="shell">{content}</main>;
 }
 
 function currentPosition() {

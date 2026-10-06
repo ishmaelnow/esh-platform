@@ -190,7 +190,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed } = await deliverQueuedNotifications(service, config, {
+    const { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed, nativeAccepted, nativeFailed } = await deliverQueuedNotifications(service, config, {
       tenantId,
       ...(notificationId ? { notificationId } : {}),
       limit: 10,
@@ -198,13 +198,15 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: `${sent} email${sent === 1 ? "" : "s"} sent; ${pushDelivered} push delivered; ${smsAccepted} text${smsAccepted === 1 ? "" : "s"} accepted; ${failed + pushFailed + smsFailed} channel attempt${failed + pushFailed + smsFailed === 1 ? "" : "s"} failed.`,
+      message: `${sent} email${sent === 1 ? "" : "s"} sent; ${pushDelivered} browser push delivered; ${nativeAccepted} mobile alerts accepted by provider; ${smsAccepted} text${smsAccepted === 1 ? "" : "s"} accepted; ${failed + pushFailed + smsFailed + nativeFailed} channel attempts failed.`,
       sent,
       failed,
       pushDelivered,
       pushFailed,
       smsAccepted,
       smsFailed,
+      nativeAccepted,
+      nativeFailed,
     });
   } catch (error) {
     return NextResponse.json(

@@ -11,6 +11,7 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   android: { allowMixedContent: false },
+  plugins: { PushNotifications: { presentationOptions: ["sound", "banner", "list"] } },
 };
 
 export default config;

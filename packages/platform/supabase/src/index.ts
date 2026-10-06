@@ -4,6 +4,8 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables, TablesInsert, TablesUpdate } from "./database.types";
 
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./database.types";
+export { createNativePushController, nativePushInstallation, nativePushTapAllowed } from "./native-push";
+export type { NativePushBridge, NativePushState } from "./native-push";
 export type {
   CommunityArea,
   CommunityComment,

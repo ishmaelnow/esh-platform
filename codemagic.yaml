@@ -58,6 +58,8 @@ workflows:
     max_build_duration: 120
     instance_type: linux_x2
     environment:
+      groups:
+        - esh_native_push
       android_signing:
         - esh_android_upload
       java: 21
@@ -66,6 +68,8 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor Rider project
         script: pnpm --filter @esh-platform/rider mobile:sync
+      - name: Configure Rider Firebase client
+        script: node tooling/scripts/native-push-config.cjs rider
       - name: Build signed Rider APK and app bundle
         script: |
           cd apps/rider/android
@@ -81,6 +85,7 @@ workflows:
     environment:
       groups:
         - mapbox_credentials
+        - esh_native_push
       android_signing:
         - esh_android_upload
       java: 21
@@ -89,6 +94,8 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor Driver project
         script: pnpm --filter @esh-platform/driver mobile:sync
+      - name: Configure Driver Firebase client
+        script: node tooling/scripts/native-push-config.cjs driver
       - name: Verify Driver Mapbox credentials
         script: |
           set -eu

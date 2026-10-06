@@ -19,14 +19,14 @@ appropriate Rider or Driver origin where normal authentication and RLS apply. Ad
 operations return aggregate push success/failure counts without exposing subscription credentials.
 
 V1 push supplements notification events that are already queued under the existing email
-preferences. It does not create a second lifecycle trigger system. Deferred: native mobile push,
+preferences. It does not create a second lifecycle trigger system. Deferred:
 push-only event preferences independent of email, localization, notification actions, and
 tenant-customizable lock-screen content.
 
 Web Push is intentionally browser-only. Rider and Driver detect the Capacitor native shell and do
-not show a dead browser-subscription checkbox there; they explain that native APNs/FCM delivery is a
-separate deferred channel. This prevents an installed app from implying that its bundled
-Push Notifications plugin is already connected to the server delivery pipeline.
+not show a dead browser-subscription checkbox there. Native APNs/FCM is a separately gated channel
+with private registrations and independent attempts; see `native-push-notifications.md`.
+Older shells and disabled rollouts retain an explicit unavailable/update state.
 
 SMS Trip Notifications V1 now provides a separate verified, explicitly consented urgent-text
 channel with its own delivery attempts.

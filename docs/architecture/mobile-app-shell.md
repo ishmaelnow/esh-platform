@@ -25,16 +25,31 @@ implicit-flow token fragment and establish the native session without relying on
 All callback URLs used by each platform must be allowed in Supabase Authentication URL
 Configuration before mobile sign-in testing.
 
+Rider native checkout now has a dedicated hosted `/payments/return` handoff page. Its explicit
+Return to ESH Rider link reuses `com.esh.rider://auth/callback` with validated payment fields;
+no auth token is transferred. Same-origin normalization and nonblocking Browser.close precede
+owned server status recovery. Browser checkout retains its normal home return. This hosted
+correction needs no new native build; see `rider-payment-return.md` for authority and acceptance.
+
 The Capacitor App, Browser, Geolocation, and Push Notifications plugins are installed to establish
 the native boundary. Native push delivery and native background location require platform-specific
 APNs/FCM credentials and consent work; the current web push and foreground location contracts remain
 the source of truth until that follow-up is implemented. Admin remains web-only.
 
+Native push build preparation now adds APNs registration callbacks and push entitlements to the
+two existing iOS shells, preserving their scene/auth handlers. Codemagic injects validated Firebase
+client configuration for each Android app from the esh_native_push environment group. The shared
+Firebase project remains separate from Supabase authentication/database. Server service-account
+keys and APNs private keys never enter mobile builds. Local integration now adds explicit consent,
+private account/session-owned tokens and independent APNs/FCM delivery attempts. Deployment,
+retry scheduling and signed-device acceptance are still pending. See
+`../operations/native-push-setup.md` for the owner configuration and release gates.
+
 The installed Rider and Driver shells must not present the Web Push subscription switch as a native
 notification control. A Capacitor WebView does not provide the browser service-worker subscription
-contract used by Web Push. Until APNs/FCM registration, token storage, and delivery are implemented,
-the apps show an explicit native-push-unavailable status and keep email and verified transactional
-SMS available. The Web Push switch remains available when the hosted portals are opened in a
+contract used by Web Push. Native alerts require the public rollout flag and Rider 1.0.3 or Driver
+1.0.5 with the configured plugin. Older/disabled shells retain an unavailable/update state. Email
+and verified transactional SMS remain available. The Web Push switch remains available in a
 supported secure browser.
 
 The hosted Rider and Driver headers import the same high-resolution launcher artwork bundled in

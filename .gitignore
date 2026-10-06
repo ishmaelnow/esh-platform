@@ -36,3 +36,10 @@ Thumbs.db
 tmp/
 temp/
 .cache/
+
+# Native push configuration and server signing credentials
+apps/rider/android/app/google-services.json
+apps/driver/android/app/google-services.json
+*.p8
+*firebase-adminsdk*.json
+*service-account*.json

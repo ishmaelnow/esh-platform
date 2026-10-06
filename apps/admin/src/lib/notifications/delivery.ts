@@ -3,6 +3,7 @@ import type { AdminServerConfig } from "@/lib/config";
 import { sendNotificationEmail } from "./email";
 import { deliverNotificationPush } from "./push";
 import { deliverNotificationSms } from "./sms";
+import { deliverNativeNotifications } from "./native-push";
 
 export type DeliveryScope = {
   tenantId?: string;
@@ -101,5 +102,7 @@ export async function deliverQueuedNotifications(
     }
   }
 
-  return { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed };
+  const native = await deliverNativeNotifications(service, config, scope)
+    .catch(() => ({ nativeAccepted: 0, nativeFailed: 1, nativeSkipped: false }));
+  return { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed, ...native };
 }
