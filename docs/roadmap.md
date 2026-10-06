@@ -6,6 +6,15 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider Home and Work saved addresses are implemented locally: private tenant/Rider persistence,
+  permanent server geocoding, existing horizontal shortcuts and progressive Account Add/Edit/Remove.
+  Migration `20261005000200_rider_saved_places.sql` is owner-applied after a dry run listing only it;
+  code commit/push and deployment remain pending. Booking coverage,
+  pricing, authentication and native shells are preserved. See `architecture/rider-saved-places.md`
+  and `operations/rider-saved-places-manual-test.md`. Disposable SQL/RLS execution and owner
+  real-account acceptance remain pending. 57 unit/API and 17 mobile browser tests, type checks,
+  scoped lint and Rider production build pass; full mobile screenshots were inspected.
+
 - Rider Account profile editing and optional private photo are implemented locally. Name, optional
   contact phone and notes use the existing tenant-owned profile; verified email remains read-only.
   Photo selection/preview/removal uses private storage and controlled audited RPCs. Migration
@@ -17,12 +26,13 @@ remain independent of transportation-specific workflows.
   `operations/rider-profile-account-manual-test.md`.
 
 - Rider native follow-up adds missing iOS camera permission descriptions, image-decoding fallback,
-  and Android encrypted session storage/foreground recovery. Rider 1.0.2 builds/install are pending
-  owner release and device acceptance; no migration, session-limit or iOS authentication change.
+  and Android encrypted session storage/foreground recovery. Owner confirms expectations are met
+  and E2E passed after enabling rider.eshapp.com in Android supported links. Rider 1.0.2 is installed;
+  no migration, session-limit or iOS authentication change.
   See `architecture/rider-native-session-recovery.md`.
 
 - Driver Android session follow-up applies the same recovery pattern in a separate Driver-only
-  encrypted vault. Android 1.0.4/code 5 awaits owner release/device acceptance; camera/navigation
+  encrypted vault. Android 1.0.4/code 5 is installed and owner-confirmed working; camera/navigation
   and iOS sign-in are preserved. No migration or session-policy extension. See
   `architecture/driver-native-session-recovery.md`.
 

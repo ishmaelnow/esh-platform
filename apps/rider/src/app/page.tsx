@@ -21,6 +21,9 @@ import { RiderMenu } from "./RiderMenu";
 import { RiderLanding } from "./RiderLanding";
 import { RiderSheet } from "./RiderSheet";
 import { RiderProfileEditor } from "./RiderProfileEditor";
+import { RiderSavedPlaces } from "./RiderSavedPlaces";
+import { useSavedPlaces } from "./useSavedPlaces";
+import { placeName, type PlaceKey } from "../lib/saved-places";
 import { useRiderLocation } from "./useRiderLocation";
 import { riderAndroidStorage } from "../lib/android-session-storage";
 import { resolveRideCoverage, type CoverageArea } from "../lib/service-coverage";
@@ -205,7 +208,7 @@ export default function RiderHome() {
   const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
   const [bookingTiming, setBookingTiming] = useState<"now" | "scheduled" | "recurring">("now");
   const [serviceType, setServiceType] = useState<"standard" | "larger" | "premium" | "accessible">("standard");
-  const [serviceAreaId, setServiceAreaId] = useState("");
+  const [, setServiceAreaId] = useState("");
   const [serviceAreaContext, setServiceAreaContext] = useState<ServiceAreaContext | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [destinationQuery, setDestinationQuery] = useState("");
@@ -253,7 +256,8 @@ export default function RiderHome() {
   const locationScope = portal?.profile ? riderIdentity : null;
   const { position: riderPosition, locate, busy: locationBusy, notice: locationNotice } = useRiderLocation(locationScope);
   const [recenterVersion, setRecenterVersion] = useState(0);
-  const [homeAddress, setHomeAddress] = useState<{ areaId: string; address: AddressSuggestion } | null>(null);
+  const [editingPlace, setEditingPlace] = useState<PlaceKey | null>(null);
+  const savedPlaces = useSavedPlaces(supabase, tenantSlug, portal?.profile && portal.tenant.tenantSlug === tenantSlug && riderIdentity ? `${riderIdentity}:${portal.profile.riderProfileId}` : null);
   const [homeAreaCenter, setHomeAreaCenter] = useState<ServiceAreaContext | null>(null);
   const [coverageAreas, setCoverageAreas] = useState<CoverageArea[]>([]);
   const [coverageNotice, setCoverageNotice] = useState("");
@@ -262,7 +266,7 @@ export default function RiderHome() {
   useEffect(() => {
     ++addressRequest.current;
     setCoverageAreas([]); setCoverageNotice("");
-    setHomeAddress(null); setPickupSelection(null); setDestinationSelection(null);
+    setEditingPlace(null); setPickupSelection(null); setDestinationSelection(null);
     setPickupQuery(""); setDestinationQuery(""); setServiceAreaContext(null); setServiceAreaId("");
   }, [riderIdentity]);
   const processedAuthCallbacks = useRef(new Set<string>());
@@ -1149,14 +1153,16 @@ export default function RiderHome() {
     finally { setBusy(false); }
   }
 
-  function chooseHome() {
+  function chooseSavedPlace(key: PlaceKey) {
+    ++addressRequest.current;
+    const place = savedPlaces.places.find((entry) => entry.key === key);
+    setActivePortalTab("book");
     setHomeDestinationEntry(true); setBookingOpen(true);
-    if (!homeAddress) {
-      setMessage("Choose a destination, then use Save as Home for this session.");
-      return;
-    }
-    setDestinationQuery(homeAddress.address.label);
-    setDestinationSelection(homeAddress.address);
+    setEditingPlace(!place ? key : null);
+    setDestinationQuery(place?.label || "");
+    setDestinationSelection(place ? { mapboxId: `saved:${key}`, label: place.label, latitude: place.latitude, longitude: place.longitude } : null);
+    setDestinationSearchSession(crypto.randomUUID());
+    setMessage(!place ? `Choose an address, then save it as ${placeName(key)}.` : "");
     setDestinationSuggestions([]); setPriceQuote(null); setPaymentConfirmed(false);
   }
 
@@ -1276,8 +1282,11 @@ export default function RiderHome() {
       {portal?.profile && activePortalTab !== "book" ? <button className="button secondary back-to-request" type="button" onClick={() => setActivePortalTab("book")}>← Back to request</button> : null}
 
       {portal?.profile && activePortalTab === "book" ? <RiderLanding
-        onOrder={() => { setHomeDestinationEntry(false); setBookingOpen(true); }}
-        onHome={() => void chooseHome()}
+        onOrder={() => { setEditingPlace(null); setHomeDestinationEntry(false); setBookingOpen(true); }}
+        onHome={() => chooseSavedPlace("home")}
+        onWork={() => chooseSavedPlace("work")}
+        homeLabel={savedPlaces.places.find((place) => place.key === "home")?.label}
+        workLabel={savedPlaces.places.find((place) => place.key === "work")?.label}
         destinations={recentDestinations.map((booking) => ({ id: booking.bookingId, label: booking.destinationAddress, onSelect: () => void bookAgain(booking) }))}
       /> : null}
 
@@ -1389,6 +1398,9 @@ export default function RiderHome() {
             {supabase ? <RiderProfileEditor key={`${session.user.id}:${portal.profile.riderProfileId}`}
               profile={portal.profile} client={supabase} token={session.access_token}
               tenantSlug={tenantSlug} onSaved={loadPortal} /> : null}
+            {portal.tenant.tenantSlug === tenantSlug ? <RiderSavedPlaces key={`${session.user.id}:${tenantSlug}:${portal.profile.riderProfileId}`} places={savedPlaces.places} busy={savedPlaces.busy} loading={savedPlaces.loading}
+              error={savedPlaces.error} feedback={savedPlaces.feedback} accessToken={mapboxToken} context={searchContext} onSave={savedPlaces.save}
+              onRemove={(key) => void savedPlaces.remove(key)} onRefresh={() => void savedPlaces.refresh()} /> : null}
             <article className="card sms-consent-card">
               <div>
                 <p className="kicker">Optional SMS</p>
@@ -1580,11 +1592,16 @@ export default function RiderHome() {
                   placeholder="Where are you going?"
                 />
                 {destinationSelection ? <span className="address-selected">Verified address selected</span> : null}
-                {validCoordinates(destinationSelection?.latitude, destinationSelection?.longitude) ? <button
-                  className="button secondary compact" type="button" onClick={() => {
-                    setHomeAddress({ areaId: serviceAreaId, address: destinationSelection });
-                    setMessage("Home is set for this signed-in session. It clears when you sign out or change provider.");
-                  }}>Save as Home for this session</button> : null}
+                {validCoordinates(destinationSelection?.latitude, destinationSelection?.longitude) ? <details className="saved-place-actions" open={editingPlace ? true : undefined}>
+                  <summary>Save destination</summary>
+                  <div className="saved-place-buttons">{(["home", "work"] as const).map((key) => <button
+                    key={key} className="button secondary compact" type="button" disabled={savedPlaces.busy || savedPlaces.loading}
+                    onClick={() => { if (destinationSelection) void savedPlaces.save(key, destinationSelection).then((saved) => { if (saved) setEditingPlace(null); }); }}>
+                    Save as {placeName(key)}
+                  </button>)}</div>
+                </details> : null}
+                {savedPlaces.error ? <p className="notice error" role="alert">{savedPlaces.error}</p> : null}
+                {savedPlaces.feedback ? <p role="status">{savedPlaces.feedback}</p> : null}
                 {destinationSuggestions.length > 0 ? (
                   <div className="address-suggestions" role="listbox" aria-label="Destination address suggestions">
                     {destinationSuggestions.map((suggestion) => (

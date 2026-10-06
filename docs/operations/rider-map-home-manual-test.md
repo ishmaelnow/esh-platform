@@ -25,7 +25,7 @@ authentication redirects. OpenFreeMap still supplies a real map without a Mapbox
 address search, reverse lookup and pricing require the established Mapbox configuration.
 
 1. At 414 × 896 verify the bright interactive map, silver car, Request ride action and full
-   plus/Home/recent shortcut row. Menu is a white circle at the upper left. Check safe area,
+   plus/Home/Work/recent shortcut row. Menu is a white circle at the upper left. Check safe area,
    horizontal swiping, attribution, no right strip and desktop maximum-width controls.
 2. Open booking. Pickup and destination must be visible immediately. A contains Use my current
    location. B says Where are you going? and focuses search from its circle, padding or text.
@@ -39,7 +39,8 @@ address search, reverse lookup and pricing require the established Mapbox config
 4. Grant GPS from the A row; confirm actual coordinates resolve pickup without expanding notes.
    Deny permission or reverse lookup: show a clear manual-entry fallback and do not invent an
    address. Drag/zoom/rotate the map; GPS must not continuously override the camera. Background
-   stops watches. Sign-out/provider changes clear GPS and session-only Home.
+   stops watches. Sign-out/provider changes clear GPS and the current saved-address view;
+   saved Home/Work persist privately for the owning account/provider.
 5. Swipe/select vehicles; unquoted types say Fare after route and a selected actual quote displays
    its fare. Time/Payment remain accessible. Actual payment methods are chosen in the existing
    secure checkout; wallet credit remains automatic. Cash is not supported.
@@ -52,7 +53,8 @@ address search, reverse lookup and pricing require the established Mapbox config
    payment disclosures. Do not create another production payment for visual review or disturb
    the previously recovered successful booking/payment. Native auth/payment-return defects remain
    deferred.
-8. Home saves selected geography for this signed-in session only; recent shortcuts reuse
+8. Home/Work save permanently verified geography for the owning account/provider; Account
+   supports Add/Edit/Remove. Follow `rider-saved-places-manual-test.md`. Recent shortcuts reuse
    authorized stored trip coordinates. Old records without coordinates need new address selection.
    Trips, Payments, Wallet and Account remain in the donut; provider switching/sign-out are in
    Account. Check onboarding, consent, notification and receipt flows remain accessible.

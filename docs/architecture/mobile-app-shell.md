@@ -79,10 +79,11 @@ operations/driver-application-manual-test.md for physical-device acceptance.
 
 The Rider home uses a persistent live map above a straight-edged bottom panel. At 414 × 896,
 the map ends at y=714; an 80px Request ride row opens the existing booking form in a dismissible,
-keyboard-accessible sheet. Home selects an address saved for the current signed-in session; when
-unset it opens destination entry. Verified search results can be saved as Home, retaining their
-coordinates and authorized service area in memory. Home clears on sign-out/provider change; no
-cross-device persistence is implemented. Recent destinations reuse booking coordinates through
+keyboard-accessible sheet. Home and Work select optional addresses persisted for the owning
+Rider/provider; when unset they open destination entry. Saving verifies permanent geography on
+the server. Account supports progressive Add/Edit/Remove. In-memory views clear on sign-out or
+provider change; server records persist across devices. See `rider-saved-places.md` for the additive
+migration and privacy contract. Recent destinations reuse booking coordinates through
 the existing book-again flow; legacy records without coordinates require address search again.
 A white hamburger at x=24, y=64 opens a donut menu that
 opens Request, Trips, Payments, Wallet, and Account progressively, with a return-to-request action

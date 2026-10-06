@@ -442,7 +442,23 @@ test("pickup location is directly accessible and resolves real supplied GPS coor
   await expect(page.locator('select[name="serviceAreaId"]')).toHaveCount(0);
 });
 
-test("search, session Home, and recent shortcuts select real coordinate destinations", async ({ page }) => {
+test("saved Home and Work persist, select coordinates, edit and remove without changing recent shortcuts", async ({ page }) => {
+  let places: { key: string; label: string; latitude: number; longitude: number }[] = [];
+  await page.route("**/rest/v1/rpc/my_rider_saved_places", (route) => route.fulfill({ json: places }));
+  await page.route("**/api/places", (route) => {
+    const body = route.request().postDataJSON() as { key: string; label: string; latitude: number; longitude: number; riderProfileId: string; tenantSlug: string };
+    expect(body.riderProfileId).toBe(profile.riderProfileId);
+    expect(body.tenantSlug).toBe(tenant.tenantSlug);
+    places = places.filter((place) => place.key !== body.key);
+    places.push({ key: body.key, label: body.label, latitude: body.latitude, longitude: body.longitude });
+    return route.fulfill({ json: { saved: true } });
+  });
+  await page.route("**/rest/v1/rpc/remove_my_rider_place", (route) => {
+    const body = route.request().postDataJSON() as { place_key_value: string; expected_rider_profile_id: string };
+    expect(body.expected_rider_profile_id).toBe(profile.riderProfileId);
+    places = places.filter((place) => place.key !== body.place_key_value);
+    return route.fulfill({ status: 204 });
+  });
   await page.route("https://api.mapbox.com/search/searchbox/v1/**", (route) => {
     const path = new URL(route.request().url()).pathname;
     return route.fulfill({ json: path.endsWith("/suggest")
@@ -453,7 +469,12 @@ test("search, session Home, and recent shortcuts select real coordinate destinat
   await page.getByLabel("Destination address", { exact: true }).fill("Chosen destination");
   await page.getByRole("option", { name: "Chosen destination" }).click();
   await expect(page.locator(".mapboxgl-marker")).toHaveCount(1);
-  await page.getByRole("button", { name: "Save as Home for this session" }).click();
+  await page.getByRole("button", { name: "Save as Home", exact: true }).click();
+  await expect(page.getByText("Home saved.", { exact: true })).toBeVisible();
+  await page.locator(".saved-place-actions summary").click();
+  await page.getByRole("button", { name: "Save as Work", exact: true }).click();
+  await expect(page.getByText("Work saved.", { exact: true })).toBeVisible();
+  expect(places).toEqual(["home", "work"].map((key) => ({ key, label: "Chosen destination", latitude: 32.79, longitude: -96.81 })));
   await page.getByLabel("Destination address", { exact: true }).fill("Different text");
   await page.getByRole("button", { name: "Home", exact: true }).click();
   await page.getByRole("button", { name: "Home", exact: true }).click();
@@ -462,6 +483,83 @@ test("search, session Home, and recent shortcuts select real coordinate destinat
   await page.getByRole("button", { name: "Previous destination", exact: true }).click();
   await expect(page.getByLabel("Destination address", { exact: true })).toHaveValue("Previous destination");
   await expect(page.locator(".mapboxgl-marker")).toHaveCount(2);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Work", exact: true })).toHaveAttribute("title", "Chosen destination");
+  await page.getByRole("button", { name: "Work", exact: true }).click();
+  await expect(page.getByLabel("Destination address", { exact: true })).toHaveValue("Chosen destination");
+  await expect(page.locator(".mapboxgl-marker")).toHaveCount(1);
+  await page.getByRole("button", { name: "Home", exact: true }).click();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  const savedCard = page.locator(".saved-places-card");
+  await expect(savedCard.getByText("Chosen destination", { exact: true })).toHaveCount(2);
+  await page.screenshot({ path: "test-results/rider-saved-addresses-414.png", fullPage: true });
+  await savedCard.getByRole("button", { name: "Edit Home", exact: true }).click();
+  await expect(savedCard.getByLabel("Home address", { exact: true })).toHaveValue("Chosen destination");
+  await expect(savedCard.getByRole("button", { name: "Save Home", exact: true })).toBeDisabled();
+  await savedCard.getByLabel("Home address", { exact: true }).fill("Changed destination");
+  await savedCard.getByRole("option", { name: "Chosen destination" }).click();
+  await page.screenshot({ path: "test-results/rider-saved-address-editor-414.png", fullPage: true });
+  await savedCard.getByRole("button", { name: "Save Home", exact: true }).click();
+  await expect(savedCard.getByText("Home saved.", { exact: true })).toBeVisible();
+  await savedCard.getByRole("button", { name: "Remove Home", exact: true }).click();
+  await expect(savedCard.getByRole("button", { name: "Add Home", exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("title", "Save your home destination");
+});
+
+test("saved address network failures remain recoverable without false success", async ({ page }) => {
+  await page.route("**/rest/v1/rpc/my_rider_saved_places", (route) => route.fulfill({ status: 503, json: { message: "Fixture unavailable" } }));
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  const savedCard = page.locator(".saved-places-card");
+  await expect(savedCard.getByRole("alert")).toContainText("could not be loaded");
+  await page.route("**/rest/v1/rpc/my_rider_saved_places", (route) => route.fulfill({ json: [{ key: "home", label: "Fixture address", latitude: 32.79, longitude: -96.81 }] }));
+  await savedCard.getByRole("button", { name: "Refresh saved addresses" }).click();
+  await expect(savedCard.getByText("Fixture address", { exact: true })).toBeVisible();
+  await page.route("**/rest/v1/rpc/remove_my_rider_place", (route) => route.fulfill({ status: 503, json: { message: "Fixture unavailable" } }));
+  await savedCard.getByRole("button", { name: "Remove Home", exact: true }).click();
+  await expect(savedCard.getByRole("alert")).toContainText("could not be updated");
+  await expect(savedCard.getByText("Fixture address", { exact: true })).toBeVisible();
+  await expect(savedCard.getByText("Home removed.", { exact: true })).toHaveCount(0);
+});
+
+test("saved addresses ignore a late response after switching providers", async ({ page }) => {
+  const otherTenant = { ...tenant, tenantSlug: "other-provider", displayName: "Other provider" };
+  const otherProfile = { ...profile, riderProfileId: "other-rider" };
+  await page.route("**/rest/v1/rpc/list_rider_booking_tenants", (route) => route.fulfill({ json: [
+    { tenant_slug: tenant.tenantSlug, display_name: tenant.displayName },
+    { tenant_slug: otherTenant.tenantSlug, display_name: otherTenant.displayName },
+  ] }));
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => {
+    const body = route.request().postDataJSON() as { target_tenant_slug: string };
+    return route.fulfill({ json: { tenant: body.target_tenant_slug === otherTenant.tenantSlug ? otherTenant : tenant,
+      profile: body.target_tenant_slug === otherTenant.tenantSlug ? otherProfile : profile, serviceAreas: [], bookings: [] } });
+  });
+  let releaseOld = () => {};
+  const oldResponse = new Promise<void>((resolve) => { releaseOld = resolve; });
+  let oldRequested = false, oldFinished = false;
+  await page.route("**/rest/v1/rpc/my_rider_saved_places", async (route) => {
+    const body = route.request().postDataJSON() as { target_tenant_slug: string };
+    if (body.target_tenant_slug === tenant.tenantSlug) {
+      oldRequested = true; await oldResponse;
+      await route.fulfill({ json: [{ key: "home", label: "Previous provider private address", latitude: 32.79, longitude: -96.81 }] });
+      oldFinished = true;
+    } else await route.fulfill({ json: [{ key: "work", label: "Current provider address", latitude: 32.80, longitude: -96.82 }] });
+  });
+  await page.reload();
+  await expect.poll(() => oldRequested).toBe(true);
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await page.getByLabel("Transportation provider", { exact: true }).selectOption(otherTenant.tenantSlug);
+  const savedCard = page.locator(".saved-places-card");
+  await expect(savedCard.getByText("Current provider address", { exact: true })).toBeVisible();
+  releaseOld(); await expect.poll(() => oldFinished).toBe(true);
+  await expect(savedCard.getByText("Previous provider private address", { exact: true })).toHaveCount(0);
+  await expect(savedCard.getByText("Current provider address", { exact: true })).toBeVisible();
 });
 
 test("trip options, verified addresses and quoted fare retain the checkout contract", async ({ page }) => {

@@ -479,6 +479,12 @@ export type Database = {
         }
         Relationships: []
       }
+      rider_saved_places: {
+        Row: { tenant_id: string; rider_profile_id: string; place_key: string; address_label: string; latitude: number; longitude: number; updated_at: string }
+        Insert: { tenant_id: string; rider_profile_id: string; place_key: string; address_label: string; latitude: number; longitude: number; updated_at?: string }
+        Update: { tenant_id?: string; rider_profile_id?: string; place_key?: string; address_label?: string; latitude?: number; longitude?: number; updated_at?: string }
+        Relationships: [{ foreignKeyName: "rider_saved_places_tenant_id_rider_profile_id_fkey"; columns: ["tenant_id", "rider_profile_id"]; isOneToOne: false; referencedRelation: "rider_profiles"; referencedColumns: ["tenant_id", "rider_profile_id"] }]
+      }
       rider_profiles: {
         Row: {
           photo_storage_path: string | null
@@ -3173,6 +3179,18 @@ export type Database = {
           target_tenant_slug: string
         }
         Returns: string
+      }
+      my_rider_saved_places: {
+        Args: { target_tenant_slug: string }
+        Returns: Json
+      }
+      save_my_rider_place: {
+        Args: { target_tenant_slug: string; expected_rider_profile_id: string; place_key_value: string; address_label_value: string; latitude_value: number; longitude_value: number }
+        Returns: undefined
+      }
+      remove_my_rider_place: {
+        Args: { target_tenant_slug: string; expected_rider_profile_id: string; place_key_value: string }
+        Returns: undefined
       }
       update_my_rider_profile: {
         Args: { target_tenant_slug: string; display_name_value: string; phone_value?: string; accessibility_notes_value?: string }

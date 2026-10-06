@@ -718,3 +718,18 @@ textarea:focus {
 .rider-profile-card input[readonly] { background: #f4f6f9; color: #53667d; }
 .rider-profile-card .primary { background: #153258; border-color: #153258; }
 @media (max-width: 380px) { .rider-profile-photo-row { flex-direction: column; } }
+.saved-places-card { display: grid; gap: 16px; color: #153258; }
+.saved-places-card p { overflow-wrap: anywhere; margin: 6px 0 0; }
+.saved-place-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #e5eaf0; }
+.saved-place-row > div:first-child { min-width: 0; flex: 1; }
+.saved-place-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-place-buttons button { min-height: 44px; }
+.saved-place-actions { color: #153258; }
+.saved-place-actions summary { cursor: pointer; padding: 10px 0; }
+.saved-place-editor { display: grid; gap: 12px; min-width: 0; }
+.saved-place-editor input { width: 100%; min-width: 0; min-height: 48px; padding: 12px; border: 1px solid #d5dfec; border-radius: 12px; color: #153258; }
+.saved-place-editor input:focus { outline: 2px solid #153258; outline-offset: 2px; }
+.saved-place-editor .primary { background: #153258; border-color: #153258; }
+.saved-places-card .secondary { background: #edf2f8; color: #153258; border-color: #d5dfec; }
+.saved-places-card button:focus-visible { outline: 2px solid #153258; outline-offset: 2px; }
+@media (max-width: 480px) { .saved-place-row { align-items: flex-start; flex-direction: column; } }
