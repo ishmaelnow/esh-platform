@@ -48,3 +48,13 @@ Automated checks: Driver unit tests, typecheck, scoped lint, production build an
 `$env:DRIVER_PREVIEW_PORT='3012'; node tooling/scripts/driver-preview.cjs --tests`.
 Screenshots live under ignored test-results/driver-*.png. Browser account/GPS fixtures are disclosed;
 the map data comes from the actual geographic provider.
+
+## External navigation acceptance
+
+After the Driver hosted deployment is Ready, reopen the installed app and use an existing
+authorized active trip. Navigate to pickup and destination should open an installed maps app
+with the correct coordinates on Android, without the missing Mapbox-token message. Choose an
+app if Android shows its resolver, then start directions there. On iPhone, confirm Apple Maps
+still opens directions. Return to ESH and confirm the trip state and live map remain intact.
+This hosted change needs no new native build or migration. Actual device launch remains an owner
+acceptance check; unit/browser mocks do not prove installed maps availability.

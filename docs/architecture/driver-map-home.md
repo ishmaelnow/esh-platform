@@ -13,6 +13,12 @@ No production fixture, decorative grid or static map is imported by Driver.
 
 ## Location and navigation
 
+Pickup/destination navigation opens installed maps using geo links on Android and Apple Maps
+directions on iOS; browsers retain HTTPS directions. It no longer invokes embedded Android
+Mapbox navigation or requires its APK-bundled public token. Existing coordinates are preserved.
+The live ESH map still uses its existing provider configuration. Existing native SDK code remains
+in the shell, unused by these controls; removing it is outside this focused hosted change.
+
 Driver map GPS is foreground and display-only. Explicit locate requests permission, while an
 already granted permission enables foreground position updates. Watches stop when the document
 is hidden, the Driver scope changes or the shell unmounts. Denial/unavailability explains that the

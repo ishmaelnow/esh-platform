@@ -1661,7 +1661,7 @@ export default function DriverHome() {
                         {trip.status === "accepted" ? (
                           <button
                             className="secondary"
-                            onClick={() => void openDriverNavigation({ latitude: trip.pickupLatitude!, longitude: trip.pickupLongitude!, label: "Pickup" }, mapboxToken)}
+                            onClick={() => void openDriverNavigation({ latitude: trip.pickupLatitude!, longitude: trip.pickupLongitude!, label: "Pickup" })}
                             type="button"
                           >
                             Navigate to pickup
@@ -1670,7 +1670,7 @@ export default function DriverHome() {
                         {trip.status === "in_progress" ? (
                           <button
                             className="secondary"
-                            onClick={() => void openDriverNavigation({ latitude: trip.destinationLatitude!, longitude: trip.destinationLongitude!, label: "Destination" }, mapboxToken)}
+                            onClick={() => void openDriverNavigation({ latitude: trip.destinationLatitude!, longitude: trip.destinationLongitude!, label: "Destination" })}
                             type="button"
                           >
                             Navigate to destination
