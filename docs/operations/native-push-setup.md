@@ -1,7 +1,9 @@
 # Native push setup and release
 
-Implementation is local, not deployed. Owner reports saving the credentials below; Codex has not
-inspected remote values or sent production notifications. No secrets belong in Git or chat.
+Native integration is owner-deployed as b501da0 and owner-confirmed to receive alerts on iPhone
+and Android. The once-per-minute retry schedule is a local follow-up, not yet deployed. Owner moved
+transport-platform-admin to ESH Platform Admin and confirmed Pro. Codex has not inspected remote
+credentials or sent production notifications. No secrets belong in Git or chat.
 
 ## Completed owner setup
 
@@ -59,7 +61,13 @@ Do not assume WSL and PowerShell share Supabase authentication.
    Authorization: Bearer CRON_SECRET. Invocation returns aggregate counts only. Existing business
    delivery invokes native sending, but recovery/retries need independent scheduling.
    Vercel Pro supports once per minute; Hobby permits daily cron only and rejects a minute schedule.
-   No new cron schedule is committed until the owner's plan or another scheduler is established.
+   Owner now confirms the transferred Admin team is Pro. apps/admin/vercel.json locally adds
+   this endpoint once per minute and preserves the existing daily email job.
+   After owner push/deployment, open Admin Settings -> Cron Jobs; confirm both jobs are enabled.
+   Inspect the native job logs for HTTP 200. HTTP 401 means the Production CRON_SECRET is missing
+   or mismatched; verify its presence without sharing its value. HTTP 503 requires sanitized
+   backend/configuration diagnosis. Never invoke Run just to inspect configuration: it can send
+   eligible queued alerts. Normal scheduled success is sufficient to verify the job.
    Daily retries are unsuitable for expiring trip offers. Never expose the secret in a public URL.
 5. Rebuild Rider Android/iOS 1.0.3 and Driver Android/iOS 1.0.5 in Codemagic. Regenerate iOS
    provisioning profiles after adding push capability; retain bundle IDs, existing signing and

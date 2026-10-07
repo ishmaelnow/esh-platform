@@ -11,15 +11,18 @@ ESH's live map, sessions and trip lifecycle are preserved. Native SDK removal is
 
 Owner pushed navigation as fa0ecf0. Driver Vercel deployment failed because the regression tests
 awaited the newly synchronous navigation function (await-thenable errors at lines 12 and 18).
-The old production navigation therefore remains active. Local follow-up removes async/await from
-those tests; production behavior is unchanged. Preserve generated next-env and Driver/Rider tsconfig
+Owner pushed the test correction as 7e2ad74 and confirms Android navigation now works.
+The correction removes async/await from those tests; production behavior is unchanged.
+Preserve generated next-env and Driver/Rider tsconfig
 edits. No migration or native build is needed. All 61 Driver unit/API tests pass after correction;
 fresh production build/type/lint verification passed with existing warnings. Previous mobile suite:
 23 passed directly, one existing Android sign-out test
 passed on retry after its page.evaluate raced navigation; no failing tests remain. Physical map
-launch/return remains owner acceptance. Next: owner commit/push of the test correction and handoff,
-confirm Driver Vercel Ready at the new commit, reopen
-the installed app and test both buttons with an existing authorized trip. Read
+launch is owner-confirmed. Current work is the Admin-only once-per-minute native retry schedule.
+Schedule/configuration validation is local; owner push/deployment and HTTP 200 cron-log verification
+remain next. No new migration, app rebuild or production request by Codex. Read
+JSON configuration checks and all 11 focused native worker/provider tests pass; diff whitespace
+check passes. No application runtime code changed, so no new full build/browser run was needed.
 docs/architecture/driver-map-home.md and docs/operations/driver-map-home-manual-test.md.
 
 ## Native release and notification checkpoint
@@ -34,7 +37,9 @@ did not prevent those TestFlight builds being available; do not rebuild merely f
 
 Owner enabled NEXT_PUBLIC_NATIVE_PUSH_ENABLED=true in Rider/Driver Production and redeployed.
 Initial unavailable state was resolved after fresh deployment. Owner confirms alerts On in both apps;
-this verifies registration, not device receipt. Android email app-links were restored through Open
+Owner subsequently confirmed actual native notification receipt on iPhone and Android, with iPhone
+more prominent; Android delivery is accepted and no presentation change is requested. Exact tested
+product/event scope was not explicitly confirmed. Android email app-links were restored through Open
 supported links. Preserve accepted sessions, camera, domains and the deferred Driver icon.
 Owner reports two Codemagic client variables in esh_native_push and four Admin-only sender variables:
 FIREBASE_SERVICE_ACCOUNT_JSON, APNS_PRIVATE_KEY, APNS_KEY_ID, APNS_TEAM_ID. Remote secrets were not
@@ -42,12 +47,24 @@ inspected; private files stay outside Git/chat.
 
 Previous push verification: 192 unit/API tests, 19 Rider and 24 Driver browser tests, type/lint/build
 and embedded minimal PostgreSQL smoke check pass. Full Supabase/RLS/concurrency acceptance was not
-performed; Docker unavailable. Actual notification receipt remains unverified. No production event
+performed; Docker unavailable. Owner confirms device receipt as above. No production event
 or alert was created by Codex. Payment-return iPhone physical acceptance is still pending.
 Read docs/architecture/rider-payment-return.md and docs/operations/rider-payment-return-manual-test.md.
 
-Independent native retry scheduling remains open; owner Vercel plan is unknown. Do not add minute
-cron blindly (Hobby rejects it). Email trip preferences currently gate outbox events for native push,
+Independent native retry scheduling remains open. Owner verified original ESHA team is Hobby, then
+transferred only transport-platform-admin to an existing Pro team instead of purchasing another
+subscription. Destination was the blue-avatar team, renamed ESH Platform Admin (not ESH Platform),
+Team ID team_vhxr74AxOIzBUmhwy0MOS660. Owner confirms transfer complete; review listed five aliases,
+23 environment variables and all deployments. Other live ESH projects stay in ESHA. The green team
+with fairfareride.com is preserved; no duplicate projects/teams were deleted and no slug change
+was authorized. Owner confirms Transportation interface opens cleanly, transferred Admin Ready
+at 7e2ad74 with admin.eshapp.com/apply.eshapp.com, main source, and destination Pro. Remote secret
+presence and integrations were not inspected by Codex. apps/admin/vercel.json now locally adds
+/api/cron/native-notifications every minute; existing daily email cron remains intact. Validate
+Production CRON_SECRET presence and successful scheduled HTTP 200 after owner deployment. Do not
+print it or run manual production delivery just to verify configuration. Integrations may need
+reconnection if later checks reveal a missing binding.
+Email trip preferences currently gate outbox events for native push,
 so keep them enabled for controlled delivery tests. Native-only preferences are separate future work.
 Read docs/architecture/native-push-notifications.md, docs/operations/native-push-setup.md and
 docs/operations/native-push-notifications-manual-test.md.

@@ -56,6 +56,8 @@ Firebase client configuration. TestFlight requires regenerated push-enabled prov
 and a signed production aps-environment entitlement. Development APNs is not supported by this
 production sender.
 
-Timely retries require a scheduler invoking the protected endpoint. No minute cron is committed:
-Vercel Hobby does not support that interval. Confirm the plan or choose an authorized external
-scheduler before release. See the setup and manual-test operations documents.
+Timely retries use the Admin-only /api/cron/native-notifications job once per minute. Owner moved
+transport-platform-admin to the existing ESH Platform Admin Pro team and confirmed the plan.
+The schedule is prepared locally in apps/admin/vercel.json; deployment and successful protected
+invocation remain pending. The daily email cron is preserved. Other products remain in ESHA and
+do not inherit this schedule. See the setup and manual-test operations documents.

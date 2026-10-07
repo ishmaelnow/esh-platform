@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/driver-notifications",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/native-notifications",
+      "schedule": "* * * * *"
     }
   ]
 }

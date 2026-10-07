@@ -22,11 +22,13 @@ remain independent of transportation-specific workflows.
   Owner reports saving Codemagic client variables and Admin-only server credentials. Migration
   `20261006000100_native_push_notifications.sql` is owner-applied after a dry run listing only it.
   Both Android builds are installed; iOS compliance cleared and internal tester groups assigned.
-  Production flags are enabled; owner confirms alerts On. Actual device receipt remains unverified.
+  Production flags are enabled; owner confirms device receipt on iPhone and Android.
   192 unit/API tests and
   43 mobile browser regressions pass; an embedded PostgreSQL minimal-schema check passes.
-  Full Supabase verification, retry scheduling, signed builds and physical delivery remain release
-  gates. See `architecture/native-push-notifications.md`, `operations/native-push-setup.md`, and
+  Admin is owner-transferred to the existing ESH Platform Admin Pro team. A once-per-minute retry
+  cron is prepared locally; owner deployment and successful authenticated invocation are pending.
+  Full Supabase verification and remaining isolation/tap scenarios remain acceptance checks.
+  See `architecture/native-push-notifications.md`, `operations/native-push-setup.md`, and
   `operations/native-push-notifications-manual-test.md`.
 
 - Rider Home and Work saved addresses are owner-pushed as `e13935c`: private tenant/Rider persistence,
