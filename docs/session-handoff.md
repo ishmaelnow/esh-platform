@@ -9,11 +9,16 @@ The hosted change bypasses EmbeddedNavigation and its missing APK Mapbox token. 
 existing geo resolver; iOS retains Apple Maps; browsers retain HTTPS directions. Real trip coordinates,
 ESH's live map, sessions and trip lifecycle are preserved. Native SDK removal is outside this change.
 
-Code is local/unpushed on b501da0. Preserve generated Driver/Rider tsconfig edits.
-No migration or native build is needed. 61 Driver unit/API tests and production build/type/lint checks
-pass with existing warnings. Mobile suite: 23 passed directly, one existing Android sign-out test
+Owner pushed navigation as fa0ecf0. Driver Vercel deployment failed because the regression tests
+awaited the newly synchronous navigation function (await-thenable errors at lines 12 and 18).
+The old production navigation therefore remains active. Local follow-up removes async/await from
+those tests; production behavior is unchanged. Preserve generated next-env and Driver/Rider tsconfig
+edits. No migration or native build is needed. All 61 Driver unit/API tests pass after correction;
+fresh production build/type/lint verification passed with existing warnings. Previous mobile suite:
+23 passed directly, one existing Android sign-out test
 passed on retry after its page.evaluate raced navigation; no failing tests remain. Physical map
-launch/return remains owner acceptance. Next: owner Git push/deployment, confirm Driver Ready, reopen
+launch/return remains owner acceptance. Next: owner commit/push of the test correction and handoff,
+confirm Driver Vercel Ready at the new commit, reopen
 the installed app and test both buttons with an existing authorized trip. Read
 docs/architecture/driver-map-home.md and docs/operations/driver-map-home-manual-test.md.
 
