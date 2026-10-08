@@ -6,6 +6,11 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Android Driver session recurrence follow-up: locally prevents successfully consumed launch
+  sign-in links from being replayed after WebView reload, using bounded token-free fingerprints.
+  Existing encrypted session and server auth rules remain unchanged. Hosted release and device
+  acceptance pending; no migration/native build. See `architecture/driver-native-session-recovery.md`.
+
 - Optional Rider pickup sharing implemented locally: explicit consent before pickup, current assigned
   Driver only, foreground GPS, sixty-second freshness cutoff, and audited lifecycle/reassignment
   deletion. Owner applied the private migration on 2026-10-08; hosted Rider/Driver release and

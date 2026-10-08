@@ -17,6 +17,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("Android recovers native session after WebView clearing, refreshes expired tokens and signs out", async ({ page }) => {
+  await page.evaluate(async () => {
+    const url = "com.esh.driver://auth/callback#access_token=expired-fixture&refresh_token=consumed-fixture";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(url));
+    const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    localStorage.setItem("esh-driver-consumed-auth-callbacks", JSON.stringify([fingerprint]));
+  });
   await page.addInitScript(() => {
     const key = "esh-driver-portal-auth";
     if (!sessionStorage.getItem("native-vault-initialized")) {
@@ -35,6 +41,7 @@ test("Android recovers native session after WebView clearing, refreshes expired 
         ],
         nativePromise: async (plugin: string, method: string, options: { key?: string; value?: string }) => {
           await Promise.resolve();
+          if (plugin === "App" && method === "getLaunchUrl") return { url: "com.esh.driver://auth/callback#access_token=expired-fixture&refresh_token=consumed-fixture" };
           if (plugin !== "DriverSessionStorage") return {};
           if (method === "get") return { value: options.key === key ? sessionStorage.getItem("native-vault") : null };
           if (method === "set") sessionStorage.setItem("native-vault", options.value!);
@@ -52,6 +59,7 @@ test("Android recovers native session after WebView clearing, refreshes expired 
   expect(await page.evaluate(() => localStorage.getItem("esh-driver-portal-auth"))).toBeNull();
   let refreshes = 0;
   await page.route("**/auth/v1/token?grant_type=refresh_token", (route) => {
+    expect(route.request().postDataJSON().refresh_token).not.toBe("consumed-fixture");
     refreshes++;
     return route.fulfill({ json: {
       access_token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmV2aWV3In0.rotated",

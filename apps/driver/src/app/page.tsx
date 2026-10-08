@@ -18,6 +18,7 @@ import type { NativePushController, NativePushViewState } from "./NativePushCont
 import { applicationDocumentRank } from "../lib/application";
 import { useDriverMapLocation } from "./useDriverMapLocation";
 import { driverAndroidStorage } from "../lib/android-session-storage";
+import { driverCallbackReceipt } from "../lib/consumed-auth-callback";
 import { driverHomeTotals } from "../lib/home-totals";
 import { DriverRiderLocation } from "./DriverRiderLocation";
 import { openDriverNavigation } from "../lib/embedded-navigation";
@@ -384,6 +385,11 @@ export default function DriverHome() {
       if (cancelled || processedAuthCallbacks.current.has(url)) return;
       processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
+      const trusted = (callback.protocol === "com.esh.driver:" && callback.host === "auth" && callback.pathname === "/callback")
+        || (callback.origin === window.location.origin && callback.pathname === "/auth/callback");
+      if (!trusted) return;
+      const receipt = Capacitor.getPlatform() === "android" ? await driverCallbackReceipt(url) : null;
+      if (cancelled || receipt?.consumed) return;
       const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
       if (callbackError) {
         setMessage(`Sign-in could not be completed: ${callbackError}`);
@@ -393,7 +399,10 @@ export default function DriverHome() {
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) setMessage(`Sign-in could not be completed: ${exchangeError.message}`);
-        else if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
+        else {
+          try { receipt?.commit(); } catch { /* Never discard a successful session for receipt storage failure. */ }
+          if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
+        }
         return;
       }
       const hash = new URLSearchParams(callback.hash.replace(/^#/, ""));
@@ -405,7 +414,10 @@ export default function DriverHome() {
         refresh_token: refreshToken,
       });
       if (sessionError) setMessage(`Sign-in could not be completed: ${sessionError.message}`);
-      else if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
+      else {
+        try { receipt?.commit(); } catch { /* Preserve successful authentication. */ }
+        if (Capacitor.getPlatform() === "android") await Browser.close().catch(() => undefined);
+      }
     };
     void App.addListener("appUrlOpen", ({ url }) => void handleCallback(url)).then((handle) => {
       listener = handle;

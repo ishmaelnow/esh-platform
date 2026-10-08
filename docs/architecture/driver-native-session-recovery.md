@@ -1,5 +1,24 @@
 # Driver Android session recovery
 
+## Android launch-link replay protection (2026-10-08)
+
+Android's original launch intent can be returned again on a later WebView mount. Driver previously
+deduplicated callbacks only in component memory; this did not survive reload. A previously consumed
+implicit callback could reintroduce old tokens after refresh. This is a plausible recurrence path,
+not a device-log-confirmed diagnosis of the owner's report.
+
+Successful Android sign-in callbacks now save a bounded list of SHA-256 URL fingerprints in
+Driver-scoped WebView storage. Home's native listener and the hosted callback page skip receipts
+already consumed. Failed callbacks are not receipted; different links still allow new sign-ins and
+account switches. Raw links and tokens are never saved in receipts. Native callbacks must target
+the Driver auth host/path or the same-origin hosted callback path. Existing encrypted credentials,
+server expiration/revocation and explicit sign-out remain authoritative. Receipt storage failure
+does not discard a successful sign-in. Clearing app data also clears receipts and session storage.
+
+This is a hosted Driver correction: no migration or native rebuild is required on current shells.
+After deployment, use a fresh sign-in once to establish its receipt, then test reopen, background
+return and normal refresh on the installed Android Driver app. Physical acceptance remains required.
+
 Owner clarified that repeated verification affects both Driver and Rider Android. Rider correction
 is pushed as `3bf1fbb`; this follow-up applies the same session contract to Driver only. Driver
 iOS authentication, working Android camera/navigation, dispatch, availability and evidence review

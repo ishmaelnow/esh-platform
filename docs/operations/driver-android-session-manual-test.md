@@ -1,5 +1,13 @@
 # Driver Android session acceptance
 
+2026-10-08 follow-up: hosted launch-link replay protection is local. After its Driver deployment is
+Ready, sign in once with a fresh link, open Driver home, background/return, close/reopen from its
+installed icon, and reload again after token refresh. Expect the same account without new email.
+Verify explicit sign-out still works and a different fresh link can sign in to another test account.
+Do not reinstall merely to test this hosted correction; no migration/native build is required.
+This code-path protection does not establish the original device cause; record remaining failures
+without printing credentials or magic links.
+
 Owner pushes the scoped correction, verifies ESH Driver hosted Ready and runs **ESH Driver Android**
 in Codemagic from that commit. Install 1.0.4/code 5 using the existing release signing. No migration
 or Driver iOS rebuild. Keep the working camera plugin and navigation registration.

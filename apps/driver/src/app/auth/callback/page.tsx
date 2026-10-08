@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createIsolatedBrowserSupabaseClient } from "@esh-platform/supabase";
 import { driverAndroidStorage } from "../../../lib/android-session-storage";
+import { Capacitor } from "@capacitor/core";
+import { driverCallbackReceipt } from "../../../lib/consumed-auth-callback";
 
 export default function DriverAuthCallbackPage() {
   const router = useRouter();
@@ -35,6 +37,11 @@ export default function DriverAuthCallbackPage() {
     const callbackError = callback.searchParams.get("error_description") ?? callback.searchParams.get("error");
 
     const complete = async () => {
+      const receipt = Capacitor.getPlatform() === "android" ? await driverCallbackReceipt(callback.href) : null;
+      if (receipt?.consumed) {
+        if (!cancelled) router.replace("/");
+        return;
+      }
       if (callbackError) {
         setError(`Sign-in could not be completed: ${callbackError}`);
         return;
@@ -66,6 +73,7 @@ export default function DriverAuthCallbackPage() {
       }
 
       if (!cancelled) {
+        try { receipt?.commit(); } catch { /* Receipt failure must not discard a valid session. */ }
         setStatus("Signed in. Redirecting to ESH Driver…");
         router.replace("/");
       }

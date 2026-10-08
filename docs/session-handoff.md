@@ -4,12 +4,32 @@ Last updated: 2026-10-08
 
 ## Current objective and checkpoint
 
-Owner agreed to optional Share my location with my driver. Implemented locally alongside the
-uncommitted Rider tracking polish: private booking/assignment-bound snapshot, audited explicit
+Owner reports Android Driver asks for email verification again when returning to the app.
+Owner authorized direct investigation without further repeated clarification. Local correction
+prevents successfully consumed Android launch auth links from being replayed on home/callback
+mounts; prior deduplication was memory-only. Bounded SHA-256 fingerprints preserve fresh links,
+account switches and failed-callback retry without storing URLs/tokens. Existing vault and foreground
+recovery remain unchanged. This is a plausible failure path, not a device-confirmed root cause.
+63 Driver unit/API tests, production build, all 24 mobile browser checks and diff whitespace checks
+pass, including recovery/replay and explicit sign-out. Hosted push/deployment and Android device acceptance pending; no migration
+or new native rebuild needed. Next: finish verification, owner deploys Driver correction, fresh
+sign-in once then reopen/foreground/normal refresh and explicit sign-out acceptance.
+Do not reset app data, remove credentials or change auth policy to mask the symptom.
+Paused Rider cleanup has uncommitted Booking progress label and Android package-targeted intent
+return changes. These are not validated or deployed. Test escalation was interrupted; do not
+report tests/build as passed. Preserve these edits and generated configuration files.
+Owner confirms sharing/tracking physical test passed after hosted 511d75a deployments Ready and
+Android rebuilds. Rider iOS 1.0.3 (1791478052) and Driver iOS 1.0.5 (1791482356) are available in
+TestFlight; internal groups and Rider notes saved. Exact sharing test device scope was not supplied.
+
+Owner agreed to optional Share my location with my driver. Delivered alongside the
+Rider tracking polish: private booking/assignment-bound snapshot, audited explicit
 consent, foreground actual GPS publisher, assigned-Driver-only fresh reads and separate passenger
 map pin/navigation. Automatic deletion on start/cancel/completion/reassignment. New migration
 20261008000100_rider_pickup_location_sharing.sql was applied remotely by the owner on 2026-10-08,
-after an intended-only dry run. Feature code remains uncommitted/unpushed. Owner requests native
+after an intended-only dry run. Owner committed/pushed the feature as 511d75a; main matches origin/main.
+Only the four generated Rider/Driver next-env.d.ts and tsconfig.json edits remained after the push.
+Vercel Ready and native build results have not yet been supplied. Owner requests native
 rebuilds; none have been started by Codex.
 Minimal PostgreSQL privacy smoke passes (including another Driver and tenant); 93 Rider and 61
 Driver unit/API tests, shared types/Maps lint, both production builds, 22 Rider and 24 Driver mobile
@@ -21,7 +41,7 @@ are generated/inspected; no production location/payment/booking was published by
 Existing generated files and prior acceptance notes preserved. Full Supabase/concurrency and
 physical iOS/Android acceptance remain pending.
 See architecture/rider-pickup-location-sharing.md and operations/rider-pickup-location-sharing-manual-test.md.
-Next: owner commits/pushes the scoped feature, confirms hosted Rider/Driver deployments Ready,
+Next: owner confirms hosted Rider/Driver deployments for 511d75a are Ready,
 then starts the requested Rider/Driver Android and iOS main-branch Codemagic workflows and performs
 device acceptance. Existing shells load their separate hosted URLs; no native configuration change
 is required for this feature. No feature Git mutation or remote migration by Codex.
