@@ -1,5 +1,8 @@
 # Rider payment-return acceptance
 
+2026-10-08: owner confirms automatic return to the app passed after release 51b1a53.
+This confirms the tested device path; no separate cross-platform acceptance is implied.
+
 Owner checkpoint, 2026-10-07: checkout X returned to the installed app, and a second current ride
 was blocked while a valid ride remained pending. Active-ride guard release is 0ec12c2.
 Owner subsequently completed payment, selected Return to ESH app from the browser/app choices,

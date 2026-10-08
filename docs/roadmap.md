@@ -6,9 +6,20 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Optional Rider pickup sharing implemented locally: explicit consent before pickup, current assigned
+  Driver only, foreground GPS, sixty-second freshness cutoff, and audited lifecycle/reassignment
+  deletion. Owner applied the private migration on 2026-10-08; hosted Rider/Driver release and
+  real-device acceptance remain pending. See
+  `architecture/rider-pickup-location-sharing.md` and `operations/rider-pickup-location-sharing-manual-test.md`.
+
+- Rider current-trip tracking polish implemented locally: compact Home status/Track ride, fresh
+  pickup/destination ETA, stale/offline fallback, and guarded account/provider refresh results.
+  Reuses existing location consent and data boundaries; hosted release/device acceptance pending.
+  See `architecture/rider-live-trip-tracking.md` and `operations/rider-live-trip-tracking-manual-test.md`.
+
 - Rider automatic payment app-return default is implemented locally for new app-originated
   checkouts, retaining explicit links as fallback and browser checkout on browser home.
-  Hosted release and physical-device automatic handoff acceptance pending.
+  Owner pushed as 51b1a53 and confirmed automatic app return passed on 2026-10-08.
 
 - Rider one-current-ride guard implemented locally; future scheduled/recurring reservations
   remain allowed. Atomic database enforcement covers booking entry points across provider profiles;

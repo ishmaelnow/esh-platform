@@ -72,7 +72,10 @@ test("Android recovers native session after WebView clearing, refreshes expired 
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByRole("button", { name: "Email me a sign-in link" })).toBeVisible();
-  expect(await page.evaluate(() => sessionStorage.getItem("native-vault"))).toBeNull();
+  await expect.poll(async () => {
+    try { return await page.evaluate(() => sessionStorage.getItem("native-vault")); }
+    catch { return "Navigation in progress"; }
+  }).toBeNull();
 });
 
 test("home uses live geographic tiles, full-width map, totals and unobscured bottom controls", async ({ page }) => {
@@ -268,6 +271,11 @@ test("unavailable account data does not fabricate earnings or confirmed online s
 });
 
 test("active dispatch stays reachable with existing trip lifecycle and navigation controls", async ({ page }) => {
+  let fresh = true;
+  await page.route("**/rest/v1/rpc/my_driver_rider_pickup_location", (route) => route.fulfill({ json: {
+    latitude: 32.831, longitude: -96.77, accuracyMeters: 12,
+    recordedAt: new Date(Date.now() - (fresh ? 0 : 90000)).toISOString(),
+  } }));
   await page.route("**/rest/v1/rpc/my_driver_dispatch", (route) => route.fulfill({ json: { offers: [], trips: [{
     bookingId: "preview-active", customerName: "Fixture passenger", customerPhone: null, pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination", notes: null,
     serviceAreaName: "Preview area", status: "accepted", pickupLatitude: 32.832, pickupLongitude: -96.771,
@@ -277,6 +285,14 @@ test("active dispatch stays reachable with existing trip lifecycle and navigatio
   await page.getByRole("button", { name: "Active trip · Open controls" }).click();
   await expect(page.getByRole("button", { name: "Mark arrived" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Navigate to pickup" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "View shared passenger location" })).toBeVisible();
+  await expect(page.getByText("This is separate from the booked pickup address.")).toBeVisible();
+  await page.screenshot({ path: "test-results/driver-passenger-sharing-414.png", fullPage: true });
+  fresh = false;
+  await page.reload();
+  await page.getByRole("button", { name: "Active trip · Open controls" }).click();
+  await expect(page.getByText("No current passenger location shared. Use the booked pickup address.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "View shared passenger location" })).toHaveCount(0);
   await expect(page.getByText("Rider trip fare (not Driver earnings):", { exact: false })).toBeVisible();
   // Do not initiate navigation, a trip lifecycle mutation, an emergency or any production action.
 });

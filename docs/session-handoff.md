@@ -1,16 +1,54 @@
 # Session Handoff
 
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 
 ## Current objective and checkpoint
+
+Owner agreed to optional Share my location with my driver. Implemented locally alongside the
+uncommitted Rider tracking polish: private booking/assignment-bound snapshot, audited explicit
+consent, foreground actual GPS publisher, assigned-Driver-only fresh reads and separate passenger
+map pin/navigation. Automatic deletion on start/cancel/completion/reassignment. New migration
+20261008000100_rider_pickup_location_sharing.sql was applied remotely by the owner on 2026-10-08,
+after an intended-only dry run. Feature code remains uncommitted/unpushed. Owner requests native
+rebuilds; none have been started by Codex.
+Minimal PostgreSQL privacy smoke passes (including another Driver and tenant); 93 Rider and 61
+Driver unit/API tests, shared types/Maps lint, both production builds, 22 Rider and 24 Driver mobile
+browser checks pass. Driver real map fixtures needed unsandboxed public tile access; the known
+sign-out test navigation race now waits for vault cleanup. Rider GPS publications use explicit
+timestamped fixture readings, not physical device GPS certification. Rider tests also confirm
+server-revoked consent restores the opt-in control. 414 × 896 sharing screenshots
+are generated/inspected; no production location/payment/booking was published by Codex.
+Existing generated files and prior acceptance notes preserved. Full Supabase/concurrency and
+physical iOS/Android acceptance remain pending.
+See architecture/rider-pickup-location-sharing.md and operations/rider-pickup-location-sharing-manual-test.md.
+Next: owner commits/pushes the scoped feature, confirms hosted Rider/Driver deployments Ready,
+then starts the requested Rider/Driver Android and iOS main-branch Codemagic workflows and performs
+device acceptance. Existing shells load their separate hosted URLs; no native configuration change
+is required for this feature. No feature Git mutation or remote migration by Codex.
+
+Owner authorized Rider live trip tracking polish. Existing tracking uses owned RPCs every ten seconds
+and shared real traffic-aware maps. Local changes add compact current-trip Home/Trips status and ETA,
+status/age-aware location exposure, destination ETA after trip start, obsolete request cancellation,
+and account/provider-safe portal result handling. Preserve approved booking design, payment return,
+native consent/session behavior, and generated tsconfig/next-env work. No migration or native rebuild.
+93 Rider unit/API tests, 16 Maps unit tests, Maps types/lint, and Rider production build pass.
+All 22 mobile browser tests pass, including tracking states and 320-pixel overflow; 414 × 896
+Home/Trips screenshots inspected in test-results/rider-tracking-home-414.png and
+test-results/rider-tracking-trip-414.png. Provider/GPS fixtures are isolated; actual movement,
+permission revocation, network recovery and cross-device privacy acceptance remain owner tests.
+See architecture/rider-live-trip-tracking.md and operations/rider-live-trip-tracking-manual-test.md.
+Next: owner stages scoped feature/docs, pushes/deploys and performs real-device acceptance.
+No feature commit/push, production booking/payment or location publication was performed by Codex.
 
 Owner requests automatic app return after app-originated checkout, with browser checkout remaining
 in the browser. Local change adds returnTo=app only to new native checkout success/cancel URLs,
 then attempts the validated fixed Rider scheme once on the return page. Existing manual app/browser
 links remain fallback. No migration or native rebuild; existing Stripe sessions retain old URLs.
 86 unit/API tests, production build, 20 existing mobile browser tests and a focused automatic
-scheme-attempt/fallback browser test pass. Owner device automatic handoff still needs acceptance
-after deployment; no Git mutations or remote deployment by Codex.
+scheme-attempt/fallback browser test pass. Owner pushed as 51b1a53; main matches origin/main.
+On 2026-10-08 owner confirms automatic return to the app passed on the tested device.
+Automatic handoff acceptance is complete for that device; other device/browser paths were not
+separately reconfirmed. No Git mutations or remote deployment by Codex.
 
 Owner clarified the limit applies only to a current ride, including requested/offered/accepted/
 arrived/in_progress; future scheduled and recurring reservations remain available. Local migration

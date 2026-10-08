@@ -19,6 +19,9 @@ import {
 import { LiveTripMap, RiderHomeMap } from "@esh-platform/maps/client";
 import { RiderMenu } from "./RiderMenu";
 import { RiderLanding } from "./RiderLanding";
+import { RiderTripTracking } from "./RiderTripTracking";
+import { RiderPickupSharing } from "./RiderPickupSharing";
+import { currentTripLocation, trackingMapPoint } from "../lib/trip-tracking";
 import { RiderSheet } from "./RiderSheet";
 import { RiderProfileEditor } from "./RiderProfileEditor";
 import { NativePushControl } from "./NativePushControl";
@@ -201,6 +204,11 @@ export default function RiderHome() {
     useState<RiderNotificationPreferences | null>(null);
   const [scheduling, setScheduling] = useState<RiderScheduling | null>(null);
   const [tripLocations, setTripLocations] = useState<RiderTripLocation[]>([]);
+  const [trackingNow, setTrackingNow] = useState(Date.now());
+  const portalScope = `${session?.user.id ?? ""}:${tenantSlug}`;
+  const portalScopeRef = useRef(portalScope);
+  portalScopeRef.current = portalScope;
+  const portalRequest = useRef(0);
   const [reputationTrips, setReputationTrips] = useState<ReputationTrip[]>([]);
   const [payments, setPayments] = useState<RiderPayment[]>([]);
   const [wallet, setWallet] = useState<RiderWallet | null>(null);
@@ -361,12 +369,14 @@ export default function RiderHome() {
 
   const loadPortal = useCallback(async () => {
     if (!supabase || !session || !tenantSlug) return;
+    const scope = `${session.user.id}:${tenantSlug}`;
+    const request = ++portalRequest.current;
     const { data, error: portalError } = await supabase.rpc("my_rider_portal", {
       target_tenant_slug: tenantSlug,
     });
-    if (portalError) throw portalError;
+    if (scope !== portalScopeRef.current || request !== portalRequest.current) return;
+    if (portalError) { setTripLocations([]); throw portalError; }
     const nextPortal = data as RiderPortal;
-    setPortal(nextPortal);
     if (nextPortal.profile) {
       const [preferenceResult, schedulingResult, locationResult, coordinateResult, quoteResult, reconciliationResult, reputationResult, refundResult, smsResult] = await Promise.all([
         supabase.rpc("my_rider_notification_preferences", { target_tenant_slug: tenantSlug }),
@@ -379,6 +389,8 @@ export default function RiderHome() {
         supabase.from("rider_payment_refunds").select("booking_id,amount_minor,currency_code,status").eq("tenant_id", nextPortal.tenant.tenantId),
         supabase.rpc("my_rider_sms_notification_settings", { target_tenant_slug: tenantSlug }),
       ]);
+      if (scope !== portalScopeRef.current || request !== portalRequest.current) return;
+      if (locationResult.error) setTripLocations([]);
       const { data: preferenceData, error: preferenceError } = preferenceResult;
       if (preferenceError) throw preferenceError;
       if (schedulingResult.error) throw schedulingResult.error;
@@ -431,6 +443,7 @@ export default function RiderHome() {
         })),
       });
     } else {
+      setPortal(nextPortal);
       setNotificationPreferences(null);
       setTripLocations([]);
       setReputationTrips([]);
@@ -707,7 +720,15 @@ export default function RiderHome() {
     nextUrl.searchParams.set("tenant", tenantSlug);
     window.history.replaceState({}, "", nextUrl);
     setPortal(null);
+    setTripLocations([]);
   }, [tenantSlug]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setTrackingNow(Date.now()), 10_000);
+    const refreshClock = () => setTrackingNow(Date.now());
+    document.addEventListener("visibilitychange", refreshClock);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refreshClock); };
+  }, []);
 
   useEffect(() => {
     if (!session || !tenantSlug) return;
@@ -1273,7 +1294,7 @@ export default function RiderHome() {
   const recentDestinations = historicalBookings.filter((booking, index, bookings) =>
     bookings.findIndex((other) => other.destinationAddress === booking.destinationAddress) === index).slice(0, 5);
   const mapBooking = currentBookings[0];
-  const mapDriver = tripLocations.find((location) => location.bookingId === mapBooking?.bookingId);
+  const mapDriver = currentTripLocation(mapBooking?.status ?? "", tripLocations.find((location) => location.bookingId === mapBooking?.bookingId), trackingNow);
   const homePickup = mapBooking?.pickupLatitude != null && mapBooking.pickupLongitude != null
     ? { latitude: mapBooking.pickupLatitude, longitude: mapBooking.pickupLongitude, label: mapBooking.pickupAddress }
     : validCoordinates(pickupSelection?.latitude, pickupSelection?.longitude)
@@ -1323,6 +1344,10 @@ export default function RiderHome() {
         workLabel={savedPlaces.places.find((place) => place.key === "work")?.label}
         destinations={recentDestinations.map((booking) => ({ id: booking.bookingId, label: booking.destinationAddress, onSelect: () => void bookAgain(booking) }))}
       /> : null}
+
+      {portal?.profile && mapBooking && activePortalTab === "book" && !bookingOpen ? <RiderTripTracking
+        booking={mapBooking} location={mapDriver} accessToken={mapboxToken}
+        onOpen={() => setActivePortalTab("trips")} /> : null}
 
       {error ? (
         <p className="notice error" role="alert">
@@ -1696,11 +1721,15 @@ export default function RiderHome() {
           <section className="history">
             <div className="section-heading"><div><p className="kicker">Current trip</p><h2>Your active ride</h2></div><button className="button secondary compact" onClick={() => void loadPortal()} disabled={busy}>Refresh</button></div>
             {currentBookings.map((booking) => <article className="card trip-card" key={`current-page-${booking.bookingId}`}>
+              <RiderTripTracking booking={booking} accessToken={mapboxToken}
+                location={currentTripLocation(booking.status, tripLocations.find((location) => location.bookingId === booking.bookingId), trackingNow)} />
+              {supabase && session && ["accepted", "arrived"].includes(booking.status) ? <RiderPickupSharing
+                key={`${session.user.id}:${tenantSlug}:${booking.bookingId}`} client={supabase} bookingId={booking.bookingId} /> : null}
               <div className="trip-top"><div><span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span><h3>{booking.pickupAddress}</h3><p className="destination">to {booking.destinationAddress}</p></div><time>{formatDate(booking.createdAt)}</time></div>
               <p className="area"><strong>{booking.farePolicy === "guaranteed_upfront" ? "Guaranteed fare" : booking.farePolicy === "metered_actual" ? "Fare estimate" : booking.farePolicy === "protected_flexible" ? "Protected fare estimate" : "Fare"}:</strong> {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100) : "Pending"}{booking.farePolicy === "protected_flexible" && booking.maximumFareMinor != null && booking.fareCurrencyCode ? ` · maximum ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.maximumFareMinor / 100)}` : ""}</p>
               <p className="area">{booking.serviceAreaName}{booking.driver ? ` · Driver: ${booking.driver.displayName}` : " · Finding an eligible driver"}</p>
               {booking.vehicle ? <p className="area">{booking.vehicle.color} {booking.vehicle.modelYear} {booking.vehicle.make} {booking.vehicle.model} · {booking.vehicle.licensePlate}</p> : null}
-              {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? <LiveTripMap accessToken={mapboxToken} pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }} destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }} driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null} /> : null}
+              {mapboxToken && booking.pickupLatitude != null && booking.pickupLongitude != null && booking.destinationLatitude != null && booking.destinationLongitude != null ? <LiveTripMap accessToken={mapboxToken} pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }} destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }} driver={trackingMapPoint(booking.status, tripLocations.find((location) => location.bookingId === booking.bookingId), trackingNow)} tripStarted={booking.status === "in_progress"} showPickupEta={booking.status === "accepted"} /> : null}
               {canCancelBooking(booking.status) ? <button className="text-button danger" disabled={busy} onClick={() => void cancelBooking(booking.bookingId)}>Cancel trip</button> : null}
             </article>)}
           </section>
@@ -1835,7 +1864,9 @@ export default function RiderHome() {
                       accessToken={mapboxToken}
                       pickup={{ latitude: booking.pickupLatitude, longitude: booking.pickupLongitude, label: `Pickup: ${booking.pickupAddress}` }}
                       destination={{ latitude: booking.destinationLatitude, longitude: booking.destinationLongitude, label: `Destination: ${booking.destinationAddress}` }}
-                      driver={tripLocations.filter((location) => location.bookingId === booking.bookingId).map((location) => ({ latitude: location.latitude, longitude: location.longitude, label: "Driver live location" }))[0] ?? null}
+                      driver={trackingMapPoint(booking.status, tripLocations.find((location) => location.bookingId === booking.bookingId), trackingNow)}
+                      tripStarted={booking.status === "in_progress"}
+                      showPickupEta={booking.status === "accepted"}
                     />
                   ) : null}
                   {canCancelBooking(booking.status) ? (

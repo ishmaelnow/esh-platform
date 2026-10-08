@@ -36,6 +36,95 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
 });
 
+test("current ride tracking uses fresh coordinates, ages offline readings and switches to destination ETA", async ({ page }) => {
+  let status = "accepted";
+  let recordedAt = new Date().toISOString();
+  let sharing = false;
+  let revokeOnUpdate = false;
+  const publications: Record<string, unknown>[] = [];
+  await page.context().grantPermissions(["geolocation"]);
+  await page.context().setGeolocation({ latitude: 32.76, longitude: -96.78 });
+  await page.addInitScript(() => {
+    // Isolated actual-GPS contract fixture, including capture time; no production location.
+    Object.defineProperty(navigator.geolocation, "getCurrentPosition", { configurable: true, value: (success: PositionCallback) => {
+      success({ timestamp: Date.now(), coords: { latitude: 32.76, longitude: -96.78, accuracy: 10,
+        altitude: null, altitudeAccuracy: null, heading: null, speed: null } } as GeolocationPosition);
+    } });
+  });
+  await page.route("**/rest/v1/rpc/my_rider_pickup_sharing", (route) => route.fulfill({ json: sharing }));
+  await page.route("**/rest/v1/rpc/set_my_rider_pickup_sharing", (route) => {
+    sharing = route.request().postDataJSON().enabled_value as boolean;
+    return route.fulfill({ json: sharing });
+  });
+  await page.route("**/rest/v1/rpc/update_my_rider_pickup_location", (route) => {
+    if (revokeOnUpdate) {
+      sharing = false;
+      return route.fulfill({ status: 400, json: { message: "Fixture assignment changed" } });
+    }
+    publications.push(route.request().postDataJSON() as Record<string, unknown>);
+    return route.fulfill({ json: null });
+  });
+  const directions: string[] = [];
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: {
+    tenant, profile, serviceAreas: [{ serviceAreaId: "preview-area", name: "City", description: null }],
+    bookings: [{ bookingId: "tracking-test", status, pickupAddress: "Test pickup", destinationAddress: "Test destination",
+      createdAt: recordedAt, driver: { displayName: "Test Driver", driverNumber: "TEST" }, vehicle: null }],
+  } }));
+  await page.route("**/rest/v1/dispatch_bookings?*", (route) => route.fulfill({ json: [{
+    booking_id: "tracking-test", pickup_latitude: 32.78, pickup_longitude: -96.8,
+    destination_latitude: 32.79, destination_longitude: -96.81,
+  }] }));
+  await page.route("**/rest/v1/rpc/my_rider_trip_locations", (route) => route.fulfill({ json: [{
+    bookingId: "tracking-test", latitude: 32.77, longitude: -96.79, accuracyMeters: 10, recordedAt, fresh: true,
+  }] }));
+  await page.route("https://api.mapbox.com/directions/**", (route) => {
+    directions.push(route.request().url());
+    return route.fulfill({ json: { routes: [{ duration: 300, distance: 1200,
+      legs: [{ duration: 300 }], geometry: { type: "LineString", coordinates: [[-96.79, 32.77], [-96.8, 32.78]] } }] } });
+  });
+  await page.reload();
+  const tracking = page.getByRole("region", { name: "Current ride tracking" });
+  await expect(tracking).toContainText("Your driver is on the way");
+  await expect(tracking).toContainText("Pickup ETA: about 5 min");
+  await expect(tracking.getByRole("button", { name: "Track ride" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Request ride", exact: true })).toBeInViewport();
+  await page.screenshot({ path: "test-results/rider-tracking-home-414.png", fullPage: true });
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(tracking.getByRole("button", { name: "Track ride" })).toBeInViewport();
+  await page.setViewportSize({ width: 414, height: 896 });
+  await tracking.getByRole("button", { name: "Track ride" }).click();
+  await expect(page.getByRole("heading", { name: "Your active ride" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Share my location with my driver", exact: true })).toBeVisible();
+  expect(publications).toHaveLength(0);
+  await page.getByRole("button", { name: "Share my location with my driver", exact: true }).click();
+  await expect.poll(() => publications.length, { timeout: 15000 }).toBeGreaterThan(0);
+  expect(publications[0]?.latitude_value).toBe(32.76);
+  expect(publications[0]?.target_booking_id).toBe("tracking-test");
+  await page.screenshot({ path: "test-results/rider-pickup-sharing-414.png", fullPage: true });
+  await page.getByRole("button", { name: "Stop sharing my location", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Share my location with my driver", exact: true })).toBeVisible();
+  expect(sharing).toBe(false);
+  revokeOnUpdate = true;
+  await page.getByRole("button", { name: "Share my location with my driver", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Share my location with my driver", exact: true })).toBeVisible();
+  expect(sharing).toBe(false);
+  await page.screenshot({ path: "test-results/rider-tracking-trip-414.png", fullPage: true });
+  recordedAt = new Date(Date.now() - 90_000).toISOString();
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Current ride tracking" })).toContainText("Last known driver location");
+  await expect(page.getByRole("region", { name: "Current ride tracking" })).toContainText("ETA unavailable");
+  status = "in_progress"; recordedAt = new Date().toISOString(); directions.length = 0;
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Current ride tracking" })).toContainText("Destination ETA: about 5 min");
+  await expect(page.getByRole("button", { name: "Share my location with my driver", exact: true })).toHaveCount(0);
+  expect(directions.some((url) => url.includes("-96.79,32.77;-96.81,32.79"))).toBe(true);
+  status = "arrived";
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Current ride tracking" })).toContainText("Your driver has arrived");
+  await expect(page.getByRole("region", { name: "Current ride tracking" })).not.toContainText("ETA:");
+});
+
 test("a current ride blocks immediate booking while future timing stays available", async ({ page }) => {
   await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: {
     tenant, profile, serviceAreas: [{ serviceAreaId: "preview-area", name: "City", description: null }],

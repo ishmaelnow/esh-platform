@@ -40,6 +40,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      rider_pickup_locations: {
+        Row: { booking_id: string; tenant_id: string; driver_profile_id: string; latitude: number | null; longitude: number | null; accuracy_meters: number | null; recorded_at: string | null; consented_at: string }
+        Insert: { booking_id: string; tenant_id: string; driver_profile_id: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; recorded_at?: string | null; consented_at?: string }
+        Update: { latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; recorded_at?: string | null }
+        Relationships: []
+      }
       native_push_registrations: {
         Row: NativePushRegistration
         Insert: Pick<NativePushRegistration, "tenant_id" | "person_id" | "auth_user_id" | "auth_session_id" | "installation_id" | "product" | "platform" | "device_token"> & Partial<NativePushRegistration>
@@ -2574,6 +2580,10 @@ export type Database = {
       }
     }
     Functions: {
+      my_rider_pickup_sharing: { Args: { target_booking_id: string }; Returns: boolean }
+      set_my_rider_pickup_sharing: { Args: { target_booking_id: string; enabled_value: boolean }; Returns: boolean }
+      update_my_rider_pickup_location: { Args: { target_booking_id: string; latitude_value: number; longitude_value: number; accuracy_meters_value: number; recorded_at_value: string }; Returns: undefined }
+      my_driver_rider_pickup_location: { Args: { target_booking_id: string }; Returns: Json }
       can_operate_community: { Args: { target_tenant_id: string }; Returns: boolean }
       set_my_native_push: { Args: { product_value: string; installation_value: string; platform_value: string; enabled_value: boolean; token_value?: string | null; tenant_slug_value?: string | null; owner_auth_user_value?: string | null }; Returns: boolean }
       my_native_push_enabled: { Args: { product_value: string; installation_value: string; tenant_slug_value?: string | null }; Returns: boolean }

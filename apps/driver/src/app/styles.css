@@ -603,3 +603,5 @@ h3 {
     margin-inline: -4px;
   }
 }
+.driver-rider-location { display: grid; gap: 8px; padding: 14px; border: 1px solid #d5dfec; border-radius: 14px; color: #153258; background: #f5f8fc; }
+.driver-rider-location button { min-height: 44px; }

@@ -19,7 +19,7 @@ import { applicationDocumentRank } from "../lib/application";
 import { useDriverMapLocation } from "./useDriverMapLocation";
 import { driverAndroidStorage } from "../lib/android-session-storage";
 import { driverHomeTotals } from "../lib/home-totals";
-import { LiveTripMap } from "@esh-platform/maps/client";
+import { DriverRiderLocation } from "./DriverRiderLocation";
 import { openDriverNavigation } from "../lib/embedded-navigation";
 import {
   availabilityBlockerDetails,
@@ -1648,11 +1648,11 @@ export default function DriverHome() {
                     <span>Destination: {trip.destinationAddress}</span>
                     {trip.fareCurrencyCode && trip.fareAmountMinor != null ? <strong>Rider trip fare (not Driver earnings): {new Intl.NumberFormat(undefined, { style: "currency", currency: trip.fareCurrencyCode }).format(trip.fareAmountMinor / 100)}</strong> : null}
                     {trip.notes ? <span>Notes: {trip.notes}</span> : null}
-                    {mapboxToken && trip.pickupLatitude != null && trip.pickupLongitude != null && trip.destinationLatitude != null && trip.destinationLongitude != null ? (
-                      <LiveTripMap
+                    {supabase && session ? (
+                      <DriverRiderLocation key={`${session.user.id}:${trip.bookingId}`} client={supabase} bookingId={trip.bookingId} status={trip.status}
                         accessToken={mapboxToken}
-                        pickup={{ latitude: trip.pickupLatitude, longitude: trip.pickupLongitude, label: `Pickup: ${trip.pickupAddress}` }}
-                        destination={{ latitude: trip.destinationLatitude, longitude: trip.destinationLongitude, label: `Destination: ${trip.destinationAddress}` }}
+                        pickup={trip.pickupLatitude != null && trip.pickupLongitude != null ? { latitude: trip.pickupLatitude, longitude: trip.pickupLongitude, label: `Pickup: ${trip.pickupAddress}` } : null}
+                        destination={trip.destinationLatitude != null && trip.destinationLongitude != null ? { latitude: trip.destinationLatitude, longitude: trip.destinationLongitude, label: `Destination: ${trip.destinationAddress}` } : null}
                         driver={locationSharing?.latitude != null && locationSharing.longitude != null ? { latitude: locationSharing.latitude, longitude: locationSharing.longitude, label: "Your live location" } : null}
                       />
                     ) : null}

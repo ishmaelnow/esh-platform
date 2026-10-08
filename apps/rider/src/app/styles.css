@@ -736,4 +736,12 @@ textarea:focus {
 .payment-return-page .card { width: 100%; max-width: 440px; display: grid; gap: 20px; }
 .payment-return-page .primary { background: #153258; border-color: #153258; }
 .payment-return-page a { min-height: 48px; text-align: center; }
+.rider-trip-tracking { color: #153258; padding: 14px 16px; border-radius: 16px; background: #fff; box-shadow: 0 4px 20px #15325818; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.rider-trip-tracking p { margin: 4px 0 0; font-size: .85rem; overflow-wrap: anywhere; }
+.rider-trip-tracking > div { min-width: 0; }
+.rider-trip-tracking button { min-height: 44px; flex-shrink: 0; background: #153258; }
+.map-shell > .tracking-home { position: fixed; top: max(128px, calc(env(safe-area-inset-top) + 104px)); left: 16px; right: 16px; max-width: 600px; margin-inline: auto; z-index: 4; }
 @media (max-width: 480px) { .saved-place-row { align-items: flex-start; flex-direction: column; } }
+.rider-pickup-sharing { display: grid; gap: 10px; padding: 14px 0; color: #153258; }
+.rider-pickup-sharing p { margin: 0; font-size: .9rem; }
+.rider-pickup-sharing button { min-height: 44px; color: #153258; }

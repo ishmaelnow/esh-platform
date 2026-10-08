@@ -36,6 +36,12 @@ Driver privacy remains enforced at the data boundary. Riders receive current loc
 active accepted trip. Stop-sharing, offline transition, and trip completion clear exposure. Admin
 and Rider maps also refuse to render a Driver marker when sharing is disabled.
 
+Rider tracking also ages cached locations locally and excludes stale Driver coordinates from ETA
+and trip-map routing. Its Home current-ride card provides pickup ETA before arrival, arrival status,
+and destination ETA after trip start. Shared maps accept an optional trip-started mode and suppress
+Rider pickup ETA after arrival; existing Admin/Driver defaults remain unchanged. Obsolete map route
+requests are cancelled and summaries reset. See `rider-live-trip-tracking.md`.
+
 `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is intentionally browser-visible. Use a Mapbox public token with
 only required scopes and URL restrictions for approved origins. Permanent geocoding must be enabled
 because resolved coordinates are stored. Never place a Mapbox secret token in a public variable.
