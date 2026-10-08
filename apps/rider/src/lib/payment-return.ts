@@ -28,6 +28,7 @@ export function checkoutReturnUrls(origin: string, tenant: string, quote: string
   const success = new URL(native ? "/payments/return" : "/", origin);
   success.searchParams.set("tenant", tenant); success.searchParams.set("payment", "success"); success.searchParams.set("quote", quote);
   if (occurrence) success.searchParams.set("occurrence", occurrence);
+  if (native) success.searchParams.set("returnTo", "app");
   const cancelled = new URL(success);
   cancelled.searchParams.set("payment", "cancelled");
   return { successUrl: success.toString(), cancelUrl: cancelled.toString() };

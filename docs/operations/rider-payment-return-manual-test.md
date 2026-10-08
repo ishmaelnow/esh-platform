@@ -1,5 +1,12 @@
 # Rider payment-return acceptance
 
+Owner checkpoint, 2026-10-07: checkout X returned to the installed app, and a second current ride
+was blocked while a valid ride remained pending. Active-ride guard release is 0ec12c2.
+Owner subsequently completed payment, selected Return to ESH app from the browser/app choices,
+and confirmed successful app handoff. Owner then confirmed the paid trip appears only once after
+the requested reopen check. Successful-payment return and single-booking reopen recovery passed. Closing the
+sheet with X alone does not verify the dedicated cancelled-return link or server cancellation state.
+
 ## Release
 
 Owner commits/pushes the scoped hosted Rider changes and verifies Rider Vercel Ready at that commit.
@@ -25,6 +32,12 @@ URLs, magic links, tokens, card details or private financial identifiers.
    refuse any unavailable/unowned quote. Do not publish the actual account or return URL in logs.
 
 ## Controlled payment acceptance
+
+New app-started checkout sessions now attempt app return automatically on both success and
+cancellation. Browser-started sessions still return to browser home. If automatic handoff is
+blocked, use the retained Return to ESH Rider link. Test a new session after deployment; old
+sessions retain their original return URLs. Confirm success and cancellation on iOS/Android;
+do not repeat a successful charge merely to test the new default.
 
 Perform only with owner-approved sandbox/test payment settings or an otherwise authorized real trip.
 Do not switch shared production Stripe settings merely to run this test.

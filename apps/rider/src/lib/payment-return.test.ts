@@ -15,6 +15,8 @@ describe("Rider payment return boundary", () => {
   it("gives native ordinary and recurring payments a dedicated HTTPS handoff", () => {
     const result = checkoutReturnUrls(origin, "provider", quote, occurrence, true);
     expect(new URL(result.successUrl).pathname).toBe("/payments/return");
+    expect(new URL(result.successUrl).searchParams.get("returnTo")).toBe("app");
+    expect(new URL(result.cancelUrl).searchParams.get("returnTo")).toBe("app");
     expect(new URL(result.successUrl).searchParams.get("occurrence")).toBe(occurrence);
     expect(new URL(result.cancelUrl).searchParams.get("quote")).toBe(quote);
   });

@@ -6,6 +6,10 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider automatic payment app-return default is implemented locally for new app-originated
+  checkouts, retaining explicit links as fallback and browser checkout on browser home.
+  Hosted release and physical-device automatic handoff acceptance pending.
+
 - Rider one-current-ride guard implemented locally; future scheduled/recurring reservations
   remain allowed. Atomic database enforcement covers booking entry points across provider profiles;
   busy scheduled activations wait without blocking other Riders. Owner applied migration

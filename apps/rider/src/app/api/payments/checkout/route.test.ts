@@ -84,14 +84,14 @@ describe("checkout returns and owned status", () => {
   it("uses the dedicated native handoff without treating a URL return as paid", async () => {
     expect((await POST(request("POST", { nativeReturn: true }))).status).toBe(200);
     expect(mocks.checkout).toHaveBeenCalledWith(expect.objectContaining({
-      success_url: `https://rider.test/payments/return?tenant=provider&payment=success&quote=${quoteId}`,
-      cancel_url: `https://rider.test/payments/return?tenant=provider&payment=cancelled&quote=${quoteId}`,
+      success_url: `https://rider.test/payments/return?tenant=provider&payment=success&quote=${quoteId}&returnTo=app`,
+      cancel_url: `https://rider.test/payments/return?tenant=provider&payment=cancelled&quote=${quoteId}&returnTo=app`,
     }), expect.any(Object));
   });
   it("preserves recurring occurrence and existing idempotency through native checkout", async () => {
     expect((await POST(request("POST", { nativeReturn: true, occurrenceId }))).status).toBe(200);
     expect(mocks.checkout).toHaveBeenCalledWith(expect.objectContaining({
-      success_url: `https://rider.test/payments/return?tenant=provider&payment=success&quote=${quoteId}&occurrence=${occurrenceId}`,
+      success_url: `https://rider.test/payments/return?tenant=provider&payment=success&quote=${quoteId}&occurrence=${occurrenceId}&returnTo=app`,
     }), { idempotencyKey: `rider_quote_${quoteId}` });
   });
   it("does not change wallet-only booking or open Stripe", async () => {

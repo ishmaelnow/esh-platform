@@ -7,8 +7,14 @@ export default function PaymentReturnPage() {
   const [value, setValue] = useState<RiderPaymentReturn | null>(null);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    setValue(readRiderPaymentReturn(window.location.href, window.location.origin));
+    const result = readRiderPaymentReturn(window.location.href, window.location.origin);
+    setValue(result);
     setLoaded(true);
+    // Only app-originated checkout URLs opt into an automatic attempt. Keep the
+    // manual links available when the browser requires a user gesture to open ESH.
+    if (result && new URL(window.location.href).searchParams.get("returnTo") === "app") {
+      window.location.assign(`com.esh.rider://auth/callback${paymentReturnPath(result).slice(1)}`);
+    }
   }, []);
   return <main className="payment-return-page">
     <section className="card" aria-label="Return to Rider">

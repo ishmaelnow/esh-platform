@@ -112,6 +112,19 @@ test("Android recovers native session after WebView clearing, refreshes expired 
   expect(await page.evaluate(() => sessionStorage.getItem("native-vault"))).toBeNull();
 });
 
+test("app checkout automatically attempts the fixed Rider scheme and retains fallback links", async ({ page }) => {
+  const client = await page.context().newCDPSession(page);
+  await client.send("Page.enable");
+  const navigations: string[] = [];
+  client.on("Page.frameRequestedNavigation", (event: { url: string }) => navigations.push(event.url));
+  const query = "tenant=rider-preview&payment=success&quote=11111111-1111-4111-8111-111111111111";
+  await page.goto(`/payments/return?${query}&returnTo=app`);
+  await expect.poll(() => navigations.filter((url) => url === `com.esh.rider://auth/callback?${query}`).length).toBe(1);
+  await expect(page.getByRole("link", { name: "Continue in browser" })).toHaveAttribute("href", `/?${query}`);
+  await expect(page.getByRole("link", { name: "Return to ESH Rider", exact: true })).toBeVisible();
+  await client.detach();
+});
+
 test("native payment handoff page offers the correct Rider link without claiming payment", async ({ page }) => {
   const quote = "11111111-1111-4111-8111-111111111111";
   await page.goto(`/payments/return?tenant=rider-preview&payment=success&quote=${quote}`);

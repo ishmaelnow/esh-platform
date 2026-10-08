@@ -4,20 +4,36 @@ Last updated: 2026-10-07
 
 ## Current objective and checkpoint
 
+Owner requests automatic app return after app-originated checkout, with browser checkout remaining
+in the browser. Local change adds returnTo=app only to new native checkout success/cancel URLs,
+then attempts the validated fixed Rider scheme once on the return page. Existing manual app/browser
+links remain fallback. No migration or native rebuild; existing Stripe sessions retain old URLs.
+86 unit/API tests, production build, 20 existing mobile browser tests and a focused automatic
+scheme-attempt/fallback browser test pass. Owner device automatic handoff still needs acceptance
+after deployment; no Git mutations or remote deployment by Codex.
+
 Owner clarified the limit applies only to a current ride, including requested/offered/accepted/
 arrived/in_progress; future scheduled and recurring reservations remain available. Local migration
 20261007000100_rider_active_booking_guard.sql adds an atomic person-wide booking slot, private RLS,
 an owned boolean check, and blocked scheduled activation isolation. Rider UI and checkout preflight
 preserve future scheduling. Owner's WSL dry-run listed only this migration, then db push successfully
-applied it on 2026-10-07. Application code remains local, not committed/pushed/deployed yet.
+applied it on 2026-10-07. Owner pushed application code as 0ec12c2; Git main matches origin/main.
+Owner reports clicking checkout X returned to the installed app, and another ride was blocked
+while a valid ride was pending. These two manual checks passed. This does not establish a successful
+payment return or the dedicated cancelled-return link path; Vercel Ready was not separately supplied.
+Subsequently, owner completed payment, saw browser/ESH return choices, selected Return to ESH app,
+and confirmed it returned successfully. Successful-payment app handoff is now owner-confirmed.
+Owner also confirmed the paid trip appears only once after the requested reopen check.
+Successful-payment app handoff and single-booking reopen recovery passed on the owner's device.
+Dedicated cancelled-return link acceptance remains separate from the already-passed checkout X dismissal.
 86 Rider unit/API tests, shared
 Supabase types and Rider production build pass. Minimal PGlite smoke checks pass; full Supabase
 and concurrent-session certification remain pending. All 20 mobile browser tests pass at 414 × 896,
 including current-ride blocking with future timing available. Legacy duplicates are preserved; old/open
 checkouts can still produce paid unbooked quotes, so recover the same quote without charging again.
 See architecture/rider-active-booking-guard.md and operations/rider-active-booking-manual-test.md.
-Next: owner stages explicit feature files, commits and pushes, then confirms Rider Vercel Ready
-and performs active-ride acceptance. Actual iPhone payment-return/Safari dismissal still needs owner acceptance.
+Next: future scheduling while a current ride is active, then complete/cancel that ride and verify
+a new immediate request is available. Concurrent-session acceptance remains pending.
 No financial production action, payment, refund or new booking was created by Codex. Preserve all
 existing notification checkpoint documentation and generated tsconfig edits.
 

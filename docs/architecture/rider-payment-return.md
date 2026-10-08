@@ -7,9 +7,10 @@ redirect will reach the app's deep-link handler. The handler already called Capa
 adding another unconditional close call would not repair a missing handoff.
 
 Native ordinary and recurring checkout now return to `/payments/return` on the existing Rider
-origin. This neutral page offers an explicit Return to ESH Rider link using the existing
-`com.esh.rider://auth/callback` scheme, plus Continue in browser. No automatic custom-scheme
-redirect, new domain, authentication-token transfer or payment claim is introduced.
+origin. New app-originated checkout URLs include `returnTo=app`; after validating the payment-return
+parameters, this page attempts the existing `com.esh.rider://auth/callback` scheme automatically.
+The Return to ESH Rider link and Continue in browser remain available if handoff is blocked.
+No new domain, authentication-token transfer or payment claim is introduced.
 The existing native manifests and iOS scene handler already accept this auth-host callback.
 This hosted change needs no new permission, migration or native build.
 
