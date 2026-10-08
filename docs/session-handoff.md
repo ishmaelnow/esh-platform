@@ -4,6 +4,23 @@ Last updated: 2026-10-07
 
 ## Current objective and checkpoint
 
+Owner clarified the limit applies only to a current ride, including requested/offered/accepted/
+arrived/in_progress; future scheduled and recurring reservations remain available. Local migration
+20261007000100_rider_active_booking_guard.sql adds an atomic person-wide booking slot, private RLS,
+an owned boolean check, and blocked scheduled activation isolation. Rider UI and checkout preflight
+preserve future scheduling. Owner's WSL dry-run listed only this migration, then db push successfully
+applied it on 2026-10-07. Application code remains local, not committed/pushed/deployed yet.
+86 Rider unit/API tests, shared
+Supabase types and Rider production build pass. Minimal PGlite smoke checks pass; full Supabase
+and concurrent-session certification remain pending. All 20 mobile browser tests pass at 414 × 896,
+including current-ride blocking with future timing available. Legacy duplicates are preserved; old/open
+checkouts can still produce paid unbooked quotes, so recover the same quote without charging again.
+See architecture/rider-active-booking-guard.md and operations/rider-active-booking-manual-test.md.
+Next: owner stages explicit feature files, commits and pushes, then confirms Rider Vercel Ready
+and performs active-ride acceptance. Actual iPhone payment-return/Safari dismissal still needs owner acceptance.
+No financial production action, payment, refund or new booking was created by Codex. Preserve all
+existing notification checkpoint documentation and generated tsconfig edits.
+
 Owner approved Android Driver pickup/destination navigation through installed maps, matching iOS.
 The hosted change bypasses EmbeddedNavigation and its missing APK Mapbox token. Android uses the
 existing geo resolver; iOS retains Apple Maps; browsers retain HTTPS directions. Real trip coordinates,
@@ -19,11 +36,21 @@ fresh production build/type/lint verification passed with existing warnings. Pre
 23 passed directly, one existing Android sign-out test
 passed on retry after its page.evaluate raced navigation; no failing tests remain. Physical map
 launch is owner-confirmed. Current work is the Admin-only once-per-minute native retry schedule.
-Schedule/configuration validation is local; owner push/deployment and HTTP 200 cron-log verification
-remain next. No new migration, app rebuild or production request by Codex. Read
+Owner pushed/deployed the schedule as 3e8ff47 and confirmed Ready. Admin Cron Jobs lists both the
+daily email job and native job every minute. Owner provided scheduled GET 200 logs at Oct 07
+05:54 through 05:58 against the new Pro-team deployment host. This confirms authenticated endpoint
+execution; logs alone do not prove a transient provider failure was retried. No new migration,
+app rebuild or production request by Codex.
+Owner now confirms all final notification checks passed, including tapping alerts to open the
+correct app/trip screen and stopping future account alerts after sign-out. Notification release
+checkpoint is closed with device delivery and scheduled execution verified. No controlled provider
+outage was performed, so observed HTTP 200 does not prove fault-injected recovery. Test-booking
+cleanup/Driver Offline was requested; no individual cleanup state was inspected by Codex.
+Next authorized pending acceptance is Rider iPhone payment return. Do not create a new payment,
+refund or production booking merely to recover context; owner controls any real-money test.
 JSON configuration checks and all 11 focused native worker/provider tests pass; diff whitespace
 check passes. No application runtime code changed, so no new full build/browser run was needed.
-docs/architecture/driver-map-home.md and docs/operations/driver-map-home-manual-test.md.
+Read docs/architecture/driver-map-home.md and docs/operations/driver-map-home-manual-test.md.
 
 ## Native release and notification checkpoint
 
@@ -51,7 +78,8 @@ performed; Docker unavailable. Owner confirms device receipt as above. No produc
 or alert was created by Codex. Payment-return iPhone physical acceptance is still pending.
 Read docs/architecture/rider-payment-return.md and docs/operations/rider-payment-return-manual-test.md.
 
-Independent native retry scheduling remains open. Owner verified original ESHA team is Hobby, then
+Independent native retry scheduling is deployed and scheduled HTTP 200 execution owner-verified.
+Owner verified original ESHA team is Hobby, then
 transferred only transport-platform-admin to an existing Pro team instead of purchasing another
 subscription. Destination was the blue-avatar team, renamed ESH Platform Admin (not ESH Platform),
 Team ID team_vhxr74AxOIzBUmhwy0MOS660. Owner confirms transfer complete; review listed five aliases,
@@ -59,9 +87,9 @@ Team ID team_vhxr74AxOIzBUmhwy0MOS660. Owner confirms transfer complete; review 
 with fairfareride.com is preserved; no duplicate projects/teams were deleted and no slug change
 was authorized. Owner confirms Transportation interface opens cleanly, transferred Admin Ready
 at 7e2ad74 with admin.eshapp.com/apply.eshapp.com, main source, and destination Pro. Remote secret
-presence and integrations were not inspected by Codex. apps/admin/vercel.json now locally adds
-/api/cron/native-notifications every minute; existing daily email cron remains intact. Validate
-Production CRON_SECRET presence and successful scheduled HTTP 200 after owner deployment. Do not
+presence and integrations were not inspected by Codex. apps/admin/vercel.json now deploys
+/api/cron/native-notifications every minute; existing daily email cron remains intact. Repeated
+scheduled HTTP 200 is owner-verified, demonstrating the protected route accepts cron requests. Do not
 print it or run manual production delivery just to verify configuration. Integrations may need
 reconnection if later checks reveal a missing binding.
 Email trip preferences currently gate outbox events for native push,

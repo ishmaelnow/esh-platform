@@ -1,5 +1,9 @@
 # Recurring Rider Bookings V1
 
+Current-ride guard: future reservations remain available while a Rider is busy. Due occurrences
+wait in scheduled status until no requested, offered, accepted, arrived, or in-progress ride remains.
+Activation skips busy Riders without blocking other Riders. See `rider-active-booking-guard.md`.
+
 Recurring schedules are Rider-owned templates containing one verified route, selected ISO weekdays,
 a tenant-local pickup time, start/end dates, and two to 50 immutable occurrence times. They do not
 pre-create dispatch bookings, reserve Drivers, lock future prices, or collect an entire series fare.

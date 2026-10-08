@@ -46,6 +46,12 @@ export type Database = {
         Update: Partial<NativePushRegistration>
         Relationships: []
       }
+      rider_active_booking_slots: {
+        Row: { person_id: string; tenant_id: string; booking_id: string }
+        Insert: { person_id: string; tenant_id: string; booking_id: string }
+        Update: { person_id?: string; tenant_id?: string; booking_id?: string }
+        Relationships: []
+      }
       native_push_attempts: {
         Row: NativePushAttempt
         Insert: Pick<NativePushAttempt, "tenant_id" | "notification_id" | "registration_id" | "expires_at"> & Partial<NativePushAttempt>
@@ -2571,6 +2577,8 @@ export type Database = {
       can_operate_community: { Args: { target_tenant_id: string }; Returns: boolean }
       set_my_native_push: { Args: { product_value: string; installation_value: string; platform_value: string; enabled_value: boolean; token_value?: string | null; tenant_slug_value?: string | null; owner_auth_user_value?: string | null }; Returns: boolean }
       my_native_push_enabled: { Args: { product_value: string; installation_value: string; tenant_slug_value?: string | null }; Returns: boolean }
+      my_rider_has_active_booking: { Args: Record<PropertyKey, never>; Returns: boolean }
+      activate_unblocked_rider_bookings_internal: { Args: { tenant_value?: string | null }; Returns: number }
       claim_native_push_attempts: { Args: { tenant_value?: string | null; notification_value?: string | null; limit_value?: number; platforms_value?: string[] }; Returns: Json }
       finish_native_push_attempt: { Args: { attempt_value: string; claim_value: string; status_value: string; response_value?: number | null; failure_value?: string | null; expire_registration?: boolean }; Returns: boolean }
       can_read_community_content: { Args: { target_tenant_id: string; target_content_id: string }; Returns: boolean }

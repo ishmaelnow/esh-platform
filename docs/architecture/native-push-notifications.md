@@ -1,6 +1,9 @@
 # Native Rider and Driver notifications
 
-Status: implemented locally; production release and physical acceptance pending.
+Status: owner-deployed; device receipt verified on iPhone and Android. Independent scheduling is
+deployed as 3e8ff47 with scheduled HTTP 200 owner-confirmed. Controlled
+provider-failure recovery remains a separate diagnostic; owner confirms tap routing and sign-out
+checks passed and accepts the notification release.
 
 Admin is the only sender. Firebase is a delivery provider, not an authentication or database
 replacement. Android uses FCM HTTP v1 for project esh-platform-609d3; iOS uses production APNs with
@@ -58,6 +61,6 @@ production sender.
 
 Timely retries use the Admin-only /api/cron/native-notifications job once per minute. Owner moved
 transport-platform-admin to the existing ESH Platform Admin Pro team and confirmed the plan.
-The schedule is prepared locally in apps/admin/vercel.json; deployment and successful protected
-invocation remain pending. The daily email cron is preserved. Other products remain in ESHA and
+The schedule is deployed as 3e8ff47; owner confirms repeated scheduled GET 200 responses.
+The daily email cron is preserved. Other products remain in ESHA and
 do not inherit this schedule. See the setup and manual-test operations documents.

@@ -19,6 +19,14 @@ export async function POST(request: Request) {
     if (quoteResult.error || !quoteResult.data) throw new Error("Price quote is unavailable.");
     const quote = quoteResult.data;
     if (quote.status !== "quoted" || Date.parse(quote.expires_at) <= Date.now()) throw new Error("Price quote has expired.");
+    if (scheduledPickupAt !== undefined && (typeof scheduledPickupAt !== "string"
+      || !Number.isFinite(Date.parse(scheduledPickupAt)) || Date.parse(scheduledPickupAt) <= Date.now()))
+      throw new Error("Choose a valid future pickup time.");
+    if (!occurrenceId && !scheduledPickupAt) {
+      const active = await authenticated.rpc("my_rider_has_active_booking");
+      if (active.error || typeof active.data !== "boolean") throw new Error("Your current ride could not be checked. Try again before paying.");
+      if (active.data) throw new Error("Finish or cancel your current ride before requesting another.");
+    }
     if (occurrenceId) {
       const occurrence = await authenticated.from("rider_booking_series_occurrences")
         .select("rider_booking_series_occurrence_id,rider_booking_series_id,status,scheduled_pickup_at").eq("rider_booking_series_occurrence_id", occurrenceId).single();

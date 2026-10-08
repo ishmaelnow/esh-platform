@@ -6,6 +6,13 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider one-current-ride guard implemented locally; future scheduled/recurring reservations
+  remain allowed. Atomic database enforcement covers booking entry points across provider profiles;
+  busy scheduled activations wait without blocking other Riders. Owner applied migration
+  20261007000100 on 2026-10-07; application commit/push/deployment and production acceptance pending.
+  See `architecture/rider-active-booking-guard.md` and
+  `operations/rider-active-booking-manual-test.md` for financial and verification limits.
+
 - Driver pickup/destination navigation is corrected locally: Android uses installed maps rather
   than the embedded SDK missing its APK token; iOS retains Apple Maps. Hosted deployment suffices,
   with no migration or new mobile build. Physical-device acceptance remains pending.
@@ -26,8 +33,9 @@ remain independent of transportation-specific workflows.
   192 unit/API tests and
   43 mobile browser regressions pass; an embedded PostgreSQL minimal-schema check passes.
   Admin is owner-transferred to the existing ESH Platform Admin Pro team. A once-per-minute retry
-  cron is prepared locally; owner deployment and successful authenticated invocation are pending.
-  Full Supabase verification and remaining isolation/tap scenarios remain acceptance checks.
+  cron is owner-deployed as 3e8ff47 with repeated scheduled HTTP 200 invocation confirmed.
+  Owner confirms final alert tap routing and sign-out checks passed; notification release accepted.
+  Full Supabase verification and fault-injected provider recovery remain separate diagnostics.
   See `architecture/native-push-notifications.md`, `operations/native-push-setup.md`, and
   `operations/native-push-notifications-manual-test.md`.
 

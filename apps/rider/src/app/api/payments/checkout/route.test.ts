@@ -28,7 +28,7 @@ beforeEach(() => {
     return query;
   });
   mocks.rpc.mockImplementation((name: string) => Promise.resolve({ error: null, data: name === "my_rider_portal"
-    ? { tenant: { tenantId }, profile: { riderProfileId: riderId } } : name === "my_rider_scheduling"
+    ? { tenant: { tenantId }, profile: { riderProfileId: riderId } } : name === "my_rider_has_active_booking" ? false : name === "my_rider_scheduling"
       ? { settings: { minimumNoticeMinutes: 60 } } : bookingId }));
   mocks.authenticated.mockReturnValue({ from: mocks.from, rpc: mocks.rpc });
   mocks.serviceRpc.mockImplementation((name: string) => Promise.resolve({ error: null, data: name === "prepare_rider_wallet_checkout_internal"
@@ -37,6 +37,27 @@ beforeEach(() => {
 });
 
 describe("checkout returns and owned status", () => {
+  it("blocks an active ride before reserving wallet credit or creating Stripe checkout", async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+    const response = await POST(request("POST"));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ message: "Finish or cancel your current ride before requesting another." });
+    expect(mocks.serviceRpc).not.toHaveBeenCalled(); expect(mocks.checkout).not.toHaveBeenCalled();
+  });
+  it("fails closed when current-ride verification is unavailable", async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: "fixture offline" } });
+    expect((await POST(request("POST"))).status).toBe(400);
+    expect(mocks.serviceRpc).not.toHaveBeenCalled(); expect(mocks.checkout).not.toHaveBeenCalled();
+  });
+  it("keeps future scheduled checkout available while a ride is active", async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+    expect((await POST(request("POST", { scheduledPickupAt: new Date(Date.now()+7200000).toISOString() }))).status).toBe(200);
+    expect(mocks.checkout).toHaveBeenCalledTimes(1);
+  });
+  it("rejects bogus scheduled times before they can bypass the active-ride check", async () => {
+    expect((await POST(request("POST", { scheduledPickupAt: "bogus" }))).status).toBe(400);
+    expect(mocks.checkout).not.toHaveBeenCalled();
+  });
   it("requires authentication before owned reads or checkout", async () => {
     expect((await GET(request("GET", {}, "", false))).status).toBe(400);
     expect((await POST(request("POST", {}, "", false))).status).toBe(400);

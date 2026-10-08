@@ -72,6 +72,7 @@ async function main() {
           my_rider_portal: { tenant, profile, serviceAreas: [{ serviceAreaId: "preview-area", name: "Preview service area", description: null }], bookings: [{ bookingId: "preview-past-trip", status: "completed", serviceAreaId: "preview-area", serviceAreaName: "Preview service area", pickupAddress: "Sample pickup", destinationAddress: "Islamic Association of North Texas", createdAt: "2026-09-01T12:00:00Z", scheduledPickupAt: null, dispatchReadyAt: null, bookingNotes: null, driver: null, vehicle: null }] },
           my_rider_notification_preferences: { tripUpdatesEnabled: true, paymentUpdatesEnabled: true },
           my_rider_scheduling: { timeZone: "America/Chicago", settings: { minimumNoticeMinutes: 60 }, bookings: [] },
+          my_rider_has_active_booking: false,
           my_rider_wallet: { currencyCode: "USD", fractionDigits: 2, balanceMinor: 0, availableMinor: 0, entries: [] },
           my_rider_booking_series: { series: [], occurrences: [], savedPaymentMethod: null },
           my_rider_service_area_context: { latitude: 32.832, longitude: -96.771, radiusKm: 20 },

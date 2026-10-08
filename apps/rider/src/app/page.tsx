@@ -916,6 +916,11 @@ export default function RiderHome() {
     try {
       if (!pickupSelection || pickupSelection.label !== pickupQuery)
         throw new Error("Choose the pickup address from the suggestions.");
+      if (bookingTiming === "now" && !recurringOccurrenceId) {
+        const active = await supabase.rpc("my_rider_has_active_booking");
+        if (active.error || typeof active.data !== "boolean") throw new Error("Your current ride could not be checked. Try again.");
+        if (active.data) throw new Error("Finish or cancel your current ride before requesting another.");
+      }
       if (!destinationSelection || destinationSelection.label !== destinationQuery)
         throw new Error("Choose the destination from the suggestions.");
       if (validCoordinates(pickupSelection.latitude, pickupSelection.longitude) && validCoordinates(destinationSelection.latitude, destinationSelection.longitude)) {
@@ -1484,7 +1489,7 @@ export default function RiderHome() {
           }} focusDestination={homeDestinationEntry} onHeightChange={setBookingHeight}>
           <section className="card booking-card">
             <h2>Where are you going?</h2>
-            {blockingBookings.length > 0 ? (
+            {blockingBookings.length > 0 && bookingTiming === "now" ? (
               <div className="card preference-card" role="status">
                 <div>
                   <strong>Booking temporarily unavailable</strong>
@@ -1495,7 +1500,7 @@ export default function RiderHome() {
             ) : null}
             <form className="form-grid" onSubmit={(event) => void createBooking(event)}>
               <div className="booking-scroll">
-              <fieldset className="booking-fields" disabled={blockingBookings.length > 0}>
+              <fieldset className="booking-fields">
               <details className="wide progressive-panel booking-time" open={bookingTiming !== "now" ? true : undefined}>
                 <summary><span className="booking-row-icon" aria-hidden="true">◷</span>{bookingTiming === "now" ? "Now" : bookingTiming === "scheduled" ? "Scheduled ride" : "Repeat rides"}<span>Change time</span></summary>
               <label className="wide">
@@ -1669,7 +1674,7 @@ export default function RiderHome() {
               </div>
               <button
                 className="button primary booking-action"
-                disabled={busy || portal.serviceAreas.length === 0 || blockingBookings.length > 0}
+                disabled={busy || portal.serviceAreas.length === 0 || (bookingTiming === "now" && blockingBookings.length > 0)}
               >
                 {busy ? "Working…" : priceQuote ? bookingTiming === "recurring" && !recurringOccurrenceId ? "Create recurring schedule" : paymentConfirmed ? "Request this trip" : "Apply wallet and continue" : bookingTiming === "recurring" ? "Review recurring route" : "Review fare"}
               </button>

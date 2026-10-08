@@ -20,6 +20,7 @@ test.beforeEach(async ({ page }) => {
     const path = new URL(route.request().url()).pathname;
     const name = path.split("/").pop();
     const responses: Record<string, unknown> = {
+      my_rider_has_active_booking: false,
       list_rider_booking_tenants: [{ tenant_slug: tenant.tenantSlug, display_name: tenant.displayName }],
       my_rider_portal: { tenant, profile, serviceAreas: [{ serviceAreaId: "preview-area", name: "City", description: null }], bookings: [{ bookingId: "past", serviceAreaId: "preview-area", pickupAddress: "Previous pickup", destinationAddress: "Previous destination", status: "completed", createdAt: "2026-09-01T12:00:00Z", driver: null, vehicle: null, pickupLatitude: 32.78, pickupLongitude: -96.8, destinationLatitude: 32.79, destinationLongitude: -96.81 }] },
       my_rider_notification_preferences: { tripUpdatesEnabled: true, paymentUpdatesEnabled: true },
@@ -33,6 +34,22 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("/?tenant=rider-preview");
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
+});
+
+test("a current ride blocks immediate booking while future timing stays available", async ({ page }) => {
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: {
+    tenant, profile, serviceAreas: [{ serviceAreaId: "preview-area", name: "City", description: null }],
+    bookings: [{ bookingId: "active-preview", status: "accepted", pickupAddress: "Test pickup",
+      destinationAddress: "Test destination", createdAt: "2026-10-07T12:00:00Z", driver: null, vehicle: null }],
+  } }));
+  await page.reload();
+  await page.getByRole("button", { name: "Request ride", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Review fare", exact: true })).toBeDisabled();
+  await expect(page.getByText("Finish or cancel your current trip before requesting another ride.")).toBeVisible();
+  await page.locator(".booking-time summary").click();
+  await page.locator("select").filter({ has: page.locator('option[value="scheduled"]') }).selectOption("scheduled");
+  await expect(page.getByRole("button", { name: "Review fare", exact: true })).toBeEnabled();
+  await expect(page.getByText("Finish or cancel your current trip before requesting another ride.")).toHaveCount(0);
 });
 
 test("Android recovers native session after WebView clearing, refreshes expired tokens and signs out", async ({ page }) => {

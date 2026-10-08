@@ -1,7 +1,8 @@
 # Native push setup and release
 
 Native integration is owner-deployed as b501da0 and owner-confirmed to receive alerts on iPhone
-and Android. The once-per-minute retry schedule is a local follow-up, not yet deployed. Owner moved
+and Android. The once-per-minute retry schedule is deployed as 3e8ff47 with repeated scheduled
+GET 200 responses owner-confirmed on Oct 07. Owner moved
 transport-platform-admin to ESH Platform Admin and confirmed Pro. Codex has not inspected remote
 credentials or sent production notifications. No secrets belong in Git or chat.
 
