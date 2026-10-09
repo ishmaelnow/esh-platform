@@ -1,5 +1,14 @@
 # Rider payment-return acceptance
 
+2026-10-08 cleanup: progress action text now reads Booking instead of Working. Android return
+attempt/manual app link explicitly target the com.esh.rider package; iOS scheme and browser checkout
+are preserved. Hosted release only, no APK or migration. After release, verify a NEW app-started
+Android checkout return targets installed Rider, while browser-started checkout stays in-browser.
+If Chrome blocks automatic launch, the explicit app link must still work with a tap. Do not claim
+automatic launch from browser mocks or reuse a completed payment to force another charge.
+Owner reports the previous USB device feature checklist passed; this newly changed Android intent
+path still requires its own post-deployment acceptance.
+
 2026-10-08: owner confirms automatic return to the app passed after release 51b1a53.
 This confirms the tested device path; no separate cross-platform acceptance is implied.
 

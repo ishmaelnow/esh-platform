@@ -6,6 +6,11 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider cleanup resumed: Booking progress text and Android payment return targeted to the Rider
+  package, with existing iOS/browser behavior and explicit recovery preserved. Hosted release and
+  new Android intent device acceptance pending; no APK rebuild/migration. Store release remains
+  owner-deferred until local stability; owner reports prior USB feature checklist passed.
+
 - Android Driver App Link signer alignment is local: public association now trusts the same actual
   Codemagic certificate as Rider, verified from both downloaded APKs. Fixes the discovered signer
   mismatch without auth policy, key rotation or APK rebuild. Hosted release/device acceptance pending.

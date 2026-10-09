@@ -4,7 +4,25 @@ Last updated: 2026-10-08
 
 ## Current objective and checkpoint
 
-Current priority: owner reports Driver recurrence persists after pushing 06cea20, with email links
+Current priority: owner authorized finishing the paused Rider cleanup. Booking replaces Working
+on the primary action; Android payment return attempt/manual link target com.esh.rider explicitly
+with an intent URI, while iOS and browser checkout remain unchanged. 94 Rider unit/API tests,
+production build (lint/types included), all 23 mobile browser checks and diff whitespace check pass.
+Tests cover Android package/non-Android scheme attempts exactly once, manual recovery targets,
+no automatic attempt without app-origin opt-in, existing callback/session/booking regressions.
+No migration/APK/auth-policy change. Checks use local fixtures, not real Stripe/device launches.
+Owner reports USB feature checklist passed. Google Play/internal store testing is deferred at
+owner request. Automatic fresh-install link verification without manual settings remains a
+separate release gate unless that exact scenario is confirmed. Do not promise every browser permits
+automatic app launch: Chrome can require a gesture; manual app/browser recovery stays available.
+Next: finish checks, owner pushes hosted Rider cleanup, Ready deployment then new Android return
+acceptance. Preserve four generated configuration edits. No Git mutation/deployment by Codex.
+
+Driver link/session checkpoint: owner pushed signer alignment as d6f5652 after replay correction
+06cea20. Driver domain selection in Android Open supported links restored opening inside Driver;
+owner replied Boom and subsequently reports the manual USB feature checklist passed. Do not reopen
+this as a confirmed vault failure. Exact clean-install automatic verification remains unconfirmed.
+The earlier report was Driver recurrence after pushing 06cea20, with email links
 opening the web instead of Android Driver. Compared Rider/Driver: vault adapters, native auth redirect
 and manifest App Link intent match apart from product identity. Concrete mismatch found in public
 assetlinks: Rider trusts the actual Codemagic signer 8E:0A:3D:FB:...; live Driver trusts only 71:F7:... .
@@ -15,11 +33,8 @@ certificate fingerprint while retaining its existing certificate and separate pa
 runtime, secret, signing key, manifest, native build or database change. This explains link
 verification failure for the inspected APK; actual installed-device link state was not read.
 ADB read-only device discovery failed in sandbox; no device setting was changed.
-Next: owner pushes scoped JSON/test/docs, Driver Vercel Ready, then Android Settings > Apps > ESH
-Driver > Open by default > Open supported links enabled and driver.eshapp.com selected if needed.
-Use a fresh link from installed Driver to populate its native vault; browser session is separate.
-Then reopen/foreground test. No new APK or migration required. Previous replay protection alone did
-not resolve the owner symptom; do not claim it did. Rider cleanup edits remain paused/unvalidated.
+Owner selected the domain as above. Browser and native vault remain separate; no new APK or
+migration required. Replay protection alone did not resolve the owner symptom; do not claim it did.
 
 Owner reports Android Driver asks for email verification again when returning to the app.
 Owner authorized direct investigation without further repeated clarification. Local correction
@@ -32,9 +47,7 @@ pass, including recovery/replay and explicit sign-out. Hosted push/deployment an
 or new native rebuild needed. Next: finish verification, owner deploys Driver correction, fresh
 sign-in once then reopen/foreground/normal refresh and explicit sign-out acceptance.
 Do not reset app data, remove credentials or change auth policy to mask the symptom.
-Paused Rider cleanup has uncommitted Booking progress label and Android package-targeted intent
-return changes. These are not validated or deployed. Test escalation was interrupted; do not
-report tests/build as passed. Preserve these edits and generated configuration files.
+Rider cleanup is now resumed as described at the top. Preserve all existing configuration files.
 Owner confirms sharing/tracking physical test passed after hosted 511d75a deployments Ready and
 Android rebuilds. Rider iOS 1.0.3 (1791478052) and Driver iOS 1.0.5 (1791482356) are available in
 TestFlight; internal groups and Rider notes saved. Exact sharing test device scope was not supplied.

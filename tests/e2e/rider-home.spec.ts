@@ -201,16 +201,22 @@ test("Android recovers native session after WebView clearing, refreshes expired 
   expect(await page.evaluate(() => sessionStorage.getItem("native-vault"))).toBeNull();
 });
 
-test("app checkout automatically attempts the fixed Rider scheme and retains fallback links", async ({ page }) => {
+for (const android of [false, true]) test(`app checkout targets ${android ? "Android Rider package" : "Rider scheme"} and retains fallback links`, async ({ page }) => {
+  if (android) await page.addInitScript(() => Object.defineProperty(navigator, "userAgent", { get: () => "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36" }));
   const client = await page.context().newCDPSession(page);
   await client.send("Page.enable");
   const navigations: string[] = [];
   client.on("Page.frameRequestedNavigation", (event: { url: string }) => navigations.push(event.url));
   const query = "tenant=rider-preview&payment=success&quote=11111111-1111-4111-8111-111111111111";
   await page.goto(`/payments/return?${query}&returnTo=app`);
-  await expect.poll(() => navigations.filter((url) => url === `com.esh.rider://auth/callback?${query}`).length).toBe(1);
+  const target = android ? `intent://auth/callback?${query}#Intent;scheme=com.esh.rider;package=com.esh.rider;end` : `com.esh.rider://auth/callback?${query}`;
+  await expect.poll(() => navigations.filter((url) => url === target).length).toBe(1);
   await expect(page.getByRole("link", { name: "Continue in browser" })).toHaveAttribute("href", `/?${query}`);
-  await expect(page.getByRole("link", { name: "Return to ESH Rider", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Return to ESH Rider", exact: true })).toHaveAttribute("href", target);
+  navigations.length = 0;
+  await page.goto(`/payments/return?${query}`);
+  await expect(page.getByRole("link", { name: "Return to ESH Rider", exact: true })).toHaveAttribute("href", target);
+  expect(navigations.some((url) => /^(intent:|com\.esh\.rider:)/.test(url))).toBe(false);
   await client.detach();
 });
 

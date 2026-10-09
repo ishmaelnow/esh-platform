@@ -9,7 +9,13 @@ adding another unconditional close call would not repair a missing handoff.
 Native ordinary and recurring checkout now return to `/payments/return` on the existing Rider
 origin. New app-originated checkout URLs include `returnTo=app`; after validating the payment-return
 parameters, this page attempts the existing `com.esh.rider://auth/callback` scheme automatically.
+On Android, the attempt and manual app link now use an intent URI with fixed scheme and package
+com.esh.rider, preserving the validated auth/callback query. This targets the installed Rider
+explicitly instead of leaving a custom-scheme handler ambiguous. iOS keeps its original scheme.
 The Return to ESH Rider link and Continue in browser remain available if handoff is blocked.
+Chrome may require a user gesture for external app launch, so this improves targeting without
+guaranteeing silent return under every browser policy. Browser-started checkouts do not opt in.
+See https://developer.chrome.com/docs/android/intents for the package targeting and gesture rules.
 No new domain, authentication-token transfer or payment claim is introduced.
 The existing native manifests and iOS scene handler already accept this auth-host callback.
 This hosted change needs no new permission, migration or native build.

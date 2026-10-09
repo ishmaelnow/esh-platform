@@ -1701,7 +1701,7 @@ export default function RiderHome() {
                 className="button primary booking-action"
                 disabled={busy || portal.serviceAreas.length === 0 || (bookingTiming === "now" && blockingBookings.length > 0)}
               >
-                {busy ? "Working…" : priceQuote ? bookingTiming === "recurring" && !recurringOccurrenceId ? "Create recurring schedule" : paymentConfirmed ? "Request this trip" : "Apply wallet and continue" : bookingTiming === "recurring" ? "Review recurring route" : "Review fare"}
+                {busy ? "Booking…" : priceQuote ? bookingTiming === "recurring" && !recurringOccurrenceId ? "Create recurring schedule" : paymentConfirmed ? "Request this trip" : "Apply wallet and continue" : bookingTiming === "recurring" ? "Review recurring route" : "Review fare"}
               </button>
             </form>
           </section>

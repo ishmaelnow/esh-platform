@@ -24,6 +24,15 @@ export function paymentReturnPath(value: RiderPaymentReturn) {
   return `/?${params}`;
 }
 
+export function paymentAppReturnUrl(value: RiderPaymentReturn, android: boolean) {
+  const callback = `auth/callback${paymentReturnPath(value).slice(1)}`;
+  // Explicit package prevents another Android handler from claiming this callback.
+  // Keep the manual link available: browsers may require a user gesture.
+  return android
+    ? `intent://${callback}#Intent;scheme=com.esh.rider;package=com.esh.rider;end`
+    : `com.esh.rider://${callback}`;
+}
+
 export function checkoutReturnUrls(origin: string, tenant: string, quote: string, occurrence: string | undefined, native: boolean) {
   const success = new URL(native ? "/payments/return" : "/", origin);
   success.searchParams.set("tenant", tenant); success.searchParams.set("payment", "success"); success.searchParams.set("quote", quote);

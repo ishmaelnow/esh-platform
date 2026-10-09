@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { checkoutReturnUrls, paymentReturnPath, readRiderPaymentReturn } from "./payment-return";
+import { checkoutReturnUrls, paymentAppReturnUrl, paymentReturnPath, readRiderPaymentReturn } from "./payment-return";
 const origin = "https://rider.eshapp.com";
 const quote = "11111111-1111-4111-8111-111111111111";
 const occurrence = "22222222-2222-4222-8222-222222222222";
 const query = `?tenant=provider&payment=success&quote=${quote}`;
 
 describe("Rider payment return boundary", () => {
+  it("targets only the Rider Android package while preserving cancellation and occurrence", () => {
+    const value = { tenant: "provider", payment: "cancelled" as const, quote, occurrence };
+    const callback = `auth/callback${paymentReturnPath(value).slice(1)}`;
+    expect(paymentAppReturnUrl(value, true)).toBe(`intent://${callback}#Intent;scheme=com.esh.rider;package=com.esh.rider;end`);
+    expect(paymentAppReturnUrl(value, false)).toBe(`com.esh.rider://${callback}`);
+  });
   it("keeps browser checkout on its original HTTPS home return", () => {
     const result = checkoutReturnUrls(origin, "provider", quote, undefined, false);
     expect(result.successUrl).toBe(`${origin}/${query}`);
