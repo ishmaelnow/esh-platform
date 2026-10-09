@@ -4,6 +4,23 @@ Last updated: 2026-10-08
 
 ## Current objective and checkpoint
 
+Current priority: owner reports Driver recurrence persists after pushing 06cea20, with email links
+opening the web instead of Android Driver. Compared Rider/Driver: vault adapters, native auth redirect
+and manifest App Link intent match apart from product identity. Concrete mismatch found in public
+assetlinks: Rider trusts the actual Codemagic signer 8E:0A:3D:FB:...; live Driver trusts only 71:F7:... .
+Read-only apksigner verification of Downloads/track-driver.apk (com.esh.driver, 1.0.5/code6) and
+rider-track.apk confirms BOTH use 8E:0A:3D:FB:... . Driver JSON now includes this verified public
+certificate fingerprint while retaining its existing certificate and separate package/domain.
+64 Driver unit/API tests pass, including association regression. No auth/session policy, Rider
+runtime, secret, signing key, manifest, native build or database change. This explains link
+verification failure for the inspected APK; actual installed-device link state was not read.
+ADB read-only device discovery failed in sandbox; no device setting was changed.
+Next: owner pushes scoped JSON/test/docs, Driver Vercel Ready, then Android Settings > Apps > ESH
+Driver > Open by default > Open supported links enabled and driver.eshapp.com selected if needed.
+Use a fresh link from installed Driver to populate its native vault; browser session is separate.
+Then reopen/foreground test. No new APK or migration required. Previous replay protection alone did
+not resolve the owner symptom; do not claim it did. Rider cleanup edits remain paused/unvalidated.
+
 Owner reports Android Driver asks for email verification again when returning to the app.
 Owner authorized direct investigation without further repeated clarification. Local correction
 prevents successfully consumed Android launch auth links from being replayed on home/callback

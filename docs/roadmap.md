@@ -6,6 +6,10 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Android Driver App Link signer alignment is local: public association now trusts the same actual
+  Codemagic certificate as Rider, verified from both downloaded APKs. Fixes the discovered signer
+  mismatch without auth policy, key rotation or APK rebuild. Hosted release/device acceptance pending.
+
 - Android Driver session recurrence follow-up: locally prevents successfully consumed launch
   sign-in links from being replayed after WebView reload, using bounded token-free fingerprints.
   Existing encrypted session and server auth rules remain unchanged. Hosted release and device

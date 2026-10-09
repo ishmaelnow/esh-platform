@@ -1,5 +1,22 @@
 # Driver Android session recovery
 
+## Verified Android link signer alignment (2026-10-08)
+
+Driver and Rider use the same Codemagic android_signing identity, esh_android_upload, but Driver's
+assetlinks file lacked the actual release signer trusted by Rider. Public hosted Driver JSON was
+read-only verified to contain only 71:F7:... . apksigner confirmed the downloaded track-driver.apk
+(com.esh.driver, 1.0.5/code6) and rider-track.apk both use SHA-256
+8E:0A:3D:FB:CB:B6:0A:9A:51:34:6F:63:35:CE:81:AE:DB:3C:71:A6:47:7F:0E:5E:23:60:9E:4F:07:B8:03:1B.
+Driver now trusts that verified signer in addition to the original certificate, preserving its own
+package and domain. No key rotation, Rider change or native manifest/build change is required.
+Android's device approval state still requires acceptance after hosted deployment; cached failure
+or user link preferences can require selecting driver.eshapp.com under Open supported links.
+
+Browser sign-in and native encrypted sign-in are separate stores. An email callback handled by
+Chrome cannot establish Driver's native vault. Restoring link routing and signing in once inside
+installed Driver is prerequisite to judging vault persistence. The replay correction alone did not
+resolve the reported recurrence. Do not claim device acceptance before it is confirmed.
+
 ## Android launch-link replay protection (2026-10-08)
 
 Android's original launch intent can be returned again on a later WebView mount. Driver previously

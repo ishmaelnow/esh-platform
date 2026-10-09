@@ -1,5 +1,16 @@
 # Driver Android session acceptance
 
+Signer alignment follow-up, 2026-10-08: Driver assetlinks now trusts the signer verified on the
+downloaded tracking Driver and Rider APKs, matching Rider's working association. Push/deploy Driver
+first and confirm its public /.well-known/assetlinks.json includes the 8E:0A:... fingerprint.
+No APK rebuild or migration is needed. On Android, Settings > Apps > ESH Driver > Open by default:
+enable Open supported links and select driver.eshapp.com (possibly under Add links). Device labels
+vary. Request a fresh email link from installed Driver and confirm it opens the installed app,
+then confirm same-account background/return, close/reopen and normal token refresh without email.
+Do not share callback URLs/tokens. Browser authentication does not populate the native vault.
+If link verification still fails, read-only `adb shell pm get-app-links com.esh.driver` can inspect
+device state when connected; do not reset data or reinstall solely to recover a browser session.
+
 2026-10-08 follow-up: hosted launch-link replay protection is local. After its Driver deployment is
 Ready, sign in once with a fresh link, open Driver home, background/return, close/reopen from its
 installed icon, and reload again after token refresh. Expect the same account without new email.
