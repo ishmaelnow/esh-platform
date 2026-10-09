@@ -196,6 +196,8 @@ export default function DriverHome() {
   const [preferenceMessage, setPreferenceMessage] = useState<string | null>(null);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [earningsUpdatesEnabled, setEarningsUpdatesEnabled] = useState(true);
+  const [tripEmailEnabled, setTripEmailEnabled] = useState<boolean | null>(null);
+  const [tripEmailMessage, setTripEmailMessage] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const nativePush = useRef<NativePushController | null>(null);
@@ -366,6 +368,8 @@ export default function DriverHome() {
     const bankPayoutResult = await supabase.rpc("my_driver_bank_payouts");
     setBankPayouts(bankPayoutResult.error ? [] : (bankPayoutResult.data as unknown as DriverBankPayout[]));
     const earningsPreferenceResult = await supabase.rpc("my_driver_earnings_notification_preferences");
+    const tripEmailPreference = await supabase.rpc("my_driver_trip_email_preferences");
+    setTripEmailEnabled(tripEmailPreference.error ? null : tripEmailPreference.data);
     if (!earningsPreferenceResult.error && earningsPreferenceResult.data)
       setEarningsUpdatesEnabled((earningsPreferenceResult.data as { earningsUpdatesEnabled: boolean }).earningsUpdatesEnabled);
     const smsResult = await supabase.rpc("my_driver_sms_notification_settings");
@@ -951,6 +955,19 @@ export default function DriverHome() {
     if (result.error) setPreferenceMessage(result.error.message);
     else { setEarningsUpdatesEnabled(enabled); setPreferenceMessage(enabled ? "Earnings update emails enabled." : "Earnings update emails disabled."); }
     setUpdatingPreferences(false);
+  }
+
+  async function updateTripEmails(enabled: boolean) {
+    if (!supabase) return;
+    setUpdatingPreferences(true);
+    setTripEmailMessage("Saving trip email preference…");
+    try {
+      const result = await supabase.rpc("set_my_driver_trip_email_preferences", { enabled_value: enabled });
+      if (result.error) throw result.error;
+      setTripEmailEnabled(result.data);
+      setTripEmailMessage(enabled ? "Trip offer emails enabled." : "Trip offer emails disabled. Device alerts are unchanged.");
+    } catch { setTripEmailMessage("Trip email preference could not be saved. Try again."); }
+    finally { setUpdatingPreferences(false); }
   }
 
   async function updateDriverSms(action: "start" | "check" | "disable") {
@@ -2067,6 +2084,9 @@ export default function DriverHome() {
                   <p className="eyebrow">Notifications</p>
                   <h3>Email preferences</h3>
                 </div>
+                <label><input type="checkbox" checked={tripEmailEnabled ?? true} disabled={updatingPreferences || tripEmailEnabled === null}
+                  onChange={(event) => { void updateTripEmails(event.target.checked); }} /> Email me about new trip offers</label>
+                {tripEmailMessage ? <p className="upload-message" role="status">{tripEmailMessage}</p> : null}
                 <label>
                   <input
                     checked={summary.notificationPreferences?.expirationRemindersEnabled ?? true}
@@ -2084,7 +2104,7 @@ export default function DriverHome() {
             <section className="notification-preferences">
               <div><p className="eyebrow">Device alerts</p><h3>{Capacitor.isNativePlatform() ? "Mobile notifications" : "Browser push notifications"}</h3></div>
               {Capacitor.isNativePlatform() ? <div>{nativePushState.ready ? <label><input checked={nativePushState.enabled} disabled={nativePushState.busy} onChange={(event) => { void nativePush.current?.setEnabled(event.target.checked).catch(() => undefined); }} type="checkbox" /> Alert this device about trip and account updates</label> : <strong>Unavailable on this device</strong>}<p role="status">{nativePushState.message}</p></div> : pushSupported() ? <label><input checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setDriverPush(event.target.checked)} type="checkbox" /> Alert this browser about urgent trip, earnings, and payout updates</label> : <strong>Unavailable on this device</strong>}
-              <p>Lock-screen alerts use privacy-safe summaries and never include Rider addresses or financial account details.</p>
+              <p>Device alerts work independently of email preferences. Lock-screen alerts never include Rider addresses or financial account details.</p>
               {!Capacitor.isNativePlatform() && !pushSupported() ? <p className="upload-message" role="status">{pushUnavailableMessage()}</p> : null}
               {preferenceMessage ? <p className="upload-message">{preferenceMessage}</p> : null}
             </section>

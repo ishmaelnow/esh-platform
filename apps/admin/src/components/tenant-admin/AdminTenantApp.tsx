@@ -2098,9 +2098,9 @@ function NotificationsPanel({
             Status
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
               <option value="all">All statuses</option>
-              {["queued", "sending", "sent", "delivered", "failed", "canceled"].map((status) => (
+              {["queued", "sending", "sent", "delivered", "failed", "canceled", "email_disabled"].map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {status === "email_disabled" ? "Email disabled" : status}
                 </option>
               ))}
             </select>
@@ -2125,10 +2125,10 @@ function NotificationsPanel({
                     </span>
                   </div>
                   <span className={`status-pill ${notification.delivery_status}`}>
-                    {notification.delivery_status}
+                    {notification.delivery_status === "email_disabled" ? "Email disabled" : notification.delivery_status}
                   </span>
                   {notification.delivery_error ? (
-                    <span className="form-error">{notification.delivery_error}</span>
+                    <span className={notification.delivery_status === "email_disabled" ? "muted" : "form-error"}>{notification.delivery_error}</span>
                   ) : null}
                   {canDeliver ? (
                     <button

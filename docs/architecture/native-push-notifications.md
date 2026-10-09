@@ -30,7 +30,8 @@ Neither Firebase auth nor a new session-duration policy is introduced.
 
 ## Delivery contract
 
-Existing notification_outbox events and their email preference gates remain authoritative. An insert
+After the pending channel-preference migration, email choices and device consent independently
+enable existing notification_outbox events. See notification-channel-preferences.md. An insert
 queues attempts only for existing opted-in matching registrations; there is no historical replay or
 duplicate business-event trigger. Attempts are independent of email delivery_status. Admin delivery
 and the protected /api/cron/native-notifications endpoint process them.

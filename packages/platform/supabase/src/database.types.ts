@@ -1474,6 +1474,9 @@ export type Database = {
       }
       driver_notification_preferences: {
         Row: {
+          expiration_email_enabled: boolean
+          earnings_email_enabled: boolean
+          trip_email_enabled: boolean
           created_at: string
           driver_profile_id: string
           earnings_updates_enabled: boolean
@@ -1482,6 +1485,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          expiration_email_enabled?: boolean
+          earnings_email_enabled?: boolean
+          trip_email_enabled?: boolean
           created_at?: string
           driver_profile_id: string
           earnings_updates_enabled?: boolean
@@ -1490,6 +1496,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          expiration_email_enabled?: boolean
+          earnings_email_enabled?: boolean
+          trip_email_enabled?: boolean
           created_at?: string
           driver_profile_id?: string
           earnings_updates_enabled?: boolean
@@ -1516,6 +1525,7 @@ export type Database = {
       }
       notification_outbox: {
         Row: {
+          email_delivery_enabled: boolean
           attempt_count: number
           available_at: string
           created_at: string
@@ -1537,6 +1547,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          email_delivery_enabled?: boolean
           attempt_count?: number
           available_at?: string
           created_at?: string
@@ -1558,6 +1569,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          email_delivery_enabled?: boolean
           attempt_count?: number
           available_at?: string
           created_at?: string
@@ -1641,6 +1653,8 @@ export type Database = {
       }
       rider_notification_preferences: {
         Row: {
+          trip_email_enabled: boolean
+          payment_email_enabled: boolean
           created_at: string
           payment_updates_enabled: boolean
           rider_profile_id: string
@@ -1649,6 +1663,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          trip_email_enabled?: boolean
+          payment_email_enabled?: boolean
           created_at?: string
           payment_updates_enabled?: boolean
           rider_profile_id: string
@@ -1657,6 +1673,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          trip_email_enabled?: boolean
+          payment_email_enabled?: boolean
           created_at?: string
           payment_updates_enabled?: boolean
           rider_profile_id?: string
@@ -3087,6 +3105,8 @@ export type Database = {
         Args: { target_tenant_slug: string }
         Returns: Json
       }
+      my_driver_trip_email_preferences: { Args: Record<PropertyKey, never>; Returns: boolean }
+      set_my_driver_trip_email_preferences: { Args: { enabled_value: boolean }; Returns: boolean }
       my_driver_earnings_notification_preferences: { Args: never; Returns: Json }
       my_driver_sms_notification_settings: { Args: never; Returns: Json }
       my_rider_sms_notification_settings: { Args: { target_tenant_slug: string }; Returns: Json }

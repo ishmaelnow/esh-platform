@@ -6,14 +6,22 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
-- Rider cleanup resumed: Booking progress text and Android payment return targeted to the Rider
-  package, with existing iOS/browser behavior and explicit recovery preserved. Hosted release and
-  new Android intent device acceptance pending; no APK rebuild/migration. Store release remains
+- Independent Rider/Driver email and device preferences implemented locally. Existing choices and
+  per-device consent are preserved; email opt-out no longer cancels mobile delivery. Driver adds a
+  new-trip-offer email control. Owner applied migration 20261008000200 after an intended-only dry run;
+  application push, hosted release and physical channel acceptance remain pending.
+  See `architecture/notification-channel-preferences.md` and
+  `operations/notification-channel-preferences-manual-test.md`.
+
+- Rider cleanup owner-pushed as 25aadc9 and manual test accepted: Booking progress text and Android payment return targeted to the Rider
+  package, with existing iOS/browser behavior and explicit recovery preserved. Owner also reports
+  Rider/Driver network recovery checklist passed; no APK rebuild/migration. Store release remains
   owner-deferred until local stability; owner reports prior USB feature checklist passed.
 
-- Android Driver App Link signer alignment is local: public association now trusts the same actual
+- Android Driver App Link signer alignment is owner-pushed as d6f5652: public association now trusts the same actual
   Codemagic certificate as Rider, verified from both downloaded APKs. Fixes the discovered signer
-  mismatch without auth policy, key rotation or APK rebuild. Hosted release/device acceptance pending.
+  mismatch without auth policy, key rotation or APK rebuild. Owner selected supported links and
+  confirms app return works; clean-install automatic routing remains separate acceptance.
 
 - Android Driver session recurrence follow-up: locally prevents successfully consumed launch
   sign-in links from being replayed after WebView reload, using bounded token-free fingerprints.

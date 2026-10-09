@@ -13,6 +13,7 @@ function publicMapResource(url) {
 }
 async function setupDriverPreview(page, options = {}) {
   let requestedStatus = options.online ? "online" : "offline";
+  let tripEmailEnabled = true;
   let applicantRecord = null;
   await page.addInitScript(() => localStorage.setItem("esh-driver-portal-auth", JSON.stringify({
     access_token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmV2aWV3In0.preview", refresh_token: "preview-only",
@@ -23,6 +24,10 @@ async function setupDriverPreview(page, options = {}) {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith("/auth/")) return route.fulfill({ json: { user: { id: "preview-driver", email: "driver-preview@example.invalid" } } });
     const rpc = url.pathname.split("/").pop();
+    if (rpc === "set_my_driver_trip_email_preferences") {
+      tripEmailEnabled = route.request().postDataJSON().enabled_value;
+      return route.fulfill({ json: tripEmailEnabled });
+    }
     if (options.applicant && rpc === "activate_my_driver_account") return route.fulfill({ status: 400, json: { message: "An approved application is required." } });
     const availability = { requestedStatus, effectiveStatus: requestedStatus, eligible: true, blockers: [], statusChangedAt: new Date().toISOString(), selectedServiceAreaId: "preview-area", selectedServiceAreaName: "Preview area" };
     if (rpc === "set_my_driver_availability") {
@@ -40,6 +45,7 @@ async function setupDriverPreview(page, options = {}) {
       my_driver_wallet: { currencyCode: "USD", balanceMinor: 0, pendingMinor: 0, availableMinor: 0, paidMinor: 0, trips: [] },
       my_driver_payout_account: { exists: false, onboardingStatus: "not_started", requirementsCurrentlyDue: [] },
       my_driver_bank_payouts: [], my_driver_earnings_notification_preferences: { earningsUpdatesEnabled: true },
+      my_driver_trip_email_preferences: tripEmailEnabled,
       my_driver_sms_notification_settings: { enabled: false, maskedPhone: null, verifiedAt: null },
       list_transport_application_tenants: [{ tenant_slug: "preview-company", display_name: "Application preview company" }],
     };

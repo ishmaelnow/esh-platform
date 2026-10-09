@@ -1,10 +1,39 @@
 # Session Handoff
 
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Current objective and checkpoint
 
-Current priority: owner authorized finishing the paused Rider cleanup. Booking replaces Working
+Owner authorized independent email/mobile preferences with Go. Local implementation adds explicit
+Rider trip/payment and Driver offer/earnings/expiration email fields, preserving existing choices.
+Device consent remains per installation. Derived legacy gates keep existing producers eligible for
+mobile-only events; opt-out masks email without canceling shared events/native attempts. Driver
+Notifications adds an owned/audited new-trip-offer email control. Admin shows Email disabled honestly.
+Owner applied 20261008000200_notification_channel_preferences.sql remotely after an intended-only
+dry run; supplied output confirms Applying migration / Finished supabase db push on 2026-10-09.
+Application code remains uncommitted locally; hosted release and physical channel acceptance pending.
+No Git mutation, production notification, remote DB change or deployment by Codex.
+104 Admin, 94 Rider and 64 Driver tests, minimal PostgreSQL smoke, Admin lint, and Admin/Rider/Driver
+production builds pass. All 23 Rider and 25 Driver mobile browser checks pass, including Driver
+email save/reload and failed-save confirmed-state preservation at 414 x 896. The complete notification
+screen screenshot is test-results/driver-notification-channels-414.png (local fixture).
+Final Driver feedback is scoped to its email control; screenshot inspected without duplicate text.
+Transportation production build also passes with temporary nonsecret public fixture configuration;
+its first local build lacked Supabase public variables. No populated environment file was modified.
+Do not overlap Driver builds and preview tests: the production build disturbed the preview's nested
+generated directory. The isolated final rerun passed all 25 checks after the build finished.
+Smoke exercises the actual existing booking producer, email masking,
+native claim independence, preserved opt-outs, web eligibility, audit and denied access. Full
+Supabase migration-chain/concurrency and physical native channel acceptance are not certified.
+See architecture/notification-channel-preferences.md and
+operations/notification-channel-preferences-manual-test.md. Next: owner commits/pushes scoped changes
+and confirms hosted Admin/Rider/Driver release, then tests mobile alerts with optional email off.
+Transportation shares the Admin history component and needs its hosted UI update as well.
+Existing push-capable shells suffice; no new APK/IPA, environment variable or credential is required.
+Preserve all generated next-env/tsconfig edits; Google Play remains owner-deferred.
+
+Current checkpoint: Rider cleanup is owner-pushed as 25aadc9; main matches origin/main.
+Owner reports its manual test passed. Booking replaces Working
 on the primary action; Android payment return attempt/manual link target com.esh.rider explicitly
 with an intent URI, while iOS and browser checkout remain unchanged. 94 Rider unit/API tests,
 production build (lint/types included), all 23 mobile browser checks and diff whitespace check pass.
@@ -15,8 +44,15 @@ Owner reports USB feature checklist passed. Google Play/internal store testing i
 owner request. Automatic fresh-install link verification without manual settings remains a
 separate release gate unless that exact scenario is confirmed. Do not promise every browser permits
 automatic app launch: Chrome can require a gesture; manual app/browser recovery stays available.
-Next: finish checks, owner pushes hosted Rider cleanup, Ready deployment then new Android return
-acceptance. Preserve four generated configuration edits. No Git mutation/deployment by Codex.
+Owner also reports the proposed Rider/Driver network recovery checklist passed: offline/online,
+stale location handling, same-ride recovery, session continuity and no duplicate booking. Exact
+device/build and per-step observations were not separately supplied; record this as owner manual
+acceptance, not fault-injected automation or full concurrent-session certification.
+Roadmap review identified email-preference-gated events and missing Driver Preorders backend.
+Independent channels are now authorized local work as above; Preorders remains future work.
+No additional recovery implementation is needed from the passing test. Google Play remains deferred.
+Next action is the independent-channel release checkpoint above. Preserve generated configuration
+edits. No Git mutation/deployment or production ride/payment by Codex.
 
 Driver link/session checkpoint: owner pushed signer alignment as d6f5652 after replay correction
 06cea20. Driver domain selection in Android Open supported links restored opening inside Driver;
@@ -196,8 +232,8 @@ presence and integrations were not inspected by Codex. apps/admin/vercel.json no
 scheduled HTTP 200 is owner-verified, demonstrating the protected route accepts cron requests. Do not
 print it or run manual production delivery just to verify configuration. Integrations may need
 reconnection if later checks reveal a missing binding.
-Email trip preferences currently gate outbox events for native push,
-so keep them enabled for controlled delivery tests. Native-only preferences are separate future work.
+Before the pending independent-channel migration, email trip preferences gate native events.
+After migration and hosted release, use the independent-channel manual test linked above.
 Read docs/architecture/native-push-notifications.md, docs/operations/native-push-setup.md and
 docs/operations/native-push-notifications-manual-test.md.
 

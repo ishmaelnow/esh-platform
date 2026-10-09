@@ -1768,7 +1768,7 @@ export default function RiderHome() {
               </label>
             </div>
             <div className="card preference-card">
-              <div><strong>Device alerts</strong><p>Receive privacy-safe trip and payment updates. Permission applies only to this device.</p></div>
+              <div><strong>Device alerts</strong><p>Receive trip and payment alerts independently of email preferences. Permission applies only to this device.</p></div>
               {Capacitor.isNativePlatform() ? <div>{nativePushState.ready ? <label className="switch"><input type="checkbox" checked={nativePushState.enabled} disabled={nativePushState.busy} onChange={(event) => { void nativePush.current?.setEnabled(event.target.checked).catch(() => undefined); }} /><span>{nativePushState.enabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}<p role="status">{nativePushState.message}</p></div> : pushSupported() ? <label className="switch"><input type="checkbox" checked={pushEnabled} disabled={pushBusy} onChange={(event) => void setRiderPush(event.target.checked)} /><span>{pushEnabled ? "On" : "Off"}</span></label> : <strong>Unavailable on this device</strong>}
             </div>
             {!Capacitor.isNativePlatform() && !pushSupported() ? <p className="notice" role="status">{pushUnavailableMessage()}</p> : null}

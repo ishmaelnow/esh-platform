@@ -49,6 +49,7 @@ export async function deliverQueuedNotifications(
   let pushFailed = 0;
   let smsAccepted = 0;
   let smsFailed = 0;
+  let emailSkipped = 0;
   for (const notification of notifications ?? []) {
     const attemptedAt = new Date().toISOString();
     const { data: claimed, error: claimError } = await service
@@ -61,7 +62,7 @@ export async function deliverQueuedNotifications(
       })
       .eq("notification_id", notification.notification_id)
       .in("delivery_status", ["queued", "failed"])
-      .select("notification_id")
+      .select("notification_id,email_delivery_enabled")
       .maybeSingle();
     if (claimError) throw claimError;
     if (!claimed) continue;
@@ -72,6 +73,15 @@ export async function deliverQueuedNotifications(
     const sms = await deliverNotificationSms(service, config, notification).catch(() => ({ accepted: 0, failed: 1, skipped: false }));
     smsAccepted += sms.accepted;
     smsFailed += sms.failed;
+
+    if (claimed.email_delivery_enabled === false) {
+      const { error: skippedError } = await service.from("notification_outbox").update({
+        delivery_status: "email_disabled", delivery_error: "Email disabled by recipient preference.",
+      }).eq("notification_id", notification.notification_id).eq("delivery_status", "sending");
+      if (skippedError) throw skippedError;
+      emailSkipped += 1;
+      continue;
+    }
 
     try {
       const result = await sendNotificationEmail(config, {
@@ -104,5 +114,5 @@ export async function deliverQueuedNotifications(
 
   const native = await deliverNativeNotifications(service, config, scope)
     .catch(() => ({ nativeAccepted: 0, nativeFailed: 1, nativeSkipped: false }));
-  return { sent, failed, pushDelivered, pushFailed, smsAccepted, smsFailed, ...native };
+  return { sent, failed, emailSkipped, pushDelivered, pushFailed, smsAccepted, smsFailed, ...native };
 }

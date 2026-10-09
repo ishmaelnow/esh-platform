@@ -155,6 +155,27 @@ test("drawer entries preserve profile, notifications, wallet, recent orders and 
   }
 });
 
+test("trip email preference persists independently and a failed update preserves its confirmed state", async ({ page }) => {
+  await page.getByRole("button", { name: "Open driver menu" }).click();
+  await page.getByRole("dialog", { name: "Driver menu" }).getByRole("button", { name: "Notifications" }).click();
+  const email = page.getByRole("checkbox", { name: "Email me about new trip offers" });
+  await expect(email).toBeChecked();
+  await email.click();
+  await expect(email).not.toBeChecked();
+  await expect(page.locator(".notification-preferences").first().getByText("Trip offer emails disabled. Device alerts are unchanged.", { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Open driver menu" }).click();
+  await page.getByRole("dialog", { name: "Driver menu" }).getByRole("button", { name: "Notifications" }).click();
+  await expect(email).not.toBeChecked();
+  await page.route("**/rest/v1/rpc/set_my_driver_trip_email_preferences", (route) =>
+    route.fulfill({ status: 503, json: { message: "Preference service unavailable" } }));
+  await email.click();
+  await expect(page.locator(".notification-preferences").first().getByText("Trip email preference could not be saved. Try again.", { exact: true })).toBeVisible();
+  await expect(email).not.toBeChecked();
+  await expect(email).toBeEnabled();
+  await page.screenshot({ path: "test-results/driver-notification-channels-414.png", fullPage: true });
+});
+
 test("drivers can view pending, approved and rejected documents without exposing a missing upload", async ({ page }) => {
   const documents = [
     { evidenceType: "personal_photo", reviewStatus: "approved", originalFileName: "profile.jpg" },

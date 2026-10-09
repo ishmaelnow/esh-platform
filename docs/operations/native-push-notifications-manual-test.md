@@ -2,6 +2,8 @@
 
 Do not mark production delivery verified from mocked tests or provider acceptance alone.
 Follow native-push-setup.md first. Owner performs deployment, builds and database mutations.
+After the channel-preference migration and hosted release, also follow
+notification-channel-preferences-manual-test.md to verify mobile alerts with email disabled.
 
 ## Local checks
 
