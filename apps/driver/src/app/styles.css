@@ -87,6 +87,15 @@
 .preorder-empty svg { width: 80px; height: 64px; color: #a4acb7; fill: #f1f3f5; }
 .preorder-empty h2 { font-size: 19px; margin: 0; color: #647080; }
 .preorder-empty p { font-size: 14px; line-height: 1.6; color: #697482; max-width: 340px; margin: 0; }
+.preorder-help { font-size: 13px; line-height: 1.6; color: #647080; }
+.preorder-refresh { margin-top: 16px; }
+.preorder-card { margin: 18px 0; padding: 20px; border-radius: 16px; background: white; box-shadow: var(--driver-shadow); border: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+.preorder-card h2 { font-size: 19px; color: var(--driver-navy); }
+.preorder-card p { line-height: 1.6; }
+.preorder-card button { min-height: 44px; width: 100%; }
+.preorder-setting input:checked { background: var(--driver-navy); }
+.preorder-setting input:checked::before { transform: translateX(20px); }
+.preorder-setting input:focus-visible { outline: 3px solid #15325866; outline-offset: 3px; }
 @media (min-width: 760px) {
   .driver-total { width: 440px; left: 88px; right: auto; top: calc(24px + env(safe-area-inset-top)); }
   .driver-home-notice { max-width: 440px; top: 210px; }

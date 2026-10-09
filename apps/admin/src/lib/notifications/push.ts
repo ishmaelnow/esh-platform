@@ -12,6 +12,7 @@ const urgentTypes = new Set([
   "dispatch_offer_created", "rider_driver_accepted", "rider_driver_arrived",
   "rider_trip_started", "rider_booking_cancelled", "rider_scheduled_reminder",
   "rider_recurring_autopay_failed", "driver_bank_payout_failed",
+  "driver_preorder_available", "driver_preorder_update",
 ]);
 
 export function buildPrivacySafePush(notificationType: string, payload: Record<string, unknown>, config: AdminServerConfig) {
@@ -19,6 +20,8 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   const title = urgentTypes.has(notificationType) ? "Action needed in ESH" : "ESH update";
   const messages: Record<string, string> = {
     dispatch_offer_created: "You have a new trip offer.",
+    driver_preorder_available: "A scheduled trip is available to reserve. Open Preorders to review it.",
+    driver_preorder_update: "Your preorder reservation has changed. Open Preorders to review it.",
     rider_driver_accepted: "A Driver accepted your trip.",
     rider_driver_arrived: "Your Driver has arrived.",
     rider_trip_started: "Your trip has started.",
@@ -31,6 +34,7 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   };
   const url = new URL("/", rider ? config.redirects.riderAppUrl : config.redirects.driverAppUrl);
   if (rider && typeof payload.tenant_slug === "string") url.searchParams.set("tenant", payload.tenant_slug);
+  if (notificationType.startsWith("driver_preorder_")) url.searchParams.set("view", "preorders");
   return { title, body: messages[notificationType] ?? "Open ESH to view your latest update.",
     url: url.toString(), tag: `esh-${notificationType}` };
 }
@@ -38,6 +42,11 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
 export async function deliverNotificationPush(
   service: PlatformSupabaseClient, config: AdminServerConfig, notification: PushNotification,
 ) {
+  if (notification.notification_type === "driver_preorder_available") {
+    const current = await service.rpc("preorder_alert_current", { notification_value: notification.notification_id });
+    if (current.error) throw current.error;
+    if (!current.data) return { delivered: 0, failed: 0, skipped: true };
+  }
   if (!config.webPush.subject || !config.webPush.publicKey || !config.webPush.privateKey)
     return { delivered: 0, failed: 0, skipped: true };
   webpush.setVapidDetails(config.webPush.subject, config.webPush.publicKey, config.webPush.privateKey);

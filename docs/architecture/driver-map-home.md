@@ -56,12 +56,10 @@ invented. The verified map controls open operating areas, assigned vehicle/compl
 sharing and active dispatch, and center actual GPS. Traffic toggles the real provider overlay when
 configured. Unknown screenshot icons do not receive decorative or guessed behaviors.
 
-Driver has no advance reservation/list API or persistent receive-while-offline setting. Preorders
-therefore opens a styled unavailable screen, with unknown counts and a disabled offline setting.
-It does not expose tenant-wide scheduled bookings or relabel ordinary dispatch offers as preorders.
-Scheduled trips still enter existing dispatch at their server-defined readiness time. A real empty
-state and assigned/new order lists require a future authorized scheduling contract.
+Driver Preorders now has an owned reservation/list API and persistent offline-alert setting locally,
+pending its migration and hosted release. Future reservations remain separate from timed dispatch
+offers. See [Driver Preorders](driver-preorders.md) for privacy and dispatch boundaries.
 
-No schema migration, direct client database write, auth redirect/domain change or new backend
-permission is introduced. Fixtures are isolated under tests/tooling, and no production availability,
+Original map-home polish introduced no schema/auth change. Preorders uses its separate migration
+and owned RPCs. Fixtures are isolated under tests/tooling, and no production availability,
 emergency, booking, payout or notification action is used for design verification.

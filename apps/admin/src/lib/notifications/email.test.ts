@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { buildDriverNotificationContent, buildRiderNotificationContent } from "./email";
 
 describe("driver notification email content", () => {
+  it("routes generic preorder emails to Preorders without exposing addresses", () => {
+    for (const type of ["driver_preorder_available", "driver_preorder_update"]) {
+      const content = buildDriverNotificationContent(type, { pickup_address: "PRIVATE ADDRESS", customer_name: "PRIVATE PERSON" }, "https://driver.eshapp.com");
+      expect(content.text).toContain("view=preorders");
+      expect(content.text).not.toContain("PRIVATE");
+    }
+  });
   it("includes rejection context and the portal link", () => {
     const content = buildDriverNotificationContent(
       "driver_evidence_rejected",

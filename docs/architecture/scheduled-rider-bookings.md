@@ -37,10 +37,11 @@ occurrences. Each occurrence is priced and paid separately before it becomes an 
 booking. Series cancellation affects only unpaid occurrences; paid bookings use the existing
 individual cancellation and refund lifecycle.
 
+Advance reservations now have a separate local [Driver Preorders](driver-preorders.md) contract,
+pending release. Bookings remain scheduled until guarded activation; eligible reservations receive
+normal timed offers then. Existing matching and pricing/payment supersede their original deferrals.
+
 ## Deferred
 
-- advance driver reservation;
-- automatic matching;
-- pricing and payment authorization;
 - route-duration-aware dispatch lead time; and
 - SMS or push reminders.

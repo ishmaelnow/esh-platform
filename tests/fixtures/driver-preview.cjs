@@ -46,6 +46,7 @@ async function setupDriverPreview(page, options = {}) {
       my_driver_payout_account: { exists: false, onboardingStatus: "not_started", requirementsCurrentlyDue: [] },
       my_driver_bank_payouts: [], my_driver_earnings_notification_preferences: { earningsUpdatesEnabled: true },
       my_driver_trip_email_preferences: tripEmailEnabled,
+      my_driver_preorders: { receiveWhileOffline: false, timeZone: "America/Chicago", assignedCount: 0, newCount: 0, assigned: [], new: [] },
       my_driver_sms_notification_settings: { enabled: false, maskedPhone: null, verifiedAt: null },
       list_transport_application_tenants: [{ tenant_slug: "preview-company", display_name: "Application preview company" }],
     };

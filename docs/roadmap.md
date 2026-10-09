@@ -6,10 +6,17 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Driver Preorders implemented locally; owner applied migration 20261009000100 after intended-only
+  dry run. Application commit/hosted release remains pending: owned New/Assigned lists,
+  actual counts, reserve/release, offline alerts, manager history and eligibility-checked priority
+  timed offers with ordinary fallback. Rider active-trip guard remains intact.
+  See `architecture/driver-preorders.md` and `operations/driver-preorders-manual-test.md`.
+
 - Independent Rider/Driver email and device preferences implemented locally. Existing choices and
   per-device consent are preserved; email opt-out no longer cancels mobile delivery. Driver adds a
   new-trip-offer email control. Owner applied migration 20261008000200 after an intended-only dry run;
-  application push, hosted release and physical channel acceptance remain pending.
+  owner pushed application changes as 01a6546 and confirmed Admin/Rider/Driver Ready plus successful
+  email-off/mobile-on workflow acceptance. Transportation deployment confirmation remains separate.
   See `architecture/notification-channel-preferences.md` and
   `operations/notification-channel-preferences-manual-test.md`.
 
@@ -457,8 +464,8 @@ deferred from this milestone and were delivered under the later milestones below
 - Driver map-home polish is owner-pushed at `ba115a1`: approved Rider palette/shared geographic renderer, daily
   authorized earnings/counts, accessible side drawer, existing feature screens and a confirmed
   availability switch. Rider remains approved at owner-pushed `95c8ae2`.
-- Driver advance preorders/offline receipt settings, SOS, daily distance and online-duration
-  aggregates need backend contracts. The new Driver surface explicitly marks unavailable data;
+- Driver Preorders/offline receipt settings are implemented locally as documented above. SOS,
+  daily distance and online-duration aggregates still need contracts. Driver marks unavailable data;
   it does not invent these behaviors. See `architecture/driver-map-home.md` and
   `operations/driver-map-home-manual-test.md` for boundaries and verification.
 

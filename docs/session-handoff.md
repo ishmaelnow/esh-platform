@@ -4,6 +4,39 @@ Last updated: 2026-10-09
 
 ## Current objective and checkpoint
 
+Current objective: owner approved and authorized implementing Driver Preorders after inspection.
+Owner applied migration 20261009000100_driver_preorders.sql after an intended-only dry run;
+supplied output confirms Applying migration / Finished supabase db push. Driver/Admin UI remains
+local and uncommitted; hosted release is pending.
+Reservations remain separate from active rides; dispatch-time priority uses existing timed offers
+with online/compliance/area/free-Driver checks, then ordinary matching/manual fallback. Driver UI
+has owned lists/counts, reservation/release and saved offline alerts; available cards hide addresses.
+Generic preorder notifications use existing email/mobile choices. Native tap routing accepts only
+the known preorder type; stale availability alerts are checked at send/claim time.
+Minimal PostgreSQL smoke passes with actual automatic matcher and Rider active guard: reservation,
+overlap, priority, decline fallback, offline fallback, release/cancellation, audit and owned reads.
+Admin 107, Driver 67, Rider 94 and shared native-push 13 unit tests pass. Admin, Driver, Rider and
+Transportation production builds pass (Transportation uses temporary nonsecret public fixtures).
+Shared Supabase type build passes. All 23 Rider and 26 Driver mobile browser checks pass.
+Complete 414 x 896 New/Assigned screenshots are in test-results/driver-preorders-new-414.png and
+test-results/driver-preorders-assigned-414.png. SQL smoke passes after the final audit patch.
+Remote migration succeeded per owner output. Full Supabase-chain, true concurrent-session and
+physical preorder delivery/dispatch acceptance remain unverified. No new native build/env required.
+See architecture/driver-preorders.md and operations/driver-preorders-manual-test.md.
+Preserve generated configs and all prior local documentation edits. Next: owner commits/pushes
+application changes and confirms hosted deployments, then performs controlled manual checks.
+
+Inspection findings:
+Repository confirms DriverShell has unavailable content, unknown counts and a disabled offline
+setting; no advance reservation RPC/types exist. Scheduled Rider bookings already persist pickup
+time and dispatch_ready_at, then activate into ordinary online-only dispatch. Latest activation
+preserves the Rider active-booking guard. Do not repurpose 90-second immediate offers as advance
+reservations or expose tenant-wide Rider addresses to all Drivers. No runtime/schema changes from
+that inspection. Owner subsequently approved the flow and said Go; current local work is above.
+Owner confirms Admin, Rider and Driver Ready at 01a6546 and email-off/mobile-on workflow all passed.
+Transportation deployment was not separately identified; do not infer its status. No new tests or
+production actions were needed for this read-only implementation review.
+
 Owner authorized independent email/mobile preferences with Go. Local implementation adds explicit
 Rider trip/payment and Driver offer/earnings/expiration email fields, preserving existing choices.
 Device consent remains per installation. Derived legacy gates keep existing producers eligible for
@@ -11,7 +44,10 @@ mobile-only events; opt-out masks email without canceling shared events/native a
 Notifications adds an owned/audited new-trip-offer email control. Admin shows Email disabled honestly.
 Owner applied 20261008000200_notification_channel_preferences.sql remotely after an intended-only
 dry run; supplied output confirms Applying migration / Finished supabase db push on 2026-10-09.
-Application code remains uncommitted locally; hosted release and physical channel acceptance pending.
+Owner committed/pushed application changes as 01a6546; supplied Git output confirms main matches
+origin/main with only four generated Rider/Driver next-env.d.ts and tsconfig.json edits remaining.
+Admin/Rider/Driver deployment and controlled email-off/mobile-on acceptance are owner-confirmed.
+Transportation deployment confirmation remains separate.
 No Git mutation, production notification, remote DB change or deployment by Codex.
 104 Admin, 94 Rider and 64 Driver tests, minimal PostgreSQL smoke, Admin lint, and Admin/Rider/Driver
 production builds pass. All 23 Rider and 25 Driver mobile browser checks pass, including Driver
@@ -26,8 +62,8 @@ Smoke exercises the actual existing booking producer, email masking,
 native claim independence, preserved opt-outs, web eligibility, audit and denied access. Full
 Supabase migration-chain/concurrency and physical native channel acceptance are not certified.
 See architecture/notification-channel-preferences.md and
-operations/notification-channel-preferences-manual-test.md. Next: owner commits/pushes scoped changes
-and confirms hosted Admin/Rider/Driver release, then tests mobile alerts with optional email off.
+operations/notification-channel-preferences-manual-test.md. Channel feature owner acceptance passed;
+next work is the Driver Preorders inspection/alignment described above.
 Transportation shares the Admin history component and needs its hosted UI update as well.
 Existing push-capable shells suffice; no new APK/IPA, environment variable or credential is required.
 Preserve all generated next-env/tsconfig edits; Google Play remains owner-deferred.

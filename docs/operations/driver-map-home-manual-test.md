@@ -36,8 +36,8 @@ testing. Production lifecycle tests require identifiable data and cleanup under 
 6. Switch availability. Pending leaves the previous position; rejection/network failure must not
    falsely show online. Successful responses set the confirmed state. Confirm offline stops sharing.
    Return any production test Driver to Offline afterward.
-7. Open Preorders and both tabs. Unknown counts and unsupported offline setting are explicit;
-   ordinary dispatch must not appear as an advance assignment. Back returns to Home.
+7. Open Preorders and both tabs. Verify actual counts, empty/error distinction and saved offline
+   alerts. Back returns Home. Follow [Preorders checks](driver-preorders-manual-test.md) after release.
 8. With Driver's public Mapbox token configured, verify Traffic shows actual congestion and can be
    toggled. Without it, real OpenFreeMap remains usable and no false traffic control appears.
 9. Open an existing authorized offer/active trip. Verify countdown/accept/decline and lifecycle

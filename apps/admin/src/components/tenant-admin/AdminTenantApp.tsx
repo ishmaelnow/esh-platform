@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { type SupabaseAuthSession } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
 import { createAdminBrowserClient } from "@/lib/browser-client";
+import { DriverPreordersPanel } from "./DriverPreordersPanel";
 import {
   adminAuthRefreshMode,
   loadPrincipalTenantContext,
@@ -2354,6 +2355,7 @@ function DispatchPanel({
         ) : null}
       </section>
 
+      <DriverPreordersPanel tenantId={summary.tenant.tenant_id} userId={session.user.id} />
       <section className="panel">
         <PanelHeader
           title="Automatic driver matching"

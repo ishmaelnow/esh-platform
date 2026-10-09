@@ -9,13 +9,13 @@ vi.mock("./push", () => ({ deliverNotificationPush: mocks.push }));
 vi.mock("./sms", () => ({ deliverNotificationSms: mocks.sms }));
 vi.mock("./native-push", () => ({ deliverNativeNotifications: mocks.native }));
 
-function serviceFor(emailEnabled: boolean) {
+function serviceFor(emailEnabled: boolean, notificationType = "rider_driver_arrived", alertCurrent = true) {
   const updates: Record<string, unknown>[] = [];
   let index = 0;
   const results = [
     { error: null },
     { data: [{ notification_id: "event", attempt_count: 0, email_delivery_enabled: true,
-      notification_type: "rider_driver_arrived", recipient_email: "test@example.invalid", payload: {} }], error: null },
+      notification_type: notificationType, recipient_email: "test@example.invalid", payload: {} }], error: null },
     { data: { notification_id: "event", email_delivery_enabled: emailEnabled }, error: null },
     { error: null },
   ];
@@ -30,7 +30,8 @@ function serviceFor(emailEnabled: boolean) {
     };
     return builder;
   });
-  return { service: { from } as unknown as PlatformSupabaseClient, updates };
+  const rpc = vi.fn().mockResolvedValue({ data: alertCurrent, error: null });
+  return { service: { from, rpc } as unknown as PlatformSupabaseClient, updates, rpc };
 }
 
 describe("channel-aware notification delivery", () => {
@@ -56,5 +57,14 @@ describe("channel-aware notification delivery", () => {
       .toMatchObject({ sent: 1, emailSkipped: 0, nativeAccepted: 1 });
     expect(mocks.email).toHaveBeenCalledOnce();
     expect(updates.at(-1)).toMatchObject({ delivery_status: "sent", provider_message_id: "provider-receipt" });
+  });
+  it("suppresses a stale preorder before any email, Web Push or SMS send", async () => {
+    const { service, updates, rpc } = serviceFor(true, "driver_preorder_available", false);
+    await deliverQueuedNotifications(service, {} as AdminServerConfig);
+    expect(rpc).toHaveBeenCalledWith("preorder_alert_current", { notification_value: "event" });
+    expect(mocks.email).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.sms).not.toHaveBeenCalled();
+    expect(updates.at(-1)).toMatchObject({ delivery_status: "canceled" });
   });
 });

@@ -1,5 +1,9 @@
 # Native Rider and Driver notifications
 
+Driver Preorders adds generic availability/reservation events, fixed validated Preorders tap
+routing and stale-availability suppression. Email/mobile choices remain independent. See
+[Driver Preorders](driver-preorders.md); its migration and hosted release are pending.
+
 Status: owner-deployed; device receipt verified on iPhone and Android. Independent scheduling is
 deployed as 3e8ff47 with scheduled HTTP 200 owner-confirmed. Controlled
 provider-failure recovery remains a separate diagnostic; owner confirms tap routing and sign-out

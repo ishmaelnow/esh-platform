@@ -67,6 +67,17 @@ export async function deliverQueuedNotifications(
     if (claimError) throw claimError;
     if (!claimed) continue;
 
+    if (notification.notification_type === "driver_preorder_available") {
+      const current = await service.rpc("preorder_alert_current", { notification_value: notification.notification_id });
+      if (current.error) throw current.error;
+      if (!current.data) {
+        const canceled = await service.from("notification_outbox").update({ delivery_status: "canceled",
+          delivery_error: "Preorder is no longer available to this Driver." }).eq("notification_id", notification.notification_id);
+        if (canceled.error) throw canceled.error;
+        continue;
+      }
+    }
+
     const push = await deliverNotificationPush(service, config, notification).catch(() => ({ delivered: 0, failed: 1, skipped: false }));
     pushDelivered += push.delivered;
     pushFailed += push.failed;

@@ -239,15 +239,19 @@ test("document review refresh unlocks rejected ID replacement and reports refres
   await expect(page.getByRole("button", { name: "Take photo for Driver ID photo", exact: true })).toHaveCount(0);
 });
 
-test("preorders distinguish unsupported data from an empty result, with usable tabs and return", async ({ page }) => {
+test("preorders distinguish real empty data from errors, with usable tabs and return", async ({ page }) => {
   await page.getByRole("button", { name: /Preorders/ }).click();
   await expect(page.getByRole("heading", { name: "Preorders", exact: true })).toBeVisible();
-  await expect(page.getByRole("switch", { name: "Receive while offline" })).toBeDisabled();
+  await expect(page.getByRole("switch", { name: "Receive while offline" })).toBeEnabled();
   await expect(page.getByRole("tab", { name: /Assigned to me/ })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: /New/ }).click();
   await expect(page.getByRole("tab", { name: /New/ })).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByText("Preorders aren’t available yet")).toBeVisible();
+  await expect(page.getByText("No available preorders", { exact: true })).toBeVisible();
   await page.screenshot({ path: "test-results/driver-preorders-414.png" });
+  await page.route("**/rest/v1/rpc/my_driver_preorders", (route) => route.fulfill({ status: 503, json: { message: "Unavailable" } }));
+  await page.getByRole("button", { name: "Refresh preorders" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Preorders could not be refreshed" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Receive while offline" })).toBeDisabled();
   await page.goBack(); await expect(page.getByRole("heading", { name: "Today’s total" })).toBeVisible();
 });
 

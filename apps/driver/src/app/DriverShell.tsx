@@ -24,7 +24,7 @@ export function DriverIcon({ name }: { name: string }) {
 
 export function DriverShell({ view, onView, children, accessToken, loading, center, location, locationNotice, onLocate,
   locationBusy, recenterVersion, rating, totals, online, availabilityKnown, availabilityBusy, onAvailability,
-  availabilityNotice, tripCount, offerCount, sharing }: {
+  availabilityNotice, tripCount, offerCount, sharing, preorders, preorderCount }: {
   view: DriverView; onView: (view: DriverView) => void; children: ReactNode; accessToken?: string | undefined;
   loading: boolean;
   center: { latitude: number; longitude: number } | null;
@@ -33,10 +33,10 @@ export function DriverShell({ view, onView, children, accessToken, loading, cent
   rating: string | null; totals: { trips: number | null; earnings: string | null; fees: string | null };
   online: boolean; availabilityKnown: boolean; availabilityBusy: boolean; onAvailability: () => void;
   availabilityNotice: string | null; tripCount: number; offerCount: number; sharing: boolean;
+  preorders: ReactNode; preorderCount: number | null;
 }) {
   const [drawer, setDrawer] = useState(false);
   const [traffic, setTraffic] = useState(true);
-  const [preorderTab, setPreorderTab] = useState("assigned");
   const toggle = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const home = view === "home";
@@ -85,7 +85,7 @@ export function DriverShell({ view, onView, children, accessToken, loading, cent
       {(locationNotice || availabilityNotice || !availabilityKnown) ? <div className="driver-home-notice" role="status">{locationNotice ?? availabilityNotice ?? "Availability unavailable. Open Settings to retry."}</div> : null}
       {(tripCount > 0 || offerCount > 0) ? <button className="driver-trip-banner" type="button" onClick={() => onView("dispatch")}>{offerCount ? `${offerCount} new trip offer${offerCount === 1 ? "" : "s"} · View now` : "Active trip · Open controls"}</button> : null}
       <footer className="driver-home-bottom">
-        <button className="driver-preorders-link" type="button" onClick={() => onView("preorders")}>Preorders <span>(—)</span><span aria-hidden="true">›</span></button>
+        <button className="driver-preorders-link" type="button" onClick={() => onView("preorders")}>Preorders <span>({preorderCount ?? "—"})</span><span aria-hidden="true">›</span></button>
         <div className={`driver-availability ${online ? "is-online" : "is-offline"}`} aria-busy={availabilityBusy}>
           <span>OFFLINE</span><button type="button" role="switch" aria-label="Driver availability" aria-checked={online}
             disabled={availabilityBusy || !availabilityKnown} onClick={onAvailability}><span /></button><span>ONLINE</span>
@@ -95,15 +95,7 @@ export function DriverShell({ view, onView, children, accessToken, loading, cent
     </> : view === "preorders" ? <section className="driver-preorders">
       <button className="driver-circle driver-page-back" type="button" aria-label="Back to home" onClick={() => onView("home")}><DriverIcon name="back" /></button>
       <h1>Preorders</h1>
-      <label className="preorder-setting">Receive while offline<input type="checkbox" role="switch" disabled aria-describedby="preorders-unavailable" /></label>
-      <div className="preorder-tabs" role="tablist" aria-label="Preorders">
-        {([['assigned', 'Assigned to me'], ['new', 'New']] as const).map(([id, label]) => <button type="button" role="tab" aria-selected={preorderTab === id} aria-controls="preorder-content" id={`preorder-${id}`} key={id} onClick={() => setPreorderTab(id)}>{label} <span>—</span></button>)}
-      </div>
-      <div className="preorder-empty" id="preorder-content" role="tabpanel" aria-labelledby={`preorder-${preorderTab}`}>
-        <svg viewBox="0 0 80 64" aria-hidden="true"><rect x="12" y="8" width="48" height="36" rx="6" /><rect x="20" y="18" width="48" height="36" rx="6" /><path d="M30 30h28M30 40h18" /></svg>
-        <h2>Preorders aren’t available yet</h2><p id="preorders-unavailable">Advance assignments and receiving preorders while offline aren’t supported by your driver portal yet. Scheduled rides enter normal dispatch when they are ready.</p>
-        <button className="secondary" type="button" onClick={() => onView("dispatch")}>View current offers and trips</button>
-      </div>
+      {preorders}
     </section> : <section className="driver-page">
       <header><button className="driver-circle" type="button" aria-label="Back to home" onClick={() => onView("home")}><DriverIcon name="back" /></button><h1>{labels[view]}</h1></header>
       {children}

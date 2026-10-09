@@ -8,6 +8,7 @@ describe("Driver Android verified sign-in links", () => {
     const rider = JSON.parse(readFileSync(new URL("../../../rider/public/.well-known/assetlinks.json", import.meta.url), "utf8")) as Association[];
     const signer = "8E:0A:3D:FB:CB:B6:0A:9A:51:34:6F:63:35:CE:81:AE:DB:3C:71:A6:47:7F:0E:5E:23:60:9E:4F:07:B8:03:1B";
     expect(driver).toHaveLength(1);
+    if (!driver[0] || !rider[0]) throw new Error("Both app associations must exist.");
     expect(driver[0].relation).toContain("delegate_permission/common.handle_all_urls");
     expect(driver[0].target.namespace).toBe("android_app");
     expect(driver[0].target.package_name).toBe("com.esh.driver");

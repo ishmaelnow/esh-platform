@@ -6,6 +6,12 @@ const config = { redirects: { riderAppUrl: "https://rider.eshapp.com",
   driverAppUrl: "https://driver.eshapp.com" } } as AdminServerConfig;
 
 describe("privacy-safe web push", () => {
+  it("routes preorder alerts to the known Driver view without private trip details", () => {
+    const alert = buildPrivacySafePush("driver_preorder_available", { pickup_address: "PRIVATE ADDRESS", url: "https://evil.invalid" }, config);
+    expect(alert.url).toBe("https://driver.eshapp.com/?view=preorders");
+    expect(JSON.stringify(alert)).not.toContain("PRIVATE");
+    expect(JSON.stringify(alert)).not.toContain("evil.invalid");
+  });
   it("routes Rider alerts without exposing addresses or payment details", () => {
     const push = buildPrivacySafePush("rider_recurring_autopay_failed", {
       tenant_slug: "philadelphia", pickup_address: "Private pickup",

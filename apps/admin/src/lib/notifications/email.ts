@@ -100,6 +100,7 @@ export function buildDriverNotificationContent(
     || notificationType.startsWith("driver_bank_payout_");
   const portalUrlValue = new URL("/", driverAppUrl);
   if (financialNotification) portalUrlValue.searchParams.set("view", "earnings");
+  if (notificationType.startsWith("driver_preorder_")) portalUrlValue.searchParams.set("view", "preorders");
   const portalUrl = portalUrlValue.toString();
   const messages: Record<string, { subject: string; intro: string; detail?: string }> = {
     driver_account_ready: {
@@ -157,6 +158,14 @@ export function buildDriverNotificationContent(
       subject: `Your vehicle ${evidenceType} has expired`,
       intro: `${driverName}, your assigned vehicle's ${evidenceType} has expired and requires replacement.`,
       ...(expiresOn ? { detail: `Expiration date: ${expiresOn}` } : {}),
+    },
+    driver_preorder_available: {
+      subject: "Scheduled trip available",
+      intro: "A scheduled trip is available to reserve. Open Preorders to review the time, service area and trip fare.",
+    },
+    driver_preorder_update: {
+      subject: "Preorder reservation update",
+      intro: "Your preorder reservation has changed. Open Preorders to review its current status. Be online before dispatch and confirm the timed offer when it arrives.",
     },
     dispatch_offer_created: {
       subject: "New trip offer",

@@ -28,7 +28,7 @@ export function nativePushInstallation(product: NativePushProduct, storage: Pick
 export function createNativePushController(options: {
   client: PlatformSupabaseClient; bridge: NativePushBridge; product: NativePushProduct;
   platform: "ios" | "android"; installationId: string; userId: string; tenantSlug: string | null;
-  update: (state: NativePushState) => void; open: () => void;
+  update: (state: NativePushState) => void; open: (data?: unknown) => void;
 }) {
   const { client, bridge, product, platform, installationId, userId, tenantSlug, update } = options;
   let disposed = false; let enabled = false; let wanted = false; let busy = false;
@@ -102,7 +102,7 @@ export function createNativePushController(options: {
         await addHandle(bridge.onToken(tokenReceived));
         await addHandle(bridge.onError(() => finishRegistration?.(new Error("Device registration failed. Check your connection and try again."))));
         await addHandle(bridge.onTap((data) => {
-          if (!disposed && nativePushTapAllowed(data, product, tenantSlug)) options.open();
+          if (!disposed && nativePushTapAllowed(data, product, tenantSlug)) options.open(data);
         }));
         if (bridge.onResume) await addHandle(bridge.onResume(() => { void refresh(); }));
         if (disposed) return;

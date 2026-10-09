@@ -29,7 +29,7 @@ async function main() {
     }
     if (!ready) throw new Error("Driver preview did not start.");
     if (testMode) {
-      const tests = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", "tests/e2e/driver-home.spec.ts", "tests/e2e/driver-application.spec.ts", "--workers=1"], {
+      const tests = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", "tests/e2e/driver-home.spec.ts", "tests/e2e/driver-application.spec.ts", "tests/e2e/driver-preorders.spec.ts", "--workers=1"], {
         cwd: root, stdio: "inherit", env: { ...process.env, PLAYWRIGHT_BASE_URL: origin },
       });
       const code = await new Promise((resolve) => tests.once("exit", resolve));

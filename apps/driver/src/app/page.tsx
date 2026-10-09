@@ -10,6 +10,7 @@ import {
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import { DriverShell, type DriverView } from "./DriverShell";
+import { DriverPreorders, useDriverPreorders } from "./DriverPreorders";
 import { DriverApplication } from "./DriverApplication";
 import { DriverFileInput } from "./DriverFileInput";
 import { DriverDocumentView } from "./DriverDocumentView";
@@ -474,8 +475,10 @@ export default function DriverHome() {
   }
 
   useEffect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "earnings")
-      setActiveTab("earnings");
+    if (typeof window !== "undefined") {
+      const requestedView = new URLSearchParams(window.location.search).get("view");
+      if (requestedView === "earnings" || requestedView === "preorders") setActiveTab(requestedView);
+    }
   }, []);
 
   useEffect(() => {
@@ -556,6 +559,7 @@ export default function DriverHome() {
   }, []);
 
   const authenticatedUserId = session?.user.id;
+  const preorders = useDriverPreorders(supabase, authenticatedUserId && summary ? `${authenticatedUserId}:${summary.driverProfileId}` : null);
   useEffect(() => {
     if (!authenticatedUserId) {
       setSummary(null);
@@ -2132,14 +2136,16 @@ export default function DriverHome() {
       </section>
   );
   const area = serviceAreas.find((item) => item.selected) ?? serviceAreas[0];
-  return summary ? <>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={() => goView("dispatch")} /> : null}<DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
+  return summary ? <>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => goView(data && typeof data === "object" && "notificationType" in data && typeof data.notificationType === "string" && data.notificationType.startsWith("driver_preorder_") ? "preorders" : "dispatch")} /> : null}<DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
     center={area ? { latitude: area.centerLatitude, longitude: area.centerLongitude } : null}
     location={mapLocation.location} locationNotice={mapLocation.notice} locationBusy={mapLocation.busy}
     onLocate={mapLocation.locate} recenterVersion={mapLocation.recenterVersion}
     rating={dailyTotals.rating} totals={dailyTotals} online={availability?.effectiveStatus === "online"}
     availabilityKnown={Boolean(availability)} availabilityBusy={updatingAvailability}
     availabilityNotice={!dispatchAvailable ? "Dispatch updates unavailable. Open Settings to refresh; existing offers may be out of date." : availabilityMessage} onAvailability={() => void updateAvailability(availability?.requestedStatus === "online" ? "offline" : "online")}
-    tripCount={dispatch.trips.length} offerCount={dispatch.offers.length} sharing={Boolean(locationSharing?.sharingEnabled)}>
+    tripCount={dispatch.trips.length} offerCount={dispatch.offers.length} sharing={Boolean(locationSharing?.sharingEnabled)}
+    preorderCount={preorders.error || !preorders.data ? null : preorders.data.assignedCount + preorders.data.newCount}
+    preorders={<DriverPreorders model={preorders} onDispatch={() => goView("dispatch")} />}>
     {content}
   </DriverShell></> : <main className="shell">{content}</main>;
 }

@@ -1,7 +1,8 @@
 # Independent email and device alerts
 
 Status: implemented locally; migration owner-applied after an intended-only dry run on 2026-10-09.
-Application push, hosted release and physical channel acceptance remain pending.
+Owner pushed application changes as 01a6546 and confirmed Admin/Rider/Driver Ready and successful
+email-off/mobile-on workflow acceptance. Transportation deployment confirmation remains separate.
 
 Rider trip/payment emails and Driver offer/earnings/expiration emails are independent of device
 alerts. Existing email selections are copied into explicit email columns. Essential account and

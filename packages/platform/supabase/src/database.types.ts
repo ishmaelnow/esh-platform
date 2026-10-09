@@ -40,6 +40,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      driver_preorder_settings: {
+        Row: { driver_profile_id: string; tenant_id: string; receive_while_offline: boolean; updated_at: string }
+        Insert: { driver_profile_id: string; tenant_id: string; receive_while_offline?: boolean; updated_at?: string }
+        Update: { receive_while_offline?: boolean; updated_at?: string }
+        Relationships: []
+      }
+      driver_preorder_reservations: {
+        Row: { reservation_id: string; tenant_id: string; booking_id: string; driver_profile_id: string; status: string; window_start: string; window_end: string; reserved_at: string; ended_at: string | null; reason: string | null }
+        Insert: { reservation_id?: string; tenant_id: string; booking_id: string; driver_profile_id: string; status?: string; window_start: string; window_end: string; reserved_at?: string; ended_at?: string | null; reason?: string | null }
+        Update: { status?: string; ended_at?: string | null; reason?: string | null }
+        Relationships: []
+      }
       rider_pickup_locations: {
         Row: { booking_id: string; tenant_id: string; driver_profile_id: string; latitude: number | null; longitude: number | null; accuracy_meters: number | null; recorded_at: string | null; consented_at: string }
         Insert: { booking_id: string; tenant_id: string; driver_profile_id: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; recorded_at?: string | null; consented_at?: string }
@@ -2599,6 +2611,12 @@ export type Database = {
     }
     Functions: {
       my_rider_pickup_sharing: { Args: { target_booking_id: string }; Returns: boolean }
+      my_driver_preorders: { Args: Record<PropertyKey, never>; Returns: Json }
+      set_my_driver_preorder_settings: { Args: { enabled_value: boolean }; Returns: boolean }
+      reserve_my_driver_preorder: { Args: { booking_value: string }; Returns: string }
+      release_my_driver_preorder: { Args: { booking_value: string }; Returns: boolean }
+      admin_driver_preorders: { Args: { tenant_value: string }; Returns: Json }
+      preorder_alert_current: { Args: { notification_value: string }; Returns: boolean }
       set_my_rider_pickup_sharing: { Args: { target_booking_id: string; enabled_value: boolean }; Returns: boolean }
       update_my_rider_pickup_location: { Args: { target_booking_id: string; latitude_value: number; longitude_value: number; accuracy_meters_value: number; recorded_at_value: string }; Returns: undefined }
       my_driver_rider_pickup_location: { Args: { target_booking_id: string }; Returns: Json }
