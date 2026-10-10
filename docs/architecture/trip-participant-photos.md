@@ -38,7 +38,8 @@ React adapters keep URLs in memory, bypass image optimization, omit referrers an
 or offline state. They renew every 45 seconds while visible, discard expired images after 55 seconds
 and abort/ignore stale requests on account/booking changes or unmount. Names accompany decorative
 images. Rider Account and Driver Documents explain visibility. Rider can remove the optional photo.
-Trip avatars are compact 36 x 36 pixels, cropped inside a circle; original document preview is unchanged.
+Driver photos shown in Rider tracking are 64 x 64 pixels for recognition; Rider photos in Driver
+dispatch remain 36 x 36 pixels. Both crop inside a circle; original document preview is unchanged.
 
 Signed links are bearer links: a recipient who already obtained one can use it until expiry even
 after cancellation/reassignment. Downloaded pixels cannot be revoked. Fresh requests are denied

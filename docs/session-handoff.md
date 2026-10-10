@@ -5,20 +5,27 @@ Last updated: 2026-10-10
 ## Current objective and checkpoint
 
 Current objective: owner approved optional participant photos after trip messaging acceptance.
+Latest owner feedback: map is now aligned; Driver photo appears but 36px is too small to recognize
+the Driver. Local CSS increases Driver photo in Rider home/current tracking to 64px; Driver app's
+Rider avatar remains 36px. Shared browser helper now accepts per-screen size. No backend, schema,
+upload or native change. All 26 Rider mobile checks pass; full 414 x 896 screenshot inspected,
+scoped test lint and diff whitespace check pass. CSS-only refinement needs no new schema/type
+generation or production build. Next: owner push, Rider Ready confirmation and device retest.
 Production acceptance found a confirmed legacy-path bug: owner SQL shows Ish Coach's latest
 personal_photo is approved image/jpeg, no expiry, object exists, correct driver-application-files
 bucket, but path_matches_tenant=false. No active ride is needed to inspect existing photo eligibility.
 Local correction: new 20261010000300_legacy_driver_trip_photos.sql and signer remove Driver tenant
 prefix assumption; still select through exact tenant/assigned profile/latest personal_photo and
 retain bucket/traversal/active-participant/recheck protections. Rider namespace is unchanged.
-No reupload, file move or approval change. Owner also requested smaller images: trip avatars now
-36px instead of 44px, with document originals/previews unchanged.
+No reupload, file move or approval change. Previous release reduced avatars from 44px to 36px;
+latest Rider recognition refinement above supersedes that size only for Driver photos in Rider.
 Shared 25 unit tests, shared type/lint and updated disposable SQL smoke pass (legacy selection,
 other-tenant/other-Driver evidence exclusion plus prior privacy/lifecycle cases).
 Owner supplied successful Applying migration / Finished supabase db push for only
-20261010000300_legacy_driver_trip_photos.sql. Remote correction is applied. Next: owner commit/push
-the application correction, verify Rider/Driver Ready at that commit, then retest Ish Coach's image
-and compact avatars. No native rebuild required.
+20261010000300_legacy_driver_trip_photos.sql. Remote correction is applied. Owner pushed correction
+as e69f2a4; supplied Git output confirms main matches origin/main with generated Driver next-env
+and Driver/Rider tsconfig edits remaining. Next: verify Rider/Driver Ready at e69f2a4, then retest
+Ish Coach's image and compact avatars. No native rebuild required. This checkpoint is a local docs edit.
 Local implementation shows Driver profile photo in Rider home/current tracking and optional Rider
 photo in Driver active dispatch, only accepted/arrived/in_progress. Initials are the fallback.
 No photos in offers, preorders, history or notifications; no ID/compliance documents displayed.

@@ -13,7 +13,10 @@ remain independent of transportation-specific workflows.
   20261010000200 successfully and pushed 7ddcc76; hosted Ready and device acceptance pending.
   Acceptance found a legacy path incompatibility for Ish Coach's existing approved image. Local
   follow-up 20261010000300 plus signing compatibility and compact 36px avatars pass local checks;
-  owner applied migration 20261010000300 successfully; application push/deployment and retest pending.
+  owner applied migration 20261010000300 and pushed e69f2a4; hosted Ready and photo retest pending.
+  Owner subsequently reports Driver image visible but too small; local Rider-only 64px recognition
+  refinement passes all 26 Rider mobile checks and scoped lint; owner release pending.
+  Driver dispatch avatar remains 36px; no migration/native rebuild.
   See `architecture/trip-participant-photos.md` and
   `operations/trip-participant-photos-manual-test.md`.
 

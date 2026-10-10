@@ -48,7 +48,7 @@ test("active Rider sees private Driver photo and initials without images outside
   await page.reload();
   await page.getByRole("button", { name: "Open rider menu" }).click();
   await page.getByRole("button", { name: "Trips", exact: true }).click();
-  await photos.verify("Fixture Driver", "rider-trip-photo-414.png");
+  await photos.verify("Fixture Driver", "rider-trip-photo-414.png", 64);
   for (const mode of ["missing", "broken"] as const) {
     photos.mode(mode); await page.reload();
     await expect(page.locator(".trip-participant-avatar")).toHaveText("FD");

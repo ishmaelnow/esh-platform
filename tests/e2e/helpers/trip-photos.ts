@@ -12,13 +12,13 @@ export async function photoFixture(page: Page) {
     ? route.fulfill({ status: 404 }) : route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44"><circle cx="22" cy="22" r="22" fill="#153258"/></svg>' }));
   return {
     mode: (value: typeof mode) => { mode = value; }, requests: () => requests,
-    verify: async (name: string, screenshot: string) => {
+    verify: async (name: string, screenshot: string, size = 36) => {
       const avatar = page.locator(".trip-participant").filter({ hasText: name });
       await expect(avatar).toBeVisible();
       await expect(avatar.locator("img")).toBeVisible();
       await expect.poll(() => avatar.locator("img").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
-      expect(await avatar.locator(".trip-participant-avatar").evaluate((el) => el.getBoundingClientRect().width)).toBe(36);
-      expect(await avatar.locator("img").evaluate((el) => el.getBoundingClientRect().height)).toBe(36);
+      expect(await avatar.locator(".trip-participant-avatar").evaluate((el) => el.getBoundingClientRect().width)).toBe(size);
+      expect(await avatar.locator("img").evaluate((el) => el.getBoundingClientRect().height)).toBe(size);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await page.screenshot({ path: `test-results/${screenshot}`, fullPage: true });
     },
