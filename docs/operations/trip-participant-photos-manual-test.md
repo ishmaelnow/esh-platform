@@ -23,7 +23,7 @@ No native rebuild or new environment variable is required for the hosted Capacit
 
 Legacy regression: Ish Coach's existing approved JPEG has no tenant-prefixed path. After the
 follow-up migration AND application deployment, it should display without reupload. Check both
-modern tenant-prefixed and historical paths. Driver photos in Rider tracking should be 64 x 64
+modern tenant-prefixed and historical paths. Driver photos in Rider tracking should be 88 x 88
 pixels; Rider photos in Driver dispatch stay 36 x 36 pixels, with names and trip controls accessible.
 To inspect photo eligibility without a ride, query the Driver's latest personal_photo directly;
 do not use a tenant path prefix as a legacy eligibility condition. Sharing still requires an active ride.

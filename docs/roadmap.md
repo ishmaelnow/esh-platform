@@ -15,8 +15,11 @@ remain independent of transportation-specific workflows.
   follow-up 20261010000300 plus signing compatibility and compact 36px avatars pass local checks;
   owner applied migration 20261010000300 and pushed e69f2a4; hosted Ready and photo retest pending.
   Owner subsequently reports Driver image visible but too small; local Rider-only 64px recognition
-  refinement passes all 26 Rider mobile checks and scoped lint; owner release pending.
+  refinement passes all 26 Rider mobile checks and scoped lint; owner pushed 01e2a4e.
+  Rider Ready confirmation and device recognition-size retest pending.
   Driver dispatch avatar remains 36px; no migration/native rebuild.
+  Further owner feedback requests larger Driver portrait: local Rider 88px refinement passes all
+  26 mobile checks and scoped lint; owner release pending, no additional backend/native change.
   See `architecture/trip-participant-photos.md` and
   `operations/trip-participant-photos-manual-test.md`.
 
