@@ -6,8 +6,14 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Scheduled Rider cancellation UI fix implemented locally after owner preorder acceptance found
+  its missing Cancel trip action. Owner approved cancel-and-rebook instead of in-place editing;
+  existing refunds/wallet restoration, reservation cleanup and fresh booking flow are reused.
+  Hosted release/manual acceptance pending; no migration or native rebuild.
+
 - Driver Preorders implemented locally; owner applied migration 20261009000100 after intended-only
-  dry run. Application commit/hosted release remains pending: owned New/Assigned lists,
+  dry run. Owner pushed application changes as a5223dd; hosted Ready/manual acceptance remains
+  pending: owned New/Assigned lists,
   actual counts, reserve/release, offline alerts, manager history and eligibility-checked priority
   timed offers with ordinary fallback. Rider active-trip guard remains intact.
   See `architecture/driver-preorders.md` and `operations/driver-preorders-manual-test.md`.

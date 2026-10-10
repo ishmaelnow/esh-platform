@@ -27,6 +27,10 @@ pricing/payment; never bypass them with production SQL.
    Reload. Another Driver cannot reserve the same trip; overlapping reservations are rejected.
 4. Release while scheduled: Rider booking remains intact. Rider cancellation clears reservation.
    Admin Dispatch shows tenant-only history.
+   In Rider Trips, Cancel trip must appear on scheduled bookings. Verify refund/wallet restoration
+   as applicable and that a failed cancellation leaves the trip visible for retry. After success,
+   open Show history / Book again, review addresses, select the new pickup time and confirm a fresh
+   fare/payment. Check the old Driver reservation disappears; the new trip is independently reservable.
 5. Enable Receive while offline and reload; availability stays unchanged. With email OFF/device
    ON, a newly available preorder alerts the device without email. Offline receipt OFF suppresses
    new availability while offline. Opting in does not replay old trips. Taps open Preorders.

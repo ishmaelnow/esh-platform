@@ -36,6 +36,51 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
 });
 
+test("scheduled trips expose cancellation, preserve failures and allow rebooking after cancellation", async ({ page }) => {
+  let cancelled = false;
+  let fail = true;
+  let refunds = 0;
+  await page.route("**/rest/v1/rpc/my_rider_scheduling", (route) => route.fulfill({ json: {
+    timeZone: "America/Chicago", settings: { minimumNoticeMinutes: 60 },
+    bookings: [{ bookingId: "scheduled-test", scheduledPickupAt: "2026-12-01T12:00:00Z", dispatchReadyAt: "2026-12-01T11:30:00Z" }],
+  } }));
+  await page.route("**/rest/v1/dispatch_bookings?*", (route) => route.fulfill({ json: [{
+    booking_id: "scheduled-test", fare_currency_code: "USD", final_fare_minor: 2500,
+    estimated_fare_minor: 2500, pickup_latitude: 32.78, pickup_longitude: -96.8,
+    destination_latitude: 32.79, destination_longitude: -96.81,
+  }] }));
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: {
+    tenant, profile, serviceAreas: [{ serviceAreaId: "preview-area", name: "City", description: null }],
+    bookings: [{ bookingId: "scheduled-test", serviceAreaId: "preview-area", pickupAddress: "Test scheduled pickup",
+      destinationAddress: "Test scheduled destination", status: cancelled ? "cancelled" : "scheduled",
+      scheduledPickupAt: "2026-12-01T12:00:00Z", createdAt: "2026-10-09T12:00:00Z",
+      finalFareMinor: 2500, estimatedFareMinor: 2500, fareCurrencyCode: "USD", driver: null, vehicle: null }],
+  } }));
+  await page.route("**/api/payments/refund", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ bookingId: "scheduled-test" });
+    refunds++;
+    if (fail) { await route.fulfill({ status: 400, json: { message: "Test refund unavailable" } }); return; }
+    cancelled = true;
+    await route.fulfill({ json: { refunded: true, walletRestored: true } });
+  });
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: "Cancel trip", exact: true }).click();
+  await expect(page.getByText("Test refund unavailable", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancel trip", exact: true })).toBeEnabled();
+  fail = false;
+  await page.getByRole("button", { name: "Cancel trip", exact: true }).click();
+  await expect(page.getByText("No scheduled trips.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancel trip", exact: true })).toHaveCount(0);
+  expect(refunds).toBe(2);
+  await page.getByRole("button", { name: "Show history" }).click();
+  await page.getByRole("button", { name: "Book again", exact: true }).click();
+  await expect(page.getByLabel("Pickup address", { exact: true })).toHaveValue("Test scheduled pickup");
+  await expect(page.getByLabel("Destination address", { exact: true })).toHaveValue("Test scheduled destination");
+  await expect(page.getByText("Review this new trip, select any unresolved address from search, and confirm the fare before requesting it.", { exact: true })).toBeVisible();
+});
+
 test("current ride tracking uses fresh coordinates, ages offline readings and switches to destination ETA", async ({ page }) => {
   let status = "accepted";
   let recordedAt = new Date().toISOString();

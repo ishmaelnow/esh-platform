@@ -1,4 +1,4 @@
-export const cancellableBookingStatuses = new Set(["requested", "offered", "accepted", "arrived"]);
+export const cancellableBookingStatuses = new Set(["scheduled", "requested", "offered", "accepted", "arrived"]);
 
 export function canCancelBooking(status: string) {
   return cancellableBookingStatuses.has(status);

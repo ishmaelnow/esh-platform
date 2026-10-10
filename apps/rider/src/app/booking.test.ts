@@ -11,10 +11,12 @@ import {
 
 describe("rider booking helpers", () => {
   it("permits cancellation only before a trip starts", () => {
+    expect(canCancelBooking("scheduled")).toBe(true);
     expect(canCancelBooking("requested")).toBe(true);
     expect(canCancelBooking("arrived")).toBe(true);
     expect(canCancelBooking("in_progress")).toBe(false);
     expect(canCancelBooking("completed")).toBe(false);
+    expect(canCancelBooking("cancelled")).toBe(false);
   });
 
   it("converts a tenant wall-clock pickup to UTC", () => {

@@ -4,10 +4,21 @@ Last updated: 2026-10-09
 
 ## Current objective and checkpoint
 
+Owner reports preorder Assigned works. Rider Cancel trip was hidden because the UI cancellable
+status set omitted scheduled. Owner approved cancellation/rebooking, not in-place editing. Local fix
+adds scheduled to that set; existing refund/wallet/unpaid cancellation and preorder cleanup remain
+authoritative. Book again prefills a new form requiring fresh confirmation, without old reservation.
+94 Rider tests, Rider production build and preorder SQL smoke pass. All 24 mobile browser tests
+pass, including scheduled cancellation/refund failure/retry/history/rebooking. Diff check passes.
+No migration/native rebuild. Hosted push and
+controlled Rider cancellation / Driver reservation cleanup acceptance pending.
+
 Current objective: owner approved and authorized implementing Driver Preorders after inspection.
 Owner applied migration 20261009000100_driver_preorders.sql after an intended-only dry run;
 supplied output confirms Applying migration / Finished supabase db push. Driver/Admin UI remains
-local and uncommitted; hosted release is pending.
+owner-committed/pushed as a5223dd; supplied Git output confirms main matches origin/main with only
+the four generated Driver/Rider next-env.d.ts and tsconfig.json edits remaining. Hosted Ready
+confirmation and controlled manual acceptance are pending.
 Reservations remain separate from active rides; dispatch-time priority uses existing timed offers
 with online/compliance/area/free-Driver checks, then ordinary matching/manual fallback. Driver UI
 has owned lists/counts, reservation/release and saved offline alerts; available cards hide addresses.
@@ -23,8 +34,8 @@ test-results/driver-preorders-assigned-414.png. SQL smoke passes after the final
 Remote migration succeeded per owner output. Full Supabase-chain, true concurrent-session and
 physical preorder delivery/dispatch acceptance remain unverified. No new native build/env required.
 See architecture/driver-preorders.md and operations/driver-preorders-manual-test.md.
-Preserve generated configs and all prior local documentation edits. Next: owner commits/pushes
-application changes and confirms hosted deployments, then performs controlled manual checks.
+Preserve generated configs. Next: owner confirms hosted deployments at a5223dd are Ready,
+then performs controlled manual checks. This checkpoint update is a local documentation change.
 
 Inspection findings:
 Repository confirms DriverShell has unavailable content, unknown counts and a disabled offline

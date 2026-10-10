@@ -40,6 +40,11 @@ not arbitrary supplied URLs. Provider acceptance is not device receipt. SMS rout
 
 ## Release and limits
 
+Rider changes to a booked preorder use cancellation followed by rebooking, not in-place editing.
+The Rider cancellation UI includes scheduled status and uses existing card refund/wallet restoration
+or unpaid cancellation paths. Cancellation clears the reservation; Book again prefills a new form
+and requires fresh address/fare/payment confirmation. It never transfers the old Driver reservation.
+
 Apply the reviewed migration before Admin, Transportation and Driver hosted release. Shared changes
 also pass the Rider build without changing its design. Existing push-capable shells suffice: no
 native rebuild, environment variable or new credential is required.
