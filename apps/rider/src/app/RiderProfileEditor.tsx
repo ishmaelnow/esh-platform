@@ -93,7 +93,7 @@ export function RiderProfileEditor({ profile, client, token, tenantSlug, onSaved
       <div className="rider-profile-photo-actions"><label>Profile photo <span className="field-hint">Optional</span>
         <input aria-label="Choose profile photo" type="file" accept="image/jpeg,image/png" disabled={photoBusy || photoLoading}
           onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void changePhoto(file); }} />
-      </label><p className="field-hint">Choose a JPEG or PNG from your photos or files. A photo is never required to book.</p>
+      </label><p className="field-hint">Choose a JPEG or PNG from your photos or files. A photo is never required to book. Your assigned driver can see it during your active ride.</p>
         {photoUrl ? <button type="button" className="button secondary compact" disabled={photoBusy}
           onClick={() => void changePhoto(null)}>Remove photo</button> : null}
         {photoError ? <><p className="error" role="alert">{photoError}</p><button type="button" className="button secondary compact"

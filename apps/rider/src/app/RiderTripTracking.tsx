@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { formatRouteDuration, validCoordinates } from "@esh-platform/maps";
 import { trackingMessage, type TripLocation } from "../lib/trip-tracking";
+import { TripParticipantPhoto } from "./TripParticipantPhoto";
 
-export function RiderTripTracking({ booking, location, accessToken, onOpen }: {
+export function RiderTripTracking({ booking, location, accessToken, sessionToken, onOpen }: {
   booking: { bookingId: string; status: string; pickupLatitude?: number | null; pickupLongitude?: number | null;
     destinationLatitude?: number | null; destinationLongitude?: number | null; driver: { displayName: string } | null };
-  location: TripLocation | null; accessToken?: string | undefined; onOpen?: () => void;
+  location: TripLocation | null; accessToken?: string | undefined; sessionToken?: string | undefined; onOpen?: () => void;
 }) {
   const targetLatitude = booking.status === "in_progress" ? booking.destinationLatitude : booking.pickupLatitude;
   const targetLongitude = booking.status === "in_progress" ? booking.destinationLongitude : booking.pickupLongitude;
@@ -35,7 +36,9 @@ export function RiderTripTracking({ booking, location, accessToken, onOpen }: {
   const seconds = estimate?.key === key ? estimate.seconds : null;
   return <section className={`rider-trip-tracking${onOpen ? " tracking-home" : ""}`} aria-label="Current ride tracking">
     <div role="status"><strong>{trackingMessage(booking.status)}</strong>
-      {booking.driver ? <p>{booking.driver.displayName}</p> : null}
+      {booking.driver ? <div>{sessionToken && ["accepted", "arrived", "in_progress"].includes(booking.status)
+        ? <TripParticipantPhoto bookingId={booking.bookingId} name={booking.driver.displayName} accessToken={sessionToken} />
+        : <p>{booking.driver.displayName}</p>}</div> : null}
       {location ? <p>{location.fresh ? "Live driver location" : "Last known driver location"} · {Number.isFinite(Date.parse(location.recordedAt)) ? new Date(location.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Update time unavailable"}</p>
         : ["accepted", "arrived", "in_progress"].includes(booking.status) ? <p>Driver location is unavailable. Trip updates will continue.</p> : null}
       {seconds !== null && canEstimate ? <p><strong>{booking.status === "in_progress" ? "Destination" : "Pickup"} ETA: about {formatRouteDuration(seconds)}</strong></p>

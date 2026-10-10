@@ -23,6 +23,7 @@ import { driverCallbackReceipt } from "../lib/consumed-auth-callback";
 import { driverHomeTotals } from "../lib/home-totals";
 import { DriverRiderLocation } from "./DriverRiderLocation";
 import { TripMessages } from "./TripMessages";
+import { TripParticipantPhoto } from "./TripParticipantPhoto";
 import { openDriverNavigation } from "../lib/embedded-navigation";
 import {
   availabilityBlockerDetails,
@@ -1676,7 +1677,9 @@ export default function DriverHome() {
                         {trip.status.replaceAll("_", " ")}
                       </span>
                     </div>
-                    <span>Customer: {trip.customerName}</span>
+                    {session && ["accepted", "arrived", "in_progress"].includes(trip.status)
+                      ? <TripParticipantPhoto bookingId={trip.bookingId} name={trip.customerName} accessToken={session.access_token} />
+                      : <span>Customer: {trip.customerName}</span>}
                     {trip.customerPhone ? <span>Contact: {trip.customerPhone}</span> : null}
                     <span>Pickup: {trip.pickupAddress}</span>
                     <span>Destination: {trip.destinationAddress}</span>
@@ -1978,6 +1981,7 @@ export default function DriverHome() {
                 <div>
                   <p className="eyebrow">Documents</p>
                   <h3>Evidence status</h3>
+                  <p className="field-hint">Your latest approved profile photo is shown to your passenger during an active ride. Your ID and other documents stay private.</p>
                 </div>
                 <button className="secondary" type="button" disabled={documentsRefreshing}
                   onClick={() => setDocumentRefresh((value) => value + 1)}>

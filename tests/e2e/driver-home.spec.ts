@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
+import { photoFixture } from "./helpers/trip-photos";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { setupDriverPreview } = require("../fixtures/driver-preview.cjs") as { setupDriverPreview: (page: Page, options?: { online?: boolean }) => Promise<void> };
 const geographicResponses = new WeakMap<Page, string[]>();
@@ -60,7 +61,7 @@ test("Android recovers native session after WebView clearing, refreshes expired 
   expect(await page.evaluate(() => localStorage.getItem("esh-driver-portal-auth"))).toBeNull();
   let refreshes = 0;
   await page.route("**/auth/v1/token?grant_type=refresh_token", (route) => {
-    expect(route.request().postDataJSON().refresh_token).not.toBe("consumed-fixture");
+    expect((route.request().postDataJSON() as { refresh_token?: string }).refresh_token).not.toBe("consumed-fixture");
     refreshes++;
     return route.fulfill({ json: {
       access_token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmV2aWV3In0.rotated",
@@ -314,6 +315,23 @@ test("assigned Driver messages support safe retry and keyboard scrolling", async
   await page.reload();
   await page.getByRole("button", { name: "Active trip · Open controls" }).click();
   await verify();
+});
+
+test("active Driver sees optional Rider photo with missing/broken image fallback", async ({ page }) => {
+  const photos = await photoFixture(page);
+  await page.route("**/rest/v1/rpc/my_driver_dispatch", (route) => route.fulfill({ json: { offers: [], trips: [{
+    bookingId: "90000000-0000-4000-8000-000000000001", customerName: "Fixture Passenger", customerPhone: null, pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination", notes: null,
+    serviceAreaName: "Preview area", status: "accepted", pickupLatitude: null, pickupLongitude: null,
+    destinationLatitude: null, destinationLongitude: null, fareCurrencyCode: "USD", fareAmountMinor: 1200,
+  }] } }));
+  await page.reload(); await page.getByRole("button", { name: "Active trip · Open controls" }).click();
+  await photos.verify("Fixture Passenger", "driver-trip-photo-414.png");
+  for (const mode of ["missing", "broken"] as const) {
+    photos.mode(mode); await page.reload();
+    await page.getByRole("button", { name: "Active trip · Open controls" }).click();
+    await expect(page.locator(".trip-participant-avatar")).toHaveText("FP");
+    await expect(page.locator(".trip-participant-avatar img")).toHaveCount(0);
+  }
 });
 
 test("active dispatch stays reachable with existing trip lifecycle and navigation controls", async ({ page }) => {

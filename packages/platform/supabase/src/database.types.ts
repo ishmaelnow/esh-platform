@@ -2616,6 +2616,7 @@ export type Database = {
       }
     }
     Functions: {
+      my_trip_participant_photo: { Args: { booking_value: string; role_value: string }; Returns: Json }
       my_trip_messages: { Args: { booking_value: string; role_value: string }; Returns: Json }
       send_my_trip_message: { Args: { booking_value: string; role_value: string; body_value: string; request_value: string }; Returns: string }
       my_rider_pickup_sharing: { Args: { target_booking_id: string }; Returns: boolean }

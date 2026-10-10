@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
+import { photoFixture } from "./helpers/trip-photos";
 
 const tenant = { tenantId: "11111111-1111-4111-8111-111111111111", tenantSlug: "rider-preview", displayName: "Preview rides" };
 const profile = { riderProfileId: "preview-rider", displayName: "Preview Rider", email: "rider-preview@example.invalid", phone: null as string | null, accessibilityNotes: null as string | null, status: "active" };
@@ -35,6 +36,28 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("/?tenant=rider-preview");
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
+});
+
+test("active Rider sees private Driver photo and initials without images outside active rides", async ({ page }) => {
+  const photos = await photoFixture(page);
+  let status = "accepted";
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: { tenant, profile, serviceAreas: [], bookings: [{
+    bookingId: "90000000-0000-4000-8000-000000000001", serviceAreaId: "preview-area", pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination",
+    status, createdAt: new Date().toISOString(), driver: { displayName: "Fixture Driver", driverNumber: "1" }, vehicle: null,
+  }] } }));
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await photos.verify("Fixture Driver", "rider-trip-photo-414.png");
+  for (const mode of ["missing", "broken"] as const) {
+    photos.mode(mode); await page.reload();
+    await expect(page.locator(".trip-participant-avatar")).toHaveText("FD");
+    await expect(page.locator(".trip-participant-avatar img")).toHaveCount(0);
+  }
+  status = "completed"; const count = photos.requests(); await page.reload();
+  await expect(page.getByText("Your active ride", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".trip-participant-avatar")).toHaveCount(0);
+  expect(photos.requests()).toBe(count);
 });
 
 test("active Rider messages support safe retry and keyboard scrolling", async ({ page }) => {
@@ -111,7 +134,7 @@ test("current ride tracking uses fresh coordinates, ages offline readings and sw
   });
   await page.route("**/rest/v1/rpc/my_rider_pickup_sharing", (route) => route.fulfill({ json: sharing }));
   await page.route("**/rest/v1/rpc/set_my_rider_pickup_sharing", (route) => {
-    sharing = route.request().postDataJSON().enabled_value as boolean;
+    sharing = (route.request().postDataJSON() as { enabled_value: boolean }).enabled_value;
     return route.fulfill({ json: sharing });
   });
   await page.route("**/rest/v1/rpc/update_my_rider_pickup_location", (route) => {

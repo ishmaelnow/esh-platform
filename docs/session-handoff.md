@@ -4,27 +4,39 @@ Last updated: 2026-10-10
 
 ## Current objective and checkpoint
 
-Current objective: owner authorized private Rider/assigned-Driver trip messaging with Go. No prior
-chat implementation found. Local migration 20261010000100_trip_messages.sql and owned read/send RPCs
-add text-only messages for accepted/arrived/in_progress trips. Direct clients/Admin cannot read text;
-RLS, current tenant/participant/assignment checks, request UUID dedupe, 1000-character/five-per-10sec
-limits and audit without bodies. Completion/cancellation/reassignment deletes content and cancels
-queued device alerts. Expandable local Rider/Driver controls reuse a shared headless controller;
-visible 5sec polling, memory-only drafts, safe text rendering and uncertain retry preservation.
-Generic native/Web Push uses existing consent and fixed Trips/Dispatch routing, never body/email/SMS.
-17 shared, 108 Admin, 94 Rider and 67 Driver unit tests pass; 25 Rider and 27 Driver mobile checks
-pass, including messaging retry/escaping/keyboard scrolling. Minimal PostgreSQL privacy/native queue/
-lifecycle smoke passes; no full Supabase-chain/concurrent-session/physical messaging certification.
-Rider/Driver/Admin final builds, shared type build and scoped lint pass. Final Rider screenshot
-regeneration and all 25 checks pass after button polish; both complete mobile message screenshots
-were inspected (preview runs clear the shared test-results directory). Diff whitespace check passes.
-No production mutation, Git mutation, credential/env
-change or native rebuild. Generated config diffs change during builds/previews; final Git lists
-Driver/Rider tsconfig and Rider next-env edits. Preserve these and exclude them from feature staging.
+Current objective: owner approved optional participant photos after trip messaging acceptance.
+Local implementation shows Driver profile photo in Rider home/current tracking and optional Rider
+photo in Driver active dispatch, only accepted/arrived/in_progress. Initials are the fallback.
+No photos in offers, preorders, history or notifications; no ID/compliance documents displayed.
+Latest Driver personal_photo evidence must be approved, unexpired JPEG/PNG; pending/rejected/PDF
+replacements never resurrect older images. Rider uses the existing optional private profile image.
+Owned metadata RPC reuses active tenant/person/profile/assignment checks, audits without paths,
+and broadens no table or storage grants. Server routes fix viewer role, verify session, validate
+bucket/path, sign for 60 seconds and recheck assignment/photo before returning no-store responses.
+UI keeps URLs in memory, renews only while visible, clears hidden/offline/expired/error images,
+and aborts stale requests. Existing signed links remain usable until expiry; downloaded images
+cannot be revoked. Account/Documents explain active-trip photo visibility.
+
+24 shared unit tests, 94 Rider and 67 Driver tests pass. All 26 Rider and 28 Driver mobile browser
+checks pass including photos, missing/broken fallback and existing messaging/booking/document flows.
+Both full mobile screenshots inspected at 414 x 896 (preview runs clear older test-results).
+Disposable minimal PostgreSQL ownership, role, anonymous, other-Driver, tenant, lifecycle,
+reassignment, latest-image eligibility and audit smoke passes. This is not full Supabase-chain,
+concurrent-session or physical-device certification. Shared type build and scoped lint pass with
+existing Rider img warning; production builds pass. Final Driver build repeated after disclosure.
+No credential/env/native changes, remote DB mutation or Git mutation by Codex.
+
 Owner supplied successful Applying migration / Finished supabase db push for only
-20261010000100_trip_messages.sql on 2026-10-10. Remote migration is applied; local checks are complete.
-Next: owner commits/pushes application changes, confirms Rider/Driver/Admin Ready, then performs
-controlled two-account/device acceptance. Codex performed no remote database mutation.
+20261010000200_trip_participant_photos.sql. Remote migration is applied; application changes remain
+uncommitted locally. Next: owner commit/push reviewed feature files, verify Rider/Driver Ready,
+then two-account device acceptance. No native rebuild required.
+Preserve generated Driver/Rider tsconfig and next-env changes; exclude from feature staging.
+See architecture/trip-participant-photos.md and operations/trip-participant-photos-manual-test.md.
+
+Previous feature: owner applied 20261010000100_trip_messages.sql, pushed b16276b and reports private
+trip messaging PASSED. Text-only current-assignment messaging, bounded duplicate-safe retry,
+generic device alerts (no email/SMS/body previews), and deletion on trip end/reassignment remain
+intact. Its previous local unit/browser/SQL/build checks passed. Do not repeat completed acceptance.
 See architecture/trip-messages.md and operations/trip-messages-manual-test.md.
 
 Owner deployed 65b7ae3 Ready and reports cancellation/rebooking passed with flying colors.

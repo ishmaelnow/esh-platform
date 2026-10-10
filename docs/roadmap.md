@@ -6,8 +6,16 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Optional active-trip participant photos implemented locally. Rider sees latest approved Driver
+  profile image; assigned Driver sees optional Rider profile image; initials fallback. Private
+  owned metadata, 60-second signed links, assignment recheck and audit; never ID/compliance photos,
+  offers or notifications. Local unit/SQL/mobile/build checks pass. Owner applied migration
+  20261010000200 successfully; application push/deployment and device acceptance pending.
+  See `architecture/trip-participant-photos.md` and
+  `operations/trip-participant-photos-manual-test.md`.
+
 - Private Rider/assigned-Driver trip messaging implemented locally; owner applied migration
-  20261010000100. Application push/hosted release and device acceptance remain pending:
+  20261010000100 and pushed application changes as b16276b. Owner reports messaging PASSED:
   text-only, accepted through trip end, owned RPCs, bounded duplicate-safe retries, device alerts
   without message previews, no email/SMS, and conversation deletion at closure/reassignment.
   See `architecture/trip-messages.md` and `operations/trip-messages-manual-test.md`.

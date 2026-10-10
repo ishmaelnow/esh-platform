@@ -1347,7 +1347,7 @@ export default function RiderHome() {
       /> : null}
 
       {portal?.profile && mapBooking && activePortalTab === "book" && !bookingOpen ? <RiderTripTracking
-        booking={mapBooking} location={mapDriver} accessToken={mapboxToken}
+        booking={mapBooking} location={mapDriver} accessToken={mapboxToken} sessionToken={session?.access_token}
         onOpen={() => setActivePortalTab("trips")} /> : null}
 
       {error ? (
@@ -1722,7 +1722,7 @@ export default function RiderHome() {
           <section className="history">
             <div className="section-heading"><div><p className="kicker">Current trip</p><h2>Your active ride</h2></div><button className="button secondary compact" onClick={() => void loadPortal()} disabled={busy}>Refresh</button></div>
             {currentBookings.map((booking) => <article className="card trip-card" key={`current-page-${booking.bookingId}`}>
-              <RiderTripTracking booking={booking} accessToken={mapboxToken}
+              <RiderTripTracking booking={booking} accessToken={mapboxToken} sessionToken={session?.access_token}
                 location={currentTripLocation(booking.status, tripLocations.find((location) => location.bookingId === booking.bookingId), trackingNow)} />
               {supabase && session && ["accepted", "arrived", "in_progress"].includes(booking.status) ? <TripMessages
                 key={`messages:${session.user.id}:${tenantSlug}:${booking.bookingId}:${booking.driver?.driverNumber}`} client={supabase} bookingId={booking.bookingId} role="rider" /> : null}

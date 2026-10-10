@@ -26,7 +26,9 @@ The photo API verifies the bearer token with Auth and resolves its active owned 
 ownership. Only then does the server use the existing server-only service-role configuration.
 Paths contain tenant/profile IDs and a random filename. The authenticated photo RPC rechecks
 ownership, bucket metadata and path before changing the record. Audit metadata contains no full
-phone, image, original filename or private storage path. Drivers receive no new photo access.
+phone, image, original filename or private storage path. Drivers receive no general photo access.
+The active-trip exception is documented in `trip-participant-photos.md`: only the current assigned
+Driver can request a short-lived link after acceptance through trip end. Missing photos use initials.
 
 GET returns a five-minute signed URL with an uncached response. Signed URLs are bearer access
 until expiry; previously issued links can remain usable briefly after removal. The image bypasses
