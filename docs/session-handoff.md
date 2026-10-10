@@ -4,22 +4,39 @@ Last updated: 2026-10-10
 
 ## Current objective and checkpoint
 
-Current objective: owner approved optional participant photos after trip messaging acceptance.
-New active issue: owner reports recurring TypeError Load failed while booking on both devices.
-Exact triggering step remains unknown; focused async clarification requested (Review fare,
-confirmation/open payment, return after payment, or address entry). Public Rider /api/health
-returned HTTP 200 {ok:true,app:rider} in a read-only external
-check. This does not certify quote/checkout/Supabase. Raw message alone cannot identify the failed
-request, and post-booking loadPortal can fail after successful booking; check Trips before retry.
-Owner requested a customer-facing wording fix for now. Local riderErrorMessage maps Safari/Supabase
-Load failed (including TypeError prefix), Failed to fetch and NetworkError to a professional
-connection message advising checking Trips before retrying a booking. Existing actionable errors
-are preserved. Seven focused booking helper tests and scoped ESLint pass (existing Pages-directory
-warning only). Root cause remains unverified; no booking request/retry/lifecycle behavior changed.
-Next: owner push/deployment for wording; diagnose original error once triggering step is known.
-No speculative booking fix or production write. Git confirms photo containment pushed as 75aa546,
-main aligned with origin/main and four generated config edits before this checkpoint update.
-Next: identify failing step/device, then inspect appropriate request response/logs and reproduce.
+Current objective: owner authorized trip support and lost-item reporting with Go. Local implementation
+adds Get help on completed/cancelled Rider history, private owned reports (one per category/trip),
+Transportation Trip support queue, Rider-visible review history/status and company responses.
+Existing dispatch owner/admin authorization is reused; direct table access is denied with RLS.
+Request UUID retries and database uniqueness prevent duplicate reports; review versions prevent
+stale conflicting edits. No booking, refund, payment, Driver chat or notification behavior changed.
+V1 explicitly tells Riders to check Get help for responses; no outbound support alerts, attachments,
+Rider follow-up thread or emergency action. See architecture/trip-support.md and
+operations/trip-support-manual-test.md.
+
+Owner supplied successful Applying migration / Finished supabase db push output for only
+20261010000400_trip_support.sql. Remote migration is applied; do not reapply. Application changes
+remain local/uncommitted and need owner commit/push plus Rider/Transportation deployment.
+No new native build/env/credential.
+233 Rider/Admin/shared unit/API tests, minimal embedded PostgreSQL ownership/tenant/retry/review/
+audit smoke, scoped lint and Rider/Admin production builds pass. All 27 Rider mobile browser
+checks pass, including failed submit preserving draft, same-request retry, resolution, 414 x 896,
+short viewport and 320px overflow. Admin browser review/filter/failure/retry/short-viewport check
+and Transportation production build pass. Complete 414 x 896 fixture screenshots inspected for
+both interfaces: Rider at test-results/rider-trip-support-414.png; retained Admin copy at
+tmp/trip-support-evidence/admin-trip-support-414.png. Physical keyboard/device acceptance pending.
+Transportation preview exposed its existing undeclared mapbox-gl CSS dependency; import now uses
+the existing @esh-platform/maps/styles.css export, preserving identical map styles.
+No Git mutation, remote migration, production report/payment/booking or deployment by Codex.
+Preserve generated configuration edits. Next: owner scoped commit/push, verify Rider/Transportation
+Ready and controlled manual acceptance. No full Supabase-chain, real concurrent-session
+or physical-device certification; embedded SQL uses explicit minimal legacy stand-ins.
+
+Owner pushed connection-error wording as 6996fbe (Git confirms main/origin alignment). Recurring
+booking TypeError Load failed on both devices remains undiagnosed: exact triggering step unknown.
+Public Rider health returned 200, which does not certify quote/checkout/Supabase. Post-booking
+refresh can fail after a successful booking. Friendly wording advises checking Trips before retry;
+no speculative request/retry/auth fix. Diagnose separately when the triggering step is supplied.
 Owner accepts 88px size but reports the circular crop hides much of the face. Local Rider-only
 image CSS now uses centered horizontal/20% vertical crop, favoring upper portrait content, while
 keeping 88px size. Tall synthetic portrait fixture exposed the underlying intrinsic sizing bug:

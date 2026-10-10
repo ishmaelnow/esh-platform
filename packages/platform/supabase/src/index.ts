@@ -219,3 +219,4 @@ export function createServiceSupabaseClient(source: NodeJS.ProcessEnv = process.
     },
   });
 }
+export * from "./trip-support";

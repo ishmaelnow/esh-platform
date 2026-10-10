@@ -7,6 +7,7 @@ import { type SupabaseAuthSession } from "@esh-platform/supabase";
 import { LiveTripMap } from "@esh-platform/maps/client";
 import { createAdminBrowserClient } from "@/lib/browser-client";
 import { DriverPreordersPanel } from "./DriverPreordersPanel";
+import { TripSupportPanel } from "./TripSupportPanel";
 import {
   adminAuthRefreshMode,
   loadPrincipalTenantContext,
@@ -55,6 +56,7 @@ type ViewKey =
   | "serviceAreas"
   | "dispatch"
   | "reputation"
+  | "support"
   | "ledger"
   | "pricing"
   | "notifications"
@@ -76,6 +78,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "roles", label: "Roles" },
   { key: "serviceAreas", label: "Service Areas" },
   { key: "settings", label: "Settings" },
+  { key: "support", label: "Trip support" },
   { key: "vehicles", label: "Vehicles" },
 ];
 
@@ -504,6 +507,8 @@ function ResolvedWorkspace({
       {activeView === "reputation" ? (
         <ReputationPanel canManageTenant={canManageTenant} onRefresh={onRefresh} summary={summary} />
       ) : null}
+      {activeView === "support" ? <TripSupportPanel key={`${session.user.id}:${summary.tenant.tenant_id}`} tenantId={summary.tenant.tenant_id}
+        userId={session.user.id} canManage={canManageTenant} /> : null}
       {activeView === "ledger" ? (
         <LedgerPanel canManageTenant={canManageTenant} onRefresh={onRefresh} summary={summary} />
       ) : null}

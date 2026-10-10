@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import "mapbox-gl/dist/mapbox-gl.css";
+import "@esh-platform/maps/styles.css";
 import "../../../admin/src/app/styles.css";
 
 export const metadata: Metadata = {

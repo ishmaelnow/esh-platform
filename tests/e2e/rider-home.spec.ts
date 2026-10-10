@@ -38,6 +38,47 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
 });
 
+test("past-trip support submits, recovers uncertain requests and displays company resolution", async ({ page }) => {
+  const reports: Record<string, unknown>[] = [];
+  const sent: Record<string, unknown>[] = [];
+  let fail = true;
+  await page.route("**/rest/v1/rpc/my_trip_support", (route) => route.fulfill({ json: reports }));
+  await page.route("**/rest/v1/rpc/create_my_trip_support", (route) => {
+    const body = route.request().postDataJSON() as Record<string, unknown>; sent.push(body);
+    if (fail) { fail = false; return route.abort("failed"); }
+    reports.push({ caseId: "support-fixture", bookingId: "past", category: body.category_value, description: body.description_value,
+      status: "open", response: "", version: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), updates: [] });
+    return route.fulfill({ json: "support-fixture" });
+  });
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: "Show history" }).click();
+  await page.getByText("Get help", { exact: true }).click();
+  const section = page.locator(".trip-support");
+  await section.getByLabel("Report type").selectOption("lost_item");
+  await section.getByLabel("What did you leave behind?").fill("TEST blue bag <script>not executable</script>");
+  await section.getByRole("button", { name: "Submit report" }).click();
+  await expect(section.getByRole("alert")).toContainText("couldn’t confirm");
+  await expect(section.getByLabel("What did you leave behind?")).toHaveValue("TEST blue bag <script>not executable</script>");
+  await section.getByRole("button", { name: "Submit report" }).click();
+  await expect(section.getByText("Report received.", { exact: false })).toBeVisible();
+  expect(sent[0]?.request_value).toBe(sent[1]?.request_value);
+  await expect(section.locator(".support-report")).toHaveCount(1);
+  reports[0]!.status = "resolved";
+  reports[0]!.updates = [{ status: "resolved", response: "TEST your bag has been found. Contact the company for collection.", createdAt: new Date().toISOString() }];
+  await section.getByRole("button", { name: "Refresh reports" }).click();
+  await expect(section.getByText("Lost item · Resolved", { exact: true })).toBeVisible();
+  await expect(section.getByText("TEST your bag has been found. Contact the company for collection.")).toBeVisible();
+  await section.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-results/rider-trip-support-414.png", fullPage: true });
+  await page.setViewportSize({ width: 414, height: 520 });
+  await section.getByLabel("How can we help?").fill("TEST another issue for the company");
+  await section.getByRole("button", { name: "Submit report" }).scrollIntoViewIfNeeded();
+  await expect(section.getByRole("button", { name: "Submit report" })).toBeInViewport();
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("active Rider sees private Driver photo and initials without images outside active rides", async ({ page }) => {
   const photos = await photoFixture(page);
   let status = "accepted";

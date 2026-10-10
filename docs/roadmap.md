@@ -6,6 +6,18 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Trip support/lost-item reporting implemented locally: completed/cancelled Rider trip history
+  Get help; owned text-only reports; tenant-authorized Transportation review, Rider-visible reply
+  history and resolution, duplicate-safe submission and versioned reviews. No automatic refunds,
+  Driver disclosure or outbound support alerts. Owner applied migration 20261010000400 successfully;
+  233 unit/API checks, minimal SQL isolation/retry/review smoke, 27 Rider mobile checks, Admin
+  mobile review check and Rider/Admin/Transportation production builds pass. Owner release and
+  device acceptance pending. See `architecture/trip-support.md` and
+  `operations/trip-support-manual-test.md`.
+
+- Rider connection-error wording is owner-pushed as 6996fbe. The recurring booking connection
+  failure remains undiagnosed; message improvement does not resolve its underlying cause.
+
 - Optional active-trip participant photos implemented locally. Rider sees latest approved Driver
   profile image; assigned Driver sees optional Rider profile image; initials fallback. Private
   owned metadata, 60-second signed links, assignment recheck and audit; never ID/compliance photos,
