@@ -4,7 +4,8 @@ Owner runs database and Git/deployment mutations. Existing Rider/Driver service 
 No native rebuild or new environment variable is required for the hosted Capacitor apps.
 
 1. Run `corepack pnpm exec supabase db push --dry-run` in the authenticated shell. Confirm only
-   `20261010000200_trip_participant_photos.sql` is listed before running the real push.
+   `20261010000300_legacy_driver_trip_photos.sql` is listed before running the real push.
+   Original migration 20261010000200 is already applied per owner output.
 2. Push reviewed files and confirm Rider and Driver Ready at the same commit. Reopen installed apps.
    Keep generated next-env/tsconfig edits out of feature staging.
 3. Use identifiable test accounts in one tenant. Rider Account: optional JPEG/PNG photo. Driver
@@ -19,6 +20,12 @@ No native rebuild or new environment variable is required for the hosted Capacit
    If testing reassignment, old Driver loses access. Already issued links last up to 60 seconds;
    downloaded images cannot be revoked. No photos in alerts, preorders or history.
 7. Restore Driver availability and end/cancel test bookings. Do not initiate SOS or real charges.
+
+Legacy regression: Ish Coach's existing approved JPEG has no tenant-prefixed path. After the
+follow-up migration AND application deployment, it should display without reupload. Check both
+modern tenant-prefixed and historical paths. Active-trip avatars should remain 36 x 36 pixels.
+To inspect photo eligibility without a ride, query the Driver's latest personal_photo directly;
+do not use a tenant path prefix as a legacy eligibility condition. Sharing still requires an active ride.
 
 Local checks include shared signing tests, Rider/Driver unit and browser suites, scoped lint/type
 checks, production builds and `node tooling/scripts/trip-participant-photos-sql-check.cjs`.

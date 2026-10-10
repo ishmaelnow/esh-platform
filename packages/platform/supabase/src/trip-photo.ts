@@ -21,8 +21,10 @@ export async function tripPhotoResponse(request: Request, role: "rider" | "drive
     if (!data.photo) return reply({ url: null });
     const bucket = role === "rider" ? "driver-application-files" : "rider-profile-photos";
     const path = data.photo.path;
-    const prefix = role === "rider" ? `${data.tenant}/` : `${data.tenant}/${data.rider}/`;
-    if (!data.tenant || !data.rider || data.photo.bucket !== bucket || !path?.startsWith(prefix)
+    // Older Driver uploads have no tenant prefix. The owned RPC selects the exact evidence
+    // through tenant + assigned profile + personal_photo; never accept a request-supplied path.
+    const riderPathValid = role === "rider" || path?.startsWith(`${data.tenant}/${data.rider}/`);
+    if (!data.tenant || !data.rider || data.photo.bucket !== bucket || !path?.trim() || !riderPathValid
       || path.split("/").some((part) => !part || part === "." || part === "..")) return reply({ url: null });
     const signed = await clients.service().storage.from(bucket).createSignedUrl(path, 60);
     if (signed.error || !signed.data?.signedUrl) return reply({ url: null });

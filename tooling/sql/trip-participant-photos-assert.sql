@@ -20,6 +20,15 @@ set local role authenticated;
 select pg_temp.check_photo('Rider sees profile only',public.my_trip_participant_photo('90000000-0000-4000-8000-000000000001','rider')->'photo'->>'path' like '%/profile.jpg');
 select pg_temp.denied_photo('driver');
 reset role;
+update public.driver_evidence set storage_path='legacy-application/profile.jpg' where evidence_type='personal_photo';
+insert into public.driver_evidence(tenant_id,driver_profile_id,evidence_type,storage_bucket,storage_path,mime_type,review_status,submitted_at)
+ values('10000000-0000-4000-8000-000000000002','50000000-0000-4000-8000-000000000001','personal_photo',
+ 'driver-application-files','another-tenant/profile.jpg','image/jpeg','approved',now()+interval '3 seconds'),
+ ('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000002','personal_photo',
+ 'driver-application-files','another-driver/profile.jpg','image/jpeg','approved',now()+interval '3 seconds');
+set local role authenticated;
+select pg_temp.check_photo('owned legacy Driver path selectable',public.my_trip_participant_photo('90000000-0000-4000-8000-000000000001','rider')->'photo'->>'path'='legacy-application/profile.jpg');
+reset role;
 insert into public.driver_evidence(tenant_id,driver_profile_id,evidence_type,storage_bucket,storage_path,mime_type,review_status,submitted_at)
  values('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','driver_id_photo',
  'driver-application-files','10000000-0000-4000-8000-000000000001/user/identity.jpg','image/jpeg','approved',now()+interval '1 second');

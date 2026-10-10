@@ -5,6 +5,20 @@ Last updated: 2026-10-10
 ## Current objective and checkpoint
 
 Current objective: owner approved optional participant photos after trip messaging acceptance.
+Production acceptance found a confirmed legacy-path bug: owner SQL shows Ish Coach's latest
+personal_photo is approved image/jpeg, no expiry, object exists, correct driver-application-files
+bucket, but path_matches_tenant=false. No active ride is needed to inspect existing photo eligibility.
+Local correction: new 20261010000300_legacy_driver_trip_photos.sql and signer remove Driver tenant
+prefix assumption; still select through exact tenant/assigned profile/latest personal_photo and
+retain bucket/traversal/active-participant/recheck protections. Rider namespace is unchanged.
+No reupload, file move or approval change. Owner also requested smaller images: trip avatars now
+36px instead of 44px, with document originals/previews unchanged.
+Shared 25 unit tests, shared type/lint and updated disposable SQL smoke pass (legacy selection,
+other-tenant/other-Driver evidence exclusion plus prior privacy/lifecycle cases).
+Owner supplied successful Applying migration / Finished supabase db push for only
+20261010000300_legacy_driver_trip_photos.sql. Remote correction is applied. Next: owner commit/push
+the application correction, verify Rider/Driver Ready at that commit, then retest Ish Coach's image
+and compact avatars. No native rebuild required.
 Local implementation shows Driver profile photo in Rider home/current tracking and optional Rider
 photo in Driver active dispatch, only accepted/arrived/in_progress. Initials are the fallback.
 No photos in offers, preorders, history or notifications; no ID/compliance documents displayed.
@@ -17,19 +31,22 @@ UI keeps URLs in memory, renews only while visible, clears hidden/offline/expire
 and aborts stale requests. Existing signed links remain usable until expiry; downloaded images
 cannot be revoked. Account/Documents explain active-trip photo visibility.
 
-24 shared unit tests, 94 Rider and 67 Driver tests pass. All 26 Rider and 28 Driver mobile browser
+25 shared unit tests pass; prior Rider 94/Driver 67 unit checks remain the last app-unit checkpoint.
+All 26 Rider and 28 Driver mobile browser
 checks pass including photos, missing/broken fallback and existing messaging/booking/document flows.
 Both full mobile screenshots inspected at 414 x 896 (preview runs clear older test-results).
 Disposable minimal PostgreSQL ownership, role, anonymous, other-Driver, tenant, lifecycle,
 reassignment, latest-image eligibility and audit smoke passes. This is not full Supabase-chain,
 concurrent-session or physical-device certification. Shared type build and scoped lint pass with
-existing Rider img warning; production builds pass. Final Driver build repeated after disclosure.
+existing Rider img warning; both production builds pass for the compatibility correction.
 No credential/env/native changes, remote DB mutation or Git mutation by Codex.
 
 Owner supplied successful Applying migration / Finished supabase db push for only
-20261010000200_trip_participant_photos.sql. Remote migration is applied; application changes remain
-uncommitted locally. Next: owner commit/push reviewed feature files, verify Rider/Driver Ready,
-then two-account device acceptance. No native rebuild required.
+20261010000200_trip_participant_photos.sql. Remote migration is applied. Owner pushed application
+changes as 7ddcc76; supplied Git output confirms main matches origin/main with only Driver/Rider
+tsconfig edits remaining. Acceptance found the legacy bug above; new correction is local and still
+requires migration/application deployment, then two-account device acceptance. No native rebuild
+required. This checkpoint update is a local documentation edit.
 Preserve generated Driver/Rider tsconfig and next-env changes; exclude from feature staging.
 See architecture/trip-participant-photos.md and operations/trip-participant-photos-manual-test.md.
 

@@ -20,9 +20,17 @@ expired or PDF replacement yields initials instead of resurrecting an older imag
 vehicle photos, registration and insurance are never selected. Existing application approval links
 evidence to the Driver profile; no new assignment or review step exists.
 
+Legacy compatibility: owner SQL confirmed Ish Coach has an approved JPEG and an existing object
+in the correct bucket, but its historical path lacks the tenant prefix. Follow-up migration
+`20261010000300_legacy_driver_trip_photos.sql` removes that invalid prefix assumption for Driver
+photos. Ownership is established by tenant + assigned Driver profile + latest personal_photo
+evidence, as in existing document preview. The signing route accepts only this RPC-selected path,
+not a request parameter; bucket, traversal, lifecycle and assignment rechecks remain. Rider's
+tenant/profile namespace rule is unchanged. No files are moved or reuploaded and no review changes.
+
 Each app's bearer-authenticated `/api/trips/photo?bookingId=...` route fixes the viewer role on the
 server and verifies the email session. Shared signing logic uses owned RPC metadata, validates
-bucket/namespace, rejects traversal, signs for 60 seconds with existing service credentials, then
+bucket and Rider namespace, rejects traversal, signs for 60 seconds with existing service credentials, then
 rechecks metadata/assignment. Replies use `Cache-Control: no-store`; errors become initials without
 blocking controls. Missing migration/configuration degrades safely. No new env or native permission.
 
@@ -30,6 +38,7 @@ React adapters keep URLs in memory, bypass image optimization, omit referrers an
 or offline state. They renew every 45 seconds while visible, discard expired images after 55 seconds
 and abort/ignore stale requests on account/booking changes or unmount. Names accompany decorative
 images. Rider Account and Driver Documents explain visibility. Rider can remove the optional photo.
+Trip avatars are compact 36 x 36 pixels, cropped inside a circle; original document preview is unchanged.
 
 Signed links are bearer links: a recipient who already obtained one can use it until expiry even
 after cancellation/reassignment. Downloaded pixels cannot be revoked. Fresh requests are denied

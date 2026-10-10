@@ -17,7 +17,8 @@ export async function photoFixture(page: Page) {
       await expect(avatar).toBeVisible();
       await expect(avatar.locator("img")).toBeVisible();
       await expect.poll(() => avatar.locator("img").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
-      expect(await avatar.locator(".trip-participant-avatar").evaluate((el) => el.getBoundingClientRect().width)).toBe(44);
+      expect(await avatar.locator(".trip-participant-avatar").evaluate((el) => el.getBoundingClientRect().width)).toBe(36);
+      expect(await avatar.locator("img").evaluate((el) => el.getBoundingClientRect().height)).toBe(36);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await page.screenshot({ path: `test-results/${screenshot}`, fullPage: true });
     },

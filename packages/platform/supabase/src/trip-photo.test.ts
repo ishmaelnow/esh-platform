@@ -39,12 +39,18 @@ describe("active-trip private profile photo signing", () => {
     expect(await (await tripPhotoResponse(request(), "rider", clients)).json()).toEqual({ url: null });
     expect(service).not.toHaveBeenCalled();
   });
-  it("rejects wrong buckets, foreign paths and traversal", async () => {
-    for (const photo of [{ bucket: "other", path: "tenant/file" }, { bucket: "driver-application-files", path: "foreign/file" }, { bucket: "driver-application-files", path: "tenant/../id" }]) {
+  it("rejects wrong buckets, empty paths and traversal", async () => {
+    for (const photo of [{ bucket: "other", path: "tenant/file" }, { bucket: "driver-application-files", path: " " }, { bucket: "driver-application-files", path: "tenant/../id" }]) {
       rpc.mockResolvedValueOnce({ data: { ...metadata, photo }, error: null });
       expect(await (await tripPhotoResponse(request(), "rider", clients)).json()).toEqual({ url: null });
     }
     expect(service).not.toHaveBeenCalled();
+  });
+  it("signs an owned legacy Driver path without accepting the request's path override", async () => {
+    rpc.mockResolvedValue({ data: { ...metadata, photo: { bucket: "driver-application-files", path: "legacy-app/profile/image.jpg" } }, error: null });
+    expect(await (await tripPhotoResponse(request(), "rider", clients)).json()).toEqual({ url: "https://storage.test/signed", expiresIn: 60 });
+    expect(sign).toHaveBeenCalledWith("legacy-app/profile/image.jpg", 60);
+    expect(sign).not.toHaveBeenCalledWith("other", 60);
   });
   it("rejects a changed assignment, closed ride, or removed photo during signing", async () => {
     for (const current of [{ data: { ...metadata, assignment: "replacement" }, error: null }, { data: null, error: {} }, { data: { ...metadata, photo: null }, error: null }]) {

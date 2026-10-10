@@ -10,7 +10,10 @@ remain independent of transportation-specific workflows.
   profile image; assigned Driver sees optional Rider profile image; initials fallback. Private
   owned metadata, 60-second signed links, assignment recheck and audit; never ID/compliance photos,
   offers or notifications. Local unit/SQL/mobile/build checks pass. Owner applied migration
-  20261010000200 successfully; application push/deployment and device acceptance pending.
+  20261010000200 successfully and pushed 7ddcc76; hosted Ready and device acceptance pending.
+  Acceptance found a legacy path incompatibility for Ish Coach's existing approved image. Local
+  follow-up 20261010000300 plus signing compatibility and compact 36px avatars pass local checks;
+  owner applied migration 20261010000300 successfully; application push/deployment and retest pending.
   See `architecture/trip-participant-photos.md` and
   `operations/trip-participant-photos-manual-test.md`.
 
