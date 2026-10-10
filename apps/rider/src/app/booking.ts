@@ -29,6 +29,9 @@ export function riderErrorMessage(value: unknown) {
     ? value.message.trim()
     : typeof value === "object" && value !== null && "message" in value
       && typeof value.message === "string" ? value.message.trim() : "";
+  if (/^(?:TypeError:\s*)?(?:Load failed|Failed to fetch|NetworkError(?: when attempting to fetch resource)?\.?)$/i.test(message)) {
+    return "We’re having trouble connecting. Please check your internet connection. If you were booking a ride, check Trips before trying again.";
+  }
   return message || fallback;
 }
 

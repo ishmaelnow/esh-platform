@@ -5,6 +5,21 @@ Last updated: 2026-10-10
 ## Current objective and checkpoint
 
 Current objective: owner approved optional participant photos after trip messaging acceptance.
+New active issue: owner reports recurring TypeError Load failed while booking on both devices.
+Exact triggering step remains unknown; focused async clarification requested (Review fare,
+confirmation/open payment, return after payment, or address entry). Public Rider /api/health
+returned HTTP 200 {ok:true,app:rider} in a read-only external
+check. This does not certify quote/checkout/Supabase. Raw message alone cannot identify the failed
+request, and post-booking loadPortal can fail after successful booking; check Trips before retry.
+Owner requested a customer-facing wording fix for now. Local riderErrorMessage maps Safari/Supabase
+Load failed (including TypeError prefix), Failed to fetch and NetworkError to a professional
+connection message advising checking Trips before retrying a booking. Existing actionable errors
+are preserved. Seven focused booking helper tests and scoped ESLint pass (existing Pages-directory
+warning only). Root cause remains unverified; no booking request/retry/lifecycle behavior changed.
+Next: owner push/deployment for wording; diagnose original error once triggering step is known.
+No speculative booking fix or production write. Git confirms photo containment pushed as 75aa546,
+main aligned with origin/main and four generated config edits before this checkpoint update.
+Next: identify failing step/device, then inspect appropriate request response/logs and reproduce.
 Owner accepts 88px size but reports the circular crop hides much of the face. Local Rider-only
 image CSS now uses centered horizontal/20% vertical crop, favoring upper portrait content, while
 keeping 88px size. Tall synthetic portrait fixture exposed the underlying intrinsic sizing bug:
@@ -13,8 +28,8 @@ position the image inside the fixed circle; Driver avatar size/crop otherwise un
 files unchanged. This meaningful portrait test replaces the earlier featureless square; the initial
 run caught 176px image height inside the 88px circle. Final corrected checks: all 26 Rider and
 28 Driver mobile tests pass, portrait screenshot inspected, scoped fixture lint and whitespace
-check pass. No new production build needed for CSS-only changes. Next: owner push, Rider/Driver
-Ready confirmation and actual-photo crop retest. No migration or native rebuild required.
+check pass. No new production build needed for CSS-only changes. Owner pushed 75aa546; hosted
+Ready and actual-photo crop acceptance not yet explicitly supplied. No migration/native rebuild.
 Latest owner feedback: Driver photo remains too small after the 64px refinement pushed as 01e2a4e.
 Local CSS now increases Driver photo in Rider home/current tracking to 88px; Driver app's Rider
 avatar remains 36px. Browser size assertion and durable docs updated. No backend, schema, upload

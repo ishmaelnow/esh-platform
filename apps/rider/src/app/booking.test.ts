@@ -48,6 +48,14 @@ describe("rider booking helpers", () => {
       localTime: "09:15", weekdays: [1, 2, 3, 4, 5, 6, 7], timeZone: "UTC", maximum: 5 })).toThrow("limited to 5 trips");
   });
 
+  it("presents connection failures without exposing browser errors or encouraging duplicate bookings", () => {
+    const expected = "We’re having trouble connecting. Please check your internet connection. If you were booking a ride, check Trips before trying again.";
+    expect(riderErrorMessage(new TypeError("Load failed"))).toBe(expected);
+    expect(riderErrorMessage({ message: "TypeError: Load failed" })).toBe(expected);
+    expect(riderErrorMessage(new TypeError("Failed to fetch"))).toBe(expected);
+    expect(riderErrorMessage({ message: "NetworkError when attempting to fetch resource." })).toBe(expected);
+  });
+
   it("normalizes tenant links and unknown errors", () => {
     expect(normalizeTenantSlug(" Dallas-Rides ")).toBe("dallas-rides");
     expect(riderErrorMessage(new Error("Not available"))).toBe("Not available");
