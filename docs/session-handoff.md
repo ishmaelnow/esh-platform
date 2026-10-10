@@ -1,8 +1,37 @@
 # Session Handoff
 
-Last updated: 2026-10-09
+Last updated: 2026-10-10
 
 ## Current objective and checkpoint
+
+Current objective: owner authorized private Rider/assigned-Driver trip messaging with Go. No prior
+chat implementation found. Local migration 20261010000100_trip_messages.sql and owned read/send RPCs
+add text-only messages for accepted/arrived/in_progress trips. Direct clients/Admin cannot read text;
+RLS, current tenant/participant/assignment checks, request UUID dedupe, 1000-character/five-per-10sec
+limits and audit without bodies. Completion/cancellation/reassignment deletes content and cancels
+queued device alerts. Expandable local Rider/Driver controls reuse a shared headless controller;
+visible 5sec polling, memory-only drafts, safe text rendering and uncertain retry preservation.
+Generic native/Web Push uses existing consent and fixed Trips/Dispatch routing, never body/email/SMS.
+17 shared, 108 Admin, 94 Rider and 67 Driver unit tests pass; 25 Rider and 27 Driver mobile checks
+pass, including messaging retry/escaping/keyboard scrolling. Minimal PostgreSQL privacy/native queue/
+lifecycle smoke passes; no full Supabase-chain/concurrent-session/physical messaging certification.
+Rider/Driver/Admin final builds, shared type build and scoped lint pass. Final Rider screenshot
+regeneration and all 25 checks pass after button polish; both complete mobile message screenshots
+were inspected (preview runs clear the shared test-results directory). Diff whitespace check passes.
+No production mutation, Git mutation, credential/env
+change or native rebuild. Generated config diffs change during builds/previews; final Git lists
+Driver/Rider tsconfig and Rider next-env edits. Preserve these and exclude them from feature staging.
+Owner supplied successful Applying migration / Finished supabase db push for only
+20261010000100_trip_messages.sql on 2026-10-10. Remote migration is applied; local checks are complete.
+Next: owner commits/pushes application changes, confirms Rider/Driver/Admin Ready, then performs
+controlled two-account/device acceptance. Codex performed no remote database mutation.
+See architecture/trip-messages.md and operations/trip-messages-manual-test.md.
+
+Owner deployed 65b7ae3 Ready and reports cancellation/rebooking passed with flying colors.
+Preorder offer for booking 6c54f2a7... was offered at 2026-10-09 21:20:00.032 CDT and accepted
+21:21:06.768 CDT, before its 21:21:30 expiry. Supplied SQL confirms server timing for that booking;
+another cancelled booking had no offers. Owner requested leaving the earlier display-time question
+alone and moving on. Do not implement a speculative timezone/activation fix.
 
 Owner reports preorder Assigned works. Rider Cancel trip was hidden because the UI cancellable
 status set omitted scheduled. Owner approved cancellation/rebooking, not in-place editing. Local fix
@@ -10,10 +39,10 @@ adds scheduled to that set; existing refund/wallet/unpaid cancellation and preor
 authoritative. Book again prefills a new form requiring fresh confirmation, without old reservation.
 94 Rider tests, Rider production build and preorder SQL smoke pass. All 24 mobile browser tests
 pass, including scheduled cancellation/refund failure/retry/history/rebooking. Diff check passes.
-No migration/native rebuild. Hosted push and
-controlled Rider cancellation / Driver reservation cleanup acceptance pending.
+No migration/native rebuild. Owner pushed 65b7ae3, confirmed Rider Ready and accepted cancellation,
+rebooking and reservation cleanup as recorded above.
 
-Current objective: owner approved and authorized implementing Driver Preorders after inspection.
+Previous objective: owner approved and authorized implementing Driver Preorders after inspection.
 Owner applied migration 20261009000100_driver_preorders.sql after an intended-only dry run;
 supplied output confirms Applying migration / Finished supabase db push. Driver/Admin UI remains
 owner-committed/pushed as a5223dd; supplied Git output confirms main matches origin/main with only

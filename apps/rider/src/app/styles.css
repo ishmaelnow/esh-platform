@@ -745,3 +745,17 @@ textarea:focus {
 .rider-pickup-sharing { display: grid; gap: 10px; padding: 14px 0; color: #153258; }
 .rider-pickup-sharing p { margin: 0; font-size: .9rem; }
 .rider-pickup-sharing button { min-height: 44px; color: #153258; }
+.trip-messages { margin: 12px 0; padding: 14px; border: 1px solid #dce4ed; border-radius: 16px; color: #153258; background: white; }
+.trip-messages summary { cursor: pointer; min-height: 44px; font-weight: 700; display: flex; align-items: center; }
+.trip-messages p { overflow-wrap: anywhere; }
+.trip-message-list { list-style: none; padding: 0; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; }
+.trip-message-list li { padding: 10px 12px; margin: 8px 0; border-radius: 12px; background: #f1f4f7; }
+.trip-message-list li.is-own { background: #e8eff8; }
+.trip-message-list p { white-space: pre-wrap; margin: 6px 0; }
+.trip-message-list time { font-size: 12px; }
+.trip-messages textarea { display: block; box-sizing: border-box; width: 100%; min-height: 70px; padding: 12px; border: 1px solid #bdcad9; border-radius: 10px; color: #153258; background: white; font: inherit; }
+.trip-messages textarea:focus-visible { outline: 2px solid #153258; outline-offset: 2px; }
+.trip-messages button { min-height: 44px; margin-top: 8px; padding: 10px 16px; border: 1px solid #dce4ed; border-radius: 12px; color: #153258; background: #f1f4f7; font: inherit; font-weight: 700; cursor: pointer; }
+.trip-messages button:focus-visible { outline: 2px solid #153258; outline-offset: 2px; }
+.trip-messages button:disabled { opacity: .6; cursor: default; }
+.trip-messages button.primary { background: #153258; color: white; }

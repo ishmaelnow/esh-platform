@@ -1,5 +1,9 @@
 # Native Rider and Driver notifications
 
+Private [trip messages](trip-messages.md) adds generic recipient-specific device events with no body
+in alerts, no email/SMS and cancellation of queued alerts when the conversation closes. Its migration
+and hosted release are pending; existing device consent and provider retry rules are preserved.
+
 Driver Preorders adds generic availability/reservation events, fixed validated Preorders tap
 routing and stale-availability suppression. Email/mobile choices remain independent. See
 [Driver Preorders](driver-preorders.md); its migration and hosted release are pending.

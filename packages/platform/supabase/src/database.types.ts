@@ -40,6 +40,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      trip_messages: {
+        Row: { message_id: string; tenant_id: string; booking_id: string; rider_profile_id: string; driver_profile_id: string; sender_role: string; request_id: string; body: string; sent_at: string }
+        Insert: { message_id?: string; tenant_id: string; booking_id: string; rider_profile_id: string; driver_profile_id: string; sender_role: string; request_id: string; body: string; sent_at?: string }
+        Update: { body?: string }
+        Relationships: []
+      }
       driver_preorder_settings: {
         Row: { driver_profile_id: string; tenant_id: string; receive_while_offline: boolean; updated_at: string }
         Insert: { driver_profile_id: string; tenant_id: string; receive_while_offline?: boolean; updated_at?: string }
@@ -2610,6 +2616,8 @@ export type Database = {
       }
     }
     Functions: {
+      my_trip_messages: { Args: { booking_value: string; role_value: string }; Returns: Json }
+      send_my_trip_message: { Args: { booking_value: string; role_value: string; body_value: string; request_value: string }; Returns: string }
       my_rider_pickup_sharing: { Args: { target_booking_id: string }; Returns: boolean }
       my_driver_preorders: { Args: Record<PropertyKey, never>; Returns: Json }
       set_my_driver_preorder_settings: { Args: { enabled_value: boolean }; Returns: boolean }

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { messageFixture } from "./helpers/trip-messages";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { setupDriverPreview } = require("../fixtures/driver-preview.cjs") as { setupDriverPreview: (page: Page, options?: { online?: boolean }) => Promise<void> };
 const geographicResponses = new WeakMap<Page, string[]>();
@@ -301,6 +302,18 @@ test("unavailable account data does not fabricate earnings or confirmed online s
   await expect(page.locator(".driver-total-money strong")).toHaveText("—");
   await expect(page.getByRole("switch", { name: "Driver availability" })).toBeDisabled();
   await expect(page.getByRole("switch", { name: "Driver availability" })).toHaveAttribute("aria-checked", "false");
+});
+
+test("assigned Driver messages support safe retry and keyboard scrolling", async ({ page }) => {
+  const verify = await messageFixture(page, "driver");
+  await page.route("**/rest/v1/rpc/my_driver_dispatch", (route) => route.fulfill({ json: { offers: [], trips: [{
+    bookingId: "message-trip", customerName: "Fixture passenger", customerPhone: null, pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination", notes: null,
+    serviceAreaName: "Preview area", status: "accepted", pickupLatitude: null, pickupLongitude: null,
+    destinationLatitude: null, destinationLongitude: null, fareCurrencyCode: "USD", fareAmountMinor: 1200,
+  }] } }));
+  await page.reload();
+  await page.getByRole("button", { name: "Active trip · Open controls" }).click();
+  await verify();
 });
 
 test("active dispatch stays reachable with existing trip lifecycle and navigation controls", async ({ page }) => {

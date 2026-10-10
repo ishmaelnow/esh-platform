@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { messageFixture } from "./helpers/trip-messages";
 
 const tenant = { tenantId: "11111111-1111-4111-8111-111111111111", tenantSlug: "rider-preview", displayName: "Preview rides" };
 const profile = { riderProfileId: "preview-rider", displayName: "Preview Rider", email: "rider-preview@example.invalid", phone: null as string | null, accessibilityNotes: null as string | null, status: "active" };
@@ -34,6 +35,18 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("/?tenant=rider-preview");
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
+});
+
+test("active Rider messages support safe retry and keyboard scrolling", async ({ page }) => {
+  const verify = await messageFixture(page, "rider");
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: { tenant, profile, serviceAreas: [], bookings: [{
+    bookingId: "message-trip", serviceAreaId: "preview-area", pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination",
+    status: "accepted", createdAt: new Date().toISOString(), driver: { displayName: "Fixture Driver", driverNumber: "1" }, vehicle: null,
+  }] } }));
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await verify();
 });
 
 test("scheduled trips expose cancellation, preserve failures and allow rebooking after cancellation", async ({ page }) => {

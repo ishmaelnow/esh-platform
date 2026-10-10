@@ -13,6 +13,7 @@ const urgentTypes = new Set([
   "rider_trip_started", "rider_booking_cancelled", "rider_scheduled_reminder",
   "rider_recurring_autopay_failed", "driver_bank_payout_failed",
   "driver_preorder_available", "driver_preorder_update",
+  "rider_trip_message", "driver_trip_message",
 ]);
 
 export function buildPrivacySafePush(notificationType: string, payload: Record<string, unknown>, config: AdminServerConfig) {
@@ -20,6 +21,8 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   const title = urgentTypes.has(notificationType) ? "Action needed in ESH" : "ESH update";
   const messages: Record<string, string> = {
     dispatch_offer_created: "You have a new trip offer.",
+    rider_trip_message: "You have a new trip message. Open ESH to read it.",
+    driver_trip_message: "You have a new trip message. Open ESH to read it.",
     driver_preorder_available: "A scheduled trip is available to reserve. Open Preorders to review it.",
     driver_preorder_update: "Your preorder reservation has changed. Open Preorders to review it.",
     rider_driver_accepted: "A Driver accepted your trip.",
@@ -35,6 +38,8 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   const url = new URL("/", rider ? config.redirects.riderAppUrl : config.redirects.driverAppUrl);
   if (rider && typeof payload.tenant_slug === "string") url.searchParams.set("tenant", payload.tenant_slug);
   if (notificationType.startsWith("driver_preorder_")) url.searchParams.set("view", "preorders");
+  if (notificationType === "rider_trip_message") url.searchParams.set("view", "trips");
+  if (notificationType === "driver_trip_message") url.searchParams.set("view", "dispatch");
   return { title, body: messages[notificationType] ?? "Open ESH to view your latest update.",
     url: url.toString(), tag: `esh-${notificationType}` };
 }

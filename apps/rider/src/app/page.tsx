@@ -21,6 +21,7 @@ import { RiderMenu } from "./RiderMenu";
 import { RiderLanding } from "./RiderLanding";
 import { RiderTripTracking } from "./RiderTripTracking";
 import { RiderPickupSharing } from "./RiderPickupSharing";
+import { TripMessages } from "./TripMessages";
 import { currentTripLocation, trackingMapPoint } from "../lib/trip-tracking";
 import { RiderSheet } from "./RiderSheet";
 import { RiderProfileEditor } from "./RiderProfileEditor";
@@ -1723,6 +1724,8 @@ export default function RiderHome() {
             {currentBookings.map((booking) => <article className="card trip-card" key={`current-page-${booking.bookingId}`}>
               <RiderTripTracking booking={booking} accessToken={mapboxToken}
                 location={currentTripLocation(booking.status, tripLocations.find((location) => location.bookingId === booking.bookingId), trackingNow)} />
+              {supabase && session && ["accepted", "arrived", "in_progress"].includes(booking.status) ? <TripMessages
+                key={`messages:${session.user.id}:${tenantSlug}:${booking.bookingId}:${booking.driver?.driverNumber}`} client={supabase} bookingId={booking.bookingId} role="rider" /> : null}
               {supabase && session && ["accepted", "arrived"].includes(booking.status) ? <RiderPickupSharing
                 key={`${session.user.id}:${tenantSlug}:${booking.bookingId}`} client={supabase} bookingId={booking.bookingId} /> : null}
               <div className="trip-top"><div><span className={`status status-${booking.status}`}>{bookingStatusLabel(booking.status)}</span><h3>{booking.pickupAddress}</h3><p className="destination">to {booking.destinationAddress}</p></div><time>{formatDate(booking.createdAt)}</time></div>

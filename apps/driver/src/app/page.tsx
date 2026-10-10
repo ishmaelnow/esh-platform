@@ -22,6 +22,7 @@ import { driverAndroidStorage } from "../lib/android-session-storage";
 import { driverCallbackReceipt } from "../lib/consumed-auth-callback";
 import { driverHomeTotals } from "../lib/home-totals";
 import { DriverRiderLocation } from "./DriverRiderLocation";
+import { TripMessages } from "./TripMessages";
 import { openDriverNavigation } from "../lib/embedded-navigation";
 import {
   availabilityBlockerDetails,
@@ -477,7 +478,7 @@ export default function DriverHome() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const requestedView = new URLSearchParams(window.location.search).get("view");
-      if (requestedView === "earnings" || requestedView === "preorders") setActiveTab(requestedView);
+      if (requestedView === "earnings" || requestedView === "preorders" || requestedView === "dispatch") setActiveTab(requestedView);
     }
   }, []);
 
@@ -1681,6 +1682,7 @@ export default function DriverHome() {
                     <span>Destination: {trip.destinationAddress}</span>
                     {trip.fareCurrencyCode && trip.fareAmountMinor != null ? <strong>Rider trip fare (not Driver earnings): {new Intl.NumberFormat(undefined, { style: "currency", currency: trip.fareCurrencyCode }).format(trip.fareAmountMinor / 100)}</strong> : null}
                     {trip.notes ? <span>Notes: {trip.notes}</span> : null}
+                    {supabase && session ? <TripMessages key={`messages:${session.user.id}:${trip.bookingId}`} client={supabase} bookingId={trip.bookingId} role="driver" /> : null}
                     {supabase && session ? (
                       <DriverRiderLocation key={`${session.user.id}:${trip.bookingId}`} client={supabase} bookingId={trip.bookingId} status={trip.status}
                         accessToken={mapboxToken}

@@ -6,6 +6,16 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Private Rider/assigned-Driver trip messaging implemented locally; owner applied migration
+  20261010000100. Application push/hosted release and device acceptance remain pending:
+  text-only, accepted through trip end, owned RPCs, bounded duplicate-safe retries, device alerts
+  without message previews, no email/SMS, and conversation deletion at closure/reassignment.
+  See `architecture/trip-messages.md` and `operations/trip-messages-manual-test.md`.
+
+- Owner confirms scheduled Rider cancellation/rebooking passed at Ready 65b7ae3. Preorder test offer
+  was created 2026-10-09 21:20:00 CDT and accepted 21:21:06 CDT before expiry, per supplied SQL.
+  No timing correction needed for that booking; owner requested moving on.
+
 - Scheduled Rider cancellation UI fix implemented locally after owner preorder acceptance found
   its missing Cancel trip action. Owner approved cancel-and-rebook instead of in-place editing;
   existing refunds/wallet restoration, reservation cleanup and fresh booking flow are reused.
