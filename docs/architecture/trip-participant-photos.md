@@ -40,6 +40,10 @@ and abort/ignore stale requests on account/booking changes or unmount. Names acc
 images. Rider Account and Driver Documents explain visibility. Rider can remove the optional photo.
 Driver photos shown in Rider tracking are 88 x 88 pixels for recognition; Rider photos in Driver
 dispatch remain 36 x 36 pixels. Both crop inside a circle; original document preview is unchanged.
+Rider's Driver portrait crop uses horizontal center and 20% vertical positioning to favor the face
+in the upper portion of portrait uploads. It does not alter originals or perform face detection.
+Both apps position the image inside a relative fixed-size circle, preventing a tall image's intrinsic
+grid height from overflowing the frame. Browser regression uses a tall synthetic portrait.
 
 Signed links are bearer links: a recipient who already obtained one can use it until expiry even
 after cancellation/reassignment. Downloaded pixels cannot be revoked. Fresh requests are denied

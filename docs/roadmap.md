@@ -19,7 +19,12 @@ remain independent of transportation-specific workflows.
   Rider Ready confirmation and device recognition-size retest pending.
   Driver dispatch avatar remains 36px; no migration/native rebuild.
   Further owner feedback requests larger Driver portrait: local Rider 88px refinement passes all
-  26 mobile checks and scoped lint; owner release pending, no additional backend/native change.
+  26 mobile checks and scoped lint; owner pushed e14773d, Rider Ready/device retest pending.
+  No additional backend/native change.
+  Owner accepts 88px size; local crop refinement favors the upper portrait to avoid hiding the
+  face. Tall-portrait testing also exposed intrinsic image height overflowing the circle; fixed
+  containment in both apps passes all 26 Rider/28 Driver mobile tests and scoped fixture lint.
+  Owner release and actual-photo crop retest pending; no upload/migration/native change.
   See `architecture/trip-participant-photos.md` and
   `operations/trip-participant-photos-manual-test.md`.
 

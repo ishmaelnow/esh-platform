@@ -25,6 +25,9 @@ Legacy regression: Ish Coach's existing approved JPEG has no tenant-prefixed pat
 follow-up migration AND application deployment, it should display without reupload. Check both
 modern tenant-prefixed and historical paths. Driver photos in Rider tracking should be 88 x 88
 pixels; Rider photos in Driver dispatch stay 36 x 36 pixels, with names and trip controls accessible.
+Use a real portrait to check the Driver's face stays visible inside the Rider circle. Rider favors
+the upper part of tall images (20% vertical crop); actual-photo confirmation is needed because this
+is a fixed crop, not face detection. Square images remain centered without changing uploaded files.
 To inspect photo eligibility without a ride, query the Driver's latest personal_photo directly;
 do not use a tenant path prefix as a legacy eligibility condition. Sharing still requires an active ride.
 

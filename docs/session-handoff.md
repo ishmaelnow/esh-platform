@@ -5,12 +5,23 @@ Last updated: 2026-10-10
 ## Current objective and checkpoint
 
 Current objective: owner approved optional participant photos after trip messaging acceptance.
+Owner accepts 88px size but reports the circular crop hides much of the face. Local Rider-only
+image CSS now uses centered horizontal/20% vertical crop, favoring upper portrait content, while
+keeping 88px size. Tall synthetic portrait fixture exposed the underlying intrinsic sizing bug:
+percentage image height inside a grid could exceed the circular frame. Both apps now absolutely
+position the image inside the fixed circle; Driver avatar size/crop otherwise unchanged. Original
+files unchanged. This meaningful portrait test replaces the earlier featureless square; the initial
+run caught 176px image height inside the 88px circle. Final corrected checks: all 26 Rider and
+28 Driver mobile tests pass, portrait screenshot inspected, scoped fixture lint and whitespace
+check pass. No new production build needed for CSS-only changes. Next: owner push, Rider/Driver
+Ready confirmation and actual-photo crop retest. No migration or native rebuild required.
 Latest owner feedback: Driver photo remains too small after the 64px refinement pushed as 01e2a4e.
 Local CSS now increases Driver photo in Rider home/current tracking to 88px; Driver app's Rider
 avatar remains 36px. Browser size assertion and durable docs updated. No backend, schema, upload
 or native change. All 26 Rider mobile checks pass, 414 x 896 full screenshot inspected, scoped test
-lint and whitespace check pass. Next: owner push/Rider Ready confirmation and device recognition-size
-retest. Preserve generated config edits and local docs. No migration or native rebuild required.
+lint and whitespace check pass. Owner reports pushed; Git confirms e14773d and main aligned with
+origin/main, only four generated config edits remaining before this docs update. Next: Rider Ready
+at e14773d and device recognition-size retest. No migration or native rebuild required.
 Prior 64px refinement passed all 26 Rider mobile checks, scoped lint and whitespace check.
 Production acceptance found a confirmed legacy-path bug: owner SQL shows Ish Coach's latest
 personal_photo is approved image/jpeg, no expiry, object exists, correct driver-application-files
