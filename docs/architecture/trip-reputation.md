@@ -14,4 +14,5 @@ To discourage retaliation, a received rating is revealed only after both parties
 seven days after completion. Hidden ratings are never returned to the rated party; the submitter can
 still see their own submission. Ratings do not affect dispatch eligibility or matching in V1.
 
-Notification delivery, appeals, aggregate public profiles, and rating-based matching remain deferred.
+Optional post-trip reminders are documented in [Trip rating reminders](trip-rating-reminders.md).
+Appeals, aggregate public profiles, received-rating alerts and rating-based matching remain deferred.

@@ -7,6 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import Image from "next/image";
 import {
   createIsolatedBrowserSupabaseClient,
+  readRatingLink, readRatingTap, type RatingTarget,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@esh-platform/maps";
 import { LiveTripMap, RiderHomeMap } from "@esh-platform/maps/client";
 import { RiderMenu } from "./RiderMenu";
+import { RatingReminderFocus } from "./RatingReminderFocus";
 import { RiderLanding } from "./RiderLanding";
 import { RiderTripTracking } from "./RiderTripTracking";
 import { RiderPickupSharing } from "./RiderPickupSharing";
@@ -269,6 +271,7 @@ export default function RiderHome() {
   const [activePortalTab, setActivePortalTab] = useState<"account" | "book" | "trips" | "payments" | "wallet">("book");
   const [showTripHistory, setShowTripHistory] = useState(false);
   const [supportLink, setSupportLink] = useState<SupportLink | null>(null);
+  const [ratingLink, setRatingLink] = useState<RatingTarget | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingHeight, setBookingHeight] = useState(360);
   const [homeDestinationEntry, setHomeDestinationEntry] = useState(false);
@@ -660,6 +663,11 @@ export default function RiderHome() {
     let listener: { remove: () => Promise<void> } | null = null;
     const handleCallback = async (url: string) => {
       if (cancelled) return;
+      const rating = readRatingLink(url, window.location.origin);
+      if (rating) {
+        setRatingLink(rating); setTenantSlug(rating.tenantSlug); setActivePortalTab("trips"); setBookingOpen(false);
+        void Browser.close().catch(() => undefined); return;
+      }
       const support = readSupportLink(url, window.location.origin);
       if (support) {
         setSupportLink(support); setTenantSlug(support.tenantSlug); setActivePortalTab("trips"); setBookingOpen(false);
@@ -722,6 +730,10 @@ export default function RiderHome() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const requestedView = new URLSearchParams(window.location.search).get("view");
+    const rating = readRatingLink(window.location.href, window.location.origin);
+    if (rating) {
+      setRatingLink(rating); setTenantSlug(rating.tenantSlug); setActivePortalTab("trips"); setBookingOpen(false); return;
+    }
     if (requestedView === "payments") setActivePortalTab("payments");
     else if (requestedView === "wallet") setActivePortalTab("wallet");
     else if (requestedView === "trips") {
@@ -1972,13 +1984,16 @@ export default function RiderHome() {
             })}
           </section>
           ) : null}
+          {activePortalTab === "trips" ? <RatingReminderFocus key={`${session?.user.id}:${tenantSlug}`}
+            bookingId={ratingLink?.tenantSlug === portal.tenant.tenantSlug ? ratingLink.bookingId : null}
+            trips={reputationTrips} ready={!loading && portal.tenant.tenantSlug === tenantSlug} /> : null}
           {activePortalTab === "trips" && reputationTrips.length > 0 ? (
           <details className="history reputation-history progressive-panel">
             <summary>Post-trip ratings</summary>
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
             {reputationTrips.length === 0 ? <div className="card empty"><p>Completed trips eligible for rating will appear here.</p></div> : reputationTrips.map((trip) => {
-              return <article className="card trip-card" key={`rating-${trip.bookingId}`}>
+              return <article className="card trip-card" id={`rating-${trip.bookingId}`} tabIndex={-1} key={`rating-${trip.bookingId}`}>
                 <h3>{trip.pickupAddress}</h3><p className="destination">to {trip.destinationAddress}</p>
                 <p className="area">Driver: {trip.subjectName} · completed {formatDate(trip.completedAt)}</p>
                 {trip.submittedRating ? <p><strong>Your rating:</strong> {trip.submittedRating.overall}/5</p> : null}
@@ -1999,7 +2014,7 @@ export default function RiderHome() {
         </div>
         </>
       )}
-      {Capacitor.isNativePlatform() && supabase && session && portal?.profile && portal.tenant.tenantSlug === tenantSlug ? <NativePushControl key={`${session.user.id}:${tenantSlug}`} client={supabase} userId={session.user.id} tenantSlug={tenantSlug} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => { setActivePortalTab("trips"); setSupportLink(readSupportTap(data)); void loadPortal().catch(() => setError("Trip updates could not be refreshed.")); }} /> : null}
+      {Capacitor.isNativePlatform() && supabase && session && portal?.profile && portal.tenant.tenantSlug === tenantSlug ? <NativePushControl key={`${session.user.id}:${tenantSlug}`} client={supabase} userId={session.user.id} tenantSlug={tenantSlug} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => { setActivePortalTab("trips"); setRatingLink(readRatingTap(data, "rider")); setSupportLink(readSupportTap(data)); setBookingOpen(false); void loadPortal().catch(() => setError("Trip updates could not be refreshed.")); }} /> : null}
     </main></TripAttentionProvider>
   );
 }

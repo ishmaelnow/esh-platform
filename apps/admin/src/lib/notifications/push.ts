@@ -2,6 +2,7 @@ import webpush from "web-push";
 import type { PlatformSupabaseClient } from "@esh-platform/supabase";
 import type { AdminServerConfig } from "@/lib/config";
 import { supportUrl } from "./support-target";
+import { ratingUrl } from "@esh-platform/supabase";
 
 type PushNotification = {
   notification_id: string; tenant_id: string; notification_type: string;
@@ -21,6 +22,8 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   const rider = notificationType.startsWith("rider_");
   const title = urgentTypes.has(notificationType) ? "Action needed in ESH" : "ESH update";
   const messages: Record<string, string> = {
+    rider_rating_reminder: "How was your trip? Open ESH to leave an optional private rating.",
+    driver_rating_reminder: "How was your trip? Open ESH to leave an optional private rating.",
     rider_support_update: "Your support report has an update. Open ESH to read it.",
     driver_support_update: "Your support report has an update. Open ESH to read it.",
     dispatch_offer_created: "You have a new trip offer.",
@@ -44,13 +47,20 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   if (notificationType === "rider_trip_message") url.searchParams.set("view", "trips");
   if (notificationType === "driver_trip_message") url.searchParams.set("view", "dispatch");
   return { title, body: messages[notificationType] ?? "Open ESH to view your latest update.",
-    url: notificationType === "rider_support_update" ? supportUrl(config.redirects.riderAppUrl, payload)
+    url: ["rider_rating_reminder", "driver_rating_reminder"].includes(notificationType)
+      ? ratingUrl(rider ? config.redirects.riderAppUrl : config.redirects.driverAppUrl, payload)
+      : notificationType === "rider_support_update" ? supportUrl(config.redirects.riderAppUrl, payload)
       : notificationType === "driver_support_update" ? supportUrl(config.redirects.driverAppUrl, payload, "recent") : url.toString(), tag: `esh-${notificationType}` };
 }
 
 export async function deliverNotificationPush(
   service: PlatformSupabaseClient, config: AdminServerConfig, notification: PushNotification,
 ) {
+  if (["rider_rating_reminder", "driver_rating_reminder"].includes(notification.notification_type)) {
+    const current = await service.rpc("rating_alert_current", { notification_value: notification.notification_id });
+    if (current.error) throw current.error;
+    if (!current.data) return { delivered: 0, failed: 0, skipped: true };
+  }
   if (notification.notification_type === "driver_preorder_available") {
     const current = await service.rpc("preorder_alert_current", { notification_value: notification.notification_id });
     if (current.error) throw current.error;
@@ -82,7 +92,8 @@ export async function deliverNotificationPush(
     if (!attempt) continue;
     try {
       const result = await webpush.sendNotification({ endpoint: subscription.endpoint,
-        keys: { p256dh: subscription.p256dh_key, auth: subscription.auth_key } }, payload, { TTL: 300, urgency: "high" });
+        keys: { p256dh: subscription.p256dh_key, auth: subscription.auth_key } }, payload, { TTL: 300,
+          urgency: notification.notification_type.endsWith("_rating_reminder") ? "normal" : "high" });
       await service.from("push_delivery_attempts").update({ status: "delivered", attempt_count: attemptCount,
         response_status: result.statusCode, delivered_at: new Date().toISOString(), failure_message: null })
         .eq("push_delivery_attempt_id", attempt.push_delivery_attempt_id);

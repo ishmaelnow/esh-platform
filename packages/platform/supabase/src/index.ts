@@ -4,6 +4,8 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables, TablesInsert, TablesUpdate } from "./database.types";
 
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./database.types";
+export { ratingTarget, readRatingLink, readRatingTap, ratingUrl } from "./rating-link";
+export type { RatingTarget } from "./rating-link";
 export { tripPhotoResponse } from "./trip-photo";
 export { createTripMessageController, readTripMessages } from "./trip-messages";
 export type { TripMessage, TripMessageState } from "./trip-messages";

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
 import { verifyUnreadSupport } from "./helpers/trip-unread";
+import { verifyRatingReminder } from "./helpers/rating-reminders";
 import { photoFixture } from "./helpers/trip-photos";
 import type { TripReceipt } from "../../apps/rider/src/lib/trip-receipt";
 
@@ -42,6 +43,10 @@ test.beforeEach(async ({ page }) => {
 
 test("Rider unread badges clear only a viewed response and survive reload", async ({ page }) => {
   await verifyUnreadSupport(page, "rider");
+});
+
+test("Rider rating reminder opens only the requested owned form and handles submitted or unavailable trips", async ({ page }) => {
+  await verifyRatingReminder(page, "rider");
 });
 
 test("trip receipt displays real-record shapes, exports safely and stays usable at mobile sizes", async ({ page }) => {

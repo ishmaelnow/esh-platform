@@ -7,9 +7,11 @@ import { Capacitor } from "@capacitor/core";
 import Image from "next/image";
 import {
   createIsolatedBrowserSupabaseClient,
+  readRatingLink, readRatingTap, type RatingTarget,
   type SupabaseAuthSession,
 } from "@esh-platform/supabase";
 import { DriverShell, type DriverView } from "./DriverShell";
+import { RatingReminderFocus } from "./RatingReminderFocus";
 import { DriverPreorders, useDriverPreorders } from "./DriverPreorders";
 import { DriverApplication } from "./DriverApplication";
 import { DriverFileInput } from "./DriverFileInput";
@@ -249,6 +251,7 @@ export default function DriverHome() {
   const [statementEndDate, setStatementEndDate] = useState(() => localDateValue(new Date()));
   const [activeTab, setActiveTab] = useState<DriverView>("home");
   const [supportLink, setSupportLink] = useState<Pick<DriverSupportLink, "bookingId" | "caseId"> | null>(null);
+  const [ratingLink, setRatingLink] = useState<RatingTarget | null>(null);
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
   const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
@@ -401,6 +404,8 @@ export default function DriverHome() {
     let listener: { remove: () => Promise<void> } | null = null;
     const handleCallback = async (url: string) => {
       if (cancelled) return;
+      const rating = readRatingLink(url, window.location.origin);
+      if (rating) { setRatingLink(rating); setActiveTab("reputation"); void Browser.close().catch(() => undefined); return; }
       const support = readDriverSupportLink(url, window.location.origin);
       if (support) { setSupportLink(support); setActiveTab("recent"); void Browser.close().catch(() => undefined); return; }
       if (cancelled || processedAuthCallbacks.current.has(url)) return;
@@ -571,6 +576,8 @@ export default function DriverHome() {
   useEffect(() => {
     if (!authenticatedUserId) return;
     const requestedView = new URLSearchParams(window.location.search).get("view");
+    const rating = readRatingLink(window.location.href, window.location.origin);
+    if (rating) { setRatingLink(rating); setActiveTab("reputation"); }
     if (requestedView === "earnings" || requestedView === "preorders" || requestedView === "dispatch" || requestedView === "recent") setActiveTab(requestedView);
     setSupportLink(readDriverSupportLink(window.location.href, window.location.origin));
   }, [authenticatedUserId]);
@@ -984,7 +991,7 @@ export default function DriverHome() {
       const result = await supabase.rpc("set_my_driver_trip_email_preferences", { enabled_value: enabled });
       if (result.error) throw result.error;
       setTripEmailEnabled(result.data);
-      setTripEmailMessage(enabled ? "Trip offer emails enabled." : "Trip offer emails disabled. Device alerts are unchanged.");
+      setTripEmailMessage(enabled ? "Trip emails enabled." : "Trip emails disabled. Device alerts are unchanged.");
     } catch { setTripEmailMessage("Trip email preference could not be saved. Try again."); }
     finally { setUpdatingPreferences(false); }
   }
@@ -1858,8 +1865,10 @@ export default function DriverHome() {
             {activeTab === "reputation" ? (
               <section className="documents">
                 <div><p className="eyebrow">Reputation</p><h3>Post-trip ratings</h3><p className="document-help">Ratings stay private until both sides submit, or seven days pass.</p></div>
+                <RatingReminderFocus key={`${authenticatedUserId}:${summary.driverProfileId}`}
+                  bookingId={ratingLink?.bookingId ?? null} trips={reputationTrips} ready={reputationAvailable && !portalLoading} />
                 {reputationTrips.map((trip) => {
-                  return <article className="document-card" key={trip.bookingId}>
+                  return <article className="document-card" id={`rating-${trip.bookingId}`} tabIndex={-1} key={trip.bookingId}>
                     <div className="document-heading"><strong>{trip.subjectName}</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
                     <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
                     {trip.submittedRating ? <span>Your rating: {trip.submittedRating.overall}/5</span> : null}
@@ -2113,7 +2122,7 @@ export default function DriverHome() {
                   <h3>Email preferences</h3>
                 </div>
                 <label><input type="checkbox" checked={tripEmailEnabled ?? true} disabled={updatingPreferences || tripEmailEnabled === null}
-                  onChange={(event) => { void updateTripEmails(event.target.checked); }} /> Email me about new trip offers and support responses</label>
+                  onChange={(event) => { void updateTripEmails(event.target.checked); }} /> Email me about new trip offers, support responses and rating reminders</label>
                 {tripEmailMessage ? <p className="upload-message" role="status">{tripEmailMessage}</p> : null}
                 <label>
                   <input
@@ -2161,6 +2170,8 @@ export default function DriverHome() {
   );
   const area = serviceAreas.find((item) => item.selected) ?? serviceAreas[0];
   return summary ? <TripAttentionProvider key={`${session?.user.id}:${summary.driverProfileId}`} client={session ? supabase : null}>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => {
+    const rating = readRatingTap(data, "driver");
+    if (rating) { setRatingLink(rating); goView("reputation"); void activateAndLoad(); return; }
     const target = readDriverSupportTap(data); setSupportLink(target);
     goView(target ? "recent" : data && typeof data === "object" && "notificationType" in data && typeof data.notificationType === "string" && data.notificationType.startsWith("driver_preorder_") ? "preorders" : "dispatch");
   }} /> : null}<DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}

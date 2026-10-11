@@ -1,5 +1,10 @@
 # Native Rider and Driver notifications
 
+[Trip rating reminders](trip-rating-reminders.md) add generic, non-urgent Rider/Driver events ten
+minutes after new trip completion, exact owned rating-form routing and suppression after submission.
+Their native attempts expire 24 hours after availability; other existing expiry rules are unchanged.
+The minute job also recovers their due email/Web delivery, respecting independent preferences.
+
 Support response alerts add generic `rider_support_update` and `driver_support_update` events with validated case/booking
 routing and recipient-access rechecks. The existing minute job also recovers only support email/Web
 Push events after independent native claims. Existing email/device preferences apply. See

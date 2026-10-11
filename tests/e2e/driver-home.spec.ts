@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
 import { verifyUnreadSupport } from "./helpers/trip-unread";
+import { verifyRatingReminder } from "./helpers/rating-reminders";
 import { photoFixture } from "./helpers/trip-photos";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { setupDriverPreview } = require("../fixtures/driver-preview.cjs") as { setupDriverPreview: (page: Page, options?: { online?: boolean }) => Promise<void> };
@@ -21,6 +22,10 @@ test.beforeEach(async ({ page }) => {
 
 test("Driver unread badges clear only a viewed response and survive reload", async ({ page }) => {
   await verifyUnreadSupport(page, "driver");
+});
+
+test("Driver rating reminder opens only the requested owned form and handles submitted or unavailable trips", async ({ page }) => {
+  await verifyRatingReminder(page, "driver");
 });
 
 test("Driver daily measurements refresh without covering map or availability", async ({ page }) => {
@@ -244,7 +249,7 @@ test("trip email preference persists independently and a failed update preserves
   await expect(email).toBeChecked();
   await email.click();
   await expect(email).not.toBeChecked();
-  await expect(page.locator(".notification-preferences").first().getByText("Trip offer emails disabled. Device alerts are unchanged.", { exact: true })).toBeVisible();
+  await expect(page.locator(".notification-preferences").first().getByText("Trip emails disabled. Device alerts are unchanged.", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "Open driver menu" }).click();
   await page.getByRole("dialog", { name: "Driver menu" }).getByRole("button", { name: "Notifications" }).click();

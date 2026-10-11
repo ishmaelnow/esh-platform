@@ -4,7 +4,26 @@ Last updated: 2026-10-11
 
 ## Current objective and checkpoint
 
-Current authorized objective: complete Driver daily distance and time-online totals. Local migration
+Current authorized objective: optional Rider/Driver rating reminders, not a new rating system.
+One reminder per role is queued ten minutes after newly completed trips; no old-trip backfill.
+Existing email/device preferences, current ownership, submission suppression and 24-hour expiry
+apply. Existing Admin minute worker handles delivery; no new secrets, cron or native build.
+Email/Web/native route to the exact existing owned rating form. Disclosure/moderation, financial,
+dispatch and session contracts remain unchanged. Migration 20261011000200 is local, NOT applied.
+Read architecture/trip-rating-reminders.md and operations/trip-rating-reminders-manual-test.md.
+Local verification: 225 unit/API tests initially and 46 focused notification/cron/link checks after
+final additions pass. Minimal PostgreSQL consent/dedupe/delay/cancellation/expiry/ownership smoke,
+shared Supabase type check, scoped lint (existing Rider image warning only), and Admin/Rider/Driver
+production builds pass. All 33 Driver and 32 Rider mobile browser checks pass, including exact-trip
+rating routing, failed-submit retry, already-rated, expired and unavailable targets. Complete
+414 x 896 screenshots inspected and retained under ignored tmp/rating-reminder-evidence.
+Browser/provider fixtures and minimal SQL smoke do not establish real-device delivery or full
+production Supabase-chain behavior; those remain owner acceptance.
+Next: owner intended-only migration dry run/apply, Git push, Ready and
+controlled ten-minute device acceptance. No Git/deployment/production database action by Codex.
+
+Daily totals are owner-pushed as 7ed6a77 and manually accepted on device. Do not reopen them.
+Previous daily totals implementation: complete Driver daily distance and time-online totals. Local migration
 20261011000100_driver_daily_activity.sql adds a private read-only owned aggregate RPC and partial
 audit index. Company-local day boundaries, trusted measured completed-trip distance and committed
 availability-setting spans are authoritative; missing distance or inconsistent online history is
@@ -17,8 +36,8 @@ browser checks pass. Complete 414 x 896 screenshot inspected and retained under 
 tmp/driver-daily-activity-evidence; 320px overflow, unavailable recovery and existing confirmed
 availability states pass. Final production build includes company-day earnings alignment.
 Owner supplied an intended-only dry run followed by successful application of migration
-20261011000100_driver_daily_activity.sql. Do not reapply. Application changes remain local;
-next is owner Git commit/push, Driver Ready confirmation and device acceptance. No native rebuild.
+20261011000100_driver_daily_activity.sql. Do not reapply. Owner pushed 7ed6a77 and accepted totals
+on device, including the empty-day behavior. No native rebuild.
 No production mutation by Codex.
 
 Rider booking hang reported before this work recovered without deployment; owner suspects browser

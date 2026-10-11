@@ -6,11 +6,17 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider/Driver optional rating reminders implemented locally: one reminder ten minutes after a
+  newly completed trip, existing independent email/device preferences, exact owned rating links,
+  submission cancellation and 24-hour expiry. No backfill, received-score disclosure or SMS.
+  Migration 20261011000200 and application release/device acceptance pending. See
+  `architecture/trip-rating-reminders.md` and `operations/trip-rating-reminders-manual-test.md`.
+
 - Driver daily trip distance and time-online totals implemented locally. Owned read-only RPC
   uses company-local day boundaries, trusted completed-trip distance and audited availability
   intervals; missing measurements/history remain unavailable. Earnings definitions and approved
   layout are preserved. Owner applied migration 20261011000100 after an intended-only dry run;
-  application commit/push, deployment and device acceptance are pending.
+  owner pushed 7ed6a77 and accepted the daily totals on device.
   See `architecture/driver-daily-activity.md` and `operations/driver-daily-activity-manual-test.md`.
 
 - Rider/Driver private unread indicators implemented locally: compact menu/conversation badges,
@@ -502,7 +508,8 @@ deferred from this milestone and were delivered under the later milestones below
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,
      audited Admin moderation, and portal experiences for both sides.
    - Production manual verification passed across Rider and Driver submission and disclosure.
-   - Remaining: notifications, appeals, aggregate public profiles, and any deliberate rating-based
+   - Optional rating reminders are locally implemented as described above. Remaining: received-rating
+     notifications, appeals, aggregate public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**
    - Current delivery: fixed tenant operating currency, integer minor-unit semantics,

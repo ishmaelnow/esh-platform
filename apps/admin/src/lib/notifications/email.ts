@@ -1,5 +1,13 @@
 import type { AdminServerConfig } from "@/lib/config";
 import { supportUrl } from "./support-target";
+import { ratingUrl } from "@esh-platform/supabase";
+
+function ratingReminderContent(base: string, payload: Record<string, unknown>) {
+  const url = ratingUrl(base, payload);
+  const intro = "How was your trip? You can leave an optional private rating in ESH.";
+  return { subject: "How was your ESH trip?", text: `${intro}\n\n${url}`,
+    html: `<p>${intro}</p><p><a href="${escapeHtml(url)}">Rate your trip</a></p>` };
+}
 
 export type NotificationEmail = {
   notificationId: string;
@@ -85,6 +93,7 @@ export function buildDriverNotificationContent(
   payload: Record<string, unknown>,
   driverAppUrl: string,
 ) {
+  if (notificationType === "driver_rating_reminder") return ratingReminderContent(driverAppUrl, payload);
   if (notificationType === "driver_support_update") {
     const url = supportUrl(driverAppUrl, payload, "recent");
     const intro = "Your support report has an update. Open ESH to read the company's response.";
@@ -235,6 +244,7 @@ export function buildRiderNotificationContent(
   payload: Record<string, unknown>,
   riderAppUrl: string,
 ) {
+  if (notificationType === "rider_rating_reminder") return ratingReminderContent(riderAppUrl, payload);
   if (notificationType === "rider_support_update") {
     const url = supportUrl(riderAppUrl, payload);
     const intro = "Your support report has an update. Open ESH to read the company's response.";
