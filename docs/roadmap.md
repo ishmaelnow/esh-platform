@@ -6,10 +6,17 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Driver daily trip distance and time-online totals implemented locally. Owned read-only RPC
+  uses company-local day boundaries, trusted completed-trip distance and audited availability
+  intervals; missing measurements/history remain unavailable. Earnings definitions and approved
+  layout are preserved. Owner applied migration 20261011000100 after an intended-only dry run;
+  application commit/push, deployment and device acceptance are pending.
+  See `architecture/driver-daily-activity.md` and `operations/driver-daily-activity-manual-test.md`.
+
 - Rider/Driver private unread indicators implemented locally: compact menu/conversation badges,
   exact report links, viewport-based acknowledgement, persisted owned state and version-safe
   clearing independent of alert consent. Owner applied 20261010000700 and pushed b0f3eae;
-  DriverShell badge wiring remains a preserved unstaged file. Hosted Ready/device acceptance pending.
+  DriverShell badge wiring is included in owner-pushed e3b4af4. Hosted Ready/device acceptance pending.
   331 unit/API checks, SQL isolation/version/lifecycle smoke, shared types, scoped lint, both app
   builds and all 62 Rider/Driver mobile checks pass; final focused rerun and complete screenshots checked.
   See architecture/trip-unread-indicators.md and operations/trip-unread-indicators-manual-test.md.
@@ -551,8 +558,9 @@ deferred from this milestone and were delivered under the later milestones below
 - Driver map-home polish is owner-pushed at `ba115a1`: approved Rider palette/shared geographic renderer, daily
   authorized earnings/counts, accessible side drawer, existing feature screens and a confirmed
   availability switch. Rider remains approved at owner-pushed `95c8ae2`.
-- Driver Preorders/offline receipt settings are implemented locally as documented above. SOS,
-  daily distance and online-duration aggregates still need contracts. Driver marks unavailable data;
+- Driver Preorders/offline receipt settings are implemented locally as documented above. SOS
+  remains unsupported. Daily distance and online-duration aggregates now have a local implementation
+  pending owner migration/deployment as described above. Driver marks unavailable data;
   it does not invent these behaviors. See `architecture/driver-map-home.md` and
   `operations/driver-map-home-manual-test.md` for boundaries and verification.
 

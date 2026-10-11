@@ -4,7 +4,32 @@ Last updated: 2026-10-11
 
 ## Current objective and checkpoint
 
-Current authorized follow-up: simplify the Rider receipt to ESH RECEIPT with date/status, route,
+Current authorized objective: complete Driver daily distance and time-online totals. Local migration
+20261011000100_driver_daily_activity.sql adds a private read-only owned aggregate RPC and partial
+audit index. Company-local day boundaries, trusted measured completed-trip distance and committed
+availability-setting spans are authoritative; missing distance or inconsistent online history is
+unavailable. No new GPS tracking, dispatch/payment/auth/notification writes or Rider UI changes.
+Driver home preserves its layout; visible-minute/foreground/reconnect and confirmed availability/
+trip-list refreshes are bounded and account-scoped. Existing earnings use the same day window when
+available. Read architecture/driver-daily-activity.md and operations/driver-daily-activity-manual-test.md.
+71 Driver unit/API tests, disposable minimal PostgreSQL smoke, scoped lint and all 32 Driver mobile
+browser checks pass. Complete 414 x 896 screenshot inspected and retained under ignored
+tmp/driver-daily-activity-evidence; 320px overflow, unavailable recovery and existing confirmed
+availability states pass. Final production build includes company-day earnings alignment.
+Owner supplied an intended-only dry run followed by successful application of migration
+20261011000100_driver_daily_activity.sql. Do not reapply. Application changes remain local;
+next is owner Git commit/push, Driver Ready confirmation and device acceptance. No native rebuild.
+No production mutation by Codex.
+
+Rider booking hang reported before this work recovered without deployment; owner suspects browser
+session, cause not confirmed. The unfinished local timeout experiment was fully removed at owner's
+request. No booking code change remains. Do not treat that experiment as a pending feature.
+
+Receipt/unread owner release is e3b4af4, pushed and main/origin aligned. It includes DriverShell badge
+wiring; that file was no longer unstaged at recovery. Four generated next-env/tsconfig changes and
+unexpected untracked git/main files remain preserved. No other prior pending source edits.
+
+Previous receipt verification: simplify the Rider receipt to ESH RECEIPT with date/status, route,
 fare and customer payment/credit/refund/amount-due details. Screen/share/download reuse one summary;
 no tenant/company, reference/booking ID, Stripe/provider wording/link, quote itemization, policy,
 review/settlement/dispute internals or accounting disclaimer. Download is ESH-receipt.txt.
@@ -13,13 +38,12 @@ Existing API/RLS/financial records and dedicated Payments are unchanged. No migr
 checks pass. Complete 414 x 896 screenshot inspected and retained in ignored
 tmp/receipt-simple-evidence. Browser checks verify exports omit internal details and handle refunds,
 credit, failed refresh, 320px width and shortened viewport. Physical download remains unconfirmed.
-Next: owner stages the nine receipt/source/test/docs files and the preserved DriverShell unread
-wiring, commits/pushes, confirms Rider/Driver Ready, then checks the simplified receipt on device.
+Owner pushed the receipt/source/test/docs and preserved DriverShell unread wiring as e3b4af4.
+Hosted Ready and simplified-receipt device confirmation remain separate from the supplied Git output.
 No new migration or Codemagic build. No Git mutation/deployment by Codex.
 
 Unread migration 20261010000700 is owner-applied (successful supplied output); owner pushed b0f3eae.
-Git confirms main/origin alignment. DriverShell.tsx still has the exact unread badge wiring unstaged;
-preserve and include in the next owner-reviewed feature staging, do not revert. Generated four
+Git confirms main/origin alignment. DriverShell badge wiring is included in e3b4af4. Generated four
 configs plus unexpected untracked git/main files remain untouched. Hosted Ready and unread physical
 acceptance not supplied. The unread local verification below remains valid, but its pending migration
 and Git claims are superseded by this checkpoint. No production/Git mutations by Codex.

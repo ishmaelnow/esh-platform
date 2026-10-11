@@ -31,7 +31,7 @@ export function DriverShell({ view, onView, children, accessToken, loading, cent
   center: { latitude: number; longitude: number } | null;
   location: { latitude: number; longitude: number; accuracy: number } | null;
   locationNotice: string | null; onLocate: () => void; locationBusy: boolean; recenterVersion: number;
-  rating: string | null; totals: { trips: number | null; earnings: string | null; fees: string | null };
+  rating: string | null; totals: { trips: number | null; earnings: string | null; fees: string | null; distance: string; online: string };
   online: boolean; availabilityKnown: boolean; availabilityBusy: boolean; onAvailability: () => void;
   availabilityNotice: string | null; tripCount: number; offerCount: number; sharing: boolean;
   preorders: ReactNode; preorderCount: number | null;
@@ -70,7 +70,7 @@ export function DriverShell({ view, onView, children, accessToken, loading, cent
       <div className="driver-map"><RiderHomeMap accessToken={accessToken} center={center} currentLocation={location}
         recenterVersion={recenterVersion} showTraffic={Boolean(accessToken && traffic)} /></div>
       <section className="driver-total" aria-label="Today's totals">
-        <div><h2>Today’s total</h2><p>{loading ? "Loading trips…" : `${totals.trips ?? "—"} completed trips`}</p><p>Distance traveled <span>Unavailable</span></p><p>Time online <span>Unavailable</span></p></div>
+        <div><h2>Today’s total</h2><p>{loading ? "Loading trips…" : `${totals.trips ?? "—"} completed trips`}</p><p title="Measured distance for trips completed today; excludes travel to pickup. Missing measurements are unavailable.">Trip distance <span>{loading ? "…" : totals.distance}</span></p><p title="Time availability was set to Online. This does not measure internet connectivity or eligibility changes.">Time online <span>{loading ? "…" : totals.online}</span></p></div>
         <div className="driver-total-money"><strong>{loading ? "…" : totals.earnings ?? "—"}</strong><span>{loading ? "Loading earnings…" : totals.fees ? `${totals.fees} platform fees` : "Earnings unavailable"}</span><small>Earned · not paid out</small></div>
       </section>
       <div className="driver-map-actions driver-actions-left">

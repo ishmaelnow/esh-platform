@@ -21,6 +21,8 @@ import { useDriverMapLocation } from "./useDriverMapLocation";
 import { driverAndroidStorage } from "../lib/android-session-storage";
 import { driverCallbackReceipt } from "../lib/consumed-auth-callback";
 import { driverHomeTotals } from "../lib/home-totals";
+import { useDailyActivity } from "./useDailyActivity";
+import { activityLabels } from "../lib/daily-activity";
 import { DriverRiderLocation } from "./DriverRiderLocation";
 import { TripMessages } from "./TripMessages";
 import { TripParticipantPhoto } from "./TripParticipantPhoto";
@@ -255,7 +257,11 @@ export default function DriverHome() {
   const knownDispatchOfferIds = useRef<Set<string>>(new Set());
 
   const mapLocation = useDriverMapLocation(summary?.driverProfileId ?? null);
-  const dailyTotals = driverHomeTotals(wallet, reputationAvailable ? reputationTrips : null, homeNow);
+  const dailyActivity = useDailyActivity(supabase, session?.user.id && summary
+    ? `${session.user.id}:${summary.driverProfileId}` : null,
+    `${availability?.requestedStatus}:${dispatch.trips.map((trip) => trip.bookingId).join(",")}`);
+  const dailyActivityLabels = activityLabels(dailyActivity);
+  const dailyTotals = driverHomeTotals(wallet, reputationAvailable ? reputationTrips : null, homeNow, dailyActivity ?? undefined);
   useEffect(() => {
     const clock = window.setInterval(() => setHomeNow(new Date()), 60000);
     return () => window.clearInterval(clock);
@@ -2161,7 +2167,7 @@ export default function DriverHome() {
     center={area ? { latitude: area.centerLatitude, longitude: area.centerLongitude } : null}
     location={mapLocation.location} locationNotice={mapLocation.notice} locationBusy={mapLocation.busy}
     onLocate={mapLocation.locate} recenterVersion={mapLocation.recenterVersion}
-    rating={dailyTotals.rating} totals={dailyTotals} online={availability?.effectiveStatus === "online"}
+    rating={dailyTotals.rating} totals={{ ...dailyTotals, trips: dailyActivity?.completedTrips ?? dailyTotals.trips, ...dailyActivityLabels }} online={availability?.effectiveStatus === "online"}
     availabilityKnown={Boolean(availability)} availabilityBusy={updatingAvailability}
     availabilityNotice={!dispatchAvailable ? "Dispatch updates unavailable. Open Settings to refresh; existing offers may be out of date." : availabilityMessage} onAvailability={() => void updateAvailability(availability?.requestedStatus === "online" ? "offline" : "online")}
     tripCount={dispatch.trips.length} offerCount={dispatch.offers.length} sharing={Boolean(locationSharing?.sharingEnabled)}

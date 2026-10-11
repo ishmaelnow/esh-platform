@@ -41,8 +41,9 @@ the card explicitly says earned, not paid out. The main amount is Driver earning
 Fee text means the platform's locked fare share, not an invented processor fee. Rating averages
 only already-disclosed received ratings. No rating is invented when none has been disclosed.
 Unavailable data renders a dash rather than falsely reporting zero. Recorded empty earnings/counts
-render zero. Daily distance and online duration are not exposed by the existing Driver RPCs, so
-those fields explicitly remain unavailable; no device-only counter is presented as a daily total.
+render zero. Daily trip distance and online duration now use the owned read-only aggregate RPC
+described in [Driver daily activity](driver-daily-activity.md), pending owner migration/deployment.
+Missing measurements/history remain unavailable; no device-only counter is presented as a daily total.
 
 The fixed availability switch reflects confirmed effectiveStatus. Pending updates disable it and
 keep its prior position. Rejected/network updates display their failure and preserve confirmed

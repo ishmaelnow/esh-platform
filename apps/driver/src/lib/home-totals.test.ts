@@ -6,6 +6,14 @@ const completedAt = new Date(2026, 9, 1, 10).toISOString();
 const yesterday = new Date(2026, 8, 30, 23).toISOString();
 const trip = { bookingId: "priced", completedAt, pickupAddress: "", destinationAddress: "", fareAmountMinor: 1000, earningsAmountMinor: 800, platformFeeMinor: 200, paymentCollected: false, transferStatus: null };
 describe("Driver home totals", () => {
+  it("uses server company-day boundaries even when the device day differs", () => {
+    const inside = { ...trip, completedAt: "2026-10-02T04:30:00Z" };
+    const outside = { ...trip, bookingId: "next-day", completedAt: "2026-10-02T05:00:00Z" };
+    const totals = driverHomeTotals({ currencyCode: "USD", trips: [inside, outside] }, [], today,
+      { startsAt: "2026-10-01T05:00:00Z", endsAt: "2026-10-02T05:00:00Z" });
+    expect(totals.earnings).toContain("8.00");
+    expect(totals.fees).toContain("2.00");
+  });
   it("uses locked driver earnings and fees rather than gross fares, including pending earnings", () => {
     const totals = driverHomeTotals({ currencyCode: "USD", trips: [trip] }, [{ bookingId: "priced", completedAt, receivedRating: { overall: 4 } }], today);
     expect(totals.earnings).toContain("8.00"); expect(totals.fees).toContain("2.00"); expect(totals.trips).toBe(1); expect(totals.rating).toBe("4.00");

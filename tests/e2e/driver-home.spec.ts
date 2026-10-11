@@ -23,6 +23,28 @@ test("Driver unread badges clear only a viewed response and survive reload", asy
   await verifyUnreadSupport(page, "driver");
 });
 
+test("Driver daily measurements refresh without covering map or availability", async ({ page }) => {
+  let fail = false;
+  await page.route("**/rest/v1/rpc/my_driver_daily_activity", (route) => fail
+    ? route.fulfill({ status: 503, json: { message: "TEST unavailable" } })
+    : route.fulfill({ json: { driverProfileId: "TEST driver", timeZone: "America/Chicago", localDate: "2026-10-11",
+      startsAt: "2026-10-11T05:00:00Z", endsAt: "2026-10-12T05:00:00Z", asOf: "2026-10-11T12:00:00Z",
+      completedTrips: 2, distanceMeters: 12340, missingDistanceTrips: 0, onlineSeconds: 7325 } }));
+  await page.reload();
+  const totals = page.getByRole("region", { name: "Today's totals" });
+  await expect(totals).toContainText("12.3 km");
+  await expect(totals).toContainText("2h 2m");
+  await expect(totals).toContainText("2 completed trips");
+  await expect(page.getByRole("switch", { name: "Driver availability" })).toBeInViewport();
+  await page.screenshot({ path: "test-results/driver-daily-activity-414.png", fullPage: true });
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  fail = true;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(totals).toContainText("Trip distance Unavailable");
+  await expect(totals).toContainText("Time online Unavailable");
+});
+
 test("Driver support preserves failed drafts and shows company responses at mobile sizes", async ({ page }) => {
   const bookingId = "90000000-0000-4000-8000-000000000001";
   const reports: Record<string, unknown>[] = [], requests: Record<string, unknown>[] = [];
