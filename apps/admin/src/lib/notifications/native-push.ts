@@ -14,7 +14,8 @@ export function readNativeClaims(value: unknown): NativeClaim[] {
     if (!["rider", "driver"].includes(String(row.product)) || !["android", "ios"].includes(String(row.platform))
       || ["attemptId", "claimId", "token", "tenantSlug", "notificationType", "expiresAt"].some((key) => typeof row[key] !== "string")
       || !Number.isFinite(Date.parse(String(row.expiresAt)))) throw new Error("Invalid native delivery claim.");
-    if (row.notificationType === "rider_support_update" && (row.product !== "rider" || !supportTarget(row)))
+    if (["rider_support_update", "driver_support_update"].includes(String(row.notificationType))
+      && (row.notificationType !== `${String(row.product)}_support_update` || !supportTarget(row)))
       throw new Error("Invalid native delivery claim.");
     return row as NativeClaim;
   });

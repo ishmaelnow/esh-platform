@@ -35,6 +35,9 @@ import { offerCountdownLabel, offerSecondsRemaining } from "../lib/dispatch";
 import { buildEarningsStatement, earningsStatementCsv } from "../lib/earnings-statement";
 import { locationErrorMessage } from "../lib/location";
 import { currentPushSubscription, pushSupported, pushUnavailableMessage, vapidApplicationKey } from "../lib/push";
+import { DriverTripSupport } from "./DriverTripSupport";
+import { DriverSupportHistory } from "./DriverSupportHistory";
+import { readDriverSupportLink, readDriverSupportTap, type DriverSupportLink } from "../lib/support-link";
 import appIcon from "../../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png";
 
 type DriverSummary = {
@@ -242,6 +245,7 @@ export default function DriverHome() {
   const [statementStartDate, setStatementStartDate] = useState(() => firstDayOfCurrentMonth());
   const [statementEndDate, setStatementEndDate] = useState(() => localDateValue(new Date()));
   const [activeTab, setActiveTab] = useState<DriverView>("home");
+  const [supportLink, setSupportLink] = useState<DriverSupportLink | null>(null);
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
   const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
@@ -389,6 +393,9 @@ export default function DriverHome() {
     let cancelled = false;
     let listener: { remove: () => Promise<void> } | null = null;
     const handleCallback = async (url: string) => {
+      if (cancelled) return;
+      const support = readDriverSupportLink(url, window.location.origin);
+      if (support) { setSupportLink(support); setActiveTab("recent"); void Browser.close().catch(() => undefined); return; }
       if (cancelled || processedAuthCallbacks.current.has(url)) return;
       processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
@@ -477,13 +484,6 @@ export default function DriverHome() {
   }
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const requestedView = new URLSearchParams(window.location.search).get("view");
-      if (requestedView === "earnings" || requestedView === "preorders" || requestedView === "dispatch") setActiveTab(requestedView);
-    }
-  }, []);
-
-  useEffect(() => {
     if (!supabase) {
       setMessage("Driver portal configuration is unavailable.");
       return;
@@ -561,6 +561,12 @@ export default function DriverHome() {
   }, []);
 
   const authenticatedUserId = session?.user.id;
+  useEffect(() => {
+    if (!authenticatedUserId) return;
+    const requestedView = new URLSearchParams(window.location.search).get("view");
+    if (requestedView === "earnings" || requestedView === "preorders" || requestedView === "dispatch" || requestedView === "recent") setActiveTab(requestedView);
+    setSupportLink(readDriverSupportLink(window.location.href, window.location.origin));
+  }, [authenticatedUserId]);
   const preorders = useDriverPreorders(supabase, authenticatedUserId && summary ? `${authenticatedUserId}:${summary.driverProfileId}` : null);
   useEffect(() => {
     if (!authenticatedUserId) {
@@ -1830,11 +1836,15 @@ export default function DriverHome() {
               </section>
             ) : null}
             {activeTab === "recent" ? <section className="documents">
-              <p className="document-help">Completed trips and their recorded earnings. Current assignments are in Dispatch.</p>
-              {reputationAvailable ? reputationTrips.length ? reputationTrips.map((trip) => <article className="document-card" key={trip.bookingId}>
-                <strong>{trip.pickupAddress}</strong><span>To {trip.destinationAddress}</span><span>{new Date(trip.completedAt).toLocaleString()}</span>
-                {wallet?.trips.find((entry) => entry.bookingId === trip.bookingId) ? <span>{formatCurrency(wallet.trips.find((entry) => entry.bookingId === trip.bookingId)!.earningsAmountMinor, wallet.currencyCode)} recorded earnings</span> : null}
-              </article>) : <p>No completed orders yet.</p> : <p role="status">Recent orders are unavailable. Open Settings and refresh your account.</p>}
+              {supabase && session ? <>
+                {supportLink ? <article className="document-card">
+                  <h3>Support report</h3><button type="button" onClick={() => setSupportLink(null)}>Close report</button>
+                  <DriverTripSupport key={`${session.user.id}:${summary.driverProfileId}:${supportLink.caseId}`} client={supabase}
+                    bookingId={supportLink.bookingId} targetCaseId={supportLink.caseId} />
+                </article> : null}
+                <DriverSupportHistory key={`${session.user.id}:${summary.driverProfileId}`} client={supabase}
+                  earnings={Object.fromEntries((wallet?.trips ?? []).map((trip) => [trip.bookingId, formatCurrency(trip.earningsAmountMinor, wallet!.currencyCode)]))} />
+              </> : null}
               <button type="button" onClick={() => goView("reputation")}>View post-trip ratings</button>
             </section> : null}
             {activeTab === "reputation" ? (
@@ -2095,7 +2105,7 @@ export default function DriverHome() {
                   <h3>Email preferences</h3>
                 </div>
                 <label><input type="checkbox" checked={tripEmailEnabled ?? true} disabled={updatingPreferences || tripEmailEnabled === null}
-                  onChange={(event) => { void updateTripEmails(event.target.checked); }} /> Email me about new trip offers</label>
+                  onChange={(event) => { void updateTripEmails(event.target.checked); }} /> Email me about new trip offers and support responses</label>
                 {tripEmailMessage ? <p className="upload-message" role="status">{tripEmailMessage}</p> : null}
                 <label>
                   <input
@@ -2142,7 +2152,10 @@ export default function DriverHome() {
       </section>
   );
   const area = serviceAreas.find((item) => item.selected) ?? serviceAreas[0];
-  return summary ? <>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => goView(data && typeof data === "object" && "notificationType" in data && typeof data.notificationType === "string" && data.notificationType.startsWith("driver_preorder_") ? "preorders" : "dispatch")} /> : null}<DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
+  return summary ? <>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => {
+    const target = readDriverSupportTap(data); setSupportLink(target);
+    goView(target ? "recent" : data && typeof data === "object" && "notificationType" in data && typeof data.notificationType === "string" && data.notificationType.startsWith("driver_preorder_") ? "preorders" : "dispatch");
+  }} /> : null}<DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
     center={area ? { latitude: area.centerLatitude, longitude: area.centerLongitude } : null}
     location={mapLocation.location} locationNotice={mapLocation.notice} locationBusy={mapLocation.busy}
     onLocate={mapLocation.locate} recenterVersion={mapLocation.recenterVersion}

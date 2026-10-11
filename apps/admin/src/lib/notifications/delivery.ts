@@ -8,6 +8,7 @@ import { deliverNativeNotifications } from "./native-push";
 export type DeliveryScope = {
   skipNative?: boolean;
   notificationType?: "rider_support_update";
+  notificationTypes?: ("rider_support_update" | "driver_support_update")[];
   tenantId?: string;
   notificationId?: string;
   limit?: number;
@@ -30,6 +31,7 @@ export async function deliverQueuedNotifications(
     .lt("last_attempted_at", staleClaimThreshold);
   if (scope.tenantId) recovery = recovery.eq("tenant_id", scope.tenantId);
   if (scope.notificationType) recovery = recovery.eq("notification_type", scope.notificationType);
+  if (scope.notificationTypes) recovery = recovery.in("notification_type", scope.notificationTypes);
   const { error: recoveryError } = await recovery;
   if (recoveryError) throw recoveryError;
 
@@ -44,6 +46,7 @@ export async function deliverQueuedNotifications(
   if (scope.tenantId) query = query.eq("tenant_id", scope.tenantId);
   if (scope.notificationId) query = query.eq("notification_id", scope.notificationId);
   if (scope.notificationType) query = query.eq("notification_type", scope.notificationType);
+  if (scope.notificationTypes) query = query.in("notification_type", scope.notificationTypes);
   const { data: notifications, error: readError } = await query;
   if (readError) throw readError;
 
@@ -71,8 +74,9 @@ export async function deliverQueuedNotifications(
     if (claimError) throw claimError;
     if (!claimed) continue;
 
-    if (notification.notification_type === "driver_preorder_available" || notification.notification_type === "rider_support_update") {
-      const current = await service.rpc(notification.notification_type === "rider_support_update" ? "support_alert_current" : "preorder_alert_current", { notification_value: notification.notification_id });
+    if (["driver_preorder_available", "rider_support_update", "driver_support_update"].includes(notification.notification_type)) {
+      const current = await service.rpc(notification.notification_type === "rider_support_update" ? "support_alert_current"
+        : notification.notification_type === "driver_support_update" ? "driver_support_alert_current" : "preorder_alert_current", { notification_value: notification.notification_id });
       if (current.error) throw current.error;
       if (!current.data) {
         const canceled = await service.from("notification_outbox").update({ delivery_status: "canceled",

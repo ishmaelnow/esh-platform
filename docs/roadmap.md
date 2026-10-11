@@ -6,12 +6,21 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Driver trip support implemented locally: private finished-trip reports in Recent orders,
+  Transportation Rider/Driver queue filter, versioned replies and generic response alerts using
+  existing independent preferences. Owner applied migration 20261010000600 successfully;
+  application push/deployment and device acceptance remain pending.
+  310 unit/API checks, SQL isolation/channel smoke, 30 Driver mobile checks, two Admin review
+  checks, all 29 Rider browser regressions, shared types, scoped lint and Driver/Admin/Transportation builds pass.
+  No native rebuild or new credentials. See `architecture/driver-trip-support.md` and
+  `operations/driver-trip-support-manual-test.md`.
+
 - Support-response alerts implemented locally: generic email/Web/native updates for new Admin
   replies/resolutions, independent existing preferences, case/version deduplication, exact owned
   report routing and delivery-time access checks. Existing minute worker recovers only support
   email/Web events after independent native delivery. 240 unit/API tests, minimal SQL migration
   smoke, shared types, scoped lint, Rider/Admin builds and all 29 Rider mobile browser checks pass.
-  Owner applied migration 20261010000500 successfully; hosted Rider/Admin rollout and real-device acceptance pending.
+  Owner applied migration 20261010000500 successfully, pushed e86d669 and accepted support notifications.
   No new credentials/native rebuild. See `architecture/trip-support.md` and its operations manual.
 
 - Trip support/lost-item reporting delivered: completed/cancelled Rider trip history

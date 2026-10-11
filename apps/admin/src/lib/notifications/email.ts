@@ -85,6 +85,12 @@ export function buildDriverNotificationContent(
   payload: Record<string, unknown>,
   driverAppUrl: string,
 ) {
+  if (notificationType === "driver_support_update") {
+    const url = supportUrl(driverAppUrl, payload, "recent");
+    const intro = "Your support report has an update. Open ESH to read the company's response.";
+    return { subject: "Your ESH support report has an update", text: `${intro}\n\n${url}`,
+      html: `<p>${intro}</p><p><a href="${escapeHtml(url)}">View your support report</a></p>` };
+  }
   const driverName = textValue(payload.driver_name) || "Driver";
   const evidenceType = (textValue(payload.evidence_type) || "document").replaceAll("_", " ");
   const reviewNotes = textValue(payload.review_notes);

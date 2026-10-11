@@ -1,5 +1,9 @@
 # Trip support and lost items
 
+Driver reports now have a separate owned workflow described in [Driver trip support](driver-trip-support.md).
+Transportation filters the shared queue by reporter; report bodies are never shared between participants.
+The minute worker's support-only email/Web scope includes both Rider and Driver response events.
+
 Riders open Get help on a completed or cancelled trip in Trips → Show history. Reports are private
 to the owning active Rider and the tenant's authorized transportation managers. Live Driver chat,
 booking status, payments, refunds, ratings and dispatch remain separate workflows. Support does

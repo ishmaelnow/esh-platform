@@ -18,6 +18,59 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".rider-map-canvas")).toHaveAttribute("data-map-idle", "true", { timeout: 25000 });
 });
 
+test("Driver support preserves failed drafts and shows company responses at mobile sizes", async ({ page }) => {
+  const bookingId = "90000000-0000-4000-8000-000000000001";
+  const reports: Record<string, unknown>[] = [], requests: Record<string, unknown>[] = [];
+  let fail = true;
+  await page.route("**/rest/v1/rpc/my_driver_support_trips", (route) => route.fulfill({ json: [{ bookingId,
+    pickupAddress: "TEST Driver pickup", destinationAddress: "TEST destination", status: "completed", finishedAt: new Date().toISOString() }] }));
+  await page.route("**/rest/v1/rpc/my_driver_trip_support", (route) => route.fulfill({ json: reports }));
+  await page.route("**/rest/v1/rpc/create_my_driver_trip_support", (route) => {
+    const body = route.request().postDataJSON() as Record<string, unknown>; requests.push(body);
+    if (fail) { fail = false; return route.fulfill({ status: 400, json: { message: "TEST uncertain submission" } }); }
+    reports.push({ caseId: "a0000000-0000-4000-8000-000000000001", bookingId, category: body.category_value,
+      description: body.description_value, response: "", status: "open", version: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), updates: [] });
+    return route.fulfill({ json: reports[0]!.caseId });
+  });
+  await page.goto("/?view=recent");
+  await page.getByText("Get help", { exact: true }).click();
+  const support = page.locator(".trip-support");
+  await support.getByLabel("How can we help?").fill("TEST Driver issue for company review");
+  await support.getByRole("button", { name: "Submit report" }).click();
+  await expect(support.getByRole("alert")).toContainText("couldn’t confirm");
+  await expect(support.getByLabel("How can we help?")).toHaveValue("TEST Driver issue for company review");
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(support.getByLabel("How can we help?")).toHaveValue("TEST Driver issue for company review");
+  await support.getByRole("button", { name: "Submit report" }).click();
+  await expect(support.locator(".support-report")).toHaveCount(1);
+  expect(requests[0]?.request_value).toBe(requests[1]?.request_value);
+  reports[0]!.status = "resolved"; reports[0]!.updates = [{ status: "resolved", response: "TEST company response", createdAt: new Date().toISOString() }];
+  await support.getByRole("button", { name: "Refresh reports" }).click();
+  await expect(support.getByText("TEST company response")).toBeVisible();
+  await page.screenshot({ path: "test-results/driver-trip-support-414.png", fullPage: true });
+  await page.setViewportSize({ width: 414, height: 520 });
+  await support.getByLabel("Report type").selectOption("lost_item");
+  await support.getByLabel("Describe the item").fill("TEST item requiring company review");
+  await support.getByRole("button", { name: "Submit report" }).scrollIntoViewIfNeeded();
+  await expect(support.getByRole("button", { name: "Submit report" })).toBeInViewport();
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("Driver support alert opens its exact report and denies unavailable reports", async ({ page }) => {
+  const bookingId = "90000000-0000-4000-8000-000000000001", caseId = "a0000000-0000-4000-8000-000000000001";
+  await page.route("**/rest/v1/rpc/my_driver_trip_support", (route) => route.fulfill({ json: [{ caseId, bookingId, category: "trip_issue",
+    description: "TEST report outside loaded history", response: "TEST response", status: "resolved", version: 2,
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), updates: [{ status: "resolved", response: "TEST response", createdAt: new Date().toISOString() }] }] }));
+  await page.goto(`/?tenant=preview-company&view=recent&booking=${bookingId}&support=${caseId}`);
+  await expect(page.locator(".support-report").getByText("TEST response", { exact: true })).toBeVisible();
+  await expect(page.locator(".support-report")).toBeFocused();
+  await page.route("**/rest/v1/rpc/my_driver_trip_support", (route) => route.fulfill({ status: 403, json: { message: "Unavailable" } }));
+  await page.reload();
+  await expect(page.locator(".trip-support").getByRole("alert")).toBeVisible();
+  await expect(page.locator(".support-report")).toHaveCount(0);
+});
+
 test("Android recovers native session after WebView clearing, refreshes expired tokens and signs out", async ({ page }) => {
   await page.evaluate(async () => {
     const url = "com.esh.driver://auth/callback#access_token=expired-fixture&refresh_token=consumed-fixture";

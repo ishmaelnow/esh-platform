@@ -2618,6 +2618,12 @@ export type Database = {
     Functions: {
       my_trip_participant_photo: { Args: { booking_value: string; role_value: string }; Returns: Json }
       support_alert_current: { Args: { notification_value: string }; Returns: boolean }
+      driver_support_alert_current: { Args: { notification_value: string }; Returns: boolean }
+      my_driver_support_trips: { Args: Record<string, never>; Returns: Json }
+      my_driver_trip_support: { Args: { booking_value: string }; Returns: Json }
+      create_my_driver_trip_support: { Args: { booking_value: string; category_value: string; description_value: string; request_value: string }; Returns: string }
+      admin_driver_trip_support: { Args: { tenant_value: string; status_value?: string; offset_value?: number }; Returns: Json }
+      review_driver_trip_support: { Args: { case_value: string; status_value: string; response_value: string; version_value: number }; Returns: boolean }
       my_trip_support: { Args: { booking_value: string }; Returns: Json }
       create_my_trip_support: { Args: { booking_value: string; category_value: string; description_value: string; request_value: string }; Returns: string }
       admin_trip_support: { Args: { tenant_value: string; status_value?: string; offset_value?: number }; Returns: Json }

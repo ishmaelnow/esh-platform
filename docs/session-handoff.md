@@ -4,7 +4,41 @@ Last updated: 2026-10-10
 
 ## Current objective and checkpoint
 
-Current objective: owner authorized support-response alerts with Go after accepting the full
+Current authorized work: Driver trip support. Rider support notifications are owner-accepted after
+applying 20261010000500 and pushing e86d669; do not repeat that release or its acceptance.
+Git recovered at main/origin/main e86d669 with generated Driver/Rider configuration edits preserved.
+
+Local Driver support adds owned finished-trip history/Get help, private cases and reply history,
+Transportation Reports from Riders/Drivers filter, generic response alerts and exact-report routing.
+Separate Driver tables preserve Rider report privacy. Active tenant/person/profile and final assigned
+Driver checks apply at read, write and delivery. Cleared/reassigned trips do not imply old ownership.
+Shared controller preserves uncertain-send request IDs/drafts; versioned reviews reject stale writes.
+Existing Driver trip-offer email preference also controls support replies; device consent stays independent.
+Minute cron handles both support event types without changing other email cadence. No new credentials,
+native rebuild, SOS, refunds, attachments, cross-participant disclosure or auth-policy change.
+
+Migration 20261010000600_driver_trip_support.sql is owner-applied remotely. Owner supplied
+successful Applying migration / Finished supabase db push output listing only that migration.
+Do not reapply it. Git push, hosted Ready and real-device acceptance remain pending.
+310 unit/API regressions, minimal embedded PostgreSQL migration/ownership/retry/channel/claim smoke,
+shared Supabase type build, scoped lint, Admin and Transportation builds pass. Driver production build
+passes after correcting initial session-loading URL routing. Both Admin Rider/Driver browser review
+checks and all 30 Driver mobile checks pass. Full Driver/Admin screenshots inspected at 414px width;
+Driver keyboard-height and 320px overflow checks pass. All 29 Rider browser regressions pass,
+including support, booking, payment return, account, saved places and session recovery.
+Screenshots are preserved under ignored tmp/driver-support-evidence. Do not infer physical
+device delivery from fixtures. Final whitespace check passes.
+New architecture/driver-trip-support.md and operations/driver-trip-support-manual-test.md describe
+access, lifecycle and owner acceptance. Existing Rider source/design is unchanged.
+
+Next: owner stages explicit feature files,
+commits/pushes and confirms Driver/Admin/Transportation Ready before device acceptance. No Git
+mutation, production SQL, notification, payment, emergency action or deployment by Codex.
+
+The older release notes below are historical context; this checkpoint supersedes pending claims
+for Rider response-alert deployment and acceptance.
+
+Previous objective: owner authorized support-response alerts with Go after accepting the full
 trip-support submission/reply/resolution workflow. Local response-alert implementation is complete,
 Remote migration is owner-applied; Git push/deployment and real-device receipt/tap acceptance remain pending.
 

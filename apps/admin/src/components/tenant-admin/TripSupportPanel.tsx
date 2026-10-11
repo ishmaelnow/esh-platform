@@ -7,6 +7,7 @@ export function TripSupportPanel({ tenantId, userId, canManage }: { tenantId: st
   const [rows, setRows] = useState<SupportCase[]>([]);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState("all");
+  const [reporter, setReporter] = useState<"rider" | "driver">("rider");
   const [offset, setOffset] = useState(0);
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -16,7 +17,7 @@ export function TripSupportPanel({ tenantId, userId, canManage }: { tenantId: st
     setRows([]); setTotal(0); setLoading(true); setError("");
     async function load() {
       try {
-        const result = await createAdminBrowserClient().rpc("admin_trip_support", { tenant_value: tenantId, status_value: filter, offset_value: offset });
+        const result = await createAdminBrowserClient().rpc(reporter === "driver" ? "admin_driver_trip_support" : "admin_trip_support", { tenant_value: tenantId, status_value: filter, offset_value: offset });
         if (!active) return;
         if (result.error || !result.data || typeof result.data !== "object" || Array.isArray(result.data)) throw new Error("Support queue unavailable");
         const value = result.data;
@@ -27,10 +28,13 @@ export function TripSupportPanel({ tenantId, userId, canManage }: { tenantId: st
     }
     void load();
     return () => { active = false; };
-  }, [tenantId, userId, filter, offset, refresh]);
+  }, [tenantId, userId, reporter, filter, offset, refresh]);
   return <section className="panel-stack">
-    <header className="panel-header"><h2>Trip support</h2><p>Review Rider trip issues and lost items. Replies below are visible to the Rider. This queue does not process refunds or notify Drivers.</p></header>
+    <header className="panel-header"><h2>Trip support</h2><p>Review private Rider or Driver trip issues and lost items. Replies are visible only to the person who submitted the report. This queue does not process refunds.</p></header>
     <div className="button-row">
+      <label>Reports from<select value={reporter} onChange={(event) => { setRows([]); setReporter(event.target.value as "rider" | "driver"); setOffset(0); }}>
+        <option value="rider">Riders</option><option value="driver">Drivers</option>
+      </select></label>
       <label>Report status<select value={filter} onChange={(event) => { setFilter(event.target.value); setOffset(0); }}>
         <option value="all">All reports</option>{(["open", "in_review", "resolved"] as const).map((value) => <option value={value} key={value}>{supportStatusLabel(value)}</option>)}
       </select></label>
@@ -38,7 +42,7 @@ export function TripSupportPanel({ tenantId, userId, canManage }: { tenantId: st
     </div>
     {loading ? <p role="status">Loading reports…</p> : error ? <p className="form-error" role="alert">{error}</p>
       : rows.length === 0 ? <p>No reports in this view.</p> : <p>{total} reports · showing {offset + 1}–{Math.min(offset + rows.length, total)}</p>}
-    {rows.map((report) => <ReviewCard key={`${userId}:${tenantId}:${report.caseId}:${report.version}`} report={report} canManage={canManage}
+    {rows.map((report) => <ReviewCard key={`${userId}:${tenantId}:${reporter}:${report.caseId}:${report.version}`} reporter={reporter} report={report} canManage={canManage}
       onSaved={() => setRefresh((value) => value + 1)} />)}
     <div className="button-row">
       <button className="secondary-button" type="button" disabled={loading || offset === 0} onClick={() => setOffset((value) => Math.max(0, value - 50))}>Previous reports</button>
@@ -46,7 +50,7 @@ export function TripSupportPanel({ tenantId, userId, canManage }: { tenantId: st
     </div>
   </section>;
 }
-function ReviewCard({ report, canManage, onSaved }: { report: SupportCase; canManage: boolean; onSaved: () => void }) {
+function ReviewCard({ report, reporter, canManage, onSaved }: { report: SupportCase; reporter: "rider" | "driver"; canManage: boolean; onSaved: () => void }) {
   const [status, setStatus] = useState<SupportStatus>(report.status);
   const [response, setResponse] = useState("");
   const [busy, setBusy] = useState(false);
@@ -58,7 +62,7 @@ function ReviewCard({ report, canManage, onSaved }: { report: SupportCase; canMa
     if (busy || !canManage) return;
     setBusy(true); setError("");
     try {
-      const result = await createAdminBrowserClient().rpc("review_trip_support", {
+      const result = await createAdminBrowserClient().rpc(reporter === "driver" ? "review_driver_trip_support" : "review_trip_support", {
         case_value: report.caseId, status_value: status, response_value: response.trim(), version_value: report.version,
       });
       if (!alive.current) return;
@@ -69,7 +73,7 @@ function ReviewCard({ report, canManage, onSaved }: { report: SupportCase; canMa
   }
   return <article className="panel support-review">
     <h3>{supportCategoryLabel(report.category)} · {supportStatusLabel(report.status)}</h3>
-    <p><strong>{report.riderName}</strong> · Reference {report.caseId.slice(0, 8)}</p>
+    <p><strong>{reporter === "driver" ? report.driverName : report.riderName}</strong> · Reference {report.caseId.slice(0, 8)}</p>
     <p>{report.pickupAddress} → {report.destinationAddress}</p>
     <small>Booking {report.bookingId} · submitted {new Date(report.createdAt).toLocaleString()}</small>
     <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{report.description}</p>
@@ -79,7 +83,7 @@ function ReviewCard({ report, canManage, onSaved }: { report: SupportCase; canMa
       <label>Status<select value={status} disabled={busy || !canManage} onChange={(event) => setStatus(event.target.value as SupportStatus)}>
         {(["open", "in_review", "resolved"] as const).map((value) => <option value={value} key={value}>{supportStatusLabel(value)}</option>)}
       </select></label>
-      <label className="wide">Reply to Rider<textarea required maxLength={2000} rows={3} value={response} disabled={busy || !canManage}
+      <label className="wide">Reply to {reporter === "driver" ? "Driver" : "Rider"}<textarea required maxLength={2000} rows={3} value={response} disabled={busy || !canManage}
         onChange={(event) => setResponse(event.target.value)} /></label>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       <button disabled={busy || !canManage || !response.trim()} type="submit">{busy ? "Saving…" : "Save response"}</button>

@@ -1,10 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PlatformSupabaseClient } from "./index";
-import { createRiderSupportController, readSupportCases, type SupportState } from "./trip-support";
+import { createRiderSupportController, createDriverSupportController, readSupportCases, type SupportState } from "./trip-support";
 
 const report = { caseId: "case", bookingId: "trip", category: "lost_item", description: "Lost a test bag", status: "open",
   response: "", version: 1, createdAt: "2026-10-10T12:00:00Z", updatedAt: "2026-10-10T12:00:00Z", updates: [] };
 describe("trip support transport", () => {
+  it("uses only Driver-owned RPCs and retains duplicate-safe retry", async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({ data: [], error: null })
+      .mockRejectedValueOnce(new TypeError("Load failed")).mockResolvedValueOnce({ data: "case", error: null })
+      .mockResolvedValue({ data: [report], error: null });
+    const controller = createDriverSupportController({ rpc } as unknown as PlatformSupabaseClient, "trip", () => undefined);
+    await controller.refresh();
+    expect(await controller.send("trip_issue", "TEST Driver issue")).toBe(false);
+    expect(await controller.send("trip_issue", "TEST Driver issue")).toBe(true);
+    expect(rpc.mock.calls.map((call) => call[0] as unknown)).toEqual(["my_driver_trip_support", "create_my_driver_trip_support", "create_my_driver_trip_support", "my_driver_trip_support"]);
+    expect(rpc.mock.calls[1]?.[1]).toEqual(rpc.mock.calls[2]?.[1]);
+  });
   it("rejects malformed reports and review histories", () => {
     expect(readSupportCases([report])).toHaveLength(1);
     for (const value of [null, {}, [{}], [{ ...report, status: "approved" }], [{ ...report, version: 0 }], [{ ...report, updates: [{ response: "hello" }] }]])

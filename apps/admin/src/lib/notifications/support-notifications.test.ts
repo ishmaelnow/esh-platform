@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import type { AdminServerConfig } from "@/lib/config";
 import { buildPrivacySafePush } from "./push";
-import { buildRiderNotificationContent } from "./email";
+import { buildRiderNotificationContent, buildDriverNotificationContent } from "./email";
 import { nativePayload, type NativeMessage } from "./native-provider";
 import { readNativeClaims } from "./native-push";
 const config = { redirects: { riderAppUrl: "https://rider.eshapp.com", driverAppUrl: "https://driver.eshapp.com" } } as AdminServerConfig;
@@ -10,6 +10,15 @@ const payload = { tenant_slug: "test-company", booking_id: bookingId, case_id: c
   response: "PRIVATE RESPONSE", description: "PRIVATE REPORT", rider_name: "PRIVATE NAME", pickup_address: "PRIVATE ADDRESS", url: "https://evil.invalid" };
 const message: NativeMessage = { attemptId: "fixture", product: "rider", platform: "ios", token: "fixture-token", title: "ESH update",
   body: "Generic update", tenantSlug: "test-company", expiresAt: new Date(Date.now() + 60000).toISOString(), notificationType: "rider_support_update", bookingId, caseId };
+it("Driver support routes only to Driver and keeps every preview generic", () => {
+  const alert = buildPrivacySafePush("driver_support_update", payload, config);
+  const email = buildDriverNotificationContent("driver_support_update", payload, config.redirects.driverAppUrl);
+  expect(alert.url).toContain("https://driver.eshapp.com/"); expect(alert.url).toContain("view=recent");
+  expect(email.text).toContain(alert.url);
+  expect(JSON.stringify({ alert, email })).not.toMatch(/PRIVATE|evil.invalid/);
+  expect(nativePayload({ ...message, product: "driver", notificationType: "driver_support_update" }))
+    .toEqual({ product: "driver", tenantSlug: "test-company", notificationType: "driver_support_update", bookingId, caseId });
+});
 it("keeps email and web previews generic and routes only to the known report", () => {
   const push = buildPrivacySafePush("rider_support_update", payload, config);
   const email = buildRiderNotificationContent("rider_support_update", payload, config.redirects.riderAppUrl);

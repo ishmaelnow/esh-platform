@@ -55,8 +55,8 @@ async function firebaseAccess(config: NativeProviderConfig, request: typeof fetc
 export function nativePayload(message: NativeMessage) {
   const target = supportTarget({ bookingId: message.bookingId, caseId: message.caseId });
   return { product: message.product, tenantSlug: message.tenantSlug,
-    ...(message.product === "rider" && message.notificationType === "rider_support_update" && target
-      ? { notificationType: "rider_support_update", ...target } : {}) };
+    ...(message.notificationType === `${message.product}_support_update` && target
+      ? { notificationType: message.notificationType, ...target } : {}) };
 }
 export function fcmBody(message: NativeMessage) {
   const ttl = Math.max(0, Math.min(900, Math.floor((Date.parse(message.expiresAt) - Date.now()) / 1000)));

@@ -6,7 +6,7 @@ export type SupportCase = {
   caseId: string; bookingId: string; category: SupportCategory; description: string;
   status: SupportStatus; response: string; version: number; createdAt: string; updatedAt: string;
   updates: { status: SupportStatus; response: string; createdAt: string }[];
-  riderName?: string; pickupAddress?: string; destinationAddress?: string;
+  riderName?: string; driverName?: string; pickupAddress?: string; destinationAddress?: string;
 };
 export const supportCategoryLabel = (value: SupportCategory) => value === "lost_item" ? "Lost item" : "Trip issue";
 export const supportStatusLabel = (value: SupportStatus) => ({ open: "Received", in_review: "Under review", resolved: "Resolved" })[value];
@@ -30,6 +30,12 @@ export function readSupportCases(value: unknown): SupportCase[] {
 export type SupportState = { cases: SupportCase[]; loading: boolean; sending: boolean; ready: boolean; error: string; message: string };
 // Memory-only retry ID: a response lost after commit can be retried without a second report.
 export function createRiderSupportController(client: PlatformSupabaseClient, bookingId: string, emit: (state: SupportState) => void) {
+  return createSupportController(client, bookingId, emit, "rider");
+}
+export function createDriverSupportController(client: PlatformSupabaseClient, bookingId: string, emit: (state: SupportState) => void) {
+  return createSupportController(client, bookingId, emit, "driver");
+}
+function createSupportController(client: PlatformSupabaseClient, bookingId: string, emit: (state: SupportState) => void, role: "rider" | "driver") {
   let stopped = false, generation = 0;
   let retry: { category: SupportCategory; description: string; id: string } | null = null;
   let state: SupportState = { cases: [], loading: true, sending: false, ready: false, error: "", message: "" };
@@ -39,7 +45,7 @@ export function createRiderSupportController(client: PlatformSupabaseClient, boo
     const current = ++generation;
     update({ loading: true, error: "" });
     try {
-      const result = await client.rpc("my_trip_support", { booking_value: bookingId });
+      const result = await client.rpc(role === "driver" ? "my_driver_trip_support" : "my_trip_support", { booking_value: bookingId });
       if (stopped || current !== generation) return;
       if (result.error) throw result.error;
       update({ cases: readSupportCases(result.data), ready: true });
@@ -54,7 +60,7 @@ export function createRiderSupportController(client: PlatformSupabaseClient, boo
     if (!retry || retry.category !== category || retry.description !== description) retry = { category, description, id: crypto.randomUUID() };
     update({ sending: true, error: "", message: "" });
     try {
-      const result = await client.rpc("create_my_trip_support", {
+      const result = await client.rpc(role === "driver" ? "create_my_driver_trip_support" : "create_my_trip_support", {
         booking_value: bookingId, category_value: category, description_value: description, request_value: retry.id,
       });
       if (stopped) return false;
