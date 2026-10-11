@@ -23,16 +23,17 @@ No database migration or new credential is required. After the owner pushes, con
 at that commit. Preserve the existing server-only Stripe configuration. No native rebuild needed.
 
 1. Rider menu → Trips → Show history → completed trip → View trip receipt.
-   Compare its full trip reference, route, dates and recorded fare with the existing trip/payment.
-2. Check the upfront breakdown, including tolls/vehicle option/minimum where recorded. It must sum
-   to the upfront quote, not silently substitute current rates or a later reviewed fare.
+   Confirm ESH RECEIPT shows route, trip date/status and fare. No tenant/company name, reference
+   number, Stripe/provider wording, hosted payment link or accounting explanations should appear.
+2. Verify the fare matches the recorded trip and no detailed quote/fare-policy/review sections appear.
 3. Check paid card, wallet-only and split-funded examples if already available. Credit and online
-   payment remain separate. Open payment receipt and compare the sanitized method/processor receipt.
+   payment remain separate, with customer-facing status and masked card method when available.
 4. Check an existing cancelled/refunded example. Booked fare is not labelled a charge; processing
-   refunds and restored credit are distinguished. Fare review/balance due/dispute records must not
-   be presented as a new completed charge. Do not create new money movement merely for this test.
+   refunds and restored credit are distinguished. A recorded outstanding balance uses Amount due;
+   review/settlement/dispute internals are hidden. Do not create new money movement for this test.
 5. Download receipt and open the `.txt` file. Share receipt should open the device sheet or copy
-   text for pasting. Verify route/reference/amounts match, with no access token or processor URL.
+   text for pasting. Verify ESH-receipt.txt and shared text match the short on-screen receipt,
+   with no tenant, reference number, provider name, access token, internal state or processor URL.
    Test Android and iPhone installed apps as well as browser; if WebView download is unsupported,
    verify share/copy separately and report the platform limitation.
 6. At 414 × 896, 320px width and with a reduced keyboard viewport, scroll all receipt content and

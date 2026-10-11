@@ -1,10 +1,31 @@
 # Session Handoff
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## Current objective and checkpoint
 
-Current authorized work: private Rider/Driver unread indicators for messages and company responses.
+Current authorized follow-up: simplify the Rider receipt to ESH RECEIPT with date/status, route,
+fare and customer payment/credit/refund/amount-due details. Screen/share/download reuse one summary;
+no tenant/company, reference/booking ID, Stripe/provider wording/link, quote itemization, policy,
+review/settlement/dispute internals or accounting disclaimer. Download is ESH-receipt.txt.
+Existing API/RLS/financial records and dedicated Payments are unchanged. No migration/native rebuild.
+16 receipt/unit/API checks, scoped lint, production Rider build and all 31 Rider mobile browser
+checks pass. Complete 414 x 896 screenshot inspected and retained in ignored
+tmp/receipt-simple-evidence. Browser checks verify exports omit internal details and handle refunds,
+credit, failed refresh, 320px width and shortened viewport. Physical download remains unconfirmed.
+Next: owner stages the nine receipt/source/test/docs files and the preserved DriverShell unread
+wiring, commits/pushes, confirms Rider/Driver Ready, then checks the simplified receipt on device.
+No new migration or Codemagic build. No Git mutation/deployment by Codex.
+
+Unread migration 20261010000700 is owner-applied (successful supplied output); owner pushed b0f3eae.
+Git confirms main/origin alignment. DriverShell.tsx still has the exact unread badge wiring unstaged;
+preserve and include in the next owner-reviewed feature staging, do not revert. Generated four
+configs plus unexpected untracked git/main files remain untouched. Hosted Ready and unread physical
+acceptance not supplied. The unread local verification below remains valid, but its pending migration
+and Git claims are superseded by this checkpoint. No production/Git mutations by Codex.
+
+Previous unread implementation checkpoint (release status superseded above): private Rider/Driver
+unread indicators for messages and company responses.
 Owner pushed receipts as be42ddf and accepted availability/sharing; physical download remains
 unconfirmed, potentially device-dependent. Do not reopen accepted receipt work or claim download passed.
 Git recovered main/origin/main be42ddf with only the four generated Driver/Rider next-env/tsconfig edits;

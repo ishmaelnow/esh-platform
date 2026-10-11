@@ -62,13 +62,19 @@ test("trip receipt displays real-record shapes, exports safely and stays usable 
   const section = page.locator(".trip-receipt");
   await expect(section.getByText("VISA ending in 4242")).toBeVisible();
   await expect(section.getByText("Applied to this trip")).toBeVisible();
-  await expect(section.getByRole("link", { name: "Open payment receipt" })).toHaveAttribute("href", "https://pay.stripe.com/receipts/test");
+  await expect(section.getByRole("heading", { name: "ESH RECEIPT", exact: true })).toBeVisible();
+  for (const internal of ["TEST company", "Trip reference", "Stripe", "Upfront quote", "Fare policy", "Fare review", "Payment dispute"])
+    await expect(section).not.toContainText(internal);
+  await expect(section.getByRole("link")).toHaveCount(0);
   const downloadPromise = page.waitForEvent("download");
   await section.getByRole("button", { name: "Download receipt" }).click();
-  const download = await downloadPromise; expect(download.suggestedFilename()).toBe("ESH-trip-past.txt");
+  const download = await downloadPromise; expect(download.suggestedFilename()).toBe("ESH-receipt.txt");
   const stream = await download.createReadStream(); let text = "";
   for await (const chunk of stream) text += String(chunk);
-  expect(text).toContain("Recorded fare: $12.00"); expect(text).toContain("VISA ending in 4242");
+  expect(text).toContain("Fare: $12.00"); expect(text).toContain("VISA ending in 4242");
+  expect(text.startsWith("ESH RECEIPT\n")).toBe(true);
+  for (const internal of ["TEST company", "Trip reference", "Stripe", "Upfront quote", "Fare policy", "Fare review", "Payment dispute"])
+    expect(text).not.toContain(internal);
   expect(text).not.toContain("Bearer"); expect(text).not.toContain("pay.stripe.com");
   await section.getByRole("button", { name: "Share receipt" }).click();
   expect(await page.evaluate(() => (window as unknown as { sharedReceiptText: string }).sharedReceiptText)).toContain("TEST destination");
@@ -82,8 +88,8 @@ test("trip receipt displays real-record shapes, exports safely and stays usable 
   receipt.settlements = [{ amountMinor: 100, currency: "USD", status: "balance_due", direction: "charge" }];
   await section.getByRole("button", { name: "Refresh receipt" }).click();
   await expect(section.getByText("Returned to your wallet")).toBeVisible();
-  await expect(section.getByText("Processing", { exact: true })).toBeVisible();
-  await expect(section.getByText("Fare difference charge:", { exact: false })).toContainText("balance due");
+  await expect(section.getByText("Processing", { exact: false })).toBeVisible();
+  await expect(section.locator(".receipt-lines > div").filter({ hasText: "Amount due" })).toContainText("$1.00");
   await page.setViewportSize({ width: 414, height: 520 });
   await section.getByRole("button", { name: "Share receipt" }).scrollIntoViewIfNeeded();
   await expect(section.getByRole("button", { name: "Share receipt" })).toBeInViewport();

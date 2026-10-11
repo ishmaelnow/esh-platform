@@ -24,15 +24,22 @@ describe("recorded trip receipts", () => {
     const receipt: TripReceipt = { bookingId: "trip", company: "TEST company", status: "cancelled", createdAt: "2026-10-10T12:00:00Z", completedAt: null,
       pickup: "TEST pickup", destination: "TEST destination", currency: null, fareMinor: null, quotedFareMinor: null, farePolicy: null,
       breakdown: [], payments: [], refunds: [], wallet: null, settlements: [], disputes: [], review: null };
-    expect(receiptText(receipt)).toContain("Fare: Not recorded");
-    expect(receiptText(receipt)).toContain("No payment record available");
+    expect(receiptText(receipt)).toContain("Booked fare: Not recorded");
+    expect(receiptText(receipt)).toContain("Payment: Details unavailable");
     const split = { ...receipt, currency: "USD", fareMinor: 1200, payments: [{ id: "payment", amountMinor: 900, currency: "USD", status: "refunded", date: receipt.createdAt,
       method: "VISA ending in 4242", receiptUrl: "https://pay.stripe.com/receipts/test" }], wallet: { amountMinor: 300, currency: "USD", status: "restored", restoredAt: receipt.createdAt },
       refunds: [{ amountMinor: 900, currency: "USD", status: "succeeded", date: receipt.createdAt }],
       settlements: [{ amountMinor: 100, currency: "USD", direction: "charge", status: "balance_due" }] };
     expect(receiptText(split)).toContain("Booked fare: $12.00");
-    expect(receiptText(split)).toContain("ESH trip credit: $3.00 - restored");
-    expect(receiptText(split)).toContain("balance due");
-    expect(receiptText(split)).not.toContain("pay.stripe.com");
+    expect(receiptText(split)).toContain("ESH credit: $3.00 · Returned to your wallet");
+    expect(receiptText(split)).toContain("Amount due: $1.00");
+    expect(receiptText(split)).toContain("Payment: $9.00 · Refunded · VISA ending in 4242");
+    const text = receiptText({ ...split, farePolicy: "INTERNAL_POLICY", review: { status: "INTERNAL_REVIEW", currency: "USD", contractFareMinor: 1200 },
+      disputes: [{ amountMinor: 100, currency: "USD", status: "INTERNAL_DISPUTE" }] });
+    expect(text.startsWith("ESH RECEIPT\n")).toBe(true);
+    for (const value of ["Stripe", "stripe.com", "TEST company", "Trip reference", "INTERNAL", "Upfront quote", "Fare review", "Payment dispute"])
+      expect(text).not.toContain(value);
+    expect(receiptText({ ...split, payments: [{ ...split.payments[0]!, method: "Stripe INTERNAL method", status: "INTERNAL_STATUS" }] }))
+      .not.toContain("INTERNAL");
   });
 });

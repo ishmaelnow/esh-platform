@@ -781,8 +781,8 @@ textarea:focus {
 .receipt-content p, .receipt-content h4 { margin: 0; }
 .receipt-reference { font-size: 12px; }
 .receipt-lines { margin: 0; display: grid; gap: 10px; }
-.receipt-lines > div { display: flex; justify-content: space-between; gap: 16px; }
-.receipt-lines dd { margin: 0; white-space: nowrap; font-weight: 700; }
+.receipt-lines > div { display: grid; grid-template-columns: minmax(64px, 90px) minmax(0, 1fr); gap: 16px; }
+.receipt-lines dd { margin: 0; white-space: normal; text-align: right; font-weight: 600; }
 .receipt-activity { padding: 14px; background: #f3f6fa; border-radius: 12px; display: grid; gap: 6px; }
 .receipt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .trip-receipt :focus-visible { outline: 2px solid #153258; outline-offset: 3px; }

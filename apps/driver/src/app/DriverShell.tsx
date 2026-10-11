@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { RiderHomeMap } from "@esh-platform/maps/client";
+import { AttentionBadge } from "./TripAttention";
 
 export type DriverView = "home" | "profile" | "notifications" | "recent" | "preorders" | "overview" | "dispatch" | "earnings" | "location" | "reputation" | "service_areas" | "documents" | "vehicle";
 export function DriverIcon({ name }: { name: string }) {
@@ -83,7 +84,7 @@ export function DriverShell({ view, onView, children, accessToken, loading, cent
         <button type="button" className="driver-circle" aria-label="Center on my location" disabled={locationBusy} onClick={onLocate}><DriverIcon name="locate" /></button>
       </div>
       {(locationNotice || availabilityNotice || !availabilityKnown) ? <div className="driver-home-notice" role="status">{locationNotice ?? availabilityNotice ?? "Availability unavailable. Open Settings to retry."}</div> : null}
-      {(tripCount > 0 || offerCount > 0) ? <button className="driver-trip-banner" type="button" onClick={() => onView("dispatch")}>{offerCount ? `${offerCount} new trip offer${offerCount === 1 ? "" : "s"} · View now` : "Active trip · Open controls"}</button> : null}
+      {(tripCount > 0 || offerCount > 0) ? <button className="driver-trip-banner" type="button" onClick={() => onView("dispatch")}>{offerCount ? `${offerCount} new trip offer${offerCount === 1 ? "" : "s"} · View now` : "Active trip · Open controls"} <AttentionBadge kind="messages" /></button> : null}
       <footer className="driver-home-bottom">
         <button className="driver-preorders-link" type="button" onClick={() => onView("preorders")}>Preorders <span>({preorderCount ?? "—"})</span><span aria-hidden="true">›</span></button>
         <div className={`driver-availability ${online ? "is-online" : "is-offline"}`} aria-busy={availabilityBusy}>
@@ -101,14 +102,14 @@ export function DriverShell({ view, onView, children, accessToken, loading, cent
       {children}
     </section>}
     <button ref={toggle} className="driver-circle driver-menu-toggle" type="button" aria-label="Open driver menu" aria-expanded={drawer} aria-controls={drawer ? "driver-drawer" : undefined}
-      onClick={() => { window.history.pushState({ ...window.history.state, driverView: view, driverDrawer: true }, ""); setDrawer(true); }}><DriverIcon name="menu" /></button>
+      onClick={() => { window.history.pushState({ ...window.history.state, driverView: view, driverDrawer: true }, ""); setDrawer(true); }}><DriverIcon name="menu" /><AttentionBadge /></button>
     {drawer ? <div className="driver-drawer-backdrop" onClick={closeDrawer}>
       <div className="driver-drawer" id="driver-drawer" role="dialog" aria-modal="true" aria-label="Driver menu" ref={panel} onClick={(event) => event.stopPropagation()}>
         <button className="drawer-close" type="button" aria-label="Close driver menu" onClick={closeDrawer}>×</button>
         <nav aria-label="Driver sections">{([
           ["profile", "Profile", "profile"], ["notifications", "Notifications", "notifications"], ["earnings", "Wallet", "wallet"], ["recent", "Recent orders", "recent"], ["overview", "Settings", "settings"],
         ] as const).map(([id, label, icon]) => <button type="button" key={id} onClick={() => { window.history.replaceState({ ...window.history.state, driverDrawer: false }, ""); setDrawer(false); onView(id); }}>
-          <DriverIcon name={icon} /><strong>{label}</strong>{id === "profile" ? <span className="driver-rating"><span aria-hidden="true">★</span> {rating ?? "—"}</span> : null}
+          <DriverIcon name={icon} /><strong>{label}</strong>{id === "recent" ? <AttentionBadge kind="support" /> : null}{id === "profile" ? <span className="driver-rating"><span aria-hidden="true">★</span> {rating ?? "—"}</span> : null}
         </button>)}</nav>
       </div>
     </div> : null}

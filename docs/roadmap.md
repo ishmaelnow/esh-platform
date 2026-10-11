@@ -8,7 +8,8 @@ remain independent of transportation-specific workflows.
 
 - Rider/Driver private unread indicators implemented locally: compact menu/conversation badges,
   exact report links, viewport-based acknowledgement, persisted owned state and version-safe
-  clearing independent of alert consent. New migration 20261010000700 awaits owner dry-run/apply.
+  clearing independent of alert consent. Owner applied 20261010000700 and pushed b0f3eae;
+  DriverShell badge wiring remains a preserved unstaged file. Hosted Ready/device acceptance pending.
   331 unit/API checks, SQL isolation/version/lifecycle smoke, shared types, scoped lint, both app
   builds and all 62 Rider/Driver mobile checks pass; final focused rerun and complete screenshots checked.
   See architecture/trip-unread-indicators.md and operations/trip-unread-indicators-manual-test.md.
@@ -21,6 +22,8 @@ remain independent of transportation-specific workflows.
   258 unit/API checks, all 30 Rider mobile browser checks, scoped lint and production Rider build
   pass. Owner pushed be42ddf and accepted receipt availability/sharing; physical download remains
   unconfirmed and is not treated as a blocker for the accepted receipt view/share workflow.
+  Owner-requested follow-up simplifies screen/share/download to ESH RECEIPT with trip/fare/payment
+  essentials, no tenant/reference/provider/internal accounting details. No migration/native rebuild.
 
 - Driver trip support implemented locally: private finished-trip reports in Recent orders,
   Transportation Rider/Driver queue filter, versioned replies and generic response alerts using

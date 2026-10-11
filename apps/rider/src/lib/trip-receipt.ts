@@ -38,23 +38,28 @@ export function safeStripeReceipt(value: unknown): string | null {
       ? url.toString() : null;
   } catch { return null; }
 }
-export function receiptText(receipt: TripReceipt): string {
+export function receiptSummary(receipt: TripReceipt): { label: string; value: string }[] {
   const money = (value: number, currency: string) => receiptMoney(value, currency);
-  const date = (value: string) => new Date(value).toLocaleString();
-  const lines = ["ESH trip receipt", receipt.company, `Trip reference: ${receipt.bookingId}`, `Trip status: ${receipt.status}`,
-    `Booked: ${date(receipt.createdAt)}`, ...(receipt.completedAt ? [`Completed: ${date(receipt.completedAt)}`] : []),
-    `Pickup: ${receipt.pickup}`, `Destination: ${receipt.destination}`,
-    receipt.fareMinor != null && receipt.currency ? `${receipt.status === "cancelled" ? "Booked" : "Recorded"} fare: ${money(receipt.fareMinor, receipt.currency)}` : "Fare: Not recorded",
-    ...(receipt.quotedFareMinor != null && receipt.currency ? [`Upfront quote: ${money(receipt.quotedFareMinor, receipt.currency)}`] : []),
-    ...receipt.breakdown.map((line) => `${line.label}: ${money(line.amountMinor, receipt.currency!)}`),
-    ...(receipt.review ? [`Fare review: ${receipt.review.status.replaceAll("_", " ")} - contract fare ${money(receipt.review.contractFareMinor, receipt.review.currency)}`] : []),
-    ...receipt.payments.map((payment) => `Online payment: ${money(payment.amountMinor, payment.currency)} - ${payment.status} - ${payment.method} - ${date(payment.date)}`),
-    ...(receipt.wallet ? [`ESH trip credit: ${money(receipt.wallet.amountMinor, receipt.wallet.currency)} - ${receipt.wallet.status}`] : []),
-    ...receipt.refunds.map((refund) => `Refund: ${money(refund.amountMinor, refund.currency)} - ${refund.status}`),
-    ...receipt.settlements.map((item) => `Fare difference ${item.direction}: ${money(item.amountMinor, item.currency)} - ${item.status.replaceAll("_", " ")}`),
-    ...receipt.disputes.map((item) => `Payment dispute: ${money(item.amountMinor, item.currency)} - ${item.status.replaceAll("_", " ")}`),
-    ...(!receipt.payments.length && !receipt.wallet ? ["No payment record available. This does not confirm payment."] : []),
-    "Amounts and statuses reflect recorded activity when loaded. Fare review or a balance due is not a completed charge.",
-    "Trip summary; not a tax invoice. Stripe receipts remain the processor payment record."];
-  return lines.join("\n");
+  const status = (value: string) => ({ paid: "Paid", refunded: "Refunded", pending: "Pending",
+    processing: "Processing", failed: "Not completed", expired: "Not completed", cancelled: "Cancelled",
+    requires_action: "Action needed" } as Record<string, string>)[value] ?? "Unconfirmed";
+  return [
+    { label: "Trip", value: receipt.status === "completed" ? "Completed" : "Cancelled" },
+    { label: "Date", value: new Date(receipt.completedAt ?? receipt.createdAt).toLocaleString() },
+    { label: "Pickup", value: receipt.pickup }, { label: "Destination", value: receipt.destination },
+    { label: receipt.status === "cancelled" ? "Booked fare" : "Fare",
+      value: receipt.fareMinor != null && receipt.currency ? money(receipt.fareMinor, receipt.currency) : "Not recorded" },
+    ...receipt.payments.map((payment) => {
+      const method = /^(VISA|MASTERCARD|AMEX|DISCOVER|JCB|UNIONPAY|DINERS|CARD) ending in \d{4}$/i.test(payment.method) ? payment.method : "";
+      return { label: "Payment", value: `${money(payment.amountMinor, payment.currency)} · ${status(payment.status)}${method ? ` · ${method}` : ""}` };
+    }),
+    ...(receipt.wallet ? [{ label: "ESH credit", value: `${money(receipt.wallet.amountMinor, receipt.wallet.currency)} · ${receipt.wallet.status === "restored" ? "Returned to your wallet" : receipt.wallet.status === "applied" ? "Applied to this trip" : "Reserved"}` }] : []),
+    ...receipt.refunds.map((refund) => ({ label: "Refund", value: `${money(refund.amountMinor, refund.currency)} · ${refund.status === "succeeded" ? "Refunded" : refund.status === "pending" ? "Processing" : "Not completed"}` })),
+    ...receipt.settlements.filter((item) => item.direction === "charge" && item.status === "balance_due")
+      .map((item) => ({ label: "Amount due", value: money(item.amountMinor, item.currency) })),
+    ...(!receipt.payments.length && !receipt.wallet ? [{ label: "Payment", value: "Details unavailable" }] : []),
+  ];
+}
+export function receiptText(receipt: TripReceipt): string {
+  return ["ESH RECEIPT", ...receiptSummary(receipt).map((line) => `${line.label}: ${line.value}`)].join("\n");
 }

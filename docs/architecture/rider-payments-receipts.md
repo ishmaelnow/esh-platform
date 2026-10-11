@@ -21,6 +21,16 @@ saved payment methods, processor-fee accounting, and cross-processor receipt rec
 
 ## Trip-level receipt
 
+The customer-facing receipt is now a compact ESH RECEIPT: trip status/date, pickup, destination,
+fare and recorded payment status/masked card method. Credit, refunds and an outstanding amount
+appear only when relevant. Screen, shared text and local download use one presentation model.
+No tenant/company name, trip/reference number, provider branding/link, quote itemization, fare
+policy, review history, settlement terminology or dispute internals appear. Download filename is
+ESH-receipt.txt and contains no booking identifier. Unknown payment states say Unconfirmed;
+unavailable payment details do not imply Paid. Cancelled fare remains Booked fare.
+The existing backend authorization and financial records are unchanged; dedicated Payments access
+remains separate from this simplified ESH receipt.
+
 Completed/cancelled trip history now has a progressive View trip receipt control. It reads
 `GET /api/trips/receipt` with the Rider JWT, selected tenant slug and booking ID. All database reads
 use that authenticated client and existing RLS; there is no service-role fallback or new grant.
@@ -31,13 +41,14 @@ requests and clears previous data on refresh, account/provider changes or closur
 
 The receipt uses the booking's recorded fare and immutable quote. Base, distance, time, minimum
 adjustment, service option and toll amounts are reconstructed only if all integer amounts are valid
-and their sum exactly equals the locked quote. Otherwise itemization is explicitly unavailable.
+and their sum exactly equals the locked quote. These backend components are no longer presented
+in the simplified customer receipt; they remain available to existing financial workflows.
 Current tenant pricing never changes a historical receipt. Minor units follow currency precision.
 Unpriced legacy trips remain Not recorded, not zero or paid. A cancelled trip shows its booked fare,
 not a claim that the full fare was charged.
 
 Payment attempts, credit applied/restored, refunds, fare review, fare-difference settlements and
-disputes remain separate records. A pending refund, approved review or balance due is not described
+disputes remain separate backend records. A pending refund, approved review or balance due is not described
 as completed collection/refund. No inferred net-paid total is calculated across these lifecycles.
 Processor metadata uses the existing server-only Stripe integration for paid/refunded payments,
 with a bounded request and no retries; failure leaves recorded activity available and labels method
