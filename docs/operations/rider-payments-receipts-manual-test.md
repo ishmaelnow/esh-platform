@@ -16,3 +16,32 @@
 
 Pass requires Rider isolation, correct paid/refunded presentation, safe hosted-receipt access, and no
 financial mutation from viewing or refreshing payment history.
+
+## Trip history receipt acceptance
+
+No database migration or new credential is required. After the owner pushes, confirm Rider Ready
+at that commit. Preserve the existing server-only Stripe configuration. No native rebuild needed.
+
+1. Rider menu → Trips → Show history → completed trip → View trip receipt.
+   Compare its full trip reference, route, dates and recorded fare with the existing trip/payment.
+2. Check the upfront breakdown, including tolls/vehicle option/minimum where recorded. It must sum
+   to the upfront quote, not silently substitute current rates or a later reviewed fare.
+3. Check paid card, wallet-only and split-funded examples if already available. Credit and online
+   payment remain separate. Open payment receipt and compare the sanitized method/processor receipt.
+4. Check an existing cancelled/refunded example. Booked fare is not labelled a charge; processing
+   refunds and restored credit are distinguished. Fare review/balance due/dispute records must not
+   be presented as a new completed charge. Do not create new money movement merely for this test.
+5. Download receipt and open the `.txt` file. Share receipt should open the device sheet or copy
+   text for pasting. Verify route/reference/amounts match, with no access token or processor URL.
+   Test Android and iPhone installed apps as well as browser; if WebView download is unsupported,
+   verify share/copy separately and report the platform limitation.
+6. At 414 × 896, 320px width and with a reduced keyboard viewport, scroll all receipt content and
+   reach the export controls. Approved home/booking layout must stay unchanged.
+7. Temporarily disconnect and Refresh receipt. Old receipt data clears and a professional error
+   appears. Restore connectivity and retry. A different Rider/provider cannot fetch this trip's
+   receipt, even by replacing booking ID. Active trips are not eligible for this history receipt.
+8. Legacy unpriced/incomplete records show unavailable details, never invented fares or payment.
+   Existing Payments receipt links, support, booking and payment-return flows remain intact.
+
+Use clearly identifiable existing test records. Viewing/exporting must create no booking, payment,
+refund, ledger entry or notification. Restore temporary settings and Driver availability afterward.

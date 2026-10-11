@@ -4,36 +4,40 @@ Last updated: 2026-10-10
 
 ## Current objective and checkpoint
 
-Current authorized work: Driver trip support. Rider support notifications are owner-accepted after
-applying 20261010000500 and pushing e86d669; do not repeat that release or its acceptance.
-Git recovered at main/origin/main e86d669 with generated Driver/Rider configuration edits preserved.
+Current authorized work: Rider trip receipts/fare breakdowns. Owner accepted Driver support
+submission, received company response and resolution after pushing a2bfa9e. Migration
+20261010000600 is owner-applied; do not repeat that completed work. Rider support alerts are
+also owner-accepted at e86d669 with 100005 applied.
+Git recovered main/origin/main a2bfa9e with only four generated Driver/Rider next-env/tsconfig
+changes. Preserve them and exclude from feature staging.
 
-Local Driver support adds owned finished-trip history/Get help, private cases and reply history,
-Transportation Reports from Riders/Drivers filter, generic response alerts and exact-report routing.
-Separate Driver tables preserve Rider report privacy. Active tenant/person/profile and final assigned
-Driver checks apply at read, write and delivery. Cleared/reassigned trips do not imply old ownership.
-Shared controller preserves uncertain-send request IDs/drafts; versioned reviews reject stale writes.
-Existing Driver trip-offer email preference also controls support replies; device consent stays independent.
-Minute cron handles both support event types without changing other email cadence. No new credentials,
-native rebuild, SOS, refunds, attachments, cross-participant disclosure or auth-policy change.
+Inspection found existing Payments history and authenticated Stripe hosted receipts. New local
+TripReceipt adds a progressive View trip receipt in completed/cancelled trip history, using a
+new no-store GET /api/trips/receipt endpoint with existing caller-JWT RLS and explicit active
+Rider/tenant/booking filters. No service-role reads, new RPC, schema migration or grants.
+Immutable quote components are shown only when integer arithmetic balances the quote exactly.
+Unpriced or incomplete legacy data stays unavailable, never fabricated zero/paid. Recorded fare,
+quote, card payments, applied/restored credit, refunds, fare review, settlements and disputes stay
+separate; pending refund/balance due is not presented as completed money movement. Stripe method
+metadata/HTTPS processor receipts are optional and bounded to five seconds without retry; database
+activity stays available during provider failure. Processor identifiers/errors remain server-side.
 
-Migration 20261010000600_driver_trip_support.sql is owner-applied remotely. Owner supplied
-successful Applying migration / Finished supabase db push output listing only that migration.
-Do not reapply it. Git push, hosted Ready and real-device acceptance remain pending.
-310 unit/API regressions, minimal embedded PostgreSQL migration/ownership/retry/channel/claim smoke,
-shared Supabase type build, scoped lint, Admin and Transportation builds pass. Driver production build
-passes after correcting initial session-loading URL routing. Both Admin Rider/Driver browser review
-checks and all 30 Driver mobile checks pass. Full Driver/Admin screenshots inspected at 414px width;
-Driver keyboard-height and 320px overflow checks pass. All 29 Rider browser regressions pass,
-including support, booking, payment return, account, saved places and session recovery.
-Screenshots are preserved under ignored tmp/driver-support-evidence. Do not infer physical
-device delivery from fixtures. Final whitespace check passes.
-New architecture/driver-trip-support.md and operations/driver-trip-support-manual-test.md describe
-access, lifecycle and owner acceptance. Existing Rider source/design is unchanged.
+Local text download/share includes trip addresses only on user action; browser/device share falls
+back to clipboard. No exported auth/processor links, stored public receipt, PDF/tax invoice, new
+notification, financial mutation, new credential or native rebuild. Approved home/booking and Driver
+source are unchanged. Existing Payments receipt controls remain intact.
+258 Rider/Admin/shared unit/API tests, scoped lint and all 30 Rider mobile browser checks pass,
+including download content, share payload, failed refresh, refunds/credit/balance due and 320px/short
+viewport. Final 414px full screenshot inspected after navy/spacing refinement; production Rider
+build passes with existing Supabase/Next/img warnings. Physical WebView download/share and real-account RLS acceptance
+remain owner checks, not inferred from fixtures. See architecture/rider-payments-receipts.md and
+operations/rider-payments-receipts-manual-test.md.
+Final browser rerun passes all 30 checks after the CSS refinement. Screenshot preserved under
+ignored tmp/rider-receipt-evidence; final whitespace check passes.
 
-Next: owner stages explicit feature files,
-commits/pushes and confirms Driver/Admin/Transportation Ready before device acceptance. No Git
-mutation, production SQL, notification, payment, emergency action or deployment by Codex.
+Next: owner stages explicit receipt files and docs,
+commits/pushes, confirms Rider Ready and performs existing-account acceptance. No database push or
+Codemagic build needed. No Git mutation, production SQL/payment/refund/notification/deployment by Codex.
 
 The older release notes below are historical context; this checkpoint supersedes pending claims
 for Rider response-alert deployment and acceptance.

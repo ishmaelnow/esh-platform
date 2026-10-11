@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
 import { photoFixture } from "./helpers/trip-photos";
+import type { TripReceipt } from "../../apps/rider/src/lib/trip-receipt";
 
 const tenant = { tenantId: "11111111-1111-4111-8111-111111111111", tenantSlug: "rider-preview", displayName: "Preview rides" };
 const profile = { riderProfileId: "preview-rider", displayName: "Preview Rider", email: "rider-preview@example.invalid", phone: null as string | null, accessibilityNotes: null as string | null, status: "active" };
@@ -36,6 +37,53 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("/?tenant=rider-preview");
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
+});
+
+test("trip receipt displays real-record shapes, exports safely and stays usable at mobile sizes", async ({ page }) => {
+  const receipt: TripReceipt = { bookingId: "past", company: "TEST company", status: "completed", createdAt: "2026-10-10T12:00:00Z", completedAt: "2026-10-10T13:00:00Z",
+    pickup: "TEST pickup", destination: "TEST destination", currency: "USD", fareMinor: 1200, quotedFareMinor: 1200, farePolicy: "guaranteed_upfront",
+    breakdown: [{ label: "Base fare", amountMinor: 1000 }, { label: "Tolls", amountMinor: 200 }],
+    payments: [{ id: "TEST payment", amountMinor: 900, currency: "USD", status: "paid", date: "2026-10-10T12:00:00Z", method: "VISA ending in 4242", receiptUrl: "https://pay.stripe.com/receipts/test" }],
+    wallet: { amountMinor: 300, currency: "USD", status: "applied", restoredAt: null }, refunds: [], settlements: [], disputes: [], review: null };
+  let failed = false;
+  await page.route("**/api/trips/receipt?*", (route) => failed ? route.fulfill({ status: 400, json: { message: "PRIVATE internal error" } }) : route.fulfill({ json: receipt }));
+  await page.evaluate(() => { Object.defineProperty(navigator, "share", { configurable: true, value: async (data: ShareData) => {
+    await Promise.resolve(); Object.assign(window, { sharedReceiptText: data.text });
+  } }); });
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: "Show history" }).click();
+  await page.getByText("View trip receipt", { exact: true }).click();
+  const section = page.locator(".trip-receipt");
+  await expect(section.getByText("VISA ending in 4242")).toBeVisible();
+  await expect(section.getByText("Applied to this trip")).toBeVisible();
+  await expect(section.getByRole("link", { name: "Open payment receipt" })).toHaveAttribute("href", "https://pay.stripe.com/receipts/test");
+  const downloadPromise = page.waitForEvent("download");
+  await section.getByRole("button", { name: "Download receipt" }).click();
+  const download = await downloadPromise; expect(download.suggestedFilename()).toBe("ESH-trip-past.txt");
+  const stream = await download.createReadStream(); let text = "";
+  for await (const chunk of stream) text += String(chunk);
+  expect(text).toContain("Recorded fare: $12.00"); expect(text).toContain("VISA ending in 4242");
+  expect(text).not.toContain("Bearer"); expect(text).not.toContain("pay.stripe.com");
+  await section.getByRole("button", { name: "Share receipt" }).click();
+  expect(await page.evaluate(() => (window as unknown as { sharedReceiptText: string }).sharedReceiptText)).toContain("TEST destination");
+  await page.screenshot({ path: "test-results/rider-trip-receipt-414.png", fullPage: true });
+  failed = true; await section.getByRole("button", { name: "Refresh receipt" }).click();
+  await expect(section.getByRole("alert")).toContainText("could not be loaded");
+  await expect(section.getByText("VISA ending in 4242")).toHaveCount(0);
+  await expect(section).not.toContainText("PRIVATE");
+  failed = false; receipt.status = "cancelled"; receipt.wallet!.status = "restored";
+  receipt.refunds = [{ amountMinor: 900, currency: "USD", status: "pending", date: null }];
+  receipt.settlements = [{ amountMinor: 100, currency: "USD", status: "balance_due", direction: "charge" }];
+  await section.getByRole("button", { name: "Refresh receipt" }).click();
+  await expect(section.getByText("Returned to your wallet")).toBeVisible();
+  await expect(section.getByText("Processing", { exact: true })).toBeVisible();
+  await expect(section.getByText("Fare difference charge:", { exact: false })).toContainText("balance due");
+  await page.setViewportSize({ width: 414, height: 520 });
+  await section.getByRole("button", { name: "Share receipt" }).scrollIntoViewIfNeeded();
+  await expect(section.getByRole("button", { name: "Share receipt" })).toBeInViewport();
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test("support alerts open the owned report even outside the loaded trip history", async ({ page }) => {

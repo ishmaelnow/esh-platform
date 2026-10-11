@@ -6,10 +6,18 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider trip-level receipts implemented locally: finished-trip history details, immutable balanced
+  quote itemization, separate card/wallet/refund/review/settlement/dispute activity and local text
+  download/share with clipboard fallback. Existing authenticated RLS reads and Stripe receipt
+  integration are reused; no migration/native rebuild/new credential. Validation and owner
+  rollout checkpoint: `session-handoff.md`; see `architecture/rider-payments-receipts.md`.
+  258 unit/API checks, all 30 Rider mobile browser checks, scoped lint and production Rider build
+  pass. Full 414px screenshot inspected; owner push/deployment/device acceptance remain pending.
+
 - Driver trip support implemented locally: private finished-trip reports in Recent orders,
   Transportation Rider/Driver queue filter, versioned replies and generic response alerts using
   existing independent preferences. Owner applied migration 20261010000600 successfully;
-  application push/deployment and device acceptance remain pending.
+  owner pushed a2bfa9e and accepted report submission, company response and resolution.
   310 unit/API checks, SQL isolation/channel smoke, 30 Driver mobile checks, two Admin review
   checks, all 29 Rider browser regressions, shared types, scoped lint and Driver/Admin/Transportation builds pass.
   No native rebuild or new credentials. See `architecture/driver-trip-support.md` and

@@ -775,3 +775,17 @@ textarea:focus {
 .support-report { display: grid; gap: 10px; background: #f6f8fb; border-radius: 14px; padding: 16px; min-width: 0; }
 .support-report h4 { margin: 0; }
 .support-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.trip-receipt { margin-top: 16px; color: #153258; }
+.trip-receipt summary { min-height: 44px; padding: 12px 0; font-weight: 700; cursor: pointer; }
+.receipt-content { display: grid; gap: 12px; padding: 12px 0 0 16px; overflow-wrap: anywhere; }
+.receipt-content p, .receipt-content h4 { margin: 0; }
+.receipt-reference { font-size: 12px; }
+.receipt-lines { margin: 0; display: grid; gap: 10px; }
+.receipt-lines > div { display: flex; justify-content: space-between; gap: 16px; }
+.receipt-lines dd { margin: 0; white-space: nowrap; font-weight: 700; }
+.receipt-activity { padding: 14px; background: #f3f6fa; border-radius: 12px; display: grid; gap: 6px; }
+.receipt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.trip-receipt :focus-visible { outline: 2px solid #153258; outline-offset: 3px; }
+.trip-receipt .button.primary { background: #153258; color: white; }
+.trip-receipt .button.secondary { background: #edf2f8; color: #153258; }
+.trip-receipt a { color: #153258; }

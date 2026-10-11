@@ -23,6 +23,7 @@ import { RiderTripTracking } from "./RiderTripTracking";
 import { RiderPickupSharing } from "./RiderPickupSharing";
 import { TripMessages } from "./TripMessages";
 import { TripSupport } from "./TripSupport";
+import { TripReceipt } from "./TripReceipt";
 import { readSupportLink, readSupportTap, type SupportLink } from "../lib/support-link";
 import { currentTripLocation, trackingMapPoint } from "../lib/trip-tracking";
 import { RiderSheet } from "./RiderSheet";
@@ -1928,6 +1929,7 @@ export default function RiderHome() {
                     {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? <p className="area"><strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100)}</strong></p> : null}
                     {booking.reconciliationStatus && booking.fareCurrencyCode ? <p className="area">Fare contract review: {booking.reconciliationStatus.replaceAll("_", " ")}{booking.contractFareMinor != null ? ` · contract fare ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.contractFareMinor / 100)}` : ""}{booking.rawMeterFareMinor != null && booking.rawMeterFareMinor !== booking.contractFareMinor ? ` · raw meter ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.rawMeterFareMinor / 100)}` : ""}</p> : null}
                     <button className="button secondary compact" type="button" disabled={busy} onClick={() => void bookAgain(booking)}>Book again</button>
+                    {session ? <TripReceipt key={`receipt:${session.user.id}:${portal.tenant.tenantId}:${booking.bookingId}`} bookingId={booking.bookingId} tenantSlug={portal.tenant.tenantSlug} accessToken={session.access_token} /> : null}
                     {supabase && session ? <TripSupport key={`${session.user.id}:${portal.tenant.tenantId}:${booking.bookingId}`} client={supabase} bookingId={booking.bookingId} /> : null}
                   </article>
                 )) : null}
