@@ -6,13 +6,22 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
-- Trip support/lost-item reporting implemented locally: completed/cancelled Rider trip history
+- Support-response alerts implemented locally: generic email/Web/native updates for new Admin
+  replies/resolutions, independent existing preferences, case/version deduplication, exact owned
+  report routing and delivery-time access checks. Existing minute worker recovers only support
+  email/Web events after independent native delivery. 240 unit/API tests, minimal SQL migration
+  smoke, shared types, scoped lint, Rider/Admin builds and all 29 Rider mobile browser checks pass.
+  Owner applied migration 20261010000500 successfully; hosted Rider/Admin rollout and real-device acceptance pending.
+  No new credentials/native rebuild. See `architecture/trip-support.md` and its operations manual.
+
+- Trip support/lost-item reporting delivered: completed/cancelled Rider trip history
   Get help; owned text-only reports; tenant-authorized Transportation review, Rider-visible reply
   history and resolution, duplicate-safe submission and versioned reviews. No automatic refunds,
-  Driver disclosure or outbound support alerts. Owner applied migration 20261010000400 successfully;
+  Driver disclosure. Response alerts are the separate local follow-up above. Owner applied migration 20261010000400 successfully;
   233 unit/API checks, minimal SQL isolation/retry/review smoke, 27 Rider mobile checks, Admin
-  mobile review check and Rider/Admin/Transportation production builds pass. Owner release and
-  device acceptance pending. See `architecture/trip-support.md` and
+  mobile review check and Rider/Admin/Transportation production builds pass. Owner
+  pushed a64de20 and confirmed submission, Admin reply, Rider response visibility and
+  resolution all passed. Privacy/recovery device edge cases remain separate. See `architecture/trip-support.md` and
   `operations/trip-support-manual-test.md`.
 
 - Rider connection-error wording is owner-pushed as 6996fbe. The recurring booking connection

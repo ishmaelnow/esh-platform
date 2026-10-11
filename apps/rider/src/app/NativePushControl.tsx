@@ -12,7 +12,7 @@ export type NativePushController = ReturnType<typeof createNativePushController>
 export type NativePushViewState = NativePushState & { ready: boolean };
 export function NativePushControl({ client, userId, tenantSlug, controllerRef, onOpen, onState }: {
   client: PlatformSupabaseClient; userId: string; tenantSlug: string | null;
-  controllerRef: RefObject<NativePushController | null>; onOpen: () => void;
+  controllerRef: RefObject<NativePushController | null>; onOpen: (data: unknown) => void;
   onState: (value: NativePushViewState) => void;
 }) {
   const open = useRef(onOpen); open.current = onOpen;
@@ -37,7 +37,7 @@ export function NativePushControl({ client, userId, tenantSlug, controllerRef, o
       controller = createNativePushController({ client, product: "rider",
         platform: Capacitor.getPlatform() === "ios" ? "ios" : "android",
         installationId: nativePushInstallation("rider", localStorage), userId, tenantSlug,
-        update: (value) => { if (!cancelled) onState({ ...value, ready: true }); }, open: () => open.current(),
+        update: (value) => { if (!cancelled) onState({ ...value, ready: true }); }, open: (data) => open.current(data),
         bridge: {
           permission: async (prompt) => {
             let status = await PushNotifications.checkPermissions();

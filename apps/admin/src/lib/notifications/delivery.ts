@@ -6,6 +6,8 @@ import { deliverNotificationSms } from "./sms";
 import { deliverNativeNotifications } from "./native-push";
 
 export type DeliveryScope = {
+  skipNative?: boolean;
+  notificationType?: "rider_support_update";
   tenantId?: string;
   notificationId?: string;
   limit?: number;
@@ -27,6 +29,7 @@ export async function deliverQueuedNotifications(
     .eq("delivery_status", "sending")
     .lt("last_attempted_at", staleClaimThreshold);
   if (scope.tenantId) recovery = recovery.eq("tenant_id", scope.tenantId);
+  if (scope.notificationType) recovery = recovery.eq("notification_type", scope.notificationType);
   const { error: recoveryError } = await recovery;
   if (recoveryError) throw recoveryError;
 
@@ -40,6 +43,7 @@ export async function deliverQueuedNotifications(
     .limit(scope.notificationId ? 1 : (scope.limit ?? 50));
   if (scope.tenantId) query = query.eq("tenant_id", scope.tenantId);
   if (scope.notificationId) query = query.eq("notification_id", scope.notificationId);
+  if (scope.notificationType) query = query.eq("notification_type", scope.notificationType);
   const { data: notifications, error: readError } = await query;
   if (readError) throw readError;
 
@@ -67,12 +71,12 @@ export async function deliverQueuedNotifications(
     if (claimError) throw claimError;
     if (!claimed) continue;
 
-    if (notification.notification_type === "driver_preorder_available") {
-      const current = await service.rpc("preorder_alert_current", { notification_value: notification.notification_id });
+    if (notification.notification_type === "driver_preorder_available" || notification.notification_type === "rider_support_update") {
+      const current = await service.rpc(notification.notification_type === "rider_support_update" ? "support_alert_current" : "preorder_alert_current", { notification_value: notification.notification_id });
       if (current.error) throw current.error;
       if (!current.data) {
         const canceled = await service.from("notification_outbox").update({ delivery_status: "canceled",
-          delivery_error: "Preorder is no longer available to this Driver." }).eq("notification_id", notification.notification_id);
+          delivery_error: "Notification is no longer available to this recipient." }).eq("notification_id", notification.notification_id);
         if (canceled.error) throw canceled.error;
         continue;
       }
@@ -123,7 +127,7 @@ export async function deliverQueuedNotifications(
     }
   }
 
-  const native = await deliverNativeNotifications(service, config, scope)
+  const native = scope.skipNative ? { nativeAccepted: 0, nativeFailed: 0, nativeSkipped: true } : await deliverNativeNotifications(service, config, scope)
     .catch(() => ({ nativeAccepted: 0, nativeFailed: 1, nativeSkipped: false }));
   return { sent, failed, emailSkipped, pushDelivered, pushFailed, smsAccepted, smsFailed, ...native };
 }

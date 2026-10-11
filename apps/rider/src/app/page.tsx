@@ -23,6 +23,7 @@ import { RiderTripTracking } from "./RiderTripTracking";
 import { RiderPickupSharing } from "./RiderPickupSharing";
 import { TripMessages } from "./TripMessages";
 import { TripSupport } from "./TripSupport";
+import { readSupportLink, readSupportTap, type SupportLink } from "../lib/support-link";
 import { currentTripLocation, trackingMapPoint } from "../lib/trip-tracking";
 import { RiderSheet } from "./RiderSheet";
 import { RiderProfileEditor } from "./RiderProfileEditor";
@@ -265,6 +266,7 @@ export default function RiderHome() {
   const [nativePaymentReturnNonce, setNativePaymentReturnNonce] = useState(0);
   const [activePortalTab, setActivePortalTab] = useState<"account" | "book" | "trips" | "payments" | "wallet">("book");
   const [showTripHistory, setShowTripHistory] = useState(false);
+  const [supportLink, setSupportLink] = useState<SupportLink | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingHeight, setBookingHeight] = useState(360);
   const [homeDestinationEntry, setHomeDestinationEntry] = useState(false);
@@ -655,7 +657,14 @@ export default function RiderHome() {
     let cancelled = false;
     let listener: { remove: () => Promise<void> } | null = null;
     const handleCallback = async (url: string) => {
-      if (cancelled || processedAuthCallbacks.current.has(url)) return;
+      if (cancelled) return;
+      const support = readSupportLink(url, window.location.origin);
+      if (support) {
+        setSupportLink(support); setTenantSlug(support.tenantSlug); setActivePortalTab("trips"); setBookingOpen(false);
+        void Browser.close().catch(() => undefined);
+        return;
+      }
+      if (processedAuthCallbacks.current.has(url)) return;
       processedAuthCallbacks.current.add(url);
       const callback = new URL(url);
       if (callback.searchParams.get("payment")) {
@@ -713,7 +722,10 @@ export default function RiderHome() {
     const requestedView = new URLSearchParams(window.location.search).get("view");
     if (requestedView === "payments") setActivePortalTab("payments");
     else if (requestedView === "wallet") setActivePortalTab("wallet");
-    else if (requestedView === "trips") setActivePortalTab("trips");
+    else if (requestedView === "trips") {
+      setActivePortalTab("trips");
+      setSupportLink(readSupportLink(window.location.href, window.location.origin));
+    }
   }, []);
 
   useEffect(() => {
@@ -1759,7 +1771,7 @@ export default function RiderHome() {
             <div className="card preference-card">
               <div>
                 <strong>Trip update emails</strong>
-                <p>Receive booking, driver, arrival, trip, completion, and cancellation updates.</p>
+                <p>Receive booking, driver, arrival, trip, completion, cancellation, and support response updates.</p>
               </div>
               <label className="switch">
                 <input
@@ -1885,6 +1897,12 @@ export default function RiderHome() {
                 </article>
               ))
             )}
+            {supportLink && supportLink.tenantSlug === portal.tenant.tenantSlug && supabase && session ? <section className="card">
+              <h3>Support report</h3>
+              <button className="button secondary compact" type="button" onClick={() => setSupportLink(null)}>Close report</button>
+              <TripSupport key={`${session.user.id}:${portal.tenant.tenantId}:${supportLink.caseId}`} client={supabase}
+                bookingId={supportLink.bookingId} targetCaseId={supportLink.caseId} />
+            </section> : null}
             {historicalBookings.length > 0 ? (
               <section className="trip-history">
                 <div className="section-heading">
@@ -1976,7 +1994,7 @@ export default function RiderHome() {
         </div>
         </>
       )}
-      {Capacitor.isNativePlatform() && supabase && session && portal?.profile && portal.tenant.tenantSlug === tenantSlug ? <NativePushControl key={`${session.user.id}:${tenantSlug}`} client={supabase} userId={session.user.id} tenantSlug={tenantSlug} controllerRef={nativePush} onState={setNativePushState} onOpen={() => { setActivePortalTab("trips"); void loadPortal().catch(() => setError("Trip updates could not be refreshed.")); }} /> : null}
+      {Capacitor.isNativePlatform() && supabase && session && portal?.profile && portal.tenant.tenantSlug === tenantSlug ? <NativePushControl key={`${session.user.id}:${tenantSlug}`} client={supabase} userId={session.user.id} tenantSlug={tenantSlug} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => { setActivePortalTab("trips"); setSupportLink(readSupportTap(data)); void loadPortal().catch(() => setError("Trip updates could not be refreshed.")); }} /> : null}
     </main>
   );
 }

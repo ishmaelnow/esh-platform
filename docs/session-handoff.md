@@ -4,33 +4,53 @@ Last updated: 2026-10-10
 
 ## Current objective and checkpoint
 
-Current objective: owner authorized trip support and lost-item reporting with Go. Local implementation
-adds Get help on completed/cancelled Rider history, private owned reports (one per category/trip),
-Transportation Trip support queue, Rider-visible review history/status and company responses.
-Existing dispatch owner/admin authorization is reused; direct table access is denied with RLS.
-Request UUID retries and database uniqueness prevent duplicate reports; review versions prevent
-stale conflicting edits. No booking, refund, payment, Driver chat or notification behavior changed.
-V1 explicitly tells Riders to check Get help for responses; no outbound support alerts, attachments,
-Rider follow-up thread or emergency action. See architecture/trip-support.md and
-operations/trip-support-manual-test.md.
+Current objective: owner authorized support-response alerts with Go after accepting the full
+trip-support submission/reply/resolution workflow. Local response-alert implementation is complete,
+Remote migration is owner-applied; Git push/deployment and real-device receipt/tap acceptance remain pending.
 
+New migration 20261010000500_trip_support_notifications.sql extends the existing outbox type
+constraint without dropping earlier types and queues generic rider_support_update events after each
+new review-history row. Case/version deduplication preserves identical review retries. No historical
+replay. Existing Trip update emails and independent Web/native consent control eligibility; both off
+means no new event. Existing email opt-out masks queued mail without canceling native delivery.
+Outbox/preview payloads exclude report/reply text, names and addresses. Service-only eligibility
+rechecks report/booking/tenant/active Rider/person bindings before email/web send and native claim.
+All existing preorder, session, registration, expiry and retry claim checks are retained.
+
+Admin's existing protected minute native cron claims native first, then processes only support
+email/web events (up to 20); support queue failure returns 503 without blocking completed native work.
+Other email cadence is unchanged. Fixed Rider links and whitelisted native IDs open the exact owned
+report in Trips, even outside loaded history; malformed/denied targets never display another report.
+Existing my_trip_support authorizes reads. Provider acceptance is not device receipt; existing
+at-least-once and fifteen-minute native expiry contracts remain. No SMS, new env/credential,
+APK/IPA, refund, Driver UI or auth-policy changes.
+
+240 Rider/Admin/shared unit/API tests pass, including privacy/route validation, stale-recipient
+suppression, cron authorization and email queue failure independence. Actual native/channel/preorder/
+support/new-alert migrations pass disposable embedded PostgreSQL checks on minimal legacy stand-ins:
+all-off/mobile-only/email-only, review retry uniqueness, routing, revoked access and native expiry.
+Shared Supabase type build and scoped lint pass (existing Pages-directory/img warnings only).
+Rider and final Admin production builds pass, including the final worker scope change; the seven
+worker regression checks pass again after that change. All 29 Rider mobile browser checks pass, including focused report outside history,
+denied report, prior booking/payment/auth regressions, 414 x 896 and short viewport. Complete fixture
+screenshot inspected at test-results/rider-support-alert-414.png. Physical provider receipt/cold-start
+taps and full Supabase-chain/concurrency certification remain owner acceptance, not inferred.
+
+Git before work: main/origin/main a64de20, four generated Driver/Rider next-env/tsconfig edits and
+local accepted-workflow documentation edits. Preserve generated edits and exclude from feature
+staging. No Git mutation, production SQL, report, notification, payment or deployment by Codex.
 Owner supplied successful Applying migration / Finished supabase db push output for only
-20261010000400_trip_support.sql. Remote migration is applied; do not reapply. Application changes
-remain local/uncommitted and need owner commit/push plus Rider/Transportation deployment.
-No new native build/env/credential.
-233 Rider/Admin/shared unit/API tests, minimal embedded PostgreSQL ownership/tenant/retry/review/
-audit smoke, scoped lint and Rider/Admin production builds pass. All 27 Rider mobile browser
-checks pass, including failed submit preserving draft, same-request retry, resolution, 414 x 896,
-short viewport and 320px overflow. Admin browser review/filter/failure/retry/short-viewport check
-and Transportation production build pass. Complete 414 x 896 fixture screenshots inspected for
-both interfaces: Rider at test-results/rider-trip-support-414.png; retained Admin copy at
-tmp/trip-support-evidence/admin-trip-support-414.png. Physical keyboard/device acceptance pending.
-Transportation preview exposed its existing undeclared mapbox-gl CSS dependency; import now uses
-the existing @esh-platform/maps/styles.css export, preserving identical map styles.
-No Git mutation, remote migration, production report/payment/booking or deployment by Codex.
-Preserve generated configuration edits. Next: owner scoped commit/push, verify Rider/Transportation
-Ready and controlled manual acceptance. No full Supabase-chain, real concurrent-session
-or physical-device certification; embedded SQL uses explicit minimal legacy stand-ins.
+20261010000500_trip_support_notifications.sql. Do not reapply it. Next: owner stages the explicit
+feature files, commits and pushes, then confirms hosted Rider/Admin sender Ready and performs the
+response-alert acceptance in operations/trip-support-manual-test.md. Preserve generated configs.
+
+Previous support checkpoint: owner applied 20261010000400 and pushed a64de20. Submission, Admin
+saved reply, Rider response visibility and resolution were all owner-accepted. No response-visibility
+fix was needed. Baseline 233 unit/API checks, 27 Rider browser checks, Admin browser review/filter/
+failure check and Rider/Admin/Transportation builds passed. Review RPC/Admin component are unchanged
+by alerts. Cross-account/physical recovery acceptance remains separate.
+See architecture/trip-support.md, architecture/native-push-notifications.md and
+operations/trip-support-manual-test.md.
 
 Owner pushed connection-error wording as 6996fbe (Git confirms main/origin alignment). Recurring
 booking TypeError Load failed on both devices remains undiagnosed: exact triggering step unknown.

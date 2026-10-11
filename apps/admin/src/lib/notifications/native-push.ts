@@ -3,6 +3,7 @@ import type { AdminServerConfig } from "@/lib/config";
 import { buildPrivacySafePush } from "./push";
 import { configuredNativePlatforms, nativeProviderConfig, sendNativePush } from "./native-provider";
 import type { NativeMessage, NativeProviderConfig, NativeResult } from "./native-provider";
+import { supportTarget } from "./support-target";
 
 export type NativeClaim = Omit<NativeMessage, "title" | "body"> & { claimId: string; notificationType: string };
 export function readNativeClaims(value: unknown): NativeClaim[] {
@@ -13,6 +14,8 @@ export function readNativeClaims(value: unknown): NativeClaim[] {
     if (!["rider", "driver"].includes(String(row.product)) || !["android", "ios"].includes(String(row.platform))
       || ["attemptId", "claimId", "token", "tenantSlug", "notificationType", "expiresAt"].some((key) => typeof row[key] !== "string")
       || !Number.isFinite(Date.parse(String(row.expiresAt)))) throw new Error("Invalid native delivery claim.");
+    if (row.notificationType === "rider_support_update" && (row.product !== "rider" || !supportTarget(row)))
+      throw new Error("Invalid native delivery claim.");
     return row as NativeClaim;
   });
 }

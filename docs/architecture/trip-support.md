@@ -10,8 +10,9 @@ not initiate an emergency action, issue a refund or disclose a report to a Drive
 Migration `20261010000400_trip_support.sql` adds cases and an append-only-through-RPC review trail.
 Both tables enable RLS and deny all direct anonymous/authenticated table access. Security-definer
 RPCs use a fixed public search path and explicit authorization, with execute granted only to
-authenticated callers. Service-role maintenance access is retained; the application uses no
-service credentials for this feature. Private helper execution is revoked from clients.
+authenticated callers. Service-role maintenance access is retained; browser review/read forms use
+no service credentials. Alerts reuse the existing Admin service-only sender. Private helper
+execution is revoked from clients.
 
 Rider reads/submits require an active person, active tenant, active owning Rider profile, and
 completed/cancelled booking. Client-selected booking/tenant IDs never establish authorization.
@@ -36,9 +37,39 @@ must refresh. Managers may reopen a resolved report with a new response. There a
 internal notes. Audit records include identifiers/category/status/version, never report/reply text.
 
 The Rider sees every response and current status by reopening Get help or refreshing it. The UI
-refreshes on foreground/online events; no background polling or push/email/SMS notification is
-produced in V1. The screen explicitly explains this. Existing notification preferences and senders
-are unchanged. New automatic support alerts would need a separately designed delivery contract.
+refreshes on foreground/online events. Support-response alerts are described below; no SMS is sent.
+
+## Response alerts
+
+Migration `20261010000500_trip_support_notifications.sql` queues `rider_support_update` after a
+new review-history row, in the same transaction. Case/version deduplication and the existing review
+retry contract prevent duplicate business events. This applies to replies, resolutions and reopened
+reports; there is no replay of earlier reviews. An inactive Rider/person/tenant is not queued.
+
+Trip update emails control support email too. Existing Web Push and native installation consent
+remain independent. With email off and device alerts on, only device delivery is attempted. With
+both off, no new event is queued; responses remain accessible in Get help. Email opt-out continues
+to mask queued email without canceling native attempts or reenabling old email after opt-in.
+
+The outbox stores only case/booking IDs and tenant slug, never report/reply text, names or addresses.
+Email and device previews say only that a support report has an update. The fixed Rider URL contains
+validated UUID routing parameters; native payloads whitelist product, tenant, type and those IDs.
+No caller-supplied URL is followed. The service-only eligibility helper checks the exact report,
+booking, tenant, active owning Rider/person and completed/cancelled lifecycle before email/web
+delivery and native claims. Existing native session, registration, expiry, retry and preorder
+checks are retained. IDs establish routing, never access: opening still calls owned my_trip_support.
+
+An alert opens a focused report in Trips even outside the currently loaded history. Wrong-account,
+missing or denied reports show a generic unavailable state with no fallback to another report.
+Signing in may be required; reopen the original alert/link after sign-in if its context was lost.
+Account/provider-scoped components discard old loads. Closing the report restores normal Trips.
+
+Admin's existing protected minute native cron also processes up to 20 support email/web events.
+Native claims run first, independently of support email/web errors; queue outages return 503 for
+visibility after native work. Other email types keep their existing cadence and delivery paths.
+Normal provider retry limits and at-least-once limitations apply; acceptance is not a guarantee of
+device receipt. Native attempts retain the existing fifteen-minute expiry. No credentials, new
+schedule or native binary changes are required; the hosted Rider and Admin sender must deploy.
 
 Drafts and retry IDs stay in memory; closing the form or signing out discards them. Confirmed
 submissions remain confirmed even if a subsequent list refresh fails. Private rows clear on failed
@@ -57,7 +88,7 @@ Transportation uses the existing shared map stylesheet export rather than relyin
 direct mapbox-gl dependency; map appearance/behavior is unchanged.
 
 This first release supports two report categories and company replies, not Rider follow-up threads,
-attachments, guaranteed response times, automated lost-item recovery or automatic alerts.
+attachments, guaranteed response times or automated lost-item recovery.
 Data retention follows existing trip history; no automatic purge policy is introduced.
 Minimal PostgreSQL smoke tests use stand-in legacy dependencies and are not a full Supabase-chain
 or true multi-session concurrency certification. See the operations manual for release acceptance.

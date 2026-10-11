@@ -1,4 +1,5 @@
 import type { AdminServerConfig } from "@/lib/config";
+import { supportUrl } from "./support-target";
 
 export type NotificationEmail = {
   notificationId: string;
@@ -228,6 +229,12 @@ export function buildRiderNotificationContent(
   payload: Record<string, unknown>,
   riderAppUrl: string,
 ) {
+  if (notificationType === "rider_support_update") {
+    const url = supportUrl(riderAppUrl, payload);
+    const intro = "Your support report has an update. Open ESH to read the company's response.";
+    return { subject: "Your ESH support report has an update", text: `${intro}\n\n${url}`,
+      html: `<p>${intro}</p><p><a href="${escapeHtml(url)}">View your support report</a></p>` };
+  }
   const riderName = textValue(payload.rider_name) || "Rider";
   const pickupAddress = textValue(payload.pickup_address);
   const destinationAddress = textValue(payload.destination_address);

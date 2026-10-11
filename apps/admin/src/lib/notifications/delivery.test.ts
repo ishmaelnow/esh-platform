@@ -67,4 +67,12 @@ describe("channel-aware notification delivery", () => {
     expect(mocks.sms).not.toHaveBeenCalled();
     expect(updates.at(-1)).toMatchObject({ delivery_status: "canceled" });
   });
+  it("suppresses support alerts when recipient ownership or access is no longer valid", async () => {
+    const { service, updates, rpc } = serviceFor(true, "rider_support_update", false);
+    await deliverQueuedNotifications(service, {} as AdminServerConfig, { notificationType: "rider_support_update", skipNative: true });
+    expect(rpc).toHaveBeenCalledWith("support_alert_current", { notification_value: "event" });
+    expect(mocks.email).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.native).not.toHaveBeenCalled();
+    expect(updates.at(-1)).toMatchObject({ delivery_status: "canceled" });
+  });
 });

@@ -1,5 +1,11 @@
 # Native Rider and Driver notifications
 
+Support response alerts add generic `rider_support_update` events with validated case/booking
+routing and recipient-access rechecks. The existing minute job also recovers only support email/Web
+Push events after independent native claims. Existing email/device preferences apply. See
+[Trip support](trip-support.md). Migration 20261010000500 and hosted sender/Rider rollout are pending;
+no native rebuild or new credentials are required.
+
 Private [trip messages](trip-messages.md) adds generic recipient-specific device events with no body
 in alerts, no email/SMS and cancellation of queued alerts when the conversation closes. Its migration
 and hosted release are pending; existing device consent and provider retry rules are preserved.

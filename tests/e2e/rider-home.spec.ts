@@ -38,6 +38,38 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
 });
 
+test("support alerts open the owned report even outside the loaded trip history", async ({ page }) => {
+  const bookingId = "90000000-0000-4000-8000-000000000001", caseId = "a0000000-0000-4000-8000-000000000001";
+  let requested = "";
+  await page.route("**/rest/v1/rpc/my_trip_support", (route) => {
+    requested = (route.request().postDataJSON() as { booking_value: string }).booking_value;
+    return route.fulfill({ json: [{ caseId, bookingId, category: "lost_item", description: "TEST lost bag", status: "resolved",
+      response: "TEST collected", version: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      updates: [{ status: "resolved", response: "TEST collected", createdAt: new Date().toISOString() }] }] });
+  });
+  await page.goto(`/?tenant=rider-preview&view=trips&booking=${bookingId}&support=${caseId}`);
+  const report = page.locator(".support-report");
+  await expect(report.getByText("TEST collected", { exact: true })).toBeVisible();
+  await expect(report).toBeFocused();
+  expect(requested).toBe(bookingId);
+  await expect(page.getByRole("button", { name: "Show history" })).toBeVisible();
+  await page.screenshot({ path: "test-results/rider-support-alert-414.png", fullPage: true });
+  await page.setViewportSize({ width: 414, height: 520 });
+  await report.scrollIntoViewIfNeeded();
+  await expect(report).toBeInViewport();
+  await page.getByRole("button", { name: "Close report", exact: true }).click();
+  await expect(report).toHaveCount(0);
+});
+
+test("an unavailable support target never displays another report", async ({ page }) => {
+  const bookingId = "90000000-0000-4000-8000-000000000001", caseId = "a0000000-0000-4000-8000-000000000001";
+  await page.route("**/rest/v1/rpc/my_trip_support", (route) => route.fulfill({ status: 403, json: { message: "Trip support unavailable" } }));
+  await page.goto(`/?tenant=rider-preview&view=trips&booking=${bookingId}&support=${caseId}`);
+  await expect(page.locator(".trip-support").getByRole("alert")).toBeVisible();
+  await expect(page.locator(".support-report")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Submit report" })).toHaveCount(0);
+});
+
 test("past-trip support submits, recovers uncertain requests and displays company resolution", async ({ page }) => {
   const reports: Record<string, unknown>[] = [];
   const sent: Record<string, unknown>[] = [];

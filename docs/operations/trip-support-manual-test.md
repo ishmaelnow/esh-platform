@@ -6,9 +6,10 @@ Run from the project root in the shell authenticated to Supabase:
 
     corepack pnpm exec supabase db push --dry-run
 
-Confirm only `20261010000400_trip_support.sql` is listed. Only after that confirmation, apply through
-the normal owner-controlled database push. Deploy Rider and Transportation from the feature commit;
-Admin also compiles the shared operational component. No native rebuild or environment changes.
+The initial migration `20261010000400_trip_support.sql` is already owner-applied. For response alerts,
+confirm only `20261010000500_trip_support_notifications.sql` is listed. Only after that confirmation,
+apply through the normal owner-controlled database push. Deploy Rider and Admin (the sender and
+minute worker). Transportation's review RPC stays unchanged. No native rebuild or environment changes.
 
 ## Manual acceptance
 
@@ -33,12 +34,17 @@ Use a clearly identified existing completed/cancelled test ride; no new real pay
 7. At 414 × 896, 320px width and with the real keyboard open, scroll to all fields and action
    buttons without overlap/sideways overflow. Confirm existing booking, payment and trip history
    remain usable. Test iPhone and Android independently.
-8. Confirm no support email/SMS/device alert, refund, emergency action, Driver message or dispatch
-   change is triggered. The form explains responses are checked here. Restore test preferences,
+8. Confirm no refund, SMS, emergency action, Driver message or dispatch change is triggered.
+   Follow the response-alert checklist below. Restore test preferences,
    resolve clearly labelled TEST reports, and restore any Driver availability/bookings changed
    during separate tests. Audit metadata must omit report and response bodies.
 
 ## Local checks
+
+- `node tooling/scripts/trip-support-notifications-sql-check.cjs`: actual native, channel, preorder,
+  support and support-alert migrations against minimal legacy stand-ins. Checks no-channel,
+  mobile-only and email-only delivery, review retry deduplication, generic metadata, exact native
+  routing and suppression after access revocation. No production credentials or delivery.
 
 - `node tooling/scripts/trip-support-sql-check.cjs`: ignored local PGlite installation, disposable
   minimal schema only. Does not read production credentials or connect remotely.
@@ -50,6 +56,28 @@ Use a clearly identified existing completed/cancelled test ride; no new real pay
   `test-results/admin-trip-support-414.png`. Run browser suites sequentially: Playwright clears
   test-results between runs. Copy evidence elsewhere before starting another suite if retaining it.
 
-Production migration/deployment, real account isolation, physical keyboards and actual network
-recovery remain owner acceptance checks. V1 has no attachments, Rider follow-up thread or outbound
-support alerts; reports/responses are retained with trip history.
+## Response-alert acceptance
+
+Use an identifiable existing TEST report, not a real support incident. Restore preferences afterward.
+
+1. Turn Rider Trip update emails off; leave mobile alerts enabled on the intended account/device.
+   Admin saves one new reply. Within the worker's processing window, check a generic device alert
+   and no support email. Tap it: the correct report and response should open directly in Trips.
+2. Resolve with a new response. Confirm another generic update and Resolved on the same report.
+   Retrying an identical uncertain Admin save must not create a second review/event. Provider
+   timeout retries can still duplicate receipt under the existing at-least-once delivery contract.
+3. Enable email and disable device alerts. Save another TEST response and verify generic email
+   with the correct report link, no private text/address/name, and no alert to a disabled device.
+4. Disable both channels. Save a response: no new outbound event; Get help still shows the response.
+   Reenabling a channel must not replay the disabled review. No support SMS should be attempted.
+5. Test tapping on iPhone, Android and browser; include foreground and closed app. If signed out,
+   sign in with the owning account and reopen the alert. Another account/tenant must not see the
+   report. Revoked registrations/sessions and inactive identities must not receive queued native
+   alerts. Verify ordinary trip/offer alerts still work; do not trigger SOS or real payments.
+6. Check Admin /api/cron/native-notifications logs: authenticated scheduled runs succeed, support
+   delivery results are visible, and unauthorized calls fail. Queue/provider outages must not
+   falsely report device receipt. Inspect Admin delivery history for failures before retrying.
+
+Production migration/deployment, real account isolation, physical keyboards and actual provider
+receipt remain owner acceptance checks. No attachments or Rider follow-up thread; reports and
+responses are retained with trip history.

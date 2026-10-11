@@ -1,8 +1,10 @@
 import { createPrivateKey, sign } from "node:crypto";
 import { connect } from "node:http2";
+import { supportTarget } from "./support-target";
 
 export type NativeMessage = { attemptId: string; product: "rider" | "driver"; platform: "ios" | "android";
-  token: string; title: string; body: string; tenantSlug: string; expiresAt: string };
+  token: string; title: string; body: string; tenantSlug: string; expiresAt: string;
+  notificationType?: string; bookingId?: string; caseId?: string };
 export type NativeResult = { accepted: boolean; expired: boolean; status: number | null; code: string | null };
 export type NativeProviderConfig = { firebaseJson: string; apnsKey: string; apnsKeyId: string; apnsTeamId: string };
 
@@ -51,7 +53,10 @@ async function firebaseAccess(config: NativeProviderConfig, request: typeof fetc
 }
 
 export function nativePayload(message: NativeMessage) {
-  return { product: message.product, tenantSlug: message.tenantSlug };
+  const target = supportTarget({ bookingId: message.bookingId, caseId: message.caseId });
+  return { product: message.product, tenantSlug: message.tenantSlug,
+    ...(message.product === "rider" && message.notificationType === "rider_support_update" && target
+      ? { notificationType: "rider_support_update", ...target } : {}) };
 }
 export function fcmBody(message: NativeMessage) {
   const ttl = Math.max(0, Math.min(900, Math.floor((Date.parse(message.expiresAt) - Date.now()) / 1000)));

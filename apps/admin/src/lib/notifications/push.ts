@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import type { PlatformSupabaseClient } from "@esh-platform/supabase";
 import type { AdminServerConfig } from "@/lib/config";
+import { supportUrl } from "./support-target";
 
 type PushNotification = {
   notification_id: string; tenant_id: string; notification_type: string;
@@ -20,6 +21,7 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   const rider = notificationType.startsWith("rider_");
   const title = urgentTypes.has(notificationType) ? "Action needed in ESH" : "ESH update";
   const messages: Record<string, string> = {
+    rider_support_update: "Your support report has an update. Open ESH to read it.",
     dispatch_offer_created: "You have a new trip offer.",
     rider_trip_message: "You have a new trip message. Open ESH to read it.",
     driver_trip_message: "You have a new trip message. Open ESH to read it.",
@@ -41,7 +43,7 @@ export function buildPrivacySafePush(notificationType: string, payload: Record<s
   if (notificationType === "rider_trip_message") url.searchParams.set("view", "trips");
   if (notificationType === "driver_trip_message") url.searchParams.set("view", "dispatch");
   return { title, body: messages[notificationType] ?? "Open ESH to view your latest update.",
-    url: url.toString(), tag: `esh-${notificationType}` };
+    url: notificationType === "rider_support_update" ? supportUrl(config.redirects.riderAppUrl, payload) : url.toString(), tag: `esh-${notificationType}` };
 }
 
 export async function deliverNotificationPush(
