@@ -2628,6 +2628,9 @@ export type Database = {
       create_my_trip_support: { Args: { booking_value: string; category_value: string; description_value: string; request_value: string }; Returns: string }
       admin_trip_support: { Args: { tenant_value: string; status_value?: string; offset_value?: number }; Returns: Json }
       review_trip_support: { Args: { case_value: string; status_value: string; response_value: string; version_value: number }; Returns: boolean }
+      my_trip_attention: { Args: { role_value: string; tenant_value?: string | null }; Returns: Json }
+      mark_my_trip_messages_read: { Args: { booking_value: string; role_value: string; message_values: string[] }; Returns: boolean }
+      mark_my_trip_support_read: { Args: { booking_value: string; role_value: string; case_value: string; version_value: number }; Returns: boolean }
       my_trip_messages: { Args: { booking_value: string; role_value: string }; Returns: Json }
       send_my_trip_message: { Args: { booking_value: string; role_value: string; body_value: string; request_value: string }; Returns: string }
       my_rider_pickup_sharing: { Args: { target_booking_id: string }; Returns: boolean }

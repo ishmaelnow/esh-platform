@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { createTripMessageController, type TripMessageState, type PlatformSupabaseClient } from "@esh-platform/supabase";
+import { AttentionBadge, AttentionSeen, AttentionNotice } from "./TripAttention";
 
 // Product presentation stays local; privacy, retries and transport are shared.
 export function TripMessages({ client, bookingId, role }: { client: PlatformSupabaseClient; bookingId: string; role: "rider" | "driver" }) {
   const [open, setOpen] = useState(false);
   return <details className="trip-messages" onToggle={(event) => setOpen(event.currentTarget.open)}>
-    <summary>Trip messages</summary>
+    <summary>Trip messages <AttentionBadge kind="messages" bookingId={bookingId} /></summary>
     {open ? <Conversation key={bookingId + role} client={client} bookingId={bookingId} role={role} /> : null}
   </details>;
 }
@@ -28,10 +29,12 @@ function Conversation({ client, bookingId, role }: { client: PlatformSupabaseCli
     <button type="button" className="secondary" onClick={() => { void controller.current?.refresh(); }}>Refresh messages</button>
     {state.loading ? <p role="status">Loading messages...</p> : null}
     {state.error ? <p role="alert">{state.error}</p> : null}
+    <AttentionNotice />
     <ol className="trip-message-list" aria-label="Trip conversation">
       {state.messages.map((message) => <li key={message.messageId} className={message.senderRole === role ? "is-own" : ""}>
         <strong>{message.senderRole === role ? "You" : role === "rider" ? "Driver" : "Rider"}</strong>
         <p>{message.body}</p><time dateTime={message.sentAt}>{new Date(message.sentAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</time>
+        {message.senderRole !== role ? <AttentionSeen bookingId={bookingId} messageId={message.messageId} /> : null}
       </li>)}
     </ol>
     {!state.loading && !state.error && state.messages.length === 0 ? <p>No messages yet.</p> : null}

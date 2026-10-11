@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
+import { verifyUnreadSupport } from "./helpers/trip-unread";
 import { photoFixture } from "./helpers/trip-photos";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { setupDriverPreview } = require("../fixtures/driver-preview.cjs") as { setupDriverPreview: (page: Page, options?: { online?: boolean }) => Promise<void> };
@@ -16,6 +17,10 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".driver-shell")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator(".rider-map-canvas")).toHaveAttribute("data-map-ready", "true", { timeout: 25000 });
   await expect(page.locator(".rider-map-canvas")).toHaveAttribute("data-map-idle", "true", { timeout: 25000 });
+});
+
+test("Driver unread badges clear only a viewed response and survive reload", async ({ page }) => {
+  await verifyUnreadSupport(page, "driver");
 });
 
 test("Driver support preserves failed drafts and shows company responses at mobile sizes", async ({ page }) => {
@@ -361,12 +366,12 @@ test("unavailable account data does not fabricate earnings or confirmed online s
 test("assigned Driver messages support safe retry and keyboard scrolling", async ({ page }) => {
   const verify = await messageFixture(page, "driver");
   await page.route("**/rest/v1/rpc/my_driver_dispatch", (route) => route.fulfill({ json: { offers: [], trips: [{
-    bookingId: "message-trip", customerName: "Fixture passenger", customerPhone: null, pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination", notes: null,
+    bookingId: "90000000-0000-4000-8000-000000000001", customerName: "Fixture passenger", customerPhone: null, pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination", notes: null,
     serviceAreaName: "Preview area", status: "accepted", pickupLatitude: null, pickupLongitude: null,
     destinationLatitude: null, destinationLongitude: null, fareCurrencyCode: "USD", fareAmountMinor: 1200,
   }] } }));
   await page.reload();
-  await page.getByRole("button", { name: "Active trip · Open controls" }).click();
+  await page.getByRole("button", { name: /^Active trip · Open controls/ }).click();
   await verify();
 });
 

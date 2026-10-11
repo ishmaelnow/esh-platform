@@ -4,12 +4,37 @@ Last updated: 2026-10-10
 
 ## Current objective and checkpoint
 
-Current authorized work: Rider trip receipts/fare breakdowns. Owner accepted Driver support
+Current authorized work: private Rider/Driver unread indicators for messages and company responses.
+Owner pushed receipts as be42ddf and accepted availability/sharing; physical download remains
+unconfirmed, potentially device-dependent. Do not reopen accepted receipt work or claim download passed.
+Git recovered main/origin/main be42ddf with only the four generated Driver/Rider next-env/tsconfig edits;
+preserve and exclude them from feature staging.
+
+New local migration 20261010000700_trip_unread_indicators.sql adds a private RLS acknowledgement
+table and owned list/message/support-read RPCs. No notification producers, preferences, worker,
+native project, auth/session or approved booking/dispatch flow changed. Menu/conversation/report
+badges use actual server counts. Exact support-response links work outside loaded history.
+Visible message IDs and loaded support versions alone are acknowledged; no fetch/menu clear-all,
+optimistic success or other participant's read receipts. Later replies stay unread; stale writes
+cannot regress. Foreground-only fifteen-second count refresh and recovery; no persistent browser cache.
+Message cleanup follows conversation deletion; support markers follow retained history.
+See architecture/trip-unread-indicators.md and operations/trip-unread-indicators-manual-test.md.
+
+Current verification: 331 unit/API tests, shared type build, scoped lint, both production app builds
+and minimal PostgreSQL isolation/consent/version/lifecycle/audit smoke pass. All 31 Rider and 31 Driver
+mobile browser checks pass. The final four focused checks also pass after badge CSS/notice changes,
+including hidden-content protection, own-message exclusion, failed-save preservation, selective
+report clearing and reload persistence. Complete 414 x 896 screenshots inspected and retained under
+ignored tmp/unread-evidence. Physical keyboards, full Supabase-chain/concurrency and real accounts
+remain owner acceptance, not inferred from fixtures. Owner migration dry-run/apply,
+Git push, hosted Ready and physical acceptance are pending. No remote database/Git mutation by Codex.
+No native rebuild, new environment variable or credential required.
+
+Previous accepted receipt checkpoint: Owner accepted Driver support
 submission, received company response and resolution after pushing a2bfa9e. Migration
 20261010000600 is owner-applied; do not repeat that completed work. Rider support alerts are
 also owner-accepted at e86d669 with 100005 applied.
-Git recovered main/origin/main a2bfa9e with only four generated Driver/Rider next-env/tsconfig
-changes. Preserve them and exclude from feature staging.
+Receipt implementation baseline was a2bfa9e. Preserve generated configuration changes.
 
 Inspection found existing Payments history and authenticated Stripe hosted receipts. New local
 TripReceipt adds a progressive View trip receipt in completed/cancelled trip history, using a
@@ -35,9 +60,8 @@ operations/rider-payments-receipts-manual-test.md.
 Final browser rerun passes all 30 checks after the CSS refinement. Screenshot preserved under
 ignored tmp/rider-receipt-evidence; final whitespace check passes.
 
-Next: owner stages explicit receipt files and docs,
-commits/pushes, confirms Rider Ready and performs existing-account acceptance. No database push or
-Codemagic build needed. No Git mutation, production SQL/payment/refund/notification/deployment by Codex.
+Receipt owner rollout/view/share is accepted at be42ddf. Physical download remains unconfirmed.
+Next release is the unread-indicator migration/hosted rollout described above.
 
 The older release notes below are historical context; this checkpoint supersedes pending claims
 for Rider response-alert deployment and acceptance.

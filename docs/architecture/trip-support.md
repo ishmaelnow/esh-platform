@@ -1,5 +1,8 @@
 # Trip support and lost items
 
+Personal unread badges and exact-response entry points are described in
+[unread indicators](trip-unread-indicators.md); they do not alter support review or alert delivery.
+
 Driver reports now have a separate owned workflow described in [Driver trip support](driver-trip-support.md).
 Transportation filters the shared queue by reporter; report bodies are never shared between participants.
 The minute worker's support-only email/Web scope includes both Rider and Driver response events.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AttentionBadge } from "./TripAttention";
 
 export type RiderView = "book" | "trips" | "account" | "payments" | "wallet";
 const destinations: { id: RiderView; label: string; symbol: string }[] = [
@@ -35,13 +36,14 @@ export function RiderMenu({ activeView, onSelect }: { activeView: RiderView; onS
       {destinations.map((item, index) => <button key={item.id}
         className={`donut-item donut-item-${index}`} aria-current={activeView === item.id ? "page" : undefined}
         type="button" onClick={() => { onSelect(item.id); setOpen(false); toggle.current?.focus(); }}>
-        <span aria-hidden="true">{item.symbol}</span>{item.label}
+        <span aria-hidden="true">{item.symbol}</span>{item.label}{item.id === "trips" ? <AttentionBadge /> : null}
       </button>)}
     </nav> : null}
     <button ref={toggle} className="donut-toggle" aria-expanded={open}
       aria-controls={open ? "rider-donut-links" : undefined} aria-label={open ? "Close rider menu" : "Open rider menu"}
       type="button" onClick={() => setOpen((value) => !value)}>
       {open ? <span aria-hidden="true">×</span> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>}
+      <AttentionBadge />
     </button>
   </div>;
 }

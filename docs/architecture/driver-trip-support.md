@@ -1,5 +1,9 @@
 # Driver trip support
 
+Owner accepted report submission, company response and resolution at a2bfa9e.
+The private unread follow-up is described in [unread indicators](trip-unread-indicators.md);
+review and existing response notifications remain unchanged.
+
 Recent orders lists the authenticated Driver's latest 50 completed or cancelled bookings.
 Get help submits a private trip issue or lost-item report. This is company support, separate
 from SOS, live trip chat, refunds, payment adjustments and compliance evidence.

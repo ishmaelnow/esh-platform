@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { AttentionBadge, AttentionSeen } from "./TripAttention";
 import { createRiderSupportController, supportCategoryLabel, supportStatusLabel,
   type PlatformSupabaseClient, type SupportCategory, type SupportState } from "@esh-platform/supabase";
 
 export function TripSupport({ client, bookingId, targetCaseId }: { client: PlatformSupabaseClient; bookingId: string; targetCaseId?: string }) {
   const [open, setOpen] = useState(Boolean(targetCaseId));
   return <details className="trip-support" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
-    <summary>Get help</summary>
+    <summary>Get help <AttentionBadge kind="support" bookingId={bookingId} {...(targetCaseId ? { itemId: targetCaseId } : {})} /></summary>
     {open ? <SupportForm key={bookingId} client={client} bookingId={bookingId} {...(targetCaseId ? { targetCaseId } : {})} /> : null}
   </details>;
 }
@@ -52,7 +53,8 @@ function SupportForm({ client, bookingId, targetCaseId }: { client: PlatformSupa
       <small>Reference {report.caseId.slice(0, 8)} · {new Date(report.createdAt).toLocaleString()}</small>
       {report.updates.map((update, index) => <div key={index}><strong>Company response · {supportStatusLabel(update.status)}</strong>
         <p className="support-text">{update.response}</p><time>{new Date(update.createdAt).toLocaleString()}</time></div>)}
-      {!report.updates.length ? <p>Awaiting a response from your transportation company.</p> : null}
+      {!report.updates.length ? <p>Awaiting a response from your transportation company.</p>
+        : <AttentionSeen key={report.version} bookingId={bookingId} caseId={report.caseId} version={report.version} />}
     </article>)}
     {targetCaseId ? null : selected ? <form onSubmit={(event) => { event.preventDefault(); const controller = model.current;
       if (controller) void controller.send(selected, description).then((sent) => { if (sent && mounted.current) setDescription(""); }); }}>

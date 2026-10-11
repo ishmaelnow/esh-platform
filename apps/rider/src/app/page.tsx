@@ -24,6 +24,7 @@ import { RiderPickupSharing } from "./RiderPickupSharing";
 import { TripMessages } from "./TripMessages";
 import { TripSupport } from "./TripSupport";
 import { TripReceipt } from "./TripReceipt";
+import { TripAttentionProvider, SupportUpdates } from "./TripAttention";
 import { readSupportLink, readSupportTap, type SupportLink } from "../lib/support-link";
 import { currentTripLocation, trackingMapPoint } from "../lib/trip-tracking";
 import { RiderSheet } from "./RiderSheet";
@@ -1331,6 +1332,7 @@ export default function RiderHome() {
   }
 
   return (
+    <TripAttentionProvider key={`${session?.user.id}:${tenantSlug}:${portal?.profile?.riderProfileId}`} client={portal?.profile && session ? supabase : null} tenantId={portal?.tenant.tenantId ?? null}>
     <main style={{ "--booking-height": `${bookingHeight}px` } as React.CSSProperties} className={`shell map-shell view-${activePortalTab}${portal?.profile ? " rider-admitted" : ""}${portal?.profile && activePortalTab === "book" ? bookingOpen ? " rider-booking" : " rider-home" : ""}`}>
       <RiderHomeMap accessToken={mapboxToken} center={serviceAreaContext ?? homeAreaCenter} pickup={homePickup} destination={homeDestination}
         currentLocation={riderPosition}
@@ -1898,6 +1900,7 @@ export default function RiderHome() {
                 </article>
               ))
             )}
+            <SupportUpdates onOpen={(bookingId, caseId) => setSupportLink({ bookingId, caseId, tenantSlug: portal.tenant.tenantSlug })} />
             {supportLink && supportLink.tenantSlug === portal.tenant.tenantSlug && supabase && session ? <section className="card">
               <h3>Support report</h3>
               <button className="button secondary compact" type="button" onClick={() => setSupportLink(null)}>Close report</button>
@@ -1997,6 +2000,6 @@ export default function RiderHome() {
         </>
       )}
       {Capacitor.isNativePlatform() && supabase && session && portal?.profile && portal.tenant.tenantSlug === tenantSlug ? <NativePushControl key={`${session.user.id}:${tenantSlug}`} client={supabase} userId={session.user.id} tenantSlug={tenantSlug} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => { setActivePortalTab("trips"); setSupportLink(readSupportTap(data)); void loadPortal().catch(() => setError("Trip updates could not be refreshed.")); }} /> : null}
-    </main>
+    </main></TripAttentionProvider>
   );
 }

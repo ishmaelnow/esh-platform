@@ -6,13 +6,21 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider/Driver private unread indicators implemented locally: compact menu/conversation badges,
+  exact report links, viewport-based acknowledgement, persisted owned state and version-safe
+  clearing independent of alert consent. New migration 20261010000700 awaits owner dry-run/apply.
+  331 unit/API checks, SQL isolation/version/lifecycle smoke, shared types, scoped lint, both app
+  builds and all 62 Rider/Driver mobile checks pass; final focused rerun and complete screenshots checked.
+  See architecture/trip-unread-indicators.md and operations/trip-unread-indicators-manual-test.md.
+
 - Rider trip-level receipts implemented locally: finished-trip history details, immutable balanced
   quote itemization, separate card/wallet/refund/review/settlement/dispute activity and local text
   download/share with clipboard fallback. Existing authenticated RLS reads and Stripe receipt
   integration are reused; no migration/native rebuild/new credential. Validation and owner
   rollout checkpoint: `session-handoff.md`; see `architecture/rider-payments-receipts.md`.
   258 unit/API checks, all 30 Rider mobile browser checks, scoped lint and production Rider build
-  pass. Full 414px screenshot inspected; owner push/deployment/device acceptance remain pending.
+  pass. Owner pushed be42ddf and accepted receipt availability/sharing; physical download remains
+  unconfirmed and is not treated as a blocker for the accepted receipt view/share workflow.
 
 - Driver trip support implemented locally: private finished-trip reports in Recent orders,
   Transportation Rider/Driver queue filter, versioned replies and generic response alerts using

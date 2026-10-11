@@ -36,6 +36,7 @@ import { buildEarningsStatement, earningsStatementCsv } from "../lib/earnings-st
 import { locationErrorMessage } from "../lib/location";
 import { currentPushSubscription, pushSupported, pushUnavailableMessage, vapidApplicationKey } from "../lib/push";
 import { DriverTripSupport } from "./DriverTripSupport";
+import { TripAttentionProvider, SupportUpdates } from "./TripAttention";
 import { DriverSupportHistory } from "./DriverSupportHistory";
 import { readDriverSupportLink, readDriverSupportTap, type DriverSupportLink } from "../lib/support-link";
 import appIcon from "../../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png";
@@ -245,7 +246,7 @@ export default function DriverHome() {
   const [statementStartDate, setStatementStartDate] = useState(() => firstDayOfCurrentMonth());
   const [statementEndDate, setStatementEndDate] = useState(() => localDateValue(new Date()));
   const [activeTab, setActiveTab] = useState<DriverView>("home");
-  const [supportLink, setSupportLink] = useState<DriverSupportLink | null>(null);
+  const [supportLink, setSupportLink] = useState<Pick<DriverSupportLink, "bookingId" | "caseId"> | null>(null);
   const [dispatchNow, setDispatchNow] = useState(() => Date.now());
   const [tripSoundsEnabled, setTripSoundsEnabled] = useState(false);
   const [tripSoundMessage, setTripSoundMessage] = useState<string | null>(null);
@@ -1836,6 +1837,7 @@ export default function DriverHome() {
               </section>
             ) : null}
             {activeTab === "recent" ? <section className="documents">
+              <SupportUpdates onOpen={(bookingId, caseId) => setSupportLink({ bookingId, caseId })} />
               {supabase && session ? <>
                 {supportLink ? <article className="document-card">
                   <h3>Support report</h3><button type="button" onClick={() => setSupportLink(null)}>Close report</button>
@@ -2152,7 +2154,7 @@ export default function DriverHome() {
       </section>
   );
   const area = serviceAreas.find((item) => item.selected) ?? serviceAreas[0];
-  return summary ? <>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => {
+  return summary ? <TripAttentionProvider key={`${session?.user.id}:${summary.driverProfileId}`} client={session ? supabase : null}>{Capacitor.isNativePlatform() && supabase && session ? <NativePushControl key={session.user.id} client={supabase} userId={session.user.id} tenantSlug={null} controllerRef={nativePush} onState={setNativePushState} onOpen={(data) => {
     const target = readDriverSupportTap(data); setSupportLink(target);
     goView(target ? "recent" : data && typeof data === "object" && "notificationType" in data && typeof data.notificationType === "string" && data.notificationType.startsWith("driver_preorder_") ? "preorders" : "dispatch");
   }} /> : null}<DriverShell view={activeTab} onView={goView} accessToken={mapboxToken} loading={portalLoading}
@@ -2166,7 +2168,7 @@ export default function DriverHome() {
     preorderCount={preorders.error || !preorders.data ? null : preorders.data.assignedCount + preorders.data.newCount}
     preorders={<DriverPreorders model={preorders} onDispatch={() => goView("dispatch")} />}>
     {content}
-  </DriverShell></> : <main className="shell">{content}</main>;
+  </DriverShell></TripAttentionProvider> : <main className="shell">{content}</main>;
 }
 
 function currentPosition() {

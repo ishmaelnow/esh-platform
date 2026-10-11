@@ -4,12 +4,15 @@ Support response alerts add generic `rider_support_update` and `driver_support_u
 routing and recipient-access rechecks. The existing minute job also recovers only support email/Web
 Push events after independent native claims. Existing email/device preferences apply. See
 [Trip support](trip-support.md) and [Driver support](driver-trip-support.md). Rider response alerts
-are owner-deployed and accepted. Driver migration 20261010000600 and hosted rollout are pending;
+are owner-deployed and accepted. Driver migration 20261010000600 and hosted support rollout are owner-accepted;
 no native rebuild or new credentials are required.
 
 Private [trip messages](trip-messages.md) adds generic recipient-specific device events with no body
 in alerts, no email/SMS and cancellation of queued alerts when the conversation closes. Its migration
-and hosted release are pending; existing device consent and provider retry rules are preserved.
+and hosted release are owner-accepted; existing device consent and provider retry rules are preserved.
+
+Private [unread indicators](trip-unread-indicators.md) track viewed messages/company responses
+independently of device consent or delivery. Reading does not cancel queued provider attempts.
 
 Driver Preorders adds generic availability/reservation events, fixed validated Preorders tap
 routing and stale-availability suppression. Email/mobile choices remain independent. See

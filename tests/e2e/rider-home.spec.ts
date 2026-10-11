@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
+import { verifyUnreadSupport } from "./helpers/trip-unread";
 import { photoFixture } from "./helpers/trip-photos";
 import type { TripReceipt } from "../../apps/rider/src/lib/trip-receipt";
 
@@ -37,6 +38,10 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("/?tenant=rider-preview");
   await expect(page.getByRole("button", { name: "Request ride" })).toBeVisible();
+});
+
+test("Rider unread badges clear only a viewed response and survive reload", async ({ page }) => {
+  await verifyUnreadSupport(page, "rider");
 });
 
 test("trip receipt displays real-record shapes, exports safely and stays usable at mobile sizes", async ({ page }) => {
@@ -184,12 +189,12 @@ test("active Rider sees private Driver photo and initials without images outside
 test("active Rider messages support safe retry and keyboard scrolling", async ({ page }) => {
   const verify = await messageFixture(page, "rider");
   await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: { tenant, profile, serviceAreas: [], bookings: [{
-    bookingId: "message-trip", serviceAreaId: "preview-area", pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination",
+    bookingId: "90000000-0000-4000-8000-000000000001", serviceAreaId: "preview-area", pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination",
     status: "accepted", createdAt: new Date().toISOString(), driver: { displayName: "Fixture Driver", driverNumber: "1" }, vehicle: null,
   }] } }));
   await page.reload();
   await page.getByRole("button", { name: "Open rider menu" }).click();
-  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: /^Trips/ }).click();
   await verify();
 });
 

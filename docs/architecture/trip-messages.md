@@ -1,6 +1,8 @@
 # Private Rider and Driver trip messages
 
-Local implementation, not deployed. Migration: `20261010000100_trip_messages.sql`.
+Owner-deployed and accepted. Migration: `20261010000100_trip_messages.sql` is owner-applied.
+Private personal unread indicators are a separate follow-up:
+[unread indicators](trip-unread-indicators.md). They do not expose read receipts to the other participant.
 
 ## Scope and access
 

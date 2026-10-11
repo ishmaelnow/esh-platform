@@ -648,3 +648,10 @@ h3 {
 .trip-support button { min-height: 44px; }
 .trip-support button.primary { background: #153258; color: white; }
 .support-report:focus-visible { outline: 2px solid #153258; outline-offset: 2px; }
+.trip-unread-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #153258; color: white; font-size: 11px; font-weight: 700; line-height: 1; vertical-align: middle; flex-shrink: 0; }
+.donut-toggle > .trip-unread-badge, .driver-menu-toggle > .trip-unread-badge { position: absolute; top: -3px; right: -5px; border: 2px solid white; font-size: 11px; line-height: 1; }
+.donut-item .trip-unread-badge { position: absolute; top: 2px; right: 4px; font-size: 11px; line-height: 1; }
+.trip-read-marker { display: block; height: 1px; width: 1px; }
+.trip-unread-updates { display: grid; gap: 8px; padding: 16px; border-radius: 12px; background: white; color: #153258; }
+.trip-unread-updates button { text-align: left; color: #153258; background: #f2f5f9; border: 0; border-radius: 8px; padding: 12px; min-height: 44px; }
+.trip-unread-notice { color: #153258; font-size: 14px; }
