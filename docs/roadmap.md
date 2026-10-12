@@ -10,8 +10,10 @@ remain independent of transportation-specific workflows.
   newly completed trip, existing independent email/device preferences, exact owned rating links,
   submission cancellation and 24-hour expiry. No backfill, received-score disclosure or SMS.
   Owner applied migration 20261011000200, pushed bed90c9 and confirmed reminder receipt.
-  Rider follow-up puts rating directly on completed-trip cards; 33 mobile checks, final focused
-  rerun, scoped lint and production build pass. Owner UI release/device acceptance pending. See
+  Rider follow-up puts rating directly on completed-trip cards; owner pushed 815f364 and confirmed
+  device acceptance. Driver Recent orders inline passenger rating is locally complete: 33 existing
+  mobile checks and two final focused rating checks, scoped lint and production build pass.
+  Owner Driver release/device acceptance pending. See
   `architecture/trip-rating-reminders.md` and `operations/trip-rating-reminders-manual-test.md`.
 
 - Driver daily trip distance and time-online totals implemented locally. Owned read-only RPC

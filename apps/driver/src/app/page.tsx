@@ -12,6 +12,7 @@ import {
 } from "@esh-platform/supabase";
 import { DriverShell, type DriverView } from "./DriverShell";
 import { RatingReminderFocus } from "./RatingReminderFocus";
+import { DriverTripRating } from "./DriverTripRating";
 import { DriverPreorders, useDriverPreorders } from "./DriverPreorders";
 import { DriverApplication } from "./DriverApplication";
 import { DriverFileInput } from "./DriverFileInput";
@@ -1858,9 +1859,11 @@ export default function DriverHome() {
                     bookingId={supportLink.bookingId} targetCaseId={supportLink.caseId} />
                 </article> : null}
                 <DriverSupportHistory key={`${session.user.id}:${summary.driverProfileId}`} client={supabase}
+                  renderRating={(bookingId) => reputationTrips.filter((trip) => trip.bookingId === bookingId).map((trip) => <DriverTripRating key={trip.bookingId} trip={trip} busy={dispatchBusy} onSubmit={(event, id) => void submitTripRating(event, id)} />)}
                   earnings={Object.fromEntries((wallet?.trips ?? []).map((trip) => [trip.bookingId, formatCurrency(trip.earningsAmountMinor, wallet!.currencyCode)]))} />
               </> : null}
               <button type="button" onClick={() => goView("reputation")}>View post-trip ratings</button>
+              {dispatchMessage ? <p className="upload-message" role="status">{dispatchMessage}</p> : null}
             </section> : null}
             {activeTab === "reputation" ? (
               <section className="documents">
@@ -1868,16 +1871,12 @@ export default function DriverHome() {
                 <RatingReminderFocus key={`${authenticatedUserId}:${summary.driverProfileId}`}
                   bookingId={ratingLink?.bookingId ?? null} trips={reputationTrips} ready={reputationAvailable && !portalLoading} />
                 {reputationTrips.map((trip) => {
-                  return <article className="document-card" id={`rating-${trip.bookingId}`} tabIndex={-1} key={trip.bookingId}>
+                  return <article className="document-card" key={trip.bookingId}>
                     <div className="document-heading"><strong>{trip.subjectName}</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
                     <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
                     {trip.submittedRating ? <span>Your rating: {trip.submittedRating.overall}/5</span> : null}
                     {trip.receivedRating ? <span>Rider rating: {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</span> : null}
-                    {trip.canSubmit ? <form className="upload-form" onSubmit={(event) => void submitTripRating(event, trip.bookingId)}>
-                      {[["overall", "Overall"], ["communication", "Communication"], ["readiness", "Readiness"], ["respect", "Respect"]].map(([name, label]) => <label key={name}>{label}<select name={name} defaultValue="5">{[5,4,3,2,1].map((value) => <option value={value} key={value}>{value} / 5</option>)}</select></label>)}
-                      <label>Optional comment<textarea name="comment" maxLength={1000} rows={3} /></label>
-                      <button disabled={dispatchBusy} type="submit">Submit private rating</button>
-                    </form> : !trip.submittedRating ? <span>The 30-day rating window has closed.</span> : null}
+                    <DriverTripRating trip={trip} busy={dispatchBusy} onSubmit={(event, bookingId) => void submitTripRating(event, bookingId)} />
                   </article>;
                 })}
                 {reputationTrips.length === 0 ? <p className="document-help">Completed Rider trips will appear here.</p> : null}

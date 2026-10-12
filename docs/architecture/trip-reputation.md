@@ -13,6 +13,14 @@ cards show “You rated this trip” and the saved score. Cancelled/ineligible t
 The separate Post-trip ratings section remains for disclosure/history and older trips outside the
 loaded booking history. Each trip has only one mounted form; reminder links open and focus it.
 
+Driver Recent orders embeds “Rate your passenger” on completed cards, using the owned reputation
+result to determine eligibility and saved score. The same Driver-only form is reused by Ratings,
+with an explicit overall star choice, compact existing communication/readiness/respect scores and
+optional comment. Cancelled cards have no rating action. Submission uses the original Driver RPC;
+failed requests preserve feedback and successful refreshes display the saved score. Only the active
+screen mounts forms, so reminder IDs remain unique. Reminder links continue to open Ratings and
+expand/focus the requested form. No Rider runtime or backend contract changes for this follow-up.
+
 `trip_ratings` is tenant-owned and permits one submission per reviewer role and booking. Submission
 RPCs derive the authenticated Rider or Driver, verify ownership of a completed trip, and enforce a
 30-day window. Clients cannot insert, update, or directly read raw ratings. Tenant dispatch managers

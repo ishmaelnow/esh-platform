@@ -4,7 +4,24 @@ Last updated: 2026-10-12
 
 ## Current objective and checkpoint
 
-Current authorized objective: make Rider ratings directly accessible on completed-trip cards.
+Current authorized objective: bring the same inline rating access to Driver Recent orders.
+Local DriverTripRating reuses the existing owned Driver submission RPC and detailed criteria;
+DriverSupportHistory embeds it only on completed cards with owned reputation data. Ratings screen
+reuses the same form; reminder links keep their existing target and open the form. Recent orders
+shows submission feedback and saved score. Rider runtime is preserved.
+Verification: 33 existing Driver mobile checks passed; the new inline test initially timed out on
+an overly specific label selector. After correction, both focused rating checks pass, including
+failed-submit preservation/retry, actual criteria payload, saved-score reload, cancelled-card
+exclusion, reminder submitted/expired/unknown targets and 320px overflow. Scoped lint and Driver
+production build/types pass with existing Supabase/Next warnings. Complete 414 x 896 screenshot
+inspected and preserved under ignored tmp/driver-inline-rating-evidence. Browser fixtures do not
+certify physical keyboards or real-account submissions.
+No new migration, native build or secret. Next: owner release and Recent orders device acceptance.
+Preserve generated configs and unknown git/main files. No Git or production mutation by Codex.
+
+Previous Rider inline ratings are owner-pushed as 815f364 and device-accepted (owner said pass).
+Do not reopen or repush that completed feature.
+Previous objective: make Rider ratings directly accessible on completed-trip cards.
 Owner found the separate collapsed Post-trip ratings form difficult to discover and approved an
 inline Rate your driver action, star selection, optional comment and saved-score confirmation.
 Local UI reuses the existing owned submission RPC, detailed criteria, windows and disclosure rules.
@@ -15,7 +32,7 @@ production build (including types) pass with existing Supabase/Next/image warnin
 Complete 414 x 896 screenshot inspected and retained in ignored tmp/inline-rating-evidence;
 320px overflow check passes. Fixtures do not certify physical keyboard or production submissions.
 No new migration, native build, secret or production mutation required.
-Next: owner Git push/hosted Rider release and completed-trip device acceptance.
+Rider owner release and completed-trip device acceptance are complete at 815f364.
 Preserve four generated next-env/tsconfig changes and unknown untracked git/main files.
 
 Previous rating reminders are owner-applied (20261011000200), owner-pushed as bed90c9 and actual

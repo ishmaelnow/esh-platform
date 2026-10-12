@@ -655,3 +655,20 @@ h3 {
 .trip-unread-updates { display: grid; gap: 8px; padding: 16px; border-radius: 12px; background: white; color: #153258; }
 .trip-unread-updates button { text-align: left; color: #153258; background: #f2f5f9; border: 0; border-radius: 8px; padding: 12px; min-height: 44px; }
 .trip-unread-notice { color: #153258; font-size: 14px; }
+.driver-trip-rating { color: #153258; width: 100%; min-width: 0; }
+.driver-trip-rating summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-weight: 700; }
+.driver-trip-rating .upload-form { display: grid; gap: 12px; padding-top: 12px; }
+.driver-trip-rating :focus-visible { outline: 2px solid #153258; outline-offset: 3px; }
+.driver-trip-rating .rating-stars { border: 0; padding: 0; margin: 0; min-width: 0; }
+.driver-trip-rating legend { font-weight: 700; padding-bottom: 8px; }
+.driver-trip-rating .rating-star-options { display: flex; gap: 6px; }
+.driver-trip-rating .rating-star-options label { position: relative; width: 44px; height: 44px; cursor: pointer; }
+.driver-trip-rating .rating-star-options input { position: absolute; opacity: 0; width: 44px; height: 44px; margin: 0; cursor: pointer; }
+.driver-trip-rating .rating-star-options span { display: grid; place-items: center; width: 44px; height: 44px; font-size: 34px; color: #b5c0ce; border-radius: 8px; }
+.driver-trip-rating .rating-star-options span.selected { color: #153258; }
+.driver-trip-rating .rating-star-options input:focus-visible + span { outline: 2px solid #153258; outline-offset: 2px; }
+.driver-trip-rating .rating-thanks { font-weight: 700; }
+.driver-trip-rating .rating-criteria { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.driver-trip-rating .rating-criteria label { font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
+.driver-trip-rating .rating-criteria select { width: 100%; min-width: 0; padding: 10px 4px; }
+.driver-trip-rating button { background: #153258; color: white; min-height: 44px; }

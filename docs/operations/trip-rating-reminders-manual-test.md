@@ -37,3 +37,14 @@ selection/comment for retry. Successful submission replaces the form with the sa
 after refresh. Cancelled trips must have no rating action. An expired eligible-history trip explains
 the closed window. Check 414 × 896 and 320px widths, keyboard focus and reminder taps into the same
 form. No new migration, environment setting or native build is needed for this UI refinement.
+
+## Driver inline rating
+
+Open Driver menu → Recent orders. A completed unrated Rider trip shows “Rate your passenger” on
+its card; cancelled orders do not. Open, choose stars, adjust detailed scores and optionally comment.
+Submission remains disabled until a star is chosen. Check failure/retry preserves feedback and
+shows a visible response, then verify the saved score after success and reload. Existing Get help,
+recorded earnings and View post-trip ratings must remain usable. A rating reminder still opens
+the exact form in Ratings; submitted, expired and unknown targets retain clear messages.
+Verify 414 × 896, 320px width, keyboard focus and existing availability/dispatch behavior.
+This hosted UI update requires no migration, native rebuild or new environment variable.

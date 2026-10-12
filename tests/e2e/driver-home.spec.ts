@@ -28,6 +28,44 @@ test("Driver rating reminder opens only the requested owned form and handles sub
   await verifyRatingReminder(page, "driver");
 });
 
+test("Recent orders offers passenger rating with retry, saved score and no cancelled-trip action", async ({ page }) => {
+  const bookingId = "90000000-0000-4000-8000-000000000001";
+  let saved = false;
+  let fail = true;
+  await page.route("**/rest/v1/rpc/my_driver_support_trips", (route) => route.fulfill({ json: [
+    { bookingId, pickupAddress: "TEST completed pickup", destinationAddress: "TEST destination", status: "completed", finishedAt: new Date().toISOString() },
+    { bookingId: "cancelled", pickupAddress: "TEST cancelled pickup", destinationAddress: "TEST destination", status: "cancelled", finishedAt: new Date().toISOString() },
+  ] }));
+  await page.route("**/rest/v1/rpc/my_driver_reputation", (route) => route.fulfill({ json: [{
+    bookingId, pickupAddress: "TEST completed pickup", destinationAddress: "TEST destination", subjectName: "TEST passenger",
+    completedAt: new Date().toISOString(), canSubmit: !saved, submittedRating: saved ? { overall: 4 } : null, receivedRating: null,
+  }] }));
+  await page.route("**/rest/v1/rpc/submit_my_driver_trip_rating", (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({ target_booking_id: bookingId, overall_rating_value: 4, communication_rating_value: 3, comment_value: "TEST inline feedback" });
+    if (fail) { fail = false; return route.fulfill({ status: 503, json: { message: "TEST rating unavailable" } }); }
+    saved = true; return route.fulfill({ json: "TEST rating" });
+  });
+  await page.goto("/?view=recent");
+  const card = page.locator(".document-card").filter({ hasText: "TEST completed pickup" });
+  await card.getByText("Rate your passenger", { exact: true }).click();
+  await expect(card.getByRole("button", { name: "Submit private rating" })).toBeDisabled();
+  await card.getByRole("radio", { name: "4 stars", exact: true }).check();
+  await card.getByRole("combobox", { name: "Communication", exact: true }).selectOption("3");
+  await card.getByLabel("Optional comment").fill("TEST inline feedback");
+  await card.getByRole("button", { name: "Submit private rating" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "TEST rating unavailable" })).toBeVisible();
+  await expect(card.getByLabel("Optional comment")).toHaveValue("TEST inline feedback");
+  await expect(card.getByRole("button", { name: "Submit private rating" })).toBeEnabled();
+  await page.screenshot({ path: "test-results/driver-inline-rating-414.png", fullPage: true });
+  await page.setViewportSize({ width: 320, height: 568 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await card.getByRole("button", { name: "Submit private rating" }).click();
+  await expect(card.getByText("You rated this trip ★ 4/5")).toBeVisible();
+  await expect(page.locator(".document-card").filter({ hasText: "TEST cancelled pickup" }).getByText("Rate your passenger", { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(card.getByText("You rated this trip ★ 4/5")).toBeVisible();
+});
+
 test("Driver daily measurements refresh without covering map or availability", async ({ page }) => {
   let fail = false;
   await page.route("**/rest/v1/rpc/my_driver_daily_activity", (route) => fail

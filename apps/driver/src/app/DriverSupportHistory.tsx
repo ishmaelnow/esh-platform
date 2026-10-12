@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { PlatformSupabaseClient } from "@esh-platform/supabase";
 import { DriverTripSupport } from "./DriverTripSupport";
 type Trip = { bookingId: string; pickupAddress: string; destinationAddress: string; status: string; finishedAt: string };
-export function DriverSupportHistory({ client, earnings }: { client: PlatformSupabaseClient; earnings: Record<string, string> }) {
+export function DriverSupportHistory({ client, earnings, renderRating }: { client: PlatformSupabaseClient; earnings: Record<string, string>; renderRating?: (bookingId: string) => ReactNode }) {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,6 +29,7 @@ export function DriverSupportHistory({ client, earnings }: { client: PlatformSup
       <strong>{trip.pickupAddress}</strong><span>To {trip.destinationAddress}</span>
       <span>{trip.status === "completed" ? "Completed" : "Cancelled · Booked"} · {new Date(trip.finishedAt).toLocaleString()}</span>
       {earnings[trip.bookingId] ? <span>{earnings[trip.bookingId]} recorded earnings</span> : null}
+      {trip.status === "completed" ? renderRating?.(trip.bookingId) : null}
       <DriverTripSupport client={client} bookingId={trip.bookingId} />
     </article>)}
   </>;

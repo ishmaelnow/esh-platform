@@ -14,6 +14,8 @@ export function RatingReminderFocus({ bookingId, trips, ready }: {
     const card = document.getElementById(`rating-${trip.bookingId}`);
     const panel = card?.closest("details");
     if (panel) panel.open = true;
+    const formPanel = card?.querySelector("details");
+    if (formPanel) formPanel.open = true;
     card?.scrollIntoView({ block: "start", behavior: "auto" });
     card?.focus({ preventScroll: true });
     if (card) focused.current = trip.bookingId;
