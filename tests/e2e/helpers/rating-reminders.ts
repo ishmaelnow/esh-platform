@@ -19,7 +19,8 @@ export async function verifyRatingReminder(page: Page, product: "rider" | "drive
   const card = page.locator(`#rating-${bookingId}`);
   await expect(card).toBeVisible();
   await expect(card).toBeFocused();
-  await card.getByRole("combobox", { name: "Overall", exact: true }).selectOption("4");
+  if (product === "rider") await card.getByRole("radio", { name: "4 stars", exact: true }).check();
+  else await card.getByRole("combobox", { name: "Overall", exact: true }).selectOption("4");
   await card.getByLabel("Optional comment").fill("TEST optional feedback");
   await card.getByRole("button", { name: "Submit private rating" }).click();
   await expect(card.getByLabel("Optional comment")).toHaveValue("TEST optional feedback");

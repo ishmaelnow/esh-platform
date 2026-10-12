@@ -12,8 +12,10 @@ export function RatingReminderFocus({ bookingId, trips, ready }: {
   useEffect(() => {
     if (!ready || !trip || focused.current === trip.bookingId) return;
     const card = document.getElementById(`rating-${trip.bookingId}`);
-    const panel = card?.closest("details");
-    if (panel) panel.open = true;
+    let panel = card?.closest("details");
+    while (panel) { panel.open = true; panel = panel.parentElement?.closest("details") ?? null; }
+    const formPanel = card?.querySelector("details");
+    if (formPanel) formPanel.open = true;
     card?.scrollIntoView({ block: "start", behavior: "auto" });
     card?.focus({ preventScroll: true });
     if (card) focused.current = trip.bookingId;

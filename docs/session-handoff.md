@@ -1,15 +1,30 @@
 # Session Handoff
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Current objective and checkpoint
 
-Current authorized objective: optional Rider/Driver rating reminders, not a new rating system.
+Current authorized objective: make Rider ratings directly accessible on completed-trip cards.
+Owner found the separate collapsed Post-trip ratings form difficult to discover and approved an
+inline Rate your driver action, star selection, optional comment and saved-score confirmation.
+Local UI reuses the existing owned submission RPC, detailed criteria, windows and disclosure rules.
+Each trip has one form; reminder targets reveal history and focus/open that form. Driver is unchanged.
+All 33 Rider mobile checks pass, including inline submission failure/retry and saved-score reload.
+Final two focused rating checks pass after compact criteria/navy styling. Scoped lint and Rider
+production build (including types) pass with existing Supabase/Next/image warnings only.
+Complete 414 x 896 screenshot inspected and retained in ignored tmp/inline-rating-evidence;
+320px overflow check passes. Fixtures do not certify physical keyboard or production submissions.
+No new migration, native build, secret or production mutation required.
+Next: owner Git push/hosted Rider release and completed-trip device acceptance.
+Preserve four generated next-env/tsconfig changes and unknown untracked git/main files.
+
+Previous rating reminders are owner-applied (20261011000200), owner-pushed as bed90c9 and actual
+reminder delivery is owner-confirmed. Do not reapply or reimplement them.
 One reminder per role is queued ten minutes after newly completed trips; no old-trip backfill.
 Existing email/device preferences, current ownership, submission suppression and 24-hour expiry
 apply. Existing Admin minute worker handles delivery; no new secrets, cron or native build.
 Email/Web/native route to the exact existing owned rating form. Disclosure/moderation, financial,
-dispatch and session contracts remain unchanged. Migration 20261011000200 is local, NOT applied.
+dispatch and session contracts remain unchanged. Migration 20261011000200 is owner-applied.
 Read architecture/trip-rating-reminders.md and operations/trip-rating-reminders-manual-test.md.
 Local verification: 225 unit/API tests initially and 46 focused notification/cron/link checks after
 final additions pass. Minimal PostgreSQL consent/dedupe/delay/cancellation/expiry/ownership smoke,
@@ -19,8 +34,8 @@ rating routing, failed-submit retry, already-rated, expired and unavailable targ
 414 x 896 screenshots inspected and retained under ignored tmp/rating-reminder-evidence.
 Browser/provider fixtures and minimal SQL smoke do not establish real-device delivery or full
 production Supabase-chain behavior; those remain owner acceptance.
-Next: owner intended-only migration dry run/apply, Git push, Ready and
-controlled ten-minute device acceptance. No Git/deployment/production database action by Codex.
+Reminder receipt and discoverability are owner-confirmed; discovery refinement is now above.
+No Git/deployment/production database action by Codex.
 
 Daily totals are owner-pushed as 7ed6a77 and manually accepted on device. Do not reopen them.
 Previous daily totals implementation: complete Driver daily distance and time-online totals. Local migration

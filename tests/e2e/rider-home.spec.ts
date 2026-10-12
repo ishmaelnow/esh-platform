@@ -49,6 +49,47 @@ test("Rider rating reminder opens only the requested owned form and handles subm
   await verifyRatingReminder(page, "rider");
 });
 
+test("completed trip offers inline driver rating with retry and saved score", async ({ page }) => {
+  let saved = false;
+  let fail = true;
+  await page.route("**/rest/v1/rpc/my_rider_reputation", (route) => route.fulfill({ json: [{
+    bookingId: "past", pickupAddress: "Previous pickup", destinationAddress: "Previous destination",
+    subjectName: "TEST driver", completedAt: new Date().toISOString(), canSubmit: !saved,
+    submittedRating: saved ? { overall: 4 } : null, receivedRating: null,
+  }] }));
+  await page.route("**/rest/v1/rpc/submit_my_rider_trip_rating", (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({ target_booking_id: "past", overall_rating_value: 4, comment_value: "TEST inline feedback" });
+    if (fail) { fail = false; return route.fulfill({ status: 503, json: { message: "TEST unavailable" } }); }
+    saved = true;
+    return route.fulfill({ json: "TEST rating" });
+  });
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: "Show history" }).click();
+  const card = page.locator(".trip-history .trip-card").first();
+  await expect(card.getByText("Rate your driver", { exact: true })).toBeVisible();
+  await expect(page.locator(".reputation-history")).not.toHaveAttribute("open");
+  await card.getByText("Rate your driver", { exact: true }).click();
+  await expect(card.getByRole("button", { name: "Submit private rating" })).toBeDisabled();
+  await card.getByRole("radio", { name: "4 stars", exact: true }).check();
+  await card.getByLabel("Optional comment").fill("TEST inline feedback");
+  await card.getByRole("button", { name: "Submit private rating" }).click();
+  await expect(card.getByLabel("Optional comment")).toHaveValue("TEST inline feedback");
+  await expect(card.getByRole("button", { name: "Submit private rating" })).toBeEnabled();
+  await page.screenshot({ path: "test-results/rider-inline-rating-414.png", fullPage: true });
+  await card.getByRole("button", { name: "Submit private rating" }).click();
+  await expect(card.getByText("You rated this trip ★ 4/5")).toBeVisible();
+  await expect(card.getByText("Rate your driver", { exact: true })).toHaveCount(0);
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: "Show history" }).click();
+  await expect(card.getByText("You rated this trip ★ 4/5")).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 568 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("trip receipt displays real-record shapes, exports safely and stays usable at mobile sizes", async ({ page }) => {
   const receipt: TripReceipt = { bookingId: "past", company: "TEST company", status: "completed", createdAt: "2026-10-10T12:00:00Z", completedAt: "2026-10-10T13:00:00Z",
     pickup: "TEST pickup", destination: "TEST destination", currency: "USD", fareMinor: 1200, quotedFareMinor: 1200, farePolicy: "guaranteed_upfront",

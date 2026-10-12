@@ -20,6 +20,7 @@ import {
 import { LiveTripMap, RiderHomeMap } from "@esh-platform/maps/client";
 import { RiderMenu } from "./RiderMenu";
 import { RatingReminderFocus } from "./RatingReminderFocus";
+import { RiderTripRating } from "./RiderTripRating";
 import { RiderLanding } from "./RiderLanding";
 import { RiderTripTracking } from "./RiderTripTracking";
 import { RiderPickupSharing } from "./RiderPickupSharing";
@@ -272,6 +273,7 @@ export default function RiderHome() {
   const [showTripHistory, setShowTripHistory] = useState(false);
   const [supportLink, setSupportLink] = useState<SupportLink | null>(null);
   const [ratingLink, setRatingLink] = useState<RatingTarget | null>(null);
+  useEffect(() => { if (ratingLink) setShowTripHistory(true); }, [ratingLink]);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingHeight, setBookingHeight] = useState(360);
   const [homeDestinationEntry, setHomeDestinationEntry] = useState(false);
@@ -1944,6 +1946,7 @@ export default function RiderHome() {
                     {booking.fareCurrencyCode && (booking.finalFareMinor ?? booking.estimatedFareMinor) != null ? <p className="area"><strong>Fare: {new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format((booking.finalFareMinor ?? booking.estimatedFareMinor ?? 0) / 100)}</strong></p> : null}
                     {booking.reconciliationStatus && booking.fareCurrencyCode ? <p className="area">Fare contract review: {booking.reconciliationStatus.replaceAll("_", " ")}{booking.contractFareMinor != null ? ` · contract fare ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.contractFareMinor / 100)}` : ""}{booking.rawMeterFareMinor != null && booking.rawMeterFareMinor !== booking.contractFareMinor ? ` · raw meter ${new Intl.NumberFormat(undefined, { style: "currency", currency: booking.fareCurrencyCode }).format(booking.rawMeterFareMinor / 100)}` : ""}</p> : null}
                     <button className="button secondary compact" type="button" disabled={busy} onClick={() => void bookAgain(booking)}>Book again</button>
+                    {booking.status === "completed" ? reputationTrips.filter((trip) => trip.bookingId === booking.bookingId).map((trip) => <RiderTripRating key={trip.bookingId} trip={trip} busy={busy} onSubmit={(event, bookingId) => void submitRating(event, bookingId)} />) : null}
                     {session ? <TripReceipt key={`receipt:${session.user.id}:${portal.tenant.tenantId}:${booking.bookingId}`} bookingId={booking.bookingId} tenantSlug={portal.tenant.tenantSlug} accessToken={session.access_token} /> : null}
                     {supabase && session ? <TripSupport key={`${session.user.id}:${portal.tenant.tenantId}:${booking.bookingId}`} client={supabase} bookingId={booking.bookingId} /> : null}
                   </article>
@@ -1986,27 +1989,21 @@ export default function RiderHome() {
           ) : null}
           {activePortalTab === "trips" ? <RatingReminderFocus key={`${session?.user.id}:${tenantSlug}`}
             bookingId={ratingLink?.tenantSlug === portal.tenant.tenantSlug ? ratingLink.bookingId : null}
-            trips={reputationTrips} ready={!loading && portal.tenant.tenantSlug === tenantSlug} /> : null}
+            trips={reputationTrips} ready={!loading && portal.tenant.tenantSlug === tenantSlug && (!ratingLink || showTripHistory)} /> : null}
           {activePortalTab === "trips" && reputationTrips.length > 0 ? (
           <details className="history reputation-history progressive-panel">
             <summary>Post-trip ratings</summary>
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
-            {reputationTrips.length === 0 ? <div className="card empty"><p>Completed trips eligible for rating will appear here.</p></div> : reputationTrips.map((trip) => {
-              return <article className="card trip-card" id={`rating-${trip.bookingId}`} tabIndex={-1} key={`rating-${trip.bookingId}`}>
+            {reputationTrips.map((trip) => {
+              const inHistory = historicalBookings.some((booking) => booking.status === "completed" && booking.bookingId === trip.bookingId);
+              return <article className="card trip-card" key={`rating-${trip.bookingId}`}>
                 <h3>{trip.pickupAddress}</h3><p className="destination">to {trip.destinationAddress}</p>
                 <p className="area">Driver: {trip.subjectName} · completed {formatDate(trip.completedAt)}</p>
                 {trip.submittedRating ? <p><strong>Your rating:</strong> {trip.submittedRating.overall}/5</p> : null}
                 {trip.receivedRating ? <p><strong>Driver’s rating:</strong> {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</p> : null}
-                {trip.canSubmit ? (
-                  <form className="form-grid" onSubmit={(event) => void submitRating(event, trip.bookingId)}>
-                    {[["overall", "Overall"], ["safety", "Safety"], ["communication", "Communication"], ["cleanliness", "Vehicle cleanliness"]].map(([name, label]) => (
-                      <label key={name}>{label}<select name={name} defaultValue="5" required>{[5,4,3,2,1].map((value) => <option key={value} value={value}>{value} / 5</option>)}</select></label>
-                    ))}
-                    <label className="wide">Optional comment<textarea name="comment" maxLength={1000} rows={3} /></label>
-                    <button className="button primary" disabled={busy}>Submit private rating</button>
-                  </form>
-                ) : !trip.submittedRating ? <p className="area">The 30-day rating window has closed.</p> : null}
+                {inHistory ? <button className="text-button" type="button" onClick={() => { setShowTripHistory(true); setRatingLink({ bookingId: trip.bookingId, tenantSlug }); }}>View trip rating</button>
+                  : <RiderTripRating trip={trip} busy={busy} onSubmit={(event, bookingId) => void submitRating(event, bookingId)} />}
               </article>;
             })}
           </details>

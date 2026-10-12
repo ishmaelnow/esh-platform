@@ -796,3 +796,20 @@ textarea:focus {
 .trip-unread-updates { display: grid; gap: 8px; padding: 16px; border-radius: 12px; background: white; color: #153258; }
 .trip-unread-updates button { text-align: left; color: #153258; background: #f2f5f9; border: 0; border-radius: 8px; padding: 12px; min-height: 44px; }
 .trip-unread-notice { color: #153258; font-size: 14px; }
+.rider-trip-rating { margin-top: 16px; color: #153258; }
+.rider-trip-rating summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-weight: 700; }
+.rider-trip-rating form { padding-top: 12px; }
+.rider-trip-rating :focus-visible { outline: 2px solid #153258; outline-offset: 3px; }
+.rating-stars { border: 0; padding: 0; margin: 0; min-width: 0; }
+.rating-stars legend { font-weight: 700; padding-bottom: 8px; }
+.rating-star-options { display: flex; gap: 6px; }
+.rating-star-options label { position: relative; width: 44px; height: 44px; cursor: pointer; }
+.rating-star-options input { position: absolute; opacity: 0; width: 44px; height: 44px; margin: 0; cursor: pointer; }
+.rating-star-options span { display: grid; place-items: center; width: 44px; height: 44px; font-size: 34px; color: #b5c0ce; border-radius: 8px; }
+.rating-star-options span.selected { color: #153258; }
+.rating-star-options input:focus-visible + span { outline: 2px solid #153258; outline-offset: 2px; }
+.rating-thanks { font-weight: 700; }
+.rating-criteria { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.rating-criteria label { font-size: 12px; min-width: 0; }
+.rating-criteria select { width: 100%; min-width: 0; padding: 10px 4px; }
+.rider-trip-rating .button.primary { background: #153258; color: white; }

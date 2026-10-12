@@ -27,3 +27,13 @@ real trips merely to force reminders. Restore preferences, unfinished bookings a
 
 Local SQL: `node tooling/scripts/trip-rating-reminders-sql-check.cjs` uses existing ignored PGlite
 under tmp/native-push-sql and never connects to production.
+
+## Rider inline rating
+
+In Rider → Trips → Show history, find a completed unrated trip. “Rate your driver” must appear
+directly on its card without expanding Post-trip ratings. Open it, choose stars, adjust the existing
+detailed scores if desired, add an optional comment and submit. A failed request must preserve the
+selection/comment for retry. Successful submission replaces the form with the saved score, including
+after refresh. Cancelled trips must have no rating action. An expired eligible-history trip explains
+the closed window. Check 414 × 896 and 320px widths, keyboard focus and reminder taps into the same
+form. No new migration, environment setting or native build is needed for this UI refinement.
