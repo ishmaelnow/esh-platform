@@ -4,7 +4,21 @@ Last updated: 2026-10-12
 
 ## Current objective and checkpoint
 
-Current authorized objective: bring the same inline rating access to Driver Recent orders.
+Current authorized objective: clearer Rider pickup identification using existing assignment data.
+Inspection confirmed photo/name already in tracking and vehicle details elsewhere. Local refinement
+groups them in Home/Current trip tracking with prominent license plate and unavailable-data fallback;
+duplicate Current trip vehicle line is removed. Existing Trips assignment, 88px private-photo rules,
+booking, auth, dispatch and Driver app are preserved. All 33 Rider mobile checks pass. Final focused
+pickup check passes after a test-only Back-button accessible-label correction and compact Home
+height limit: 414 x 896 Home/Current screenshots, 320px overflow and Home bottom-panel separation,
+missing/broken photo, missing vehicle, arrival/start and completion removal. Scoped lint and final
+production Rider build/types pass with existing warnings. Screenshots inspected and retained under
+ignored tmp/pickup-identification-evidence. Physical-device acceptance remains owner work.
+No new migration, native build, credential or backend change. Next: owner scoped Git release,
+Rider Ready and real assigned-driver/vehicle identification check. No production/Git mutation by Codex.
+
+Driver inline passenger ratings are owner-pushed as 3b971dd and owner device-accepted (pass).
+Previous objective: bring the same inline rating access to Driver Recent orders.
 Local DriverTripRating reuses the existing owned Driver submission RPC and detailed criteria;
 DriverSupportHistory embeds it only on completed cards with owned reputation data. Ratings screen
 reuses the same form; reminder links keep their existing target and open the form. Recent orders
@@ -16,7 +30,7 @@ exclusion, reminder submitted/expired/unknown targets and 320px overflow. Scoped
 production build/types pass with existing Supabase/Next warnings. Complete 414 x 896 screenshot
 inspected and preserved under ignored tmp/driver-inline-rating-evidence. Browser fixtures do not
 certify physical keyboards or real-account submissions.
-No new migration, native build or secret. Next: owner release and Recent orders device acceptance.
+No new migration, native build or secret. Owner release/device acceptance complete at 3b971dd.
 Preserve generated configs and unknown git/main files. No Git or production mutation by Codex.
 
 Previous Rider inline ratings are owner-pushed as 815f364 and device-accepted (owner said pass).

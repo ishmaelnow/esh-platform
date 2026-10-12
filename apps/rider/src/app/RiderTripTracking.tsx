@@ -7,7 +7,8 @@ import { TripParticipantPhoto } from "./TripParticipantPhoto";
 
 export function RiderTripTracking({ booking, location, accessToken, sessionToken, onOpen }: {
   booking: { bookingId: string; status: string; pickupLatitude?: number | null; pickupLongitude?: number | null;
-    destinationLatitude?: number | null; destinationLongitude?: number | null; driver: { displayName: string } | null };
+    destinationLatitude?: number | null; destinationLongitude?: number | null; driver: { displayName: string } | null;
+    vehicle?: { make: string; model: string; modelYear: number; color: string; licensePlate: string } | null };
   location: TripLocation | null; accessToken?: string | undefined; sessionToken?: string | undefined; onOpen?: () => void;
 }) {
   const targetLatitude = booking.status === "in_progress" ? booking.destinationLatitude : booking.pickupLatitude;
@@ -36,9 +37,18 @@ export function RiderTripTracking({ booking, location, accessToken, sessionToken
   const seconds = estimate?.key === key ? estimate.seconds : null;
   return <section className={`rider-trip-tracking${onOpen ? " tracking-home" : ""}`} aria-label="Current ride tracking">
     <div role="status"><strong>{trackingMessage(booking.status)}</strong>
-      {booking.driver ? <div>{sessionToken && ["accepted", "arrived", "in_progress"].includes(booking.status)
+      {booking.driver && ["accepted", "arrived", "in_progress"].includes(booking.status) ? <section className="pickup-identification" aria-label="Your driver and vehicle">
+        <p className="pickup-identification-label">Your driver</p>
+        {sessionToken
         ? <TripParticipantPhoto bookingId={booking.bookingId} name={booking.driver.displayName} accessToken={sessionToken} />
-        : <p>{booking.driver.displayName}</p>}</div> : null}
+        : <p>{booking.driver.displayName}</p>}
+        {booking.vehicle ? <div className="pickup-vehicle">
+          <p>{[booking.vehicle.color, booking.vehicle.modelYear, booking.vehicle.make, booking.vehicle.model].filter(Boolean).join(" ")}</p>
+          {booking.vehicle.licensePlate?.trim() ? <div><span>License plate</span><strong className="pickup-license-plate">{booking.vehicle.licensePlate}</strong></div>
+            : <p>License plate unavailable</p>}
+        </div> : <p>Vehicle details unavailable</p>}
+        {booking.status !== "in_progress" ? <p className="pickup-check">Check the license plate before entering the vehicle.</p> : null}
+      </section> : null}
       {location ? <p>{location.fresh ? "Live driver location" : "Last known driver location"} · {Number.isFinite(Date.parse(location.recordedAt)) ? new Date(location.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Update time unavailable"}</p>
         : ["accepted", "arrived", "in_progress"].includes(booking.status) ? <p>Driver location is unavailable. Trip updates will continue.</p> : null}
       {seconds !== null && canEstimate ? <p><strong>{booking.status === "in_progress" ? "Destination" : "Pickup"} ETA: about {formatRouteDuration(seconds)}</strong></p>

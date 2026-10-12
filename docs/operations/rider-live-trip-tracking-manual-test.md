@@ -23,3 +23,10 @@ just to inspect tracking. Keep Driver and Rider signed into the same intended pr
 
 Restore test Driver availability and close unfinished test rides after acceptance. Local mocked
 tests make no production booking, payment, GPS publication, or notification.
+
+Pickup identification: after acceptance, Home and Track ride show the same assigned Driver photo
+and name, vehicle color/year/make/model and clearly labeled license plate together. Check a real
+portrait and plate against the assigned vehicle. Missing photo yields initials; missing vehicle
+details are labeled unavailable. Arrived/in-progress retain identification; completion/cancellation
+remove it. Check 414 × 896 and compact widths, keeping Home shortcuts and map attribution reachable.
+No new migration or native build is needed for this presentation-only refinement.

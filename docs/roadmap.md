@@ -6,6 +6,12 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rider pickup identification refinement groups existing assigned Driver photo/name and vehicle
+  description/license plate in Home/Current trip tracking. Prominent plate and missing-data fallbacks;
+  existing authorization/photo lifecycle retained. All 33 mobile checks, final focused Home/Current
+  and compact-phone check, scoped lint and production build pass. Owner release pending. See
+  `architecture/rider-live-trip-tracking.md` and `operations/rider-live-trip-tracking-manual-test.md`.
+
 - Rider/Driver optional rating reminders implemented locally: one reminder ten minutes after a
   newly completed trip, existing independent email/device preferences, exact owned rating links,
   submission cancellation and 24-hour expiry. No backfill, received-score disclosure or SMS.
@@ -13,7 +19,7 @@ remain independent of transportation-specific workflows.
   Rider follow-up puts rating directly on completed-trip cards; owner pushed 815f364 and confirmed
   device acceptance. Driver Recent orders inline passenger rating is locally complete: 33 existing
   mobile checks and two final focused rating checks, scoped lint and production build pass.
-  Owner Driver release/device acceptance pending. See
+  Owner pushed Driver 3b971dd and confirmed device acceptance. See
   `architecture/trip-rating-reminders.md` and `operations/trip-rating-reminders-manual-test.md`.
 
 - Driver daily trip distance and time-online totals implemented locally. Owned read-only RPC

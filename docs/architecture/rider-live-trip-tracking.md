@@ -29,5 +29,12 @@ Provider switching clears location state. Location-RPC failure clears cached Dri
 existing polling remains every ten seconds. This is foreground snapshot tracking, not background
 GPS or a stored movement trail. Driver background tracking remains separately deferred.
 
+Pickup identification groups the existing private Driver profile photo/name, actual assigned
+vehicle color/year/make/model and prominent license plate inside Home and Current trip tracking.
+It uses the existing portal assignment and photo signer; no additional profile/storage reads.
+Only accepted/arrived/in-progress trips render the identification card. Missing vehicle/plate is
+explicitly unavailable, never substituted. The pre-pickup plate-check hint disappears after start.
+Duplicate vehicle text beneath Current trip is removed; Trips retains its existing assignment data.
+
 No backend authorization or tenant boundaries change. Actual physical-device movement, consent
 revocation, and network recovery require owner acceptance in addition to local mocked tests.

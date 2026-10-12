@@ -219,20 +219,46 @@ test("past-trip support submits, recovers uncertain requests and displays compan
 test("active Rider sees private Driver photo and initials without images outside active rides", async ({ page }) => {
   const photos = await photoFixture(page);
   let status = "accepted";
+  let vehicle: { make: string; model: string; modelYear: number; color: string; licensePlate: string } | null = { make: "Toyota", model: "Camry", modelYear: 2024, color: "Silver", licensePlate: "TEST-123" };
   await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: { tenant, profile, serviceAreas: [], bookings: [{
     bookingId: "90000000-0000-4000-8000-000000000001", serviceAreaId: "preview-area", pickupAddress: "Fixture pickup", destinationAddress: "Fixture destination",
-    status, createdAt: new Date().toISOString(), driver: { displayName: "Fixture Driver", driverNumber: "1" }, vehicle: null,
+    status, createdAt: new Date().toISOString(), driver: { displayName: "Fixture Driver", driverNumber: "1" }, vehicle,
   }] } }));
   await page.reload();
   await page.getByRole("button", { name: "Open rider menu" }).click();
   await page.getByRole("button", { name: "Trips", exact: true }).click();
   await photos.verify("Fixture Driver", "rider-trip-photo-414.png", 88);
+  const identification = page.getByRole("region", { name: "Your driver and vehicle" });
+  await expect(identification).toContainText("Fixture Driver");
+  await expect(identification).toContainText("Silver 2024 Toyota Camry");
+  await expect(identification.locator(".pickup-license-plate")).toHaveText("TEST-123");
+  await page.screenshot({ path: "test-results/rider-pickup-identification-414.png", fullPage: true });
+  await page.getByRole("button", { name: /Back to request/ }).click();
+  await expect(identification.locator(".pickup-license-plate")).toHaveText("TEST-123");
+  await page.screenshot({ path: "test-results/rider-pickup-home-414.png", fullPage: true });
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const homeCard = await page.locator(".tracking-home").boundingBox();
+  const homePanel = await page.locator(".rider-landing").boundingBox();
+  expect(homeCard!.y + homeCard!.height).toBeLessThan(homePanel!.y);
+  await page.getByRole("button", { name: "Track ride", exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 414, height: 896 });
   for (const mode of ["missing", "broken"] as const) {
     photos.mode(mode); await page.reload();
     await expect(page.locator(".trip-participant-avatar")).toHaveText("FD");
     await expect(page.locator(".trip-participant-avatar img")).toHaveCount(0);
   }
+  for (const phase of ["arrived", "in_progress"]) {
+    status = phase; await page.reload();
+    await expect(identification.locator(".pickup-license-plate")).toHaveText("TEST-123");
+  }
+  await expect(identification.getByText("Check the license plate before entering the vehicle.")).toHaveCount(0);
+  vehicle = null; await page.reload();
+  await expect(identification).toContainText("Vehicle details unavailable");
   status = "completed"; const count = photos.requests(); await page.reload();
+  await expect(identification).toHaveCount(0);
   await expect(page.getByText("Your active ride", { exact: true })).toHaveCount(0);
   await expect(page.locator(".trip-participant-avatar")).toHaveCount(0);
   expect(photos.requests()).toBe(count);

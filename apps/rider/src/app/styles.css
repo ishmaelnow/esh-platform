@@ -813,3 +813,15 @@ textarea:focus {
 .rating-criteria label { font-size: 12px; min-width: 0; }
 .rating-criteria select { width: 100%; min-width: 0; padding: 10px 4px; }
 .rider-trip-rating .button.primary { background: #153258; color: white; }
+.pickup-identification { display: grid; gap: 10px; padding: 14px; margin-top: 12px; background: white; border: 1px solid #e0e7ef; border-radius: 16px; color: #153258; min-width: 0; box-shadow: 0 3px 12px rgb(21 50 88 / 5%); }
+.pickup-identification .pickup-identification-label { font-size: 12px; font-weight: 700; margin: 0; }
+.pickup-identification .pickup-vehicle p { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.pickup-vehicle > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.pickup-vehicle > div > span { font-size: 12px; }
+.pickup-identification .pickup-license-plate { display: inline-block; padding: 8px 12px; border: 1px solid #cdd6e0; border-radius: 8px; background: #f4f7fa; font-size: 20px; letter-spacing: 0.06em; overflow-wrap: anywhere; }
+.pickup-identification .pickup-check { font-size: 12px; line-height: 1.5; margin: 0; }
+.map-shell > .tracking-home { max-height: calc(80dvh - max(128px, calc(env(safe-area-inset-top) + 104px)) - 20px); overflow-y: auto; overscroll-behavior: contain; }
+@media (max-width: 360px) {
+  .map-shell > .tracking-home { display: block; }
+  .tracking-home > button { width: 100%; margin-top: 12px; }
+}
