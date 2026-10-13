@@ -10,10 +10,12 @@ It opens an inline overall star selector, the existing safety/communication/clea
 optional comment. A star choice is required before submission; no overall score is preselected.
 The existing owned submission RPC is reused. Failed submissions retain entered feedback; submitted
 cards show “You rated this trip” and the saved score. Cancelled/ineligible trips gain no rating form.
-The separate Post-trip ratings section remains for disclosure/history and older trips outside the
-loaded booking history. Each trip has only one mounted form; reminder links open and focus it.
+Received ratings and review requests/decisions are shown on the same completed-trip card.
+The separate Post-trip ratings section remains only for trips outside loaded completed history.
+Each trip has only one mounted form; reminder links open and focus it.
 
-Driver Recent orders embeds “Rate your passenger” on completed cards, using the owned reputation
+Driver Recent orders embeds received ratings and review requests/decisions alongside
+“Rate your passenger” on completed cards, using the owned reputation
 result to determine eligibility and saved score. The same Driver-only form is reused by Ratings,
 with an explicit overall star choice, compact existing communication/readiness/respect scores and
 optional comment. Cancelled cards have no rating action. Submission uses the original Driver RPC;

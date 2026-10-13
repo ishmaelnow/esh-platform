@@ -109,7 +109,7 @@ test("completed trip offers inline driver rating with retry and saved score", as
   await page.getByRole("button", { name: "Show history" }).click();
   const card = page.locator(".trip-history .trip-card").first();
   await expect(card.getByText("Rate your driver", { exact: true })).toBeVisible();
-  await expect(page.locator(".reputation-history")).not.toHaveAttribute("open");
+  await expect(page.locator(".reputation-history")).toHaveCount(0);
   await card.getByText("Rate your driver", { exact: true }).click();
   await expect(card.getByRole("button", { name: "Submit private rating" })).toBeDisabled();
   await card.getByRole("radio", { name: "4 stars", exact: true }).check();

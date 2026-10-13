@@ -1861,9 +1861,17 @@ export default function DriverHome() {
                   <DriverTripSupport key={`${session.user.id}:${summary.driverProfileId}:${supportLink.caseId}`} client={supabase}
                     bookingId={supportLink.bookingId} targetCaseId={supportLink.caseId} />
                 </article> : null}
-                <DriverSupportHistory key={`${session.user.id}:${summary.driverProfileId}`} client={supabase}
-                  renderRating={(bookingId) => reputationTrips.filter((trip) => trip.bookingId === bookingId).map((trip) => <DriverTripRating key={trip.bookingId} trip={trip} busy={dispatchBusy} onSubmit={(event, id) => void submitTripRating(event, id)} />)}
-                  earnings={Object.fromEntries((wallet?.trips ?? []).map((trip) => [trip.bookingId, formatCurrency(trip.earningsAmountMinor, wallet!.currencyCode)]))} />
+                <RatingReviews key={`${session.user.id}:${summary.driverProfileId}:recent`} client={supabase} role="driver" onRefresh={() => { void activateAndLoad(); }}>
+                  <DriverSupportHistory client={supabase}
+                    renderRating={(bookingId) => reputationTrips.filter((trip) => trip.bookingId === bookingId).map((trip) => <div className="trip-rating-details" key={trip.bookingId}>
+                      <p><strong>Your passenger:</strong> {trip.subjectName}</p>
+                      <DriverTripRating trip={trip} busy={dispatchBusy} onSubmit={(event, id) => void submitTripRating(event, id)} />
+                      {trip.receivedRating ? <p><strong>Passenger rated you: {trip.receivedRating.overall}/5</strong>{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</p>
+                        : null}
+                      <RatingReview bookingId={trip.bookingId} received={Boolean(trip.receivedRating)} waiting />
+                    </div>)}
+                    earnings={Object.fromEntries((wallet?.trips ?? []).map((trip) => [trip.bookingId, formatCurrency(trip.earningsAmountMinor, wallet!.currencyCode)]))} />
+                </RatingReviews>
               </> : null}
               <button type="button" onClick={() => goView("reputation")}>View post-trip ratings</button>
               {dispatchMessage ? <p className="upload-message" role="status">{dispatchMessage}</p> : null}

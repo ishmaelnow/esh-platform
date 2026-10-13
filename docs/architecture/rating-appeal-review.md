@@ -5,8 +5,12 @@ rating system, change the 30-day rating submission window, reveal undisclosed ra
 or generate notification events. Requests and company decisions are read inside existing ratings
 screens; refresh retrieves updates. Received-rating/review-decision alerts remain separate work.
 
-Rider/Driver Post-trip ratings show Request review only beside a disclosed received rating, separate
-from the participant's own submitted score. One owned list read per mounted ratings section supplies
+Rider completed-trip history and Driver Recent orders show the participant, own submitted score,
+disclosed received score and Request rating review on the same trip card. Rider's separate ratings
+section is retained only for trips outside loaded completed history; Driver's Ratings screen remains
+available. A review can only challenge a received, disclosed rating. Cards explain when no received
+rating is available, without implying that an existing removed-rating decision is still pending.
+One owned list read per mounted ratings section supplies
 status/history, including a removed rating whose received score no longer appears. Initial list
 failure disables new submissions instead of treating unavailable data as an empty list. Ten-second
 request timeouts, stale-result/unmount protection and account/tenant/profile keys isolate state.

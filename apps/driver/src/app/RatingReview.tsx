@@ -47,7 +47,7 @@ export function RatingReviews({ client, role, tenantSlug, children, onRefresh }:
     {children}
   </Context.Provider>;
 }
-export function RatingReview({ bookingId, received }: { bookingId: string; received: boolean }) {
+export function RatingReview({ bookingId, received, waiting = false }: { bookingId: string; received: boolean; waiting?: boolean }) {
   const context = useContext(Context), [reason, setReason] = useState("");
   if (!context) return null;
   const row = context.rows.find((item) => item.bookingId === bookingId);
@@ -56,12 +56,12 @@ export function RatingReview({ bookingId, received }: { bookingId: string; recei
     <strong>{reviewStatus(row.status)}</strong><p className="rating-review-text">{row.reason}</p>
     {row.resolutionNotes ? <><strong>Admin decision</strong><p className="rating-review-text">{row.resolutionNotes}</p></> : <p>Your company is reviewing your request.</p>}
   </section>;
-  return received ? <details className="rating-review"><summary>Request review</summary>
+  return received ? <details className="rating-review"><summary>Request rating review</summary>
     <p>Ask your transportation company to review the rating you received. This does not change your own submitted rating.</p>
     <form onSubmit={(event) => void send(event)}>
       <label>Reason for review<textarea required minLength={10} maxLength={1000} rows={3} value={reason} disabled={context.busy} onChange={(event) => setReason(event.target.value)} /></label>
       <button type="submit" disabled={!context.ready || context.busy || reason.trim().length < 10}>{context.busy ? "Submitting…" : "Submit review request"}</button>
     </form>
-  </details> : null;
+  </details> : waiting && context.ready ? <p className="document-help">No received rating available yet. Submitted ratings become visible when both sides rate, or seven days after the trip.</p> : null;
 }
 

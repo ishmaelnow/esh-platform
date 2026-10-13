@@ -1,6 +1,8 @@
 # Rating review acceptance
 
-Owner runs database and release commands. First:
+Owner applied `20261013000100_rating_appeal_review.sql` and pushed `5d1a5c3`.
+The follow-up integrating reviews into completed-trip cards requires only a hosted UI release,
+with no additional migration or native rebuild. For initial installation in another environment:
 
     corepack pnpm exec supabase db push --dry-run
 
@@ -10,10 +12,11 @@ feature files and confirm Rider, Driver, Admin and Transportation Ready. No APK/
 or notification configuration is needed. Use identifiable tests and restore unfinished bookings/
 Driver Offline; no production payment or ride is created by local checks.
 
-1. In Rider Trips → Post-trip ratings, use a completed trip with a disclosed Driver rating. Driver
-   menu → Recent orders → View post-trip ratings provides the other side.
-   Request review appears beside the received score, not your own rating. Before disclosure, no action.
-2. Open Request review, enter 10–1000 characters and submit. Under review replaces the form. Reopen/
+1. In Rider Trips → Show history, find a completed trip. In Driver, use menu → Recent orders.
+   The participant, own score, received score and review belong to the same trip card.
+   Request rating review appears beside the received score, not your own rating. Before disclosure,
+   the card explains that no received rating is available; no review action is offered.
+2. Open Request rating review, enter 10–1000 characters and submit. Under review replaces the form. Reopen/
    refresh: the existing request persists and cannot be submitted twice. Network failure must retain
    the reason and permit a safe retry. Initial list failure must not falsely offer an enabled form.
 3. Transportation → Reputation → Rating reviews: find the test request. Review the score/comment and

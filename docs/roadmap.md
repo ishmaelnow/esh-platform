@@ -6,12 +6,18 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
-- Rating appeals are the current local work: received-rating review requests in Rider/Driver,
+- Rating appeals are owner-pushed at `5d1a5c3` with migration `20261013000100` owner-applied:
+  received-rating review requests in Rider/Driver,
   Admin Reputation queue, explicit keep/remove decisions and requester-visible explanations.
   Reuses existing appeal tables/RPCs with additive ownership/disclosure/idempotence hardening.
   Minimal SQL isolation/disclosure/idempotence smoke, two parser tests, all 74 browser checks across
   initial/focused runs, types/lint and Rider/Driver/Admin/Transportation builds pass. Owner migration/
-  release/device acceptance pending. See `architecture/rating-appeal-review.md` and
+  release recorded above; device acceptance pending. A local usability follow-up connects received
+  scores and review requests/decisions directly to Rider completed trips and Driver Recent orders,
+  without another migration. All 72 mobile checks pass across initial/focused runs, including the
+  isolated rerun of an initial tracking exception; its initial cause remains unconfirmed. Scoped
+  lint and both production builds pass; complete mobile screenshots inspected. Follow-up owner push
+  and device acceptance remain pending. See `architecture/rating-appeal-review.md` and
   `operations/rating-appeal-review-manual-test.md`.
 
 - Trusted-contact Share my trip is the current local work: Rider-created/revocable four-hour link,
@@ -534,7 +540,8 @@ deferred from this milestone and were delivered under the later milestones below
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,
      audited Admin moderation, and portal experiences for both sides.
    - Production manual verification passed across Rider and Driver submission and disclosure.
-   - Optional rating reminders are owner-deployed; rating appeals are locally complete as described
+   - Optional rating reminders and original rating appeals are owner-deployed; the trip-card review
+     usability follow-up is locally verified as described
      above. Remaining: received-rating notifications, aggregate public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**

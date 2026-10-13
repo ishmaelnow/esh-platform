@@ -4,7 +4,27 @@ Last updated: 2026-10-13
 
 ## Current objective and checkpoint
 
-Current authorized objective: complete existing rating appeals (owner said I WOULD SAY GO).
+Current authorized objective: connect ratings and review controls to their completed trips after
+owner reported that ratings were detached and no review action was visible. Owner applied
+20261013000100_rating_appeal_review.sql and pushed the original feature as 5d1a5c3.
+Local UI follow-up puts participant, own score, disclosed received score, Request rating review,
+and review decisions on Rider completed-trip history and Driver Recent orders cards. Rider's
+separate ratings section remains only for trips outside loaded completed history. No received
+rating means an explicit disclosure explanation, not a review of one's own submitted score.
+Existing removed-rating decisions take precedence over that explanation. No backend/schema,
+notification, native shell or permission changes. Preserve generated configs and unknown git/main.
+Verification complete: 36/37 initial Rider checks passed; tracking encountered a client exception
+during that run. Its isolated rerun passes unchanged; the initial cause is not proven. Final focused
+Rider review passes; all 35 Driver mobile checks, scoped lint and both production builds pass with
+existing warnings. All 72 distinct mobile checks are covered across runs. Integrated 414 x 896
+screenshots inspected and retained in ignored tmp/rating-review-unified-evidence; review checks
+also verify 320px overflow and removed-decision state without a misleading waiting explanation.
+Physical keyboards and real-account acceptance remain owner checks. Next: provide feature-only Git
+commands, owner hosted release and real-account acceptance. No new migration or native rebuild.
+Trip-sharing physical acceptance remains pending; Student Transportation remains brainstorming.
+
+Previous appeal implementation checkpoint (deployment claims superseded above):
+Original authorized objective: complete existing rating appeals (owner said I WOULD SAY GO).
 Inspection found 20260815000500 backend foundations and client types but no Rider/Driver/Admin UI.
 Local additive 20261013000100_rating_appeal_review.sql hardens active tenant/person/profile and role
 ownership, received-rating disclosure, retry idempotence and Admin decision conflicts; adds bounded
@@ -22,8 +42,8 @@ production builds pass with existing warnings. Transportation first lacked local
 rerun used nonsecret fixture process env only, no populated environment file edits. Complete 414 x
 896 screenshots inspected and retained under ignored tmp/rating-review-evidence; 320px checks pass.
 Physical keyboard, real-account RLS and full Supabase-chain/concurrency acceptance remain owner work.
-Migration 20261013000100 is NOT applied. Next: owner intended-only dry run/apply, exact Git handover,
-Rider/Driver/Admin/Transportation Ready and controlled request/decision acceptance. No native build,
+Migration 20261013000100 is owner-applied; original source is owner-pushed as 5d1a5c3.
+Hosted readiness and controlled request/decision acceptance are separate owner checks. No native build,
 secret or new notification event. No Git or production mutations by Codex.
 Trip sharing migration 20261012000100 is owner-applied and source owner-pushed as 286000b; manual
 mobile acceptance is pending until owner can test at home. Do not mark it passed or reapply.
