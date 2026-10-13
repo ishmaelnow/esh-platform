@@ -25,7 +25,8 @@ Driver Offline; no production payment or ride is created by local checks.
    cannot overwrite it. Use All reviews to see resolved requests.
 4. Requester refreshes rating reviews: Rating kept/Rating removed and the Admin explanation appear.
    Removed received score/comment disappears while decision history and own submitted score remain.
-   No new notification is sent by this feature; checking Ratings is the current delivery contract.
+   The original review feature sends no notification. The separate rating-update migration adds
+   generic requester-only decision alerts; see `rating-update-notifications-manual-test.md`.
 5. Verify both Rider and Driver, another account/tenant and inactive access. Opposite participants
    must not read each other's appeals. Ordinary ratings, reminders, messages, booking and payments
    remain unchanged. Check 414 × 896, 320px, short keyboard viewport and accessible controls.

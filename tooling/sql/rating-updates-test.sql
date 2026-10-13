@@ -1,0 +1,92 @@
+-- Disposable fixture; no messages leave this database. Never run against production.
+begin;
+update public.driver_notification_preferences set trip_email_enabled=false;
+create function pg_temp.check_update(label text,condition boolean) returns void language plpgsql as $$
+begin if condition is not true then raise exception 'Rating update assertion: %',label; end if; end; $$;
+create function pg_temp.new_trip(id_value uuid,completed_value timestamptz) returns void language sql as $$
+  insert into public.dispatch_bookings(booking_id,tenant_id,rider_profile_id,current_driver_profile_id,status,completed_at,pickup_address,destination_address)
+    values(id_value,'10000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000001',
+      '50000000-0000-4000-8000-000000000001','completed',completed_value,'TEST pickup','TEST destination');
+$$;
+select pg_temp.check_update('no historical sweep',(select count(*)=0 from public.notification_outbox where notification_type like '%_rating_received'));
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims','{"session_id":"60000000-0000-4000-8000-000000000001"}',true);
+set local role authenticated;
+select public.set_my_native_push('rider',gen_random_uuid(),'ios',true,repeat('a',64),'channel-test','20000000-0000-4000-8000-000000000001');
+reset role;
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claims','{"session_id":"60000000-0000-4000-8000-000000000002"}',true);
+set local role authenticated;
+select public.set_my_native_push('driver',gen_random_uuid(),'android',true,repeat('b',64),null,'20000000-0000-4000-8000-000000000002');
+reset role;
+select pg_temp.new_trip('90000000-0000-4000-8000-000000000001',now()-interval '1 hour');
+select public.submit_my_driver_trip_rating('90000000-0000-4000-8000-000000000001',4,4,4,4,'PRIVATE driver comment');
+select pg_temp.check_update('first rating delayed',(select count(*)=1 and min(available_at)>now() from notification_outbox where notification_type like '%_rating_received'));
+select pg_temp.check_update('not disclosed',(select bool_and(not reputation_alert_current(notification_id)) from notification_outbox where notification_type like '%_rating_received'));
+select pg_temp.check_update('native not early',jsonb_array_length(public.claim_native_push_attempts())=0);
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
+select public.submit_my_rider_trip_rating('90000000-0000-4000-8000-000000000001',5,5,5,5,'PRIVATE rider comment');
+select pg_temp.check_update('both recipients disclosed',(select count(*)=2 and bool_and(reputation_alert_current(notification_id)) from notification_outbox where notification_type like '%_rating_received'));
+select pg_temp.check_update('mobile-only respects email opt-out',(select bool_and(not email_delivery_enabled) from notification_outbox where notification_type like '%_rating_received'));
+select pg_temp.check_update('minimal payload',(select bool_and(payload-array['booking_id','tenant_slug','rating_id']='{}'::jsonb) from notification_outbox where notification_type like '%_rating_received'));
+select set_config('test.claims',public.claim_native_push_attempts()::text,true);
+select pg_temp.check_update('native expedited',jsonb_array_length(current_setting('test.claims')::jsonb)=2);
+select pg_temp.check_update('native exact target',current_setting('test.claims')::jsonb->0->>'bookingId'='90000000-0000-4000-8000-000000000001');
+select pg_temp.check_update('native private projection',not (current_setting('test.claims')::jsonb->0 ? 'ratingId') and not (current_setting('test.claims')::jsonb->0 ? 'overall'));
+update notification_outbox set person_id='30000000-0000-4000-8000-000000000002' where notification_type='rider_rating_received';
+select pg_temp.check_update('wrong person denied',(select not reputation_alert_current(notification_id) from notification_outbox where notification_type='rider_rating_received'));
+update notification_outbox set person_id='30000000-0000-4000-8000-000000000001' where notification_type='rider_rating_received';
+update tenants set status='inactive';
+select pg_temp.check_update('inactive tenant denied',(select bool_and(not reputation_alert_current(notification_id)) from notification_outbox where notification_type like '%_rating_received'));
+update tenants set status='active';
+update driver_profiles set status='inactive' where driver_profile_id='50000000-0000-4000-8000-000000000001';
+select pg_temp.check_update('inactive subject denied',(select not reputation_alert_current(notification_id) from notification_outbox where notification_type='driver_rating_received'));
+update driver_profiles set status='active' where driver_profile_id='50000000-0000-4000-8000-000000000001';
+update notification_outbox set payload=jsonb_set(payload,'{rating_id}','"00000000-0000-4000-8000-000000000000"') where notification_type='driver_rating_received';
+select pg_temp.check_update('foreign rating denied',(select not reputation_alert_current(notification_id) from notification_outbox where notification_type='driver_rating_received'));
+update notification_outbox set payload=jsonb_set(payload,'{rating_id}',to_jsonb((select rating_id from trip_ratings where reviewer_type='rider'))) where notification_type='driver_rating_received';
+select set_config('test.appeal',public.submit_my_rider_rating_appeal('channel-test','90000000-0000-4000-8000-000000000001','PRIVATE review reason')::text,true);
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000003',true);
+-- Test admin needs an active person, matching production authorization.
+insert into person_profiles(person_id,auth_user_id,status) values('30000000-0000-4000-8000-000000000003','20000000-0000-4000-8000-000000000003','active');
+select public.resolve_trip_rating_appeal(current_setting('test.appeal')::uuid,'removed','PRIVATE removal explanation');
+select public.resolve_trip_rating_appeal(current_setting('test.appeal')::uuid,'removed','PRIVATE removal explanation');
+select pg_temp.check_update('decision once to requester',(select count(*)=1 and bool_and(reputation_alert_current(notification_id)) from notification_outbox where notification_type like '%_rating_reviewed'));
+select pg_temp.check_update('decision carries no details',(select bool_and(payload-array['booking_id','tenant_slug','appeal_id']='{}'::jsonb) from notification_outbox where notification_type like '%_rating_reviewed'));
+select pg_temp.check_update('hidden received suppressed',(select not reputation_alert_current(notification_id) from notification_outbox where notification_type='rider_rating_received'));
+update native_push_attempts set status='pending',claimed_at=null where notification_id in(select notification_id from notification_outbox where notification_type='rider_rating_received');
+select set_config('test.claims',public.claim_native_push_attempts()::text,true);
+select pg_temp.check_update('hidden not sent natively',not exists(select 1 from jsonb_array_elements(current_setting('test.claims')::jsonb) r where r->>'notificationType'='rider_rating_received'));
+select pg_temp.check_update('decision sent natively',exists(select 1 from jsonb_array_elements(current_setting('test.claims')::jsonb) r where r->>'notificationType'='rider_rating_reviewed'));
+-- Driver can request and receive a kept decision independently.
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000002',true);
+select set_config('test.driver_appeal',public.submit_my_driver_rating_appeal('90000000-0000-4000-8000-000000000001','PRIVATE driver review reason')::text,true);
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000003',true);
+select public.resolve_trip_rating_appeal(current_setting('test.driver_appeal')::uuid,'upheld','PRIVATE kept explanation');
+select pg_temp.check_update('driver decision eligible',(select reputation_alert_current(notification_id) from notification_outbox where notification_type='driver_rating_reviewed'));
+update notification_outbox set available_at=now()-interval '25 hours' where notification_type='driver_rating_reviewed';
+select pg_temp.check_update('decision expired',(select not reputation_alert_current(notification_id) from notification_outbox where notification_type='driver_rating_reviewed'));
+-- Clock boundary simulation for a one-sided rating, without changing production disclosure.
+select pg_temp.new_trip('90000000-0000-4000-8000-000000000002',now()-interval '6 days');
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
+select public.submit_my_rider_trip_rating('90000000-0000-4000-8000-000000000002',4,4,4,4,null);
+select pg_temp.check_update('one-sided still private',(select not reputation_alert_current(notification_id) from notification_outbox where payload->>'booking_id'='90000000-0000-4000-8000-000000000002'));
+update dispatch_bookings set completed_at=now()-interval '7 days' where booking_id='90000000-0000-4000-8000-000000000002';
+update notification_outbox set available_at=now() where payload->>'booking_id'='90000000-0000-4000-8000-000000000002';
+select pg_temp.check_update('seven-day disclosed',(select reputation_alert_current(notification_id) from notification_outbox where payload->>'booking_id'='90000000-0000-4000-8000-000000000002'));
+update dispatch_bookings set current_driver_profile_id='50000000-0000-4000-8000-000000000002' where booking_id='90000000-0000-4000-8000-000000000002';
+select pg_temp.check_update('changed assignment denied',(select not reputation_alert_current(notification_id) from notification_outbox where payload->>'booking_id'='90000000-0000-4000-8000-000000000002'));
+update native_push_registrations set status='disabled';
+select pg_temp.new_trip('90000000-0000-4000-8000-000000000003',now()-interval '8 days');
+select public.submit_my_rider_trip_rating('90000000-0000-4000-8000-000000000003',4,4,4,4,null);
+select pg_temp.check_update('all channels off no event',(select count(*)=0 from notification_outbox where payload->>'booking_id'='90000000-0000-4000-8000-000000000003'));
+update driver_notification_preferences set trip_email_enabled=true;
+select pg_temp.new_trip('90000000-0000-4000-8000-000000000004',now()-interval '8 days');
+select public.submit_my_rider_trip_rating('90000000-0000-4000-8000-000000000004',4,4,4,4,null);
+select pg_temp.check_update('email-only event',(select email_delivery_enabled and reputation_alert_current(notification_id) from notification_outbox where payload->>'booking_id'='90000000-0000-4000-8000-000000000004'));
+update driver_notification_preferences set trip_email_enabled=false;
+select pg_temp.check_update('later opt-out masks email',(select not email_delivery_enabled from notification_outbox where payload->>'booking_id'='90000000-0000-4000-8000-000000000004'));
+select pg_temp.check_update('anonymous predicate denied',not has_function_privilege('anon','public.reputation_alert_current(uuid)','execute'));
+select pg_temp.check_update('client cannot queue',not has_function_privilege('authenticated','public.queue_rating_update(uuid,text,text,uuid,timestamp with time zone,uuid)','execute'));
+select pg_temp.check_update('client cannot trigger',not has_function_privilege('authenticated','public.queue_received_rating_updates()','execute'));
+rollback;

@@ -1,7 +1,7 @@
 import { createPrivateKey, sign } from "node:crypto";
 import { connect } from "node:http2";
 import { supportTarget } from "./support-target";
-import { ratingTarget } from "@esh-platform/supabase";
+import { ratingTarget, isRatingNotification } from "@esh-platform/supabase";
 
 export type NativeMessage = { attemptId: string; product: "rider" | "driver"; platform: "ios" | "android";
   token: string; title: string; body: string; tenantSlug: string; expiresAt: string;
@@ -57,7 +57,8 @@ export function nativePayload(message: NativeMessage) {
   const target = supportTarget({ bookingId: message.bookingId, caseId: message.caseId });
   const rating = ratingTarget(message);
   return { product: message.product, tenantSlug: message.tenantSlug,
-    ...(message.notificationType === `${message.product}_rating_reminder` && rating
+    ...(message.notificationType && isRatingNotification(message.notificationType)
+      && message.notificationType.startsWith(`${message.product}_`) && rating
       ? { notificationType: message.notificationType, bookingId: rating.bookingId } : {}),
     ...(message.notificationType === `${message.product}_support_update` && target
       ? { notificationType: message.notificationType, ...target } : {}) };

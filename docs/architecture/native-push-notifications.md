@@ -1,5 +1,9 @@
 # Native Rider and Driver notifications
 
+[Rating updates](rating-update-notifications.md) add generic alerts for disclosed received ratings
+and the requester's review decision. They reuse the minute worker, consent and session checks,
+24-hour availability expiry, and exact owned trip routing. No native rebuild or new credentials.
+
 [Trip rating reminders](trip-rating-reminders.md) add generic, non-urgent Rider/Driver events ten
 minutes after new trip completion, exact owned rating-form routing and suppression after submission.
 Their native attempts expire 24 hours after availability; other existing expiry rules are unchanged.

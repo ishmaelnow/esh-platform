@@ -1,4 +1,4 @@
-import type { PlatformSupabaseClient } from "@esh-platform/supabase";
+import { isRatingNotification, type PlatformSupabaseClient } from "@esh-platform/supabase";
 import type { AdminServerConfig } from "@/lib/config";
 import { sendNotificationEmail } from "./email";
 import { deliverNotificationPush } from "./push";
@@ -8,7 +8,8 @@ import { deliverNativeNotifications } from "./native-push";
 export type DeliveryScope = {
   skipNative?: boolean;
   notificationType?: "rider_support_update";
-  notificationTypes?: ("rider_support_update" | "driver_support_update" | "rider_rating_reminder" | "driver_rating_reminder")[];
+  notificationTypes?: ("rider_support_update" | "driver_support_update" | "rider_rating_reminder" | "driver_rating_reminder"
+    | "rider_rating_received" | "driver_rating_received" | "rider_rating_reviewed" | "driver_rating_reviewed")[];
   tenantId?: string;
   notificationId?: string;
   limit?: number;
@@ -74,8 +75,9 @@ export async function deliverQueuedNotifications(
     if (claimError) throw claimError;
     if (!claimed) continue;
 
-    if (["driver_preorder_available", "rider_support_update", "driver_support_update", "rider_rating_reminder", "driver_rating_reminder"].includes(notification.notification_type)) {
-      const current = await service.rpc(notification.notification_type.endsWith("_rating_reminder") ? "rating_alert_current"
+    if (isRatingNotification(notification.notification_type) || ["driver_preorder_available", "rider_support_update", "driver_support_update"].includes(notification.notification_type)) {
+      const current = await service.rpc(isRatingNotification(notification.notification_type) && !notification.notification_type.endsWith("_rating_reminder") ? "reputation_alert_current"
+        : notification.notification_type.endsWith("_rating_reminder") ? "rating_alert_current"
         : notification.notification_type === "rider_support_update" ? "support_alert_current"
         : notification.notification_type === "driver_support_update" ? "driver_support_alert_current" : "preorder_alert_current", { notification_value: notification.notification_id });
       if (current.error) throw current.error;

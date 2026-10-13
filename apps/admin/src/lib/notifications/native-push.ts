@@ -4,7 +4,7 @@ import { buildPrivacySafePush } from "./push";
 import { configuredNativePlatforms, nativeProviderConfig, sendNativePush } from "./native-provider";
 import type { NativeMessage, NativeProviderConfig, NativeResult } from "./native-provider";
 import { supportTarget } from "./support-target";
-import { ratingTarget } from "@esh-platform/supabase";
+import { ratingTarget, isRatingNotification } from "@esh-platform/supabase";
 
 export type NativeClaim = Omit<NativeMessage, "title" | "body"> & { claimId: string; notificationType: string };
 export function readNativeClaims(value: unknown): NativeClaim[] {
@@ -18,8 +18,8 @@ export function readNativeClaims(value: unknown): NativeClaim[] {
     if (["rider_support_update", "driver_support_update"].includes(String(row.notificationType))
       && (row.notificationType !== `${String(row.product)}_support_update` || !supportTarget(row)))
       throw new Error("Invalid native delivery claim.");
-    if (["rider_rating_reminder", "driver_rating_reminder"].includes(String(row.notificationType))
-      && (row.notificationType !== `${String(row.product)}_rating_reminder` || !ratingTarget(row)))
+    if (isRatingNotification(String(row.notificationType))
+      && (!String(row.notificationType).startsWith(`${String(row.product)}_`) || !ratingTarget(row)))
       throw new Error("Invalid native delivery claim.");
     return row as NativeClaim;
   });

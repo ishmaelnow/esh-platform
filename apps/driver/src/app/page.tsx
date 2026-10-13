@@ -1880,9 +1880,9 @@ export default function DriverHome() {
               <section className="documents">
                 <div><p className="eyebrow">Reputation</p><h3>Post-trip ratings</h3><p className="document-help">Ratings stay private until both sides submit, or seven days pass.</p></div>
                 <RatingReminderFocus key={`${authenticatedUserId}:${summary.driverProfileId}`}
-                  bookingId={ratingLink?.bookingId ?? null} trips={reputationTrips} ready={reputationAvailable && !portalLoading} />
+                  bookingId={ratingLink?.bookingId ?? null} intent={ratingLink?.intent} trips={reputationTrips} ready={reputationAvailable && !portalLoading} />
                 {supabase ? <RatingReviews key={`${authenticatedUserId}:${summary.driverProfileId}`} client={supabase} role="driver" onRefresh={() => { void activateAndLoad(); }}>{reputationTrips.map((trip) => {
-                  return <article className="document-card" key={trip.bookingId}>
+                  return <article className="document-card" id={`rating-details-${trip.bookingId}`} tabIndex={-1} key={trip.bookingId}>
                     <div className="document-heading"><strong>{trip.subjectName}</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
                     <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
                     {trip.submittedRating ? <span>Your rating: {trip.submittedRating.overall}/5</span> : null}
@@ -2133,7 +2133,7 @@ export default function DriverHome() {
                   <h3>Email preferences</h3>
                 </div>
                 <label><input type="checkbox" checked={tripEmailEnabled ?? true} disabled={updatingPreferences || tripEmailEnabled === null}
-                  onChange={(event) => { void updateTripEmails(event.target.checked); }} /> Email me about new trip offers, support responses and rating reminders</label>
+                  onChange={(event) => { void updateTripEmails(event.target.checked); }} /> Email me about new trip offers, support responses and rating updates</label>
                 {tripEmailMessage ? <p className="upload-message" role="status">{tripEmailMessage}</p> : null}
                 <label>
                   <input

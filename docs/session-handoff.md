@@ -4,10 +4,33 @@ Last updated: 2026-10-13
 
 ## Current objective and checkpoint
 
-Current authorized objective: connect ratings and review controls to their completed trips after
+Current authorized objective: received-rating and review-decision notifications (owner said GO).
+New local 20261013000200_rating_update_notifications.sql reuses outbox/native attempts and current
+Admin minute worker. No historical sweep. One generic recipient-owned event per rating/appeal;
+received scores wait for mutual submission or seven days; decisions go only to requester. Existing
+email/device preferences, tenant/person/profile ownership, moderation and session checks remain.
+Alerts contain no score/comment/reason/decision text. New validated routing intent focuses the
+received-rating/decision details rather than the submission form; old reminder links are preserved.
+No new native build, credential, cron, booking/payment/dispatch/auth change. Owner supplied successful
+application of migration 20261013000200; do not reapply it.
+Local verification complete: minimal actual-migration SQL smoke and all 49 notification/link tests
+pass. Scoped lint passes with existing Rider image warning. Rider initial suite passed all 37 existing
+checks; new alert test reached correct rating/decision then failed on a multi-element test selector.
+After selector-only correction, focused Rider alert test passes. All 36 Driver browser checks pass.
+All 74 distinct mobile checks pass across runs, including exact received/decision focus, unknown
+targets and 320px overflow. Initial Rider build caught an exact-optional-prop type; corrected.
+Final Admin, Rider and Driver production builds pass with existing warnings. All four complete
+414 x 896 received/decision screenshots inspected and retained in ignored tmp/rating-update-evidence.
+Physical delivery, real-account RLS, seven-day natural timing and full Supabase/concurrency remain
+owner acceptance. Next: exact feature-only Git handover, owner push, Admin/
+Rider/Driver Ready and controlled notification acceptance. No production/Git mutation by Codex.
+See architecture/rating-update-notifications.md and operations/rating-update-notifications-manual-test.md.
+Preserve generated configs, unknown git/main and earlier local acceptance documentation.
+
+Completed objective: connect ratings and review controls to their completed trips after
 owner reported that ratings were detached and no review action was visible. Owner applied
 20261013000100_rating_appeal_review.sql and pushed the original feature as 5d1a5c3.
-Local UI follow-up puts participant, own score, disclosed received score, Request rating review,
+Owner-pushed e989965 follow-up puts participant, own score, disclosed received score, Request rating review,
 and review decisions on Rider completed-trip history and Driver Recent orders cards. Rider's
 separate ratings section remains only for trips outside loaded completed history. No received
 rating means an explicit disclosure explanation, not a review of one's own submitted score.
@@ -19,8 +42,11 @@ Rider review passes; all 35 Driver mobile checks, scoped lint and both productio
 existing warnings. All 72 distinct mobile checks are covered across runs. Integrated 414 x 896
 screenshots inspected and retained in ignored tmp/rating-review-unified-evidence; review checks
 also verify 320px overflow and removed-decision state without a misleading waiting explanation.
-Physical keyboards and real-account acceptance remain owner checks. Next: provide feature-only Git
-commands, owner hosted release and real-account acceptance. No new migration or native rebuild.
+Owner reports TEST PASSED for the integrated trip/rating review follow-up. Git confirms main and
+origin/main aligned at e989965. Acceptance is recorded for the reported test, not an inference that
+every physical-keyboard or authorization scenario was exercised. No new migration or native rebuild.
+Next: select the next roadmap item; do not reopen accepted rating-card work. This acceptance-only
+documentation update remains local until included in a future owner commit.
 Trip-sharing physical acceptance remains pending; Student Transportation remains brainstorming.
 
 Previous appeal implementation checkpoint (deployment claims superseded above):

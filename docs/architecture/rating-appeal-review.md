@@ -3,7 +3,8 @@
 This feature completes the existing 20260815000500 appeal foundation. It does not create a new
 rating system, change the 30-day rating submission window, reveal undisclosed ratings, alter matching,
 or generate notification events. Requests and company decisions are read inside existing ratings
-screens; refresh retrieves updates. Received-rating/review-decision alerts remain separate work.
+screens; refresh retrieves updates. Generic received-rating/review-decision alerts are added by
+the separate [rating update notification](rating-update-notifications.md) migration.
 
 Rider completed-trip history and Driver Recent orders show the participant, own submitted score,
 disclosed received score and Request rating review on the same trip card. Rider's separate ratings

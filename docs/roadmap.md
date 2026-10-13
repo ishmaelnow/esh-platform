@@ -6,18 +6,27 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Received-rating and review-decision alerts are the current local work: disclosure-aware delayed
+  events, requester-only decisions, existing email/device preferences and worker, generic payloads,
+  exact owned trip-detail routing and duplicate prevention. Migration `20261013000200` is owner-applied.
+  Minimal SQL and 49 notification/routing unit checks pass. All 74 mobile checks pass across full/
+  focused runs, scoped lint and Admin/Rider/Driver production builds pass; complete 414 x 896
+  screenshots inspected. Owner source release and physical notification acceptance remain pending.
+  See `architecture/rating-update-notifications.md` and
+  `operations/rating-update-notifications-manual-test.md`.
+
 - Rating appeals are owner-pushed at `5d1a5c3` with migration `20261013000100` owner-applied:
   received-rating review requests in Rider/Driver,
   Admin Reputation queue, explicit keep/remove decisions and requester-visible explanations.
   Reuses existing appeal tables/RPCs with additive ownership/disclosure/idempotence hardening.
   Minimal SQL isolation/disclosure/idempotence smoke, two parser tests, all 74 browser checks across
   initial/focused runs, types/lint and Rider/Driver/Admin/Transportation builds pass. Owner migration/
-  release recorded above; device acceptance pending. A local usability follow-up connects received
+  release recorded above. The usability follow-up connects received
   scores and review requests/decisions directly to Rider completed trips and Driver Recent orders,
   without another migration. All 72 mobile checks pass across initial/focused runs, including the
   isolated rerun of an initial tracking exception; its initial cause remains unconfirmed. Scoped
-  lint and both production builds pass; complete mobile screenshots inspected. Follow-up owner push
-  and device acceptance remain pending. See `architecture/rating-appeal-review.md` and
+  lint and both production builds pass; complete mobile screenshots inspected. Owner pushed
+  `e989965` and reports TEST PASSED for the integrated trip/rating review. See `architecture/rating-appeal-review.md` and
   `operations/rating-appeal-review-manual-test.md`.
 
 - Trusted-contact Share my trip is the current local work: Rider-created/revocable four-hour link,
@@ -542,7 +551,8 @@ deferred from this milestone and were delivered under the later milestones below
    - Production manual verification passed across Rider and Driver submission and disclosure.
    - Optional rating reminders and original rating appeals are owner-deployed; the trip-card review
      usability follow-up is locally verified as described
-     above. Remaining: received-rating notifications, aggregate public profiles, and any deliberate rating-based
+     above. Received-rating/review-decision alerts are in local verification as described above.
+     Remaining: aggregate public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**
    - Current delivery: fixed tenant operating currency, integer minor-unit semantics,

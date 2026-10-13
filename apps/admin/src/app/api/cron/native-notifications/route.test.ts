@@ -19,7 +19,8 @@ it("rejects unauthenticated cron requests without delivery", async () => {
 it("recovers only support email/web events while claiming native once", async () => {
   expect((await GET(request())).status).toBe(200);
   expect(mocks.native).toHaveBeenCalledOnce();
-  expect(mocks.queued).toHaveBeenCalledWith(expect.anything(), expect.anything(), { notificationTypes: ["rider_support_update", "driver_support_update", "rider_rating_reminder", "driver_rating_reminder"], limit: 20, skipNative: true });
+  expect(mocks.queued).toHaveBeenCalledWith(expect.anything(), expect.anything(), { notificationTypes: ["rider_support_update", "driver_support_update", "rider_rating_reminder", "driver_rating_reminder",
+    "rider_rating_received", "driver_rating_received", "rider_rating_reviewed", "driver_rating_reviewed"], limit: 20, skipNative: true });
 });
 it("an email queue outage does not prevent native delivery", async () => {
   mocks.queued.mockRejectedValue(new Error("Fixture outage"));

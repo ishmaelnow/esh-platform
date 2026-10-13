@@ -35,6 +35,15 @@ function serviceFor(emailEnabled: boolean, notificationType = "rider_driver_arri
 }
 
 describe("channel-aware notification delivery", () => {
+  it("suppresses unavailable received ratings and decisions before any channel sends", async () => {
+    for (const type of ["rider_rating_received", "driver_rating_received", "rider_rating_reviewed", "driver_rating_reviewed"]) {
+      const { service, updates, rpc } = serviceFor(true, type, false);
+      await deliverQueuedNotifications(service, {} as AdminServerConfig, { skipNative: true });
+      expect(rpc).toHaveBeenCalledWith("reputation_alert_current", { notification_value: "event" });
+      expect(mocks.email).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled();
+      expect(updates.at(-1)).toMatchObject({ delivery_status: "canceled" });
+    }
+  });
   it("suppresses a rating reminder that is already submitted or expired", async () => {
     const { service, updates, rpc } = serviceFor(true, "rider_rating_reminder", false);
     await deliverQueuedNotifications(service, {} as AdminServerConfig, { skipNative: true });

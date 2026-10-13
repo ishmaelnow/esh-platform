@@ -16,7 +16,8 @@ export async function GET(request: Request) {
     // Native claims remain independent of email/web failures.
     const result = await deliverNativeNotifications(service, config, { limit: 20 });
     const support = await deliverQueuedNotifications(service, config,
-      { limit: 20, notificationTypes: ["rider_support_update", "driver_support_update", "rider_rating_reminder", "driver_rating_reminder"], skipNative: true })
+      { limit: 20, notificationTypes: ["rider_support_update", "driver_support_update", "rider_rating_reminder", "driver_rating_reminder",
+        "rider_rating_received", "driver_rating_received", "rider_rating_reviewed", "driver_rating_reviewed"], skipNative: true })
       .catch(() => ({ unavailable: true }));
     return Response.json({ ...result, support }, { status: "unavailable" in support ? 503 : 200 });
   } catch { return Response.json({ message: "Native delivery is unavailable." }, { status: 503 }); }

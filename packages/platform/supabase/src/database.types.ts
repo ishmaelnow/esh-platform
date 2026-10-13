@@ -3027,6 +3027,7 @@ export type Database = {
       my_driver_wallet: { Args: never; Returns: Json }
       my_driver_daily_activity: { Args: never; Returns: Json }
       rating_alert_current: { Args: { notification_value: string }; Returns: boolean }
+      reputation_alert_current: { Args: { notification_value: string }; Returns: boolean }
       my_driver_payout_account: { Args: never; Returns: Json }
       my_driver_bank_payouts: { Args: never; Returns: Json }
       record_driver_bank_payout_internal: {

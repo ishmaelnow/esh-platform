@@ -34,4 +34,5 @@ still see their own submission. Ratings do not affect dispatch eligibility or ma
 
 Optional post-trip reminders are documented in [Trip rating reminders](trip-rating-reminders.md).
 Rating review requests complete the existing appeals foundation; see [Rating review](rating-appeal-review.md).
-Aggregate public profiles, received-rating alerts and rating-based matching remain deferred.
+Received-rating and review-decision alerts are documented in [Rating updates](rating-update-notifications.md).
+Aggregate public profiles and rating-based matching remain deferred.

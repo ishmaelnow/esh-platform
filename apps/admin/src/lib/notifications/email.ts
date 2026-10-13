@@ -9,6 +9,15 @@ function ratingReminderContent(base: string, payload: Record<string, unknown>) {
     html: `<p>${intro}</p><p><a href="${escapeHtml(url)}">Rate your trip</a></p>` };
 }
 
+function ratingUpdateContent(base: string, payload: Record<string, unknown>, notificationType: string) {
+  const review = notificationType.endsWith("_rating_reviewed");
+  const url = ratingUrl(base, { ...payload, notificationType });
+  const intro = review ? "Your rating review has a decision. Open ESH to read the company's response."
+    : "A rating from your trip is now available. Open ESH to view it.";
+  return { subject: review ? "Your ESH rating review has a decision" : "Your ESH trip rating is available",
+    text: `${intro}\n\n${url}`, html: `<p>${intro}</p><p><a href="${escapeHtml(url)}">${review ? "View rating review" : "View trip rating"}</a></p>` };
+}
+
 export type NotificationEmail = {
   notificationId: string;
   notificationType: string;
@@ -94,6 +103,7 @@ export function buildDriverNotificationContent(
   driverAppUrl: string,
 ) {
   if (notificationType === "driver_rating_reminder") return ratingReminderContent(driverAppUrl, payload);
+  if (["driver_rating_received", "driver_rating_reviewed"].includes(notificationType)) return ratingUpdateContent(driverAppUrl, payload, notificationType);
   if (notificationType === "driver_support_update") {
     const url = supportUrl(driverAppUrl, payload, "recent");
     const intro = "Your support report has an update. Open ESH to read the company's response.";
@@ -245,6 +255,7 @@ export function buildRiderNotificationContent(
   riderAppUrl: string,
 ) {
   if (notificationType === "rider_rating_reminder") return ratingReminderContent(riderAppUrl, payload);
+  if (["rider_rating_received", "rider_rating_reviewed"].includes(notificationType)) return ratingUpdateContent(riderAppUrl, payload, notificationType);
   if (notificationType === "rider_support_update") {
     const url = supportUrl(riderAppUrl, payload);
     const intro = "Your support report has an update. Open ESH to read the company's response.";
