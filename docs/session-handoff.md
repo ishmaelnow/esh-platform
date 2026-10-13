@@ -1,10 +1,38 @@
 # Session Handoff
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Current objective and checkpoint
 
-Current authorized objective: optional trusted-contact Share my trip. No previous public sharing
+Current authorized objective: complete existing rating appeals (owner said I WOULD SAY GO).
+Inspection found 20260815000500 backend foundations and client types but no Rider/Driver/Admin UI.
+Local additive 20261013000100_rating_appeal_review.sql hardens active tenant/person/profile and role
+ownership, received-rating disclosure, retry idempotence and Admin decision conflicts; adds bounded
+Admin queue. No rating windows/disclosure/payment/dispatch/notification changes. Rider/Driver ratings
+screens now have request/status/explanation components; Admin Reputation has review queue.
+Local implementation and verification are complete. Actual old reputation/appeal plus new migration
+pass minimal PostgreSQL ownership/disclosure/role/tenant/RLS/idempotence/decision/audit smoke. Two
+strict parser tests and shared types/scoped lint pass. Initial browser suites passed 36 Rider and
+34 Driver checks; the new review checks stopped on a broad alert selector matching Next's announcer.
+After test-only correction, focused Rider and Driver review checks pass, including failed-load and
+failed-submit draft preservation, removed-rating privacy and decision reload. Both Admin mobile
+review tests pass (keep/remove, failed-save notes preserved, confirmed decisions and compact width).
+All 74 browser checks pass across initial/focused runs. Rider, Driver, Admin and Transportation
+production builds pass with existing warnings. Transportation first lacked local public config;
+rerun used nonsecret fixture process env only, no populated environment file edits. Complete 414 x
+896 screenshots inspected and retained under ignored tmp/rating-review-evidence; 320px checks pass.
+Physical keyboard, real-account RLS and full Supabase-chain/concurrency acceptance remain owner work.
+Migration 20261013000100 is NOT applied. Next: owner intended-only dry run/apply, exact Git handover,
+Rider/Driver/Admin/Transportation Ready and controlled request/decision acceptance. No native build,
+secret or new notification event. No Git or production mutations by Codex.
+Trip sharing migration 20261012000100 is owner-applied and source owner-pushed as 286000b; manual
+mobile acceptance is pending until owner can test at home. Do not mark it passed or reapply.
+Student Transportation remains brainstorming: independent service in existing repo, separate data/
+permissions/deployments, reuse shared foundations and shared resource guard if fleet is shared.
+Owner has a saved future architecture prompt; NO implementation authorized. Keep separate from appeals.
+Preserve generated Driver/Rider tsconfig edits and unexpected git/main files.
+
+Previous objective: optional trusted-contact Share my trip. No previous public sharing
 implementation was found. New local migration 20261012000100 adds private hash-only link storage,
 owned create/status/revoke, service-only minimal status/location projection and lifecycle cleanup.
 Rider Current trip has progressive explicit share/copy/replacement/stop controls; unauthenticated

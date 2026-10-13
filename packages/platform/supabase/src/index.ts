@@ -223,3 +223,4 @@ export function createServiceSupabaseClient(source: NodeJS.ProcessEnv = process.
 }
 export * from "./trip-support";
 export * from "./trip-attention";
+export { readRatingReviews, reviewStatus, type RatingReview } from "./rating-reviews";

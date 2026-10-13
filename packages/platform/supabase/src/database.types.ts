@@ -2640,6 +2640,8 @@ export type Database = {
       my_trip_messages: { Args: { booking_value: string; role_value: string }; Returns: Json }
       send_my_trip_message: { Args: { booking_value: string; role_value: string; body_value: string; request_value: string }; Returns: string }
       my_rider_pickup_sharing: { Args: { target_booking_id: string }; Returns: boolean }
+      my_rating_appeal_owned: { Args: { role_value: string; booking_value: string; tenant_slug?: string }; Returns: Json }
+      admin_rating_appeals: { Args: { tenant_value: string; status_value?: string; offset_value?: number }; Returns: Json }
       manage_my_trip_share: { Args: { booking_value: string; action_value: string; hash_value?: string }; Returns: Json }
       read_shared_trip: { Args: { hash_value: string }; Returns: Json }
       my_driver_preorders: { Args: Record<PropertyKey, never>; Returns: Json }

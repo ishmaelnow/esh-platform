@@ -21,6 +21,7 @@ import { LiveTripMap, RiderHomeMap } from "@esh-platform/maps/client";
 import { RiderMenu } from "./RiderMenu";
 import { RatingReminderFocus } from "./RatingReminderFocus";
 import { RiderTripRating } from "./RiderTripRating";
+import { RatingReviews, RatingReview } from "./RatingReview";
 import { RiderLanding } from "./RiderLanding";
 import { RiderTripTracking } from "./RiderTripTracking";
 import { ShareTrip } from "./ShareTrip";
@@ -1996,17 +1997,18 @@ export default function RiderHome() {
             <summary>Post-trip ratings</summary>
             <div className="section-heading"><div><p className="kicker">Reputation</p><h2>Post-trip ratings</h2></div></div>
             <p className="area">Ratings stay private until both sides submit, or seven days pass.</p>
-            {reputationTrips.map((trip) => {
+            {supabase && session ? <RatingReviews key={`${session.user.id}:${tenantSlug}`} client={supabase} role="rider" tenantSlug={tenantSlug} onRefresh={() => { void loadPortal(); }}>{reputationTrips.map((trip) => {
               const inHistory = historicalBookings.some((booking) => booking.status === "completed" && booking.bookingId === trip.bookingId);
               return <article className="card trip-card" key={`rating-${trip.bookingId}`}>
                 <h3>{trip.pickupAddress}</h3><p className="destination">to {trip.destinationAddress}</p>
                 <p className="area">Driver: {trip.subjectName} · completed {formatDate(trip.completedAt)}</p>
                 {trip.submittedRating ? <p><strong>Your rating:</strong> {trip.submittedRating.overall}/5</p> : null}
                 {trip.receivedRating ? <p><strong>Driver’s rating:</strong> {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</p> : null}
+                <RatingReview bookingId={trip.bookingId} received={Boolean(trip.receivedRating)} />
                 {inHistory ? <button className="text-button" type="button" onClick={() => { setShowTripHistory(true); setRatingLink({ bookingId: trip.bookingId, tenantSlug }); }}>View trip rating</button>
                   : <RiderTripRating trip={trip} busy={busy} onSubmit={(event, bookingId) => void submitRating(event, bookingId)} />}
               </article>;
-            })}
+            })}</RatingReviews> : null}
           </details>
           ) : null}
         </div>

@@ -31,4 +31,5 @@ seven days after completion. Hidden ratings are never returned to the rated part
 still see their own submission. Ratings do not affect dispatch eligibility or matching in V1.
 
 Optional post-trip reminders are documented in [Trip rating reminders](trip-rating-reminders.md).
-Appeals, aggregate public profiles, received-rating alerts and rating-based matching remain deferred.
+Rating review requests complete the existing appeals foundation; see [Rating review](rating-appeal-review.md).
+Aggregate public profiles, received-rating alerts and rating-based matching remain deferred.

@@ -8,6 +8,7 @@ import { LiveTripMap } from "@esh-platform/maps/client";
 import { createAdminBrowserClient } from "@/lib/browser-client";
 import { DriverPreordersPanel } from "./DriverPreordersPanel";
 import { TripSupportPanel } from "./TripSupportPanel";
+import { RatingAppealsPanel } from "./RatingAppealsPanel";
 import {
   adminAuthRefreshMode,
   loadPrincipalTenantContext,
@@ -505,7 +506,7 @@ function ResolvedWorkspace({
         />
       ) : null}
       {activeView === "reputation" ? (
-        <ReputationPanel canManageTenant={canManageTenant} onRefresh={onRefresh} summary={summary} />
+        <ReputationPanel userId={session.user.id} canManageTenant={canManageTenant} onRefresh={onRefresh} summary={summary} />
       ) : null}
       {activeView === "support" ? <TripSupportPanel key={`${session.user.id}:${summary.tenant.tenant_id}`} tenantId={summary.tenant.tenant_id}
         userId={session.user.id} canManage={canManageTenant} /> : null}
@@ -4500,7 +4501,7 @@ function LedgerPanel({ canManageTenant, onRefresh, summary }: { canManageTenant:
   </section>;
 }
 
-function ReputationPanel({ canManageTenant, onRefresh, summary }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary }) {
+function ReputationPanel({ canManageTenant, onRefresh, summary, userId }: { canManageTenant: boolean; onRefresh: () => void; summary: TenantSummary; userId: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const supabase = useMemo(() => createAdminBrowserClient(), []);
   const average = summary.tripRatings.length
@@ -4515,6 +4516,7 @@ function ReputationPanel({ canManageTenant, onRefresh, summary }: { canManageTen
   }
   return <section className="panel-stack">
     <PanelHeader title="Reputation" description={`${summary.tripRatings.length} ratings · ${average} average`} />
+    <RatingAppealsPanel key={`${userId}:${summary.tenant.tenant_id}`} tenantId={summary.tenant.tenant_id} userId={userId} canManage={canManageTenant} onRefresh={onRefresh} />
     {message ? <p className="feedback-message">{message}</p> : null}
     {summary.tripRatings.length === 0 ? <EmptyState message="Submitted Rider and Driver ratings will appear here." /> : summary.tripRatings.map((rating) => {
       const booking = summary.dispatchBookings.find((item) => item.booking_id === rating.booking_id);

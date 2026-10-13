@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
 import { verifyUnreadSupport } from "./helpers/trip-unread";
 import { verifyRatingReminder } from "./helpers/rating-reminders";
+import { verifyRatingReview } from "./helpers/rating-reviews";
 import { photoFixture } from "./helpers/trip-photos";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { setupDriverPreview } = require("../fixtures/driver-preview.cjs") as { setupDriverPreview: (page: Page, options?: { online?: boolean }) => Promise<void> };
@@ -23,6 +24,7 @@ test.beforeEach(async ({ page }) => {
 test("Driver unread badges clear only a viewed response and survive reload", async ({ page }) => {
   await verifyUnreadSupport(page, "driver");
 });
+test("Driver received rating review preserves failed drafts and shows the Admin decision", async ({ page }) => { await verifyRatingReview(page, "driver"); });
 
 test("Driver rating reminder opens only the requested owned form and handles submitted or unavailable trips", async ({ page }) => {
   await verifyRatingReminder(page, "driver");

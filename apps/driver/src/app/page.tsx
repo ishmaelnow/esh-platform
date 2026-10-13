@@ -13,6 +13,7 @@ import {
 import { DriverShell, type DriverView } from "./DriverShell";
 import { RatingReminderFocus } from "./RatingReminderFocus";
 import { DriverTripRating } from "./DriverTripRating";
+import { RatingReviews, RatingReview } from "./RatingReview";
 import { DriverPreorders, useDriverPreorders } from "./DriverPreorders";
 import { DriverApplication } from "./DriverApplication";
 import { DriverFileInput } from "./DriverFileInput";
@@ -1872,15 +1873,16 @@ export default function DriverHome() {
                 <div><p className="eyebrow">Reputation</p><h3>Post-trip ratings</h3><p className="document-help">Ratings stay private until both sides submit, or seven days pass.</p></div>
                 <RatingReminderFocus key={`${authenticatedUserId}:${summary.driverProfileId}`}
                   bookingId={ratingLink?.bookingId ?? null} trips={reputationTrips} ready={reputationAvailable && !portalLoading} />
-                {reputationTrips.map((trip) => {
+                {supabase ? <RatingReviews key={`${authenticatedUserId}:${summary.driverProfileId}`} client={supabase} role="driver" onRefresh={() => { void activateAndLoad(); }}>{reputationTrips.map((trip) => {
                   return <article className="document-card" key={trip.bookingId}>
                     <div className="document-heading"><strong>{trip.subjectName}</strong><span>{new Date(trip.completedAt).toLocaleString()}</span></div>
                     <span>{trip.pickupAddress} to {trip.destinationAddress}</span>
                     {trip.submittedRating ? <span>Your rating: {trip.submittedRating.overall}/5</span> : null}
                     {trip.receivedRating ? <span>Rider rating: {trip.receivedRating.overall}/5{trip.receivedRating.comment ? ` · ${trip.receivedRating.comment}` : ""}</span> : null}
+                    <RatingReview bookingId={trip.bookingId} received={Boolean(trip.receivedRating)} />
                     <DriverTripRating trip={trip} busy={dispatchBusy} onSubmit={(event, bookingId) => void submitTripRating(event, bookingId)} />
                   </article>;
-                })}
+                })}</RatingReviews> : null}
                 {reputationTrips.length === 0 ? <p className="document-help">Completed Rider trips will appear here.</p> : null}
                 {dispatchMessage ? <p className="upload-message">{dispatchMessage}</p> : null}
               </section>

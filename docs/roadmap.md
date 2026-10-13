@@ -6,11 +6,19 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Rating appeals are the current local work: received-rating review requests in Rider/Driver,
+  Admin Reputation queue, explicit keep/remove decisions and requester-visible explanations.
+  Reuses existing appeal tables/RPCs with additive ownership/disclosure/idempotence hardening.
+  Minimal SQL isolation/disclosure/idempotence smoke, two parser tests, all 74 browser checks across
+  initial/focused runs, types/lint and Rider/Driver/Admin/Transportation builds pass. Owner migration/
+  release/device acceptance pending. See `architecture/rating-appeal-review.md` and
+  `operations/rating-appeal-review-manual-test.md`.
+
 - Trusted-contact Share my trip is the current local work: Rider-created/revocable four-hour link,
   minimal active status/fresh shared Driver location, anonymous recipient map, hash-only capability,
   strict assignment/tenant lifecycle and no new SMS/notifications. Nine unit/API tests, minimal SQL
   smoke, all 36 mobile checks across initial/final focused runs, types/lint and Rider/Driver builds
-  pass. Owner intended-only migration/release and physical acceptance pending.
+  pass. Owner applied 20261012000100 and pushed 286000b. Physical sharing acceptance remains pending.
   See `architecture/trip-share-links.md` and `operations/trip-share-links-manual-test.md`.
 
 - Rider pickup identification refinement groups existing assigned Driver photo/name and vehicle
@@ -526,8 +534,8 @@ deferred from this milestone and were delivered under the later milestones below
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,
      audited Admin moderation, and portal experiences for both sides.
    - Production manual verification passed across Rider and Driver submission and disclosure.
-   - Optional rating reminders are locally implemented as described above. Remaining: received-rating
-     notifications, appeals, aggregate public profiles, and any deliberate rating-based
+   - Optional rating reminders are owner-deployed; rating appeals are locally complete as described
+     above. Remaining: received-rating notifications, aggregate public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**
    - Current delivery: fixed tenant operating currency, integer minor-unit semantics,

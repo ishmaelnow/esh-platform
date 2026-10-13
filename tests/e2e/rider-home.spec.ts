@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { messageFixture } from "./helpers/trip-messages";
 import { verifyUnreadSupport } from "./helpers/trip-unread";
 import { verifyRatingReminder } from "./helpers/rating-reminders";
+import { verifyRatingReview } from "./helpers/rating-reviews";
 import { photoFixture } from "./helpers/trip-photos";
 import type { TripReceipt } from "../../apps/rider/src/lib/trip-receipt";
 
@@ -44,6 +45,7 @@ test.beforeEach(async ({ page }) => {
 test("Rider unread badges clear only a viewed response and survive reload", async ({ page }) => {
   await verifyUnreadSupport(page, "rider");
 });
+test("Rider received rating review preserves failed drafts and shows the Admin decision", async ({ page }) => { await verifyRatingReview(page, "rider"); });
 
 test("Rider creates, shares and revokes trip links without changing the booking", async ({ page }) => {
   const bookingId = "90000000-0000-4000-8000-000000000001", token = "A".repeat(43);

@@ -25,7 +25,8 @@ async function main() {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     if (!ready) throw new Error(`Transportation preview did not start.\n${logs}`);
-    const child = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", "tests/e2e/trip-support-admin.spec.ts", "--workers=1"],
+    const testFile = process.argv.includes("--ratings") ? "tests/e2e/rating-appeals-admin.spec.ts" : "tests/e2e/trip-support-admin.spec.ts";
+    const child = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", testFile, "--workers=1"],
       { cwd: root, stdio: "inherit", env: { ...process.env, PLAYWRIGHT_BASE_URL: origin } });
     const code = await new Promise((resolve) => child.once("exit", resolve));
     if (code !== 0) throw new Error("Transportation support browser check failed.");
