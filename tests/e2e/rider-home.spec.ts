@@ -45,6 +45,44 @@ test("Rider unread badges clear only a viewed response and survive reload", asyn
   await verifyUnreadSupport(page, "rider");
 });
 
+test("Rider creates, shares and revokes trip links without changing the booking", async ({ page }) => {
+  const bookingId = "90000000-0000-4000-8000-000000000001", token = "A".repeat(43);
+  let active = false, failStop = true;
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: { tenant, profile, serviceAreas: [], bookings: [{ bookingId,
+    pickupAddress: "TEST pickup", destinationAddress: "TEST destination", status: "accepted", createdAt: new Date().toISOString(), driver: { displayName: "TEST driver", driverNumber: "1" }, vehicle: null }] } }));
+  await page.route("**/api/trips/share**", (route) => {
+    const method = route.request().method();
+    if (method === "DELETE" && failStop) { failStop = false; return route.fulfill({ status: 503, json: {} }); }
+    if (method !== "GET") { expect(route.request().postDataJSON()).toEqual({ bookingId }); active = method === "POST"; }
+    return route.fulfill({ json: { active, expiresAt: active ? new Date(Date.now()+3600_000).toISOString() : null, ...(method === "POST" ? { token } : {}) } });
+  });
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  const share = page.getByRole("region", { name: "Share my trip", exact: true });
+  await share.getByText("Share my trip", { exact: true }).click();
+  await expect(share.getByText("Trip sharing is off.")).toBeVisible();
+  await share.getByRole("button", { name: "Create trip link", exact: true }).click();
+  await expect(share.getByLabel("Copy trip link")).toHaveValue(new RegExp(`/share-trip#token=${token}`));
+  await page.evaluate(() => { Object.defineProperty(navigator, "share", { configurable: true, value: async (data: ShareData) => { await Promise.resolve(); Object.assign(window, { sharedTripUrl: data.url }); } }); });
+  await share.getByRole("button", { name: "Share trip link", exact: true }).click();
+  expect(await page.evaluate(() => (window as unknown as { sharedTripUrl: string }).sharedTripUrl)).toContain(`#token=${token}`);
+  await page.screenshot({ path: "test-results/rider-share-controls-414.png", fullPage: true });
+  await share.getByRole("button", { name: "Stop sharing trip" }).click();
+  await expect(share.getByText("Sharing could not be refreshed. Check your connection and try again.")).toBeVisible();
+  await expect(share.getByText("Trip link is active.")).toBeVisible();
+  await share.getByRole("button", { name: "Stop sharing trip" }).click();
+  await expect(share.getByText("Trip sharing is off.")).toBeVisible();
+  await expect(share.getByLabel("Copy trip link")).toHaveCount(0);
+  await share.getByRole("button", { name: "Create trip link", exact: true }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Open rider menu" }).click();
+  await page.getByRole("button", { name: "Trips", exact: true }).click();
+  await share.getByText("Share my trip", { exact: true }).click();
+  await expect(share.getByText("Trip link is active.")).toBeVisible();
+  await expect(share.getByText("Your link is active on another session. Creating a replacement stops the previous link.")).toBeVisible();
+});
+
 test("Rider rating reminder opens only the requested owned form and handles submitted or unavailable trips", async ({ page }) => {
   await verifyRatingReminder(page, "rider");
 });

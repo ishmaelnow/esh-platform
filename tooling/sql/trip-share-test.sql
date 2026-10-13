@@ -1,0 +1,62 @@
+begin;
+insert into tenants values('10000000-0000-4000-8000-000000000001','active',now());
+insert into auth.users(id) values('20000000-0000-4000-8000-000000000001'),('20000000-0000-4000-8000-000000000002');
+insert into person_profiles(person_id,auth_user_id,status) values
+ ('30000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','active'),
+ ('30000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000002','active');
+insert into rider_profiles(rider_profile_id,tenant_id,person_id) values('40000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001');
+insert into driver_profiles values('50000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000002','active');
+insert into dispatch_bookings values('90000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','accepted');
+insert into driver_locations values('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001',true,40,-75,now());
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select manage_my_trip_share('90000000-0000-4000-8000-000000000001','create',repeat('a',64));
+reset role;
+do $$ begin
+ if read_shared_trip(repeat('a',64))->>'status'<>'accepted' then raise exception 'Missing status'; end if;
+ if read_shared_trip(repeat('a',64))->'location'->>'latitude'<>'40' then raise exception 'Missing live location'; end if;
+ if (select count(*) from jsonb_object_keys(read_shared_trip(repeat('a',64))))<>3 then raise exception 'Projection leak'; end if;
+ if has_table_privilege('authenticated','trip_share_links','select') or has_table_privilege('anon','trip_share_links','select') then raise exception 'Table grant leak'; end if;
+ if has_function_privilege('anon','read_shared_trip(text)','execute') or has_function_privilege('authenticated','read_shared_trip(text)','execute') then raise exception 'Reader grant leak'; end if;
+ if not has_function_privilege('service_role','read_shared_trip(text)','execute') then raise exception 'Missing server grant'; end if;
+ if read_shared_trip(repeat('b',64)) is not null then raise exception 'Unknown token leak'; end if;
+end $$;
+update driver_locations set recorded_at=now()-interval '61 seconds';
+do $$ begin if read_shared_trip(repeat('a',64))->'location'<>'null'::jsonb then raise exception 'Stale location leak'; end if; end $$;
+update driver_locations set recorded_at=now(),sharing_enabled=false;
+do $$ begin if read_shared_trip(repeat('a',64))->'location'<>'null'::jsonb then raise exception 'Disabled sharing leak'; end if; end $$;
+update driver_locations set sharing_enabled=true;
+update tenants set status='inactive';
+do $$ begin if read_shared_trip(repeat('a',64)) is not null then raise exception 'Inactive tenant leak'; end if; end $$;
+update tenants set status='active';
+update person_profiles set status='inactive' where person_id='30000000-0000-4000-8000-000000000002';
+do $$ begin if read_shared_trip(repeat('a',64)) is not null then raise exception 'Inactive Driver person leak'; end if; end $$;
+update person_profiles set status='active';
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000002',true);
+do $$ begin
+ begin perform manage_my_trip_share('90000000-0000-4000-8000-000000000001','stop'); raise exception 'Cross Rider allowed';
+ exception when others then if sqlerrm='Cross Rider allowed' then raise; end if; end;
+end $$;
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
+select manage_my_trip_share('90000000-0000-4000-8000-000000000001','create',repeat('b',64));
+do $$ begin if read_shared_trip(repeat('a',64)) is not null then raise exception 'Old link still active'; end if; end $$;
+update trip_share_links set expires_at=now()-interval '1 second';
+do $$ begin if read_shared_trip(repeat('b',64)) is not null then raise exception 'Expired link leak'; end if; end $$;
+select manage_my_trip_share('90000000-0000-4000-8000-000000000001','create',repeat('c',64));
+select manage_my_trip_share('90000000-0000-4000-8000-000000000001','stop');
+do $$ begin if read_shared_trip(repeat('c',64)) is not null then raise exception 'Revoked link leak'; end if; end $$;
+select manage_my_trip_share('90000000-0000-4000-8000-000000000001','create',repeat('d',64));
+update dispatch_bookings set current_driver_profile_id=null;
+do $$ begin if exists(select 1 from trip_share_links) then raise exception 'Reassigned link retained'; end if; end $$;
+update dispatch_bookings set current_driver_profile_id='50000000-0000-4000-8000-000000000001';
+select manage_my_trip_share('90000000-0000-4000-8000-000000000001','create',repeat('e',64));
+update dispatch_bookings set status='completed';
+do $$ begin
+ if exists(select 1 from trip_share_links) then raise exception 'Completed link retained'; end if;
+ if (select count(*) from tenant_audit_events where event_name like 'rider.trip_share_%')<>6 then raise exception 'Missing audit'; end if;
+end $$;
+update dispatch_bookings set status='accepted';
+select manage_my_trip_share('90000000-0000-4000-8000-000000000001','create',repeat('f',64));
+update dispatch_bookings set status='cancelled';
+do $$ begin if exists(select 1 from trip_share_links) then raise exception 'Cancelled link retained'; end if; end $$;
+rollback;

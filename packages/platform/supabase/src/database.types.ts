@@ -40,6 +40,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      trip_share_links: {
+        Row: { booking_id: string; tenant_id: string; rider_profile_id: string; driver_profile_id: string; token_hash: string; expires_at: string }
+        Insert: { booking_id: string; tenant_id: string; rider_profile_id: string; driver_profile_id: string; token_hash: string; expires_at: string }
+        Update: { token_hash?: string; expires_at?: string }
+        Relationships: []
+      }
       trip_messages: {
         Row: { message_id: string; tenant_id: string; booking_id: string; rider_profile_id: string; driver_profile_id: string; sender_role: string; request_id: string; body: string; sent_at: string }
         Insert: { message_id?: string; tenant_id: string; booking_id: string; rider_profile_id: string; driver_profile_id: string; sender_role: string; request_id: string; body: string; sent_at?: string }
@@ -2634,6 +2640,8 @@ export type Database = {
       my_trip_messages: { Args: { booking_value: string; role_value: string }; Returns: Json }
       send_my_trip_message: { Args: { booking_value: string; role_value: string; body_value: string; request_value: string }; Returns: string }
       my_rider_pickup_sharing: { Args: { target_booking_id: string }; Returns: boolean }
+      manage_my_trip_share: { Args: { booking_value: string; action_value: string; hash_value?: string }; Returns: Json }
+      read_shared_trip: { Args: { hash_value: string }; Returns: Json }
       my_driver_preorders: { Args: Record<PropertyKey, never>; Returns: Json }
       set_my_driver_preorder_settings: { Args: { enabled_value: boolean }; Returns: boolean }
       reserve_my_driver_preorder: { Args: { booking_value: string }; Returns: string }

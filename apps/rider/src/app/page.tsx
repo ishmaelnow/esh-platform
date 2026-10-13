@@ -23,6 +23,7 @@ import { RatingReminderFocus } from "./RatingReminderFocus";
 import { RiderTripRating } from "./RiderTripRating";
 import { RiderLanding } from "./RiderLanding";
 import { RiderTripTracking } from "./RiderTripTracking";
+import { ShareTrip } from "./ShareTrip";
 import { RiderPickupSharing } from "./RiderPickupSharing";
 import { TripMessages } from "./TripMessages";
 import { TripSupport } from "./TripSupport";
@@ -1754,6 +1755,7 @@ export default function RiderHome() {
             {currentBookings.map((booking) => <article className="card trip-card" key={`current-page-${booking.bookingId}`}>
               <RiderTripTracking booking={booking} accessToken={mapboxToken} sessionToken={session?.access_token}
                 location={currentTripLocation(booking.status, tripLocations.find((location) => location.bookingId === booking.bookingId), trackingNow)} />
+              {session && ["accepted", "arrived", "in_progress"].includes(booking.status) ? <ShareTrip key={`share:${session.user.id}:${tenantSlug}:${booking.bookingId}:${booking.driver?.driverNumber}`} bookingId={booking.bookingId} accessToken={session.access_token} /> : null}
               {supabase && session && ["accepted", "arrived", "in_progress"].includes(booking.status) ? <TripMessages
                 key={`messages:${session.user.id}:${tenantSlug}:${booking.bookingId}:${booking.driver?.driverNumber}`} client={supabase} bookingId={booking.bookingId} role="rider" /> : null}
               {supabase && session && ["accepted", "arrived"].includes(booking.status) ? <RiderPickupSharing

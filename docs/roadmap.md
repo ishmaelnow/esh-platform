@@ -6,10 +6,18 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Trusted-contact Share my trip is the current local work: Rider-created/revocable four-hour link,
+  minimal active status/fresh shared Driver location, anonymous recipient map, hash-only capability,
+  strict assignment/tenant lifecycle and no new SMS/notifications. Nine unit/API tests, minimal SQL
+  smoke, all 36 mobile checks across initial/final focused runs, types/lint and Rider/Driver builds
+  pass. Owner intended-only migration/release and physical acceptance pending.
+  See `architecture/trip-share-links.md` and `operations/trip-share-links-manual-test.md`.
+
 - Rider pickup identification refinement groups existing assigned Driver photo/name and vehicle
   description/license plate in Home/Current trip tracking. Prominent plate and missing-data fallbacks;
   existing authorization/photo lifecycle retained. All 33 mobile checks, final focused Home/Current
-  and compact-phone check, scoped lint and production build pass. Owner release pending. See
+  and compact-phone check, scoped lint and production build pass. Owner pushed 0297b3c and
+  confirmed device acceptance. See
   `architecture/rider-live-trip-tracking.md` and `operations/rider-live-trip-tracking-manual-test.md`.
 
 - Rider/Driver optional rating reminders implemented locally: one reminder ten minutes after a

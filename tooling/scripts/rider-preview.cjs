@@ -140,7 +140,7 @@ async function main() {
         throw new Error("The full shortcut row and map must fill the 414 × 896 viewport.");
       console.log("Verified 414 × 896 Rider home, y=714 bottom panel, location marker, and donut navigation.");
       if (process.argv.includes("--tests")) {
-        const testRun = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", "tests/e2e/rider-home.spec.ts", "--workers=1"],
+        const testRun = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", "tests/e2e/rider-home.spec.ts", "tests/e2e/rider-trip-share.spec.ts", "--workers=1"],
           { cwd: root, stdio: "inherit", env: { ...process.env, PLAYWRIGHT_BASE_URL: origin } });
         const code = await new Promise((resolve) => testRun.once("exit", resolve));
         if (code !== 0) throw new Error("Rider viewport browser tests failed.");

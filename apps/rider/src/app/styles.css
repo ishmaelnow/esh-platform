@@ -820,6 +820,18 @@ textarea:focus {
 .pickup-vehicle > div > span { font-size: 12px; }
 .pickup-identification .pickup-license-plate { display: inline-block; padding: 8px 12px; border: 1px solid #cdd6e0; border-radius: 8px; background: #f4f7fa; font-size: 20px; letter-spacing: 0.06em; overflow-wrap: anywhere; }
 .pickup-identification .pickup-check { font-size: 12px; line-height: 1.5; margin: 0; }
+.share-trip { margin-top: 16px; padding: 16px; background: #f5f8fc; color: #153258; border-radius: 14px; display: grid; gap: 12px; }
+.share-trip p, .share-trip h3 { margin: 0; }
+.share-trip summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+.share-trip-content { display: grid; gap: 12px; padding-top: 12px; }
+.share-trip-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.share-trip label { display: grid; gap: 8px; }
+.share-trip input { width: 100%; min-width: 0; font: inherit; color: #153258; padding: 12px; border-radius: 8px; border: 1px solid #cdd6e0; }
+.shared-trip-page { width: min(100%, 640px); margin: auto; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); color: #153258; }
+.shared-trip-map { position: relative; height: min(50dvh, 400px); min-height: 240px; border-radius: 16px; overflow: hidden; }
+.shared-trip-map > .rider-map-background { position: absolute; inset: 0; }
+.shared-trip-page .button.secondary { color: #153258; background: #edf2f8; }
+.share-trip .button.primary { background: #153258; color: white; }
 .map-shell > .tracking-home { max-height: calc(80dvh - max(128px, calc(env(safe-area-inset-top) + 104px)) - 20px); overflow-y: auto; overscroll-behavior: contain; }
 @media (max-width: 360px) {
   .map-shell > .tracking-home { display: block; }

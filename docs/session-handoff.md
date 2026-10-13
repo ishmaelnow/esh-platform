@@ -4,7 +4,29 @@ Last updated: 2026-10-12
 
 ## Current objective and checkpoint
 
-Current authorized objective: clearer Rider pickup identification using existing assignment data.
+Current authorized objective: optional trusted-contact Share my trip. No previous public sharing
+implementation was found. New local migration 20261012000100 adds private hash-only link storage,
+owned create/status/revoke, service-only minimal status/location projection and lifecycle cleanup.
+Rider Current trip has progressive explicit share/copy/replacement/stop controls; unauthenticated
+fragment-token page uses existing real map only for fresh consented Driver coordinates. Four-hour
+expiry, terminal/reassignment invalidation and no person/address/photo/payment/message disclosure.
+Driver change is only existing location-sharing explanation of trusted-contact visibility and stop.
+Local minimal PostgreSQL ownership/RLS/freshness/consent/expiry/replacement/cancellation/completion/
+reassignment smoke and nine unit/API tests pass. Browser suite: 35 passed initially; recipient map
+import failure corrected to the existing client module. Final three sharing checks pass after the
+map was contained below the heading (caught by screenshot inspection). This covers all 36 checks
+across runs, including the existing booking/payment/auth regressions. Shared types, scoped lint and
+final Rider/Driver production builds pass with existing warnings. Complete 414 x 896 Rider controls
+and recipient screenshots inspected and retained in ignored tmp/trip-share-evidence; recipient 320px
+overflow, stale-coordinate removal, transient recovery, invalid/ended tokens and owner failed-stop/
+reload/replacement state are checked. Physical Web Share and full Supabase/concurrency remain owner
+acceptance. Migration NOT applied; nothing pushed/deployed by Codex.
+Next: finish verification, owner intended-only dry run/apply, exact scoped Git commands and release,
+then controlled real-device acceptance. Read architecture/trip-share-links.md and its manual test.
+No new secret, cron, native build or notification event. Preserve generated configs and git/main.
+
+Pickup identification is owner-pushed 0297b3c and owner device-accepted (test pass).
+Previous objective: clearer Rider pickup identification using existing assignment data.
 Inspection confirmed photo/name already in tracking and vehicle details elsewhere. Local refinement
 groups them in Home/Current trip tracking with prominent license plate and unavailable-data fallback;
 duplicate Current trip vehicle line is removed. Existing Trips assignment, 88px private-photo rules,
@@ -14,8 +36,8 @@ height limit: 414 x 896 Home/Current screenshots, 320px overflow and Home bottom
 missing/broken photo, missing vehicle, arrival/start and completion removal. Scoped lint and final
 production Rider build/types pass with existing warnings. Screenshots inspected and retained under
 ignored tmp/pickup-identification-evidence. Physical-device acceptance remains owner work.
-No new migration, native build, credential or backend change. Next: owner scoped Git release,
-Rider Ready and real assigned-driver/vehicle identification check. No production/Git mutation by Codex.
+No new migration, native build, credential or backend change for identification; owner release and
+device check passed at 0297b3c. No production/Git mutation by Codex.
 
 Driver inline passenger ratings are owner-pushed as 3b971dd and owner device-accepted (pass).
 Previous objective: bring the same inline rating access to Driver Recent orders.

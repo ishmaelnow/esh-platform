@@ -1520,7 +1520,9 @@ export default function DriverHome() {
                 </div>
                 <p className="document-help">
                   Share only your current coordinate with tenant dispatch. Your Rider can see it
-                  only after you accept their active trip. ESH does not store your route history.
+                  only after you accept their active trip, and can share a temporary trip link with
+                  trusted contacts. Stopping location sharing also removes your location from those
+                  links. ESH does not store your route history.
                 </p>
                 <dl className="location-details">
                   <div>
