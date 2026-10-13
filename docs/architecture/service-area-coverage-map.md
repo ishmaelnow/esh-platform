@@ -18,6 +18,8 @@ changes the camera/rendered shapes, never saved center/radius, activation or Dri
 Missing/deleted selection falls back to all current areas; tenant map keys prevent retaining the
 previous tenant's map instance. Empty tenants retain their existing empty-state form without a map.
 Unsaved edits do not appear as saved coverage until the normal authorized save/refresh completes.
+Edit names the selected area in the existing form and scrolls/focuses its saved Radius field above
+the map. This makes widening coverage discoverable without changing save permissions or semantics.
 
 Dragging, zooming and rotation use the existing provider controls. Map attribution remains visible;
 controls have 44px targets. The responsive map is 360px high, 320px on compact widths; resizing

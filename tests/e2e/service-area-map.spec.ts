@@ -63,6 +63,17 @@ test("saved service-area boundaries display on an interactive map without modify
   await expect(page.getByRole("button", { name: "Edit", exact: true }).first()).toBeEnabled();
   await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   await expect(page.getByRole("spinbutton", { name: "Radius (km)", exact: true })).toHaveValue("25");
+  await expect(page.getByRole("spinbutton", { name: "Radius (km)", exact: true })).toBeFocused();
+  await expect(page.getByRole("spinbutton", { name: "Radius (km)", exact: true })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "Edit service area: TEST Dallas", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel edit", exact: true }).click();
+  await page.setViewportSize({ width: 414, height: 896 });
+  await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+  const radius = page.getByRole("spinbutton", { name: "Radius (km)", exact: true });
+  await expect(radius).toBeFocused(); await expect(radius).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Save service area", exact: true })).toBeInViewport();
+  await radius.fill("35");
+  await page.screenshot({ path: "test-results/admin-coverage-edit-414.png", fullPage: true });
   await page.getByRole("button", { name: "Cancel edit", exact: true }).click();
   expect(writes).toEqual([]);
   failMap = false; await region.getByRole("button", { name: "Retry coverage map", exact: true }).click();

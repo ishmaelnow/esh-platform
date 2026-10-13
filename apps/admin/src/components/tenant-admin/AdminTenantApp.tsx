@@ -2715,6 +2715,7 @@ function ServiceAreasPanel({
 }) {
   const draftStorageKey = `esh-service-area-draft:${summary.tenant.tenant_id}`;
   const [coverageAreaId, setCoverageAreaId] = useState("");
+  const radiusInput = useRef<HTMLInputElement>(null);
   const selectedCoverageAreaId = summary.serviceAreas.some((area) => area.service_area_id === coverageAreaId) ? coverageAreaId : "";
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -2723,6 +2724,11 @@ function ServiceAreasPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!showForm || !editingAreaId) return;
+    radiusInput.current?.scrollIntoView({ block: "center", behavior: "auto" });
+    radiusInput.current?.focus({ preventScroll: true });
+  }, [showForm, editingAreaId]);
   useEffect(() => {
     const restored = restoreServiceAreaDraft(window.sessionStorage.getItem(draftStorageKey));
     setFormDraft(restored.draft);
@@ -2843,7 +2849,8 @@ function ServiceAreasPanel({
         </button>
         {message ? <p className="notice">{message}</p> : null}
         {showForm ? (
-          <form className="settings-grid" onSubmit={(event) => void saveArea(event)}>
+          <form className="settings-grid" aria-label={editingAreaId ? "Edit service area" : "Add service area"} onSubmit={(event) => void saveArea(event)}>
+            {editingAreaId ? <h3 style={{ gridColumn: "1 / -1" }}>Edit service area: {summary.serviceAreas.find((area) => area.service_area_id === editingAreaId)?.name}</h3> : null}
             <label>
               Name
               <input
@@ -2899,6 +2906,7 @@ function ServiceAreasPanel({
                 max="1000"
                 min="0.01"
                 name="radiusKm"
+                ref={radiusInput}
                 onChange={(event) => updateDraft("radiusKm", event.target.value)}
                 placeholder="Example: 25"
                 required

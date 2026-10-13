@@ -10,8 +10,11 @@ remain independent of transportation-specific workflows.
   tenant center/radius records, individual/all-area selection, active/inactive styling and preserved
   edit controls. No polygon rules, schema, booking/dispatch changes or native rebuild. Geographic
   math, all 17 map unit tests, shared types, scoped lint and coverage UI check pass. Complete mobile/
-  desktop screenshots inspected; final Admin/Transportation builds pass. Owner source release and
-  actual-company visual acceptance remain pending. See
+  desktop screenshots inspected; final Admin/Transportation builds pass. Owner pushed `23cd1e6`
+  and confirms Dallas/Philadelphia circles visible, then reports PASS. A local Edit discoverability
+  fix now brings the saved radius field into view/focus and names the edited area; browser acceptance
+  passes, scoped lint and both production builds pass. Owner follow-up release/manual Edit acceptance
+  pending. No boundary-rule change. See
   `architecture/service-area-coverage-map.md` and `operations/service-area-coverage-map-manual-test.md`.
 
 - Assigned Rider average/count in Driver is owner-pushed at `938e078` and owner-accepted: the existing active-trip Dispatch

@@ -4,7 +4,22 @@ Last updated: 2026-10-13
 
 ## Current objective and checkpoint
 
-Current authorized objective: show existing coverage circles on a live Admin Service areas map
+Current authorized objective: fix Service area Edit discoverability (owner reports no actionable
+feature, then CONTINUE). Owner now confirms Dallas/Philadelphia circles visible and reports PASS
+at 23cd1e6; original missing-map report is resolved without a source/config/domain change.
+Inspection confirms Edit opened the existing form above the map without bringing it into view.
+Local fix scrolls/focuses its saved Radius field on edit and names the area in a full-width heading.
+No save semantics, permission, boundary, map behavior, endpoint or Rider/Driver change.
+Coverage browser check passes: desktop/mobile field focus and viewport, 414 x 896 Save visibility,
+saved 25km value, optional unsaved 35km entry and cancellation with no Settings mutation.
+Complete mobile edit screenshot inspected and retained in ignored tmp/service-area-map-evidence.
+Scoped lint and final Admin/Transportation production builds pass with existing warnings.
+Next: exact feature-only Git handover, owner hosted release and manual Edit/radius-save acceptance.
+No migration/native rebuild. No production radius was changed during local verification.
+Read architecture/service-area-coverage-map.md and operations/service-area-coverage-map-manual-test.md.
+Preserve generated configs, unknown git/main and acceptance docs; no production/Git mutation by Codex.
+
+Previous implementation checkpoint: show existing coverage circles on a live Admin Service areas map
 (owner go). This is visualization of saved center/radius rules, not new polygon coverage. Local
 ServiceAreaMap uses existing Mapbox/public configuration, geographic 6371km/128-segment circles,
 navy active/gray inactive and selection fitting one/all saved areas. Existing authorized summary

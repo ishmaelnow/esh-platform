@@ -13,6 +13,9 @@ migration, Codemagic rebuild or new secret. Use each project's existing public m
 4. Existing create/edit/deactivate/coverage-mode controls remain present. Merely viewing or moving
    the map must not save or activate anything. Do not change production boundaries just to test
    rendering; use controlled test data for mutation acceptance and restore settings afterward.
+   Edit must scroll to and focus the saved Radius field, with the area's name above the form.
+   Increase Radius (km), then Save service area to widen actual coverage; zooming does not save.
+   Cancel edit must not change saved coverage. Confirm at mobile and desktop widths.
 5. After a normal authorized save/refresh, the map should use saved values, not an unsaved draft.
    Switch companies: no old tenant circle remains. Empty companies show the existing empty state.
 6. Check 414 × 896, 320px and desktop for overflow, readable labels, complete circles, usable
