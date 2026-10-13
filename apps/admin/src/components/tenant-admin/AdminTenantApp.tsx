@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { type SupabaseAuthSession } from "@esh-platform/supabase";
-import { LiveTripMap } from "@esh-platform/maps/client";
+import { LiveTripMap, ServiceAreaMap } from "@esh-platform/maps/client";
 import { createAdminBrowserClient } from "@/lib/browser-client";
 import { DriverPreordersPanel } from "./DriverPreordersPanel";
 import { TripSupportPanel } from "./TripSupportPanel";
@@ -2714,6 +2714,8 @@ function ServiceAreasPanel({
   summary: TenantSummary;
 }) {
   const draftStorageKey = `esh-service-area-draft:${summary.tenant.tenant_id}`;
+  const [coverageAreaId, setCoverageAreaId] = useState("");
+  const selectedCoverageAreaId = summary.serviceAreas.some((area) => area.service_area_id === coverageAreaId) ? coverageAreaId : "";
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formDraft, setFormDraft] = useState(emptyServiceAreaDraft);
@@ -2935,6 +2937,17 @@ function ServiceAreasPanel({
           </form>
         ) : null}
       </section>
+      {summary.serviceAreas.length > 0 ? <section className="panel coverage-map-panel" aria-label="Coverage map">
+        <PanelHeader title="Coverage map" description="Saved geographic boundaries. Navy is active; gray is inactive. Viewing the map does not change coverage." />
+        <label>Coverage area<select aria-label="Coverage area" value={selectedCoverageAreaId} onChange={(event) => setCoverageAreaId(event.target.value)}>
+          <option value="">All service areas</option>
+          {summary.serviceAreas.map((area) => <option value={area.service_area_id} key={area.service_area_id}>{area.name} · {area.radius_km} km · {area.status}</option>)}
+        </select></label>
+        <ServiceAreaMap key={summary.tenant.tenant_id} accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
+          areas={summary.serviceAreas.filter((area) => !selectedCoverageAreaId || area.service_area_id === selectedCoverageAreaId).map((area) => ({
+            id: area.service_area_id, name: area.name, latitude: area.center_latitude, longitude: area.center_longitude, radiusKm: area.radius_km, active: area.status === "active",
+          }))} />
+      </section> : null}
       {summary.serviceAreas.length === 0 ? (
         <section className="panel">
           <p className="muted">No service areas are configured for this tenant.</p>

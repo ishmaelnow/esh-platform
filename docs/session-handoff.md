@@ -4,7 +4,27 @@ Last updated: 2026-10-13
 
 ## Current objective and checkpoint
 
-Current authorized objective: assigned Rider average/count beside Rider photo in Driver (owner go,
+Current authorized objective: show existing coverage circles on a live Admin Service areas map
+(owner go). This is visualization of saved center/radius rules, not new polygon coverage. Local
+ServiceAreaMap uses existing Mapbox/public configuration, geographic 6371km/128-segment circles,
+navy active/gray inactive and selection fitting one/all saved areas. Existing authorized summary
+only; no GPS, mutation, schema, RPC, booking/dispatch or Rider/Driver runtime change. Saved forms
+remain intact. Missing provider/config has a readable fallback. No migration or native rebuild.
+Local verification complete: all 17 map unit tests, shared maps types, scoped lint and final coverage
+browser check pass. The browser check exercises selection, real SDK drag/zoom, attribution, 414px/
+320px/desktop sizing, existing Edit values without writes, provider failure and explicit Retry.
+Initial checks found an ambiguous selector label, fixture attribution omission and compact selector
+overflow; corrected and final rerun passed. Resize refits saved boundaries. Final Admin and
+Transportation production builds pass with existing warnings; Transportation used nonsecret fixture
+process env only, no populated env-file edits. Complete mobile/desktop screenshots inspected and
+retained under ignored tmp/service-area-map-evidence. Browser basemap is isolated: production real
+streets/config/network and actual-company circles remain owner acceptance. Next: exact feature-only
+Git handover, owner push, Admin/Transportation Ready and controlled visual acceptance. No migration
+or native rebuild. No Git/deployment/production mutation by Codex.
+Read architecture/service-area-coverage-map.md and operations/service-area-coverage-map-manual-test.md.
+Preserve generated configs, unknown git/main and prior acceptance docs. No Git/production mutation.
+
+Completed objective: assigned Rider average/count beside Rider photo in Driver (owner go,
 then continue). Owner confirms Rider-side Driver rating/photo visible at 511d0e1; Rider photo slot
 in Driver works but this account has not uploaded a real photo. Do not change approved Rider runtime.
 Local 20261013000400_assigned_rider_rating.sql appends riderRatingSummary only to actual active-trip
@@ -21,11 +41,15 @@ pass with existing warnings. Complete 414 x 896 photo and initials-fallback scre
 and retained under ignored tmp/assigned-rider-rating-evidence; 320px overflow, refresh, passenger
 change, missing/invalid vs confirmed zero and active lifecycle removal are checked. Rider runtime
 is unchanged. Physical-device/real-account and full Supabase/concurrency acceptance remain owner
-work. Next: exact feature-only Git handover, owner push, Driver
-Ready and controlled acceptance. No native rebuild or new environment variable.
+work beyond the reported acceptance. Owner pushed 938e078 and reports pass for the Rider rating
+display in Driver Active trip. Do not repeat migration or feature staging. Next: select the next
+roadmap item; no additional implementation authorized. This acceptance documentation remains local
+for a future owner commit. No native rebuild or new environment variable.
 Read architecture/assigned-rider-rating.md and operations/assigned-rider-rating-manual-test.md.
 Preserve generated configs, unknown git/main and earlier acceptance docs. No production/Git mutation
-by Codex. Share-my-trip physical test remains pending; Student service remains brainstorming.
+by Codex. Owner now reports pass for Share my trip after locating its controls in Rider Active trip.
+The pending sharing acceptance checkpoint is closed for the reported test; do not infer additional
+security/concurrency scenarios were exercised. Student service remains brainstorming.
 
 Completed objective: assigned Driver average/count in Rider (owner said go, then continue).
 Local additive 20261013000300_assigned_driver_rating.sql appends ratingSummary to the actual owned

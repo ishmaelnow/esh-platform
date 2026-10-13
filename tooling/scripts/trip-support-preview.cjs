@@ -11,7 +11,8 @@ async function main() {
   const server = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "dev", "--port", String(port)], {
     cwd: path.join(root, "apps/transportation"), stdio: ["ignore", "pipe", "pipe"],
     env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: "https://support-preview.invalid", NEXT_PUBLIC_SUPABASE_ANON_KEY: "preview-only",
-      NEXT_PUBLIC_ADMIN_SURFACE: "transportation", NEXT_TELEMETRY_DISABLED: "1" },
+      NEXT_PUBLIC_ADMIN_SURFACE: "transportation", NEXT_TELEMETRY_DISABLED: "1",
+      ...(process.argv.includes("--coverage") ? { NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: "pk.preview-only" } : {}) },
   });
   let logs = "";
   const capture = (chunk) => { logs = (logs + chunk.toString()).slice(-6000); };
@@ -25,7 +26,8 @@ async function main() {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     if (!ready) throw new Error(`Transportation preview did not start.\n${logs}`);
-    const testFile = process.argv.includes("--ratings") ? "tests/e2e/rating-appeals-admin.spec.ts" : "tests/e2e/trip-support-admin.spec.ts";
+    const testFile = process.argv.includes("--coverage") ? "tests/e2e/service-area-map.spec.ts"
+      : process.argv.includes("--ratings") ? "tests/e2e/rating-appeals-admin.spec.ts" : "tests/e2e/trip-support-admin.spec.ts";
     const child = spawn(process.execPath, [require.resolve("@playwright/test/cli"), "test", testFile, "--workers=1"],
       { cwd: root, stdio: "inherit", env: { ...process.env, PLAYWRIGHT_BASE_URL: origin } });
     const code = await new Promise((resolve) => child.once("exit", resolve));

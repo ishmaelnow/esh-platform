@@ -6,12 +6,20 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
-- Assigned Rider average/count in Driver is current local work: the existing active-trip Dispatch
+- Saved Admin coverage circles are current local work: a read-only live street map of existing
+  tenant center/radius records, individual/all-area selection, active/inactive styling and preserved
+  edit controls. No polygon rules, schema, booking/dispatch changes or native rebuild. Geographic
+  math, all 17 map unit tests, shared types, scoped lint and coverage UI check pass. Complete mobile/
+  desktop screenshots inspected; final Admin/Transportation builds pass. Owner source release and
+  actual-company visual acceptance remain pending. See
+  `architecture/service-area-coverage-map.md` and `operations/service-area-coverage-map-manual-test.md`.
+
+- Assigned Rider average/count in Driver is owner-pushed at `938e078` and owner-accepted: the existing active-trip Dispatch
   projection supplies a private, tenant/profile-scoped disclosed aggregate beside the Rider photo.
   No offer/preorder/history exposure or approved Rider runtime change. Migration `20261013000400`
   is owner-applied. Minimal actual-dispatch SQL, both label contracts, scoped lint, all 37 Driver
   mobile checks and production build/types pass; complete 414 x 896 screenshots inspected.
-  Owner source release and device acceptance remain pending. See `architecture/assigned-rider-rating.md` and
+  Owner reports pass for the rating display. See `architecture/assigned-rider-rating.md` and
   `operations/assigned-rider-rating-manual-test.md`.
 
 - Assigned Driver average/count in Rider is current local work: the existing owned portal returns
@@ -50,7 +58,7 @@ remain independent of transportation-specific workflows.
   minimal active status/fresh shared Driver location, anonymous recipient map, hash-only capability,
   strict assignment/tenant lifecycle and no new SMS/notifications. Nine unit/API tests, minimal SQL
   smoke, all 36 mobile checks across initial/final focused runs, types/lint and Rider/Driver builds
-  pass. Owner applied 20261012000100 and pushed 286000b. Physical sharing acceptance remains pending.
+  pass. Owner applied 20261012000100 and pushed 286000b. Owner now reports Share my trip passed.
   See `architecture/trip-share-links.md` and `operations/trip-share-links-manual-test.md`.
 
 - Rider pickup identification refinement groups existing assigned Driver photo/name and vehicle
