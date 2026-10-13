@@ -36,5 +36,9 @@ Only accepted/arrived/in-progress trips render the identification card. Missing 
 explicitly unavailable, never substituted. The pre-pickup plate-check hint disappears after start.
 Duplicate vehicle text beneath Current trip is removed; Trips retains its existing assignment data.
 
+[Assigned Driver rating](assigned-driver-rating.md) adds a disclosed tenant-scoped average/count
+beside the Driver photo/name through the existing portal response. This follow-up requires its
+additive migration; it introduces no new tracking request, timer or native permission.
+
 No backend authorization or tenant boundaries change. Actual physical-device movement, consent
 revocation, and network recovery require owner acceptance in addition to local mocked tests.

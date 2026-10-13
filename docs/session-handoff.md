@@ -4,7 +4,29 @@ Last updated: 2026-10-13
 
 ## Current objective and checkpoint
 
-Current authorized objective: received-rating and review-decision notifications (owner said GO).
+Current authorized objective: assigned Driver average/count in Rider (owner said go, then continue).
+Local additive 20261013000300_assigned_driver_rating.sql appends ratingSummary to the actual owned
+portal Driver projection through a private non-client-callable aggregate helper. Active ownership/
+tenant/assignment only; disclosed, non-hidden completed Rider overall scores, same tenant/profile,
+all-time mean rounded to two decimals. No raw historical data, general Driver lookup or Driver app
+change. Home/Current trip put it beside photo/name; confirmed zero is Not yet rated, missing/invalid
+is Rating unavailable. Existing portal refresh supplies assignment and summary together; no new
+timer, request, cache, auth/payment/matching/notification/native change. Owner supplied successful
+application of migration 20261013000300; do not reapply it.
+Local verification complete: minimal actual-portal/reputation SQL ownership/disclosure/moderation/
+count/lifecycle smoke (including final active-only projection) and label validation test pass. All
+39 Rider mobile checks pass, including refresh/reassignment, photo fallback, unavailable vs zero,
+active lifecycle and 320px overflow. Scoped lint and Rider production build/types pass with existing
+warnings. Complete 414 x 896 Home/Current screenshots inspected and retained under ignored
+tmp/assigned-driver-rating-evidence. Physical-device/real-account and full Supabase/concurrency
+acceptance remain owner work. Next: feature-only Git
+handover, Rider Ready and controlled acceptance. No native rebuild or new environment variable.
+Read architecture/assigned-driver-rating.md and operations/assigned-driver-rating-manual-test.md.
+Preserve generated configs, unknown git/main and previous acceptance documentation. No Git or
+production mutation by Codex. Share-my-trip physical acceptance remains pending; Student service
+remains brainstorming only.
+
+Completed objective: received-rating and review-decision notifications (owner said GO).
 New local 20261013000200_rating_update_notifications.sql reuses outbox/native attempts and current
 Admin minute worker. No historical sweep. One generic recipient-owned event per rating/appeal;
 received scores wait for mutual submission or seven days; decisions go only to requester. Existing
@@ -22,8 +44,12 @@ targets and 320px overflow. Initial Rider build caught an exact-optional-prop ty
 Final Admin, Rider and Driver production builds pass with existing warnings. All four complete
 414 x 896 received/decision screenshots inspected and retained in ignored tmp/rating-update-evidence.
 Physical delivery, real-account RLS, seven-day natural timing and full Supabase/concurrency remain
-owner acceptance. Next: exact feature-only Git handover, owner push, Admin/
-Rider/Driver Ready and controlled notification acceptance. No production/Git mutation by Codex.
+owner acceptance. Owner pushed source as 3b7a905; supplied Git output confirms main/origin alignment.
+Owner reports RATING ALERT PASS and then pass for the review-decision receipt/tap check.
+Both notification acceptance checks are complete for the reported tests at owner-pushed 3b7a905.
+Assigned Driver average/count is now authorized and in progress above. Do not reapply the migration
+or repeat source staging. Release-status documentation remains local for a future owner commit.
+No production/Git mutation by Codex.
 See architecture/rating-update-notifications.md and operations/rating-update-notifications-manual-test.md.
 Preserve generated configs, unknown git/main and earlier local acceptance documentation.
 

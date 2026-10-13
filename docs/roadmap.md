@@ -6,12 +6,21 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Assigned Driver average/count in Rider is current local work: the existing owned portal returns
+  only the active assignment's disclosed, non-hidden tenant-scoped aggregate. Home/Current trip
+  show it beside the photo, with confirmed unrated and unavailable fallbacks. Migration
+  `20261013000300` is owner-applied. Minimal actual-portal SQL, label tests, all 39 Rider mobile
+  checks, scoped lint and production build/types pass; complete 414 x 896 screenshots inspected.
+  Owner source release and device acceptance remain pending. See `architecture/assigned-driver-rating.md` and
+  `operations/assigned-driver-rating-manual-test.md`.
+
 - Received-rating and review-decision alerts are the current local work: disclosure-aware delayed
   events, requester-only decisions, existing email/device preferences and worker, generic payloads,
   exact owned trip-detail routing and duplicate prevention. Migration `20261013000200` is owner-applied.
   Minimal SQL and 49 notification/routing unit checks pass. All 74 mobile checks pass across full/
   focused runs, scoped lint and Admin/Rider/Driver production builds pass; complete 414 x 896
-  screenshots inspected. Owner source release and physical notification acceptance remain pending.
+  screenshots inspected. Owner pushed `3b7a905`; hosted readiness and physical notification
+  acceptance is owner-confirmed for both received-rating and review-decision receipt/tap checks.
   See `architecture/rating-update-notifications.md` and
   `operations/rating-update-notifications-manual-test.md`.
 

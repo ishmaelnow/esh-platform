@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { formatRouteDuration, validCoordinates } from "@esh-platform/maps";
 import { trackingMessage, type TripLocation } from "../lib/trip-tracking";
 import { TripParticipantPhoto } from "./TripParticipantPhoto";
+import { driverRatingLabel } from "../lib/driver-rating";
 
 export function RiderTripTracking({ booking, location, accessToken, sessionToken, onOpen }: {
   booking: { bookingId: string; status: string; pickupLatitude?: number | null; pickupLongitude?: number | null;
-    destinationLatitude?: number | null; destinationLongitude?: number | null; driver: { displayName: string } | null;
+    destinationLatitude?: number | null; destinationLongitude?: number | null; driver: { displayName: string; ratingSummary?: { average: number | null; count: number } | null } | null;
     vehicle?: { make: string; model: string; modelYear: number; color: string; licensePlate: string } | null };
   location: TripLocation | null; accessToken?: string | undefined; sessionToken?: string | undefined; onOpen?: () => void;
 }) {
@@ -40,8 +41,9 @@ export function RiderTripTracking({ booking, location, accessToken, sessionToken
       {booking.driver && ["accepted", "arrived", "in_progress"].includes(booking.status) ? <section className="pickup-identification" aria-label="Your driver and vehicle">
         <p className="pickup-identification-label">Your driver</p>
         {sessionToken
-        ? <TripParticipantPhoto bookingId={booking.bookingId} name={booking.driver.displayName} accessToken={sessionToken} />
-        : <p>{booking.driver.displayName}</p>}
+        ? <TripParticipantPhoto bookingId={booking.bookingId} name={booking.driver.displayName} accessToken={sessionToken}
+          ratingLabel={driverRatingLabel(booking.driver.ratingSummary)} />
+        : <div><p>{booking.driver.displayName}</p><p className="driver-rating-summary">{driverRatingLabel(booking.driver.ratingSummary)}</p></div>}
         {booking.vehicle ? <div className="pickup-vehicle">
           <p>{[booking.vehicle.color, booking.vehicle.modelYear, booking.vehicle.make, booking.vehicle.model].filter(Boolean).join(" ")}</p>
           {booking.vehicle.licensePlate?.trim() ? <div><span>License plate</span><strong className="pickup-license-plate">{booking.vehicle.licensePlate}</strong></div>

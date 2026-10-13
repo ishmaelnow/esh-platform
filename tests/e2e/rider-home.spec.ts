@@ -49,6 +49,57 @@ test("Rider unread badges clear only a viewed response and survive reload", asyn
 test("Rider received rating review preserves failed drafts and shows the Admin decision", async ({ page }) => { await verifyRatingReview(page, "rider"); });
 test("Rider rating update alerts open the exact received rating and review decision", async ({ page }) => { await verifyRatingUpdates(page, "rider"); });
 
+test("assigned Driver rating stays beside the photo, refreshes with assignment and disappears outside the active trip", async ({ page }) => {
+  const photos = await photoFixture(page);
+  let status = "accepted", driverName = "TEST Rated Driver", driverNumber = "1";
+  let ratingSummary: unknown = { average: 4.25, count: 4 };
+  await page.route("**/rest/v1/rpc/my_rider_portal", (route) => route.fulfill({ json: { tenant, profile, serviceAreas: [], bookings: [{
+    bookingId: "90000000-0000-4000-8000-000000000001", status, createdAt: new Date().toISOString(),
+    pickupAddress: "TEST pickup", destinationAddress: "TEST destination",
+    driver: { displayName: driverName, driverNumber, ratingSummary },
+    vehicle: { make: "Toyota", model: "Camry", modelYear: 2024, color: "Silver", licensePlate: "TEST-123" },
+  }] } }));
+  await page.reload();
+  const identification = page.getByRole("region", { name: "Your driver and vehicle" });
+  await expect(identification.getByText("★ 4.25 · 4 ratings", { exact: true })).toBeVisible();
+  await photos.verify(driverName, "rider-assigned-driver-rating-home-414.png", 88);
+  await expect(page.getByRole("button", { name: "Request ride", exact: true })).toBeInViewport();
+  await page.getByRole("button", { name: "Track ride", exact: true }).click();
+  await expect(identification.getByText("★ 4.25 · 4 ratings", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/rider-assigned-driver-rating-trip-414.png", fullPage: true });
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(identification.getByText("★ 4.25 · 4 ratings", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 414, height: 896 });
+  ratingSummary = { average: 4.6, count: 5 };
+  await page.getByRole("button", { name: "Refresh", exact: true }).first().click();
+  await expect(identification.getByText("★ 4.60 · 5 ratings", { exact: true })).toBeVisible();
+  await expect(identification).not.toContainText("4.25");
+  driverName = "TEST New Driver"; driverNumber = "2"; ratingSummary = { average: null, count: 0 };
+  await page.getByRole("button", { name: "Refresh", exact: true }).first().click();
+  await expect(identification).toContainText(driverName);
+  await expect(identification.getByText("Not yet rated", { exact: true })).toBeVisible();
+  await expect(identification).not.toContainText("4.60");
+  photos.mode("missing"); ratingSummary = { average: 5, count: 1 }; await page.reload();
+  await expect(identification.locator(".trip-participant-avatar")).toHaveText("TN");
+  await expect(identification.getByText("★ 5.00 · 1 rating", { exact: true })).toBeVisible();
+  for (const summary of [null, { average: 9, count: 1 }]) {
+    ratingSummary = summary; await page.reload();
+    await expect(identification.getByText("Rating unavailable", { exact: true })).toBeVisible();
+    await expect(identification.getByText("Not yet rated", { exact: true })).toHaveCount(0);
+  }
+  ratingSummary = { average: 4.25, count: 4 };
+  for (const phase of ["arrived", "in_progress"]) {
+    status = phase; await page.reload();
+    await expect(identification.getByText("★ 4.25 · 4 ratings", { exact: true })).toBeVisible();
+  }
+  for (const phase of ["completed", "cancelled", "offered"]) {
+    status = phase; await page.reload();
+    await expect(identification).toHaveCount(0);
+    await expect(page.getByText("★ 4.25 · 4 ratings", { exact: true })).toHaveCount(0);
+  }
+});
+
 test("Rider creates, shares and revokes trip links without changing the booking", async ({ page }) => {
   const bookingId = "90000000-0000-4000-8000-000000000001", token = "A".repeat(43);
   let active = false, failStop = true;

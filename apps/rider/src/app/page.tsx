@@ -99,7 +99,7 @@ type RiderBooking = {
   refundAmountMinor?: number | null;
   refundCurrencyCode?: string | null;
   refundStatus?: string | null;
-  driver: { displayName: string; driverNumber: string } | null;
+  driver: { displayName: string; driverNumber: string; ratingSummary?: { average: number | null; count: number } | null } | null;
   vehicle: {
     vehicleNumber: string;
     make: string;

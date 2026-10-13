@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-export function TripParticipantPhoto({ bookingId, name, accessToken }: {
-  bookingId: string; name: string; accessToken: string;
+export function TripParticipantPhoto({ bookingId, name, accessToken, ratingLabel }: {
+  bookingId: string; name: string; accessToken: string; ratingLabel?: string;
 }) {
   const key = `${bookingId}:${name}:${accessToken}`;
   const [photo, setPhoto] = useState<{ key: string; url: string; expires: number } | null>(null);
@@ -43,7 +43,8 @@ export function TripParticipantPhoto({ bookingId, name, accessToken }: {
       {/* Private signed URLs bypass image optimization and are never persisted. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {url ? <img src={url} alt="" referrerPolicy="no-referrer" onError={() => setPhoto(null)} /> : initials}
-    </span><strong>{name}</strong>
+    </span><span className="trip-participant-details"><strong>{name}</strong>
+      {ratingLabel ? <span className="driver-rating-summary" aria-label={`Driver rating: ${ratingLabel}`}>{ratingLabel}</span> : null}</span>
   </span>;
 }
 

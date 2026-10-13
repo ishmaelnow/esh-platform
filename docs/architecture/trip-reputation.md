@@ -35,4 +35,5 @@ still see their own submission. Ratings do not affect dispatch eligibility or ma
 Optional post-trip reminders are documented in [Trip rating reminders](trip-rating-reminders.md).
 Rating review requests complete the existing appeals foundation; see [Rating review](rating-appeal-review.md).
 Received-rating and review-decision alerts are documented in [Rating updates](rating-update-notifications.md).
-Aggregate public profiles and rating-based matching remain deferred.
+The active assigned Driver aggregate is documented in [Assigned Driver rating](assigned-driver-rating.md).
+General public profiles and rating-based matching remain deferred.
