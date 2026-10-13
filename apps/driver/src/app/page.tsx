@@ -30,6 +30,7 @@ import { activityLabels } from "../lib/daily-activity";
 import { DriverRiderLocation } from "./DriverRiderLocation";
 import { TripMessages } from "./TripMessages";
 import { TripParticipantPhoto } from "./TripParticipantPhoto";
+import { riderRatingLabel } from "../lib/rider-rating";
 import { openDriverNavigation } from "../lib/embedded-navigation";
 import {
   availabilityBlockerDetails,
@@ -142,6 +143,7 @@ type DriverDispatchOffer = {
 };
 
 type DriverTrip = {
+  riderRatingSummary?: { average: number | null; count: number } | null;
   bookingId: string;
   customerName: string;
   customerPhone: string | null;
@@ -1702,7 +1704,8 @@ export default function DriverHome() {
                       </span>
                     </div>
                     {session && ["accepted", "arrived", "in_progress"].includes(trip.status)
-                      ? <TripParticipantPhoto bookingId={trip.bookingId} name={trip.customerName} accessToken={session.access_token} />
+                      ? <TripParticipantPhoto bookingId={trip.bookingId} name={trip.customerName} accessToken={session.access_token}
+                        ratingLabel={riderRatingLabel(trip.riderRatingSummary)} />
                       : <span>Customer: {trip.customerName}</span>}
                     {trip.customerPhone ? <span>Contact: {trip.customerPhone}</span> : null}
                     <span>Pickup: {trip.pickupAddress}</span>

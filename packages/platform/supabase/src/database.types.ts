@@ -3029,6 +3029,7 @@ export type Database = {
       rating_alert_current: { Args: { notification_value: string }; Returns: boolean }
       reputation_alert_current: { Args: { notification_value: string }; Returns: boolean }
       rider_assigned_driver_rating: { Args: { booking_value: string }; Returns: Json }
+      driver_assigned_rider_rating: { Args: { booking_value: string }; Returns: Json }
       my_driver_payout_account: { Args: never; Returns: Json }
       my_driver_bank_payouts: { Args: never; Returns: Json }
       record_driver_bank_payout_internal: {

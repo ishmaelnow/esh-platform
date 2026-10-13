@@ -6,12 +6,20 @@ remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
 
+- Assigned Rider average/count in Driver is current local work: the existing active-trip Dispatch
+  projection supplies a private, tenant/profile-scoped disclosed aggregate beside the Rider photo.
+  No offer/preorder/history exposure or approved Rider runtime change. Migration `20261013000400`
+  is owner-applied. Minimal actual-dispatch SQL, both label contracts, scoped lint, all 37 Driver
+  mobile checks and production build/types pass; complete 414 x 896 screenshots inspected.
+  Owner source release and device acceptance remain pending. See `architecture/assigned-rider-rating.md` and
+  `operations/assigned-rider-rating-manual-test.md`.
+
 - Assigned Driver average/count in Rider is current local work: the existing owned portal returns
   only the active assignment's disclosed, non-hidden tenant-scoped aggregate. Home/Current trip
   show it beside the photo, with confirmed unrated and unavailable fallbacks. Migration
   `20261013000300` is owner-applied. Minimal actual-portal SQL, label tests, all 39 Rider mobile
   checks, scoped lint and production build/types pass; complete 414 x 896 screenshots inspected.
-  Owner source release and device acceptance remain pending. See `architecture/assigned-driver-rating.md` and
+  Owner pushed `511d0e1` and confirms seeing Driver rating/photo in Rider. See `architecture/assigned-driver-rating.md` and
   `operations/assigned-driver-rating-manual-test.md`.
 
 - Received-rating and review-decision alerts are the current local work: disclosure-aware delayed

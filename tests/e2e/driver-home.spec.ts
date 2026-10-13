@@ -28,6 +28,57 @@ test("Driver unread badges clear only a viewed response and survive reload", asy
 test("Driver received rating review preserves failed drafts and shows the Admin decision", async ({ page }) => { await verifyRatingReview(page, "driver"); });
 test("Driver rating update alerts open the exact received rating and review decision", async ({ page }) => { await verifyRatingUpdates(page, "driver"); });
 
+test("assigned Rider rating stays beside the photo, refreshes with the passenger and ends with the active trip", async ({ page }) => {
+  const photos = await photoFixture(page);
+  let status = "accepted", customerName = "TEST Rated Rider";
+  let riderRatingSummary: unknown = { average: 4.25, count: 4 };
+  await page.route("**/rest/v1/rpc/my_driver_dispatch", (route) => route.fulfill({ json: { offers: [],
+    trips: ["accepted", "arrived", "in_progress"].includes(status) ? [{
+      bookingId: "90000000-0000-4000-8000-000000000001", customerName, customerPhone: null,
+      pickupAddress: "TEST pickup", destinationAddress: "TEST destination", notes: null,
+      serviceAreaName: "TEST area", status, riderRatingSummary, pickupLatitude: null, pickupLongitude: null,
+      destinationLatitude: null, destinationLongitude: null, fareCurrencyCode: "USD", fareAmountMinor: 1200,
+    }] : [],
+  } }));
+  await page.goto("/?view=dispatch");
+  const participant = page.locator(".trip-participant");
+  await expect(participant.getByText("★ 4.25 · 4 ratings", { exact: true })).toBeVisible();
+  await photos.verify(customerName, "driver-assigned-rider-rating-414.png");
+  await expect(page.getByRole("button", { name: "Mark arrived", exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(participant.getByText("★ 4.25 · 4 ratings", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 414, height: 896 });
+  riderRatingSummary = { average: 4.6, count: 5 };
+  await page.getByRole("button", { name: "Refresh dispatch", exact: true }).click();
+  await expect(participant.getByText("★ 4.60 · 5 ratings", { exact: true })).toBeVisible();
+  await expect(participant).not.toContainText("4.25");
+  customerName = "TEST New Rider"; riderRatingSummary = { average: null, count: 0 };
+  await page.getByRole("button", { name: "Refresh dispatch", exact: true }).click();
+  await expect(participant).toContainText(customerName);
+  await expect(participant.getByText("Not yet rated", { exact: true })).toBeVisible();
+  await expect(participant).not.toContainText("4.60");
+  photos.mode("missing"); riderRatingSummary = { average: 5, count: 1 }; await page.reload();
+  await expect(participant.locator(".trip-participant-avatar")).toHaveText("TN");
+  await expect(participant.getByText("★ 5.00 · 1 rating", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/driver-assigned-rider-rating-fallback-414.png", fullPage: true });
+  for (const summary of [null, { average: 9, count: 1 }]) {
+    riderRatingSummary = summary; await page.reload();
+    await expect(participant.getByText("Rating unavailable", { exact: true })).toBeVisible();
+    await expect(participant.getByText("Not yet rated", { exact: true })).toHaveCount(0);
+  }
+  riderRatingSummary = { average: 4.25, count: 4 };
+  for (const phase of ["arrived", "in_progress"]) {
+    status = phase; await page.reload();
+    await expect(participant.getByText("★ 4.25 · 4 ratings", { exact: true })).toBeVisible();
+  }
+  for (const phase of ["completed", "cancelled", "offered"]) {
+    status = phase; await page.reload();
+    await expect(participant).toHaveCount(0);
+    await expect(page.getByText("★ 4.25 · 4 ratings", { exact: true })).toHaveCount(0);
+  }
+});
+
 test("Driver rating reminder opens only the requested owned form and handles submitted or unavailable trips", async ({ page }) => {
   await verifyRatingReminder(page, "driver");
 });

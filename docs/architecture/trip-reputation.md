@@ -36,4 +36,5 @@ Optional post-trip reminders are documented in [Trip rating reminders](trip-rati
 Rating review requests complete the existing appeals foundation; see [Rating review](rating-appeal-review.md).
 Received-rating and review-decision alerts are documented in [Rating updates](rating-update-notifications.md).
 The active assigned Driver aggregate is documented in [Assigned Driver rating](assigned-driver-rating.md).
+The matching active Rider aggregate in Driver is documented in [Assigned Rider rating](assigned-rider-rating.md).
 General public profiles and rating-based matching remain deferred.

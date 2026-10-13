@@ -4,7 +4,30 @@ Last updated: 2026-10-13
 
 ## Current objective and checkpoint
 
-Current authorized objective: assigned Driver average/count in Rider (owner said go, then continue).
+Current authorized objective: assigned Rider average/count beside Rider photo in Driver (owner go,
+then continue). Owner confirms Rider-side Driver rating/photo visible at 511d0e1; Rider photo slot
+in Driver works but this account has not uploaded a real photo. Do not change approved Rider runtime.
+Local 20261013000400_assigned_rider_rating.sql appends riderRatingSummary only to actual active-trip
+my_driver_dispatch projection, through a private helper. Active current Driver/tenant/person/Rider
+ownership; same tenant/profile disclosed, non-hidden completed Driver overall scores. No general
+Rider lookup, other Drivers' historical details, offer/preorder/history exposure or matching effect.
+Driver photo/name shows mean/count; confirmed zero is Not yet rated, unavailable/invalid is Rating
+unavailable. Existing dispatch snapshot/refresh supplies assignment and summary together. No new
+request/timer/cache/auth/payment/notification/native behavior. Owner supplied successful application
+of migration 20261013000400; do not reapply it.
+Local verification complete: minimal actual-dispatch/reputation SQL, both rating-label validation
+tests, scoped Driver lint and all 37 Driver mobile checks pass. Final Driver production build/types
+pass with existing warnings. Complete 414 x 896 photo and initials-fallback screenshots inspected
+and retained under ignored tmp/assigned-rider-rating-evidence; 320px overflow, refresh, passenger
+change, missing/invalid vs confirmed zero and active lifecycle removal are checked. Rider runtime
+is unchanged. Physical-device/real-account and full Supabase/concurrency acceptance remain owner
+work. Next: exact feature-only Git handover, owner push, Driver
+Ready and controlled acceptance. No native rebuild or new environment variable.
+Read architecture/assigned-rider-rating.md and operations/assigned-rider-rating-manual-test.md.
+Preserve generated configs, unknown git/main and earlier acceptance docs. No production/Git mutation
+by Codex. Share-my-trip physical test remains pending; Student service remains brainstorming.
+
+Completed objective: assigned Driver average/count in Rider (owner said go, then continue).
 Local additive 20261013000300_assigned_driver_rating.sql appends ratingSummary to the actual owned
 portal Driver projection through a private non-client-callable aggregate helper. Active ownership/
 tenant/assignment only; disclosed, non-hidden completed Rider overall scores, same tenant/profile,
@@ -19,8 +42,8 @@ count/lifecycle smoke (including final active-only projection) and label validat
 active lifecycle and 320px overflow. Scoped lint and Rider production build/types pass with existing
 warnings. Complete 414 x 896 Home/Current screenshots inspected and retained under ignored
 tmp/assigned-driver-rating-evidence. Physical-device/real-account and full Supabase/concurrency
-acceptance remain owner work. Next: feature-only Git
-handover, Rider Ready and controlled acceptance. No native rebuild or new environment variable.
+acceptance remain owner work beyond reported checks. Owner pushed 511d0e1 and confirms Driver
+rating/photo visible in Rider. No native rebuild or new environment variable.
 Read architecture/assigned-driver-rating.md and operations/assigned-driver-rating-manual-test.md.
 Preserve generated configs, unknown git/main and previous acceptance documentation. No Git or
 production mutation by Codex. Share-my-trip physical acceptance remains pending; Student service
