@@ -17,6 +17,11 @@ migration, Codemagic rebuild or new secret. Use each project's existing public m
    Increase Radius (km), then Save service area to widen actual coverage; zooming does not save.
    Cancel edit must not change saved coverage. Confirm at mobile and desktop widths.
 5. After a normal authorized save/refresh, the map should use saved values, not an unsaved draft.
+   To resize visually, select one Coverage area and click Resize circle. Drag its arrow handle
+   outward/inward: the dashed preview and radius readout change, but the solid saved circle remains.
+   Cancel resize must restore saved coverage. With controlled test data, repeat and Save coverage;
+   confirm the new saved radius after refresh. A failed save must retain the draft for retry.
+   Check keyboard arrows, Shift+arrows, Home/End and physical touch dragging. Restore test coverage.
    Switch companies: no old tenant circle remains. Empty companies show the existing empty state.
 6. Check 414 × 896, 320px and desktop for overflow, readable labels, complete circles, usable
    controls and attribution. Test provider/network failure: saved center/radius and Edit stay usable.

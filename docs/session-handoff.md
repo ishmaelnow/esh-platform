@@ -1,10 +1,26 @@
 # Session Handoff
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 ## Current objective and checkpoint
 
-Current authorized objective: fix Service area Edit discoverability (owner reports no actionable
+Current authorized objective: visually widen/shrink service-area circles (owner GO/CONTINUE).
+Baseline Edit discoverability fix is pushed at 543b334. Local draggable 44px edge handle renders
+a dashed unsaved radius preview; spherical distance is rounded/clamped to existing 0.01–1000km.
+Keyboard arrows/Shift/Home/End supported. Saved circle stays distinct. Explicit Save coverage
+uses the existing form/Settings endpoint with tenant authorization/validation/audit unchanged;
+Cancel discards, pending controls disable, failure retains draft. No schema, native, domain,
+booking/dispatch or approved Rider/Driver runtime change. No production/Git mutation by Codex.
+18 map unit tests and scoped lint pass. Mobile coverage browser check passes actual pointer drag,
+keyboard limits, no autosave, failed save/draft recovery, Cancel, successful save/summary refresh,
+unchanged center/coverage-mode/tenant payload, existing map interaction/fallback and form Edit.
+Final Admin/Transportation production builds, shared maps types and scoped lint pass with existing
+warnings. Complete 414 x 896 fixture screenshot inspected and retained in ignored
+tmp/service-area-resize-evidence/resize-414.png. Next: exact feature-only Git handover, owner hosted
+deployment and physical touch acceptance. Browser basemap is isolated; no production writes.
+Preserve generated Driver/Rider configs and unknown git/main. No migration or native rebuild.
+
+Previous completed objective: fix Service area Edit discoverability (owner reports no actionable
 feature, then CONTINUE). Owner now confirms Dallas/Philadelphia circles visible and reports PASS
 at 23cd1e6; original missing-map report is resolved without a source/config/domain change.
 Inspection confirms Edit opened the existing form above the map without bringing it into view.

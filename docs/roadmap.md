@@ -14,7 +14,10 @@ remain independent of transportation-specific workflows.
   and confirms Dallas/Philadelphia circles visible, then reports PASS. A local Edit discoverability
   fix now brings the saved radius field into view/focus and names the edited area; browser acceptance
   passes, scoped lint and both production builds pass. Owner follow-up release/manual Edit acceptance
-  pending. No boundary-rule change. See
+  completed at `543b334`. Visual resizing is now implemented locally: a draggable edge handle,
+  dashed unsaved preview, keyboard adjustment and explicit Save/Cancel reuse existing Settings
+  authorization and validation. Owner hosted release and physical touch acceptance pending.
+  No boundary-rule change. See
   `architecture/service-area-coverage-map.md` and `operations/service-area-coverage-map-manual-test.md`.
 
 - Assigned Rider average/count in Driver is owner-pushed at `938e078` and owner-accepted: the existing active-trip Dispatch

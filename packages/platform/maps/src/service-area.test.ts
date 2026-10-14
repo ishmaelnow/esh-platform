@@ -1,5 +1,12 @@
 import { expect, it } from "vitest";
-import { coverageCircle } from "./service-area";
+import { coverageCircle, coverageRadius } from "./service-area";
+it("measures a dragged boundary geographically and enforces supported radii", () => {
+  const area = { id: "test", name: "TEST", latitude: 32.7, longitude: -96.8, radiusKm: 42.37, active: true };
+  const [lon, lat] = coverageCircle(area)!.geometry.coordinates[0]![32]!;
+  expect(coverageRadius(area.latitude, area.longitude, lat!, lon!)).toBe(42.37);
+  expect(coverageRadius(0, 0, 0, 0)).toBe(0.01);
+  expect(coverageRadius(0, 0, 0, 90)).toBe(1000);
+});
 it("draws a geographic 25km boundary rather than a screen-size circle", () => {
   const area = { id: "test", name: "TEST Dallas", latitude: 32.7767, longitude: -96.797, radiusKm: 25, active: true };
   const shape = coverageCircle(area)!;

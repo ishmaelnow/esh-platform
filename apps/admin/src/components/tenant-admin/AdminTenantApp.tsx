@@ -2716,6 +2716,8 @@ function ServiceAreasPanel({
   const draftStorageKey = `esh-service-area-draft:${summary.tenant.tenant_id}`;
   const [coverageAreaId, setCoverageAreaId] = useState("");
   const radiusInput = useRef<HTMLInputElement>(null);
+  const areaForm = useRef<HTMLFormElement>(null);
+  const [mapResizing, setMapResizing] = useState(false);
   const selectedCoverageAreaId = summary.serviceAreas.some((area) => area.service_area_id === coverageAreaId) ? coverageAreaId : "";
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -2725,10 +2727,10 @@ function ServiceAreasPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
   useEffect(() => {
-    if (!showForm || !editingAreaId) return;
+    if (!showForm || !editingAreaId || mapResizing) return;
     radiusInput.current?.scrollIntoView({ block: "center", behavior: "auto" });
     radiusInput.current?.focus({ preventScroll: true });
-  }, [showForm, editingAreaId]);
+  }, [showForm, editingAreaId, mapResizing]);
   useEffect(() => {
     const restored = restoreServiceAreaDraft(window.sessionStorage.getItem(draftStorageKey));
     setFormDraft(restored.draft);
@@ -2752,6 +2754,7 @@ function ServiceAreasPanel({
 
   async function saveArea(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busyId !== null || !canManageTenant) return;
     const form = new FormData(event.currentTarget);
     const value = (name: string) => {
       const field = form.get(name);
@@ -2783,6 +2786,7 @@ function ServiceAreasPanel({
       setMessage(editingAreaId ? "Service area updated." : "Service area created.");
       if (!editingAreaId) clearCreateDraft();
       setEditingAreaId(null);
+      setMapResizing(false);
       setShowForm(false);
       onRefresh();
     } catch (error) {
@@ -2834,6 +2838,7 @@ function ServiceAreasPanel({
           className="primary-button"
           disabled={!canManageTenant}
           onClick={() => {
+            setMapResizing(false);
             if (showForm && !editingAreaId) {
               setShowForm(false);
               clearCreateDraft();
@@ -2849,7 +2854,7 @@ function ServiceAreasPanel({
         </button>
         {message ? <p className="notice">{message}</p> : null}
         {showForm ? (
-          <form className="settings-grid" aria-label={editingAreaId ? "Edit service area" : "Add service area"} onSubmit={(event) => void saveArea(event)}>
+          <form ref={areaForm} className="settings-grid" aria-label={editingAreaId ? "Edit service area" : "Add service area"} onSubmit={(event) => void saveArea(event)}>
             {editingAreaId ? <h3 style={{ gridColumn: "1 / -1" }}>Edit service area: {summary.serviceAreas.find((area) => area.service_area_id === editingAreaId)?.name}</h3> : null}
             <label>
               Name
@@ -2932,7 +2937,9 @@ function ServiceAreasPanel({
             {editingAreaId ? (
               <button
                 className="secondary-button"
+                disabled={busyId !== null}
                 onClick={() => {
+                  setMapResizing(false);
                   setEditingAreaId(null);
                   setFormDraft(emptyServiceAreaDraft);
                   setShowForm(false);
@@ -2947,14 +2954,28 @@ function ServiceAreasPanel({
       </section>
       {summary.serviceAreas.length > 0 ? <section className="panel coverage-map-panel" aria-label="Coverage map">
         <PanelHeader title="Coverage map" description="Saved geographic boundaries. Navy is active; gray is inactive. Viewing the map does not change coverage." />
-        <label>Coverage area<select aria-label="Coverage area" value={selectedCoverageAreaId} onChange={(event) => setCoverageAreaId(event.target.value)}>
+        <label>Coverage area<select disabled={mapResizing || busyId !== null} aria-label="Coverage area" value={selectedCoverageAreaId} onChange={(event) => setCoverageAreaId(event.target.value)}>
           <option value="">All service areas</option>
           {summary.serviceAreas.map((area) => <option value={area.service_area_id} key={area.service_area_id}>{area.name} · {area.radius_km} km · {area.status}</option>)}
         </select></label>
+        {!mapResizing ? <button type="button" className="secondary-button" disabled={!canManageTenant || !selectedCoverageAreaId || busyId !== null} onClick={() => {
+          const area = summary.serviceAreas.find((item) => item.service_area_id === selectedCoverageAreaId);
+          if (!area) return;
+          setEditingAreaId(area.service_area_id);
+          setFormDraft({ name: area.name, description: area.description ?? "", centerLatitude: String(area.center_latitude), centerLongitude: String(area.center_longitude), radiusKm: String(area.radius_km), coverageMode: area.coverage_mode });
+          setShowForm(true); setMapResizing(true); setMessage(null);
+        }}>Resize circle</button> : null}
+        {!selectedCoverageAreaId ? <p className="muted">Select one service area to resize its circle.</p> : null}
         <ServiceAreaMap key={summary.tenant.tenant_id} accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
+          resize={mapResizing && editingAreaId ? { area: { id: editingAreaId, name: formDraft.name, latitude: Number(formDraft.centerLatitude), longitude: Number(formDraft.centerLongitude), radiusKm: Number(formDraft.radiusKm), active: true }, disabled: busyId !== null, onRadiusChange: (radius) => updateDraft("radiusKm", String(radius)) } : undefined}
           areas={summary.serviceAreas.filter((area) => !selectedCoverageAreaId || area.service_area_id === selectedCoverageAreaId).map((area) => ({
             id: area.service_area_id, name: area.name, latitude: area.center_latitude, longitude: area.center_longitude, radiusKm: area.radius_km, active: area.status === "active",
           }))} />
+        {mapResizing ? <div className="row-actions">
+          <button type="button" className="primary-button" disabled={busyId !== null} onClick={() => areaForm.current?.requestSubmit()}>Save coverage</button>
+          <button type="button" className="secondary-button" disabled={busyId !== null} onClick={() => { setMapResizing(false); setEditingAreaId(null); setShowForm(false); setFormDraft(emptyServiceAreaDraft); setMessage(null); }}>Cancel resize</button>
+          {message ? <p role="status">{message}</p> : null}
+        </div> : null}
       </section> : null}
       {summary.serviceAreas.length === 0 ? (
         <section className="panel">
@@ -3009,6 +3030,7 @@ function ServiceAreasPanel({
                   className="secondary-button"
                   disabled={!canManageTenant || busyId === area.service_area_id}
                   onClick={() => {
+                    setMapResizing(false);
                     setEditingAreaId(area.service_area_id);
                     setFormDraft({
                       name: area.name,

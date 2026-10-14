@@ -3,4 +3,6 @@
 .esh-service-area-map .mapboxgl-ctrl-group button { width: 44px; height: 44px; }
 .coverage-map-panel { min-width: 0; }
 .coverage-map-panel select { width: 100%; max-width: 100%; min-width: 0; }
+.esh-coverage-resize-handle { width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; background: #153258; color: white; font-size: 24px; cursor: grab; box-shadow: 0 2px 8px #15325855; touch-action: none; }
+.esh-coverage-resize-handle:focus-visible { outline: 3px solid #2367d1; outline-offset: 3px; }
 @media (max-width: 600px) { .esh-service-area-map { height: 320px; } }

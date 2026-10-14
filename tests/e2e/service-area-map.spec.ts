@@ -11,6 +11,7 @@ test("saved service-area boundaries display on an interactive map without modify
     { service_area_id: "test-phl", tenant_id: tenantId, name: "TEST Philadelphia", description: null, center_latitude: 39.9526, center_longitude: -75.1652, radius_km: 40, status: "inactive", coverage_mode: "selected_drivers" },
   ];
   const writes: string[] = [];
+  let saveSucceeds = false;
   let failMap = false;
   await page.addInitScript(() => localStorage.setItem("esh-transportation-admin-auth", JSON.stringify({ access_token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmV2aWV3In0.preview", refresh_token: "preview-only", token_type: "bearer", expires_at: Math.floor(Date.now()/1000)+3600, user: { id: "preview", email: "coverage@example.invalid", aud: "authenticated", role: "authenticated" } })));
   await page.route("https://api.mapbox.com/**", (route) => failMap ? route.fulfill({ status: 503, json: {} })
@@ -27,7 +28,16 @@ test("saved service-area boundaries display on an interactive map without modify
     };
     return route.fulfill({ json: values[name ?? ""] ?? [] });
   });
-  await page.route("**/api/tenant-admin/settings**", (route) => { writes.push(route.request().method()); return route.fulfill({ status: 500 }); });
+  await page.route("**/api/tenant-admin/settings**", (route) => {
+    writes.push(route.request().method());
+    const body = route.request().postDataJSON() as Record<string, string>;
+    expect(body.tenantId).toBe(tenantId); expect(body.serviceAreaId).toBe("test-dallas");
+    expect(body.kind).toBe("service_area_update"); expect(body.centerLatitude).toBe("32.7767");
+    expect(body.centerLongitude).toBe("-96.797"); expect(body.coverageMode).toBe("all_drivers");
+    if (!saveSucceeds) return route.fulfill({ status: 500 });
+    areas[0]!.radius_km = Number(body.radiusKm);
+    return route.fulfill({ json: { message: "Saved" } });
+  });
   await page.goto("/transportation");
   await page.getByRole("button", { name: "Service Areas", exact: true }).click();
   const region = page.getByRole("region", { name: "Coverage map", exact: true });
@@ -78,4 +88,34 @@ test("saved service-area boundaries display on an interactive map without modify
   expect(writes).toEqual([]);
   failMap = false; await region.getByRole("button", { name: "Retry coverage map", exact: true }).click();
   await expect(map).toHaveAttribute("data-map-ready", "true");
+  await region.getByLabel("Coverage area", { exact: true }).selectOption("test-dallas");
+  await region.getByRole("button", { name: "Resize circle", exact: true }).click();
+  const handle = region.getByRole("slider", { name: "Resize coverage radius" });
+  await expect(handle).toHaveAttribute("aria-valuenow", "25");
+  await handle.scrollIntoViewIfNeeded();
+  const handleBox = (await handle.boundingBox())!;
+  await page.mouse.move(handleBox.x + 22, handleBox.y + 22); await page.mouse.down();
+  await page.mouse.move(handleBox.x + 42, handleBox.y + 22, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => Number(await handle.getAttribute("aria-valuenow"))).toBeGreaterThan(25);
+  await handle.focus(); await handle.press("End");
+  await expect(radius).toHaveValue("1000");
+  await handle.press("Home"); await expect(radius).toHaveValue("0.01");
+  await handle.press("Shift+ArrowRight"); await expect(radius).toHaveValue("10.01");
+  expect(writes).toEqual([]);
+  await page.screenshot({ path: "test-results/admin-coverage-resize-414.png", fullPage: true });
+  await region.getByRole("button", { name: "Save coverage", exact: true }).click();
+  await expect(region.getByRole("status").filter({ hasText: "Unable to save" })).toBeVisible();
+  await expect(radius).toHaveValue("10.01");
+  expect(writes).toEqual(["PATCH"]);
+  await region.getByRole("button", { name: "Cancel resize", exact: true }).click();
+  await expect(handle).toHaveCount(0);
+  await expect(region.getByRole("combobox")).toHaveValue("test-dallas");
+  saveSucceeds = true;
+  await region.getByRole("button", { name: "Resize circle", exact: true }).click();
+  await expect(handle).toHaveAttribute("aria-valuenow", "25");
+  await handle.press("ArrowRight"); await expect(radius).toHaveValue("26");
+  await region.getByRole("button", { name: "Save coverage", exact: true }).click();
+  await expect(handle).toHaveCount(0);
+  await expect(region.getByRole("combobox").locator("option:checked")).toContainText("26 km");
+  expect(writes).toEqual(["PATCH", "PATCH"]);
 });
