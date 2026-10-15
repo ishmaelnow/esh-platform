@@ -67,6 +67,6 @@ export function enrollmentError(action: "load" | "save" | "access" | "auth") {
     : action === "load"
       ? "We could not load enrollment. Refresh or contact your program administrator."
       : action === "access"
-        ? "Access could not be updated. Check that the person is an existing active member of this organization."
+        ? "Access could not be updated. Check your organization permissions and that the person is an existing active member."
         : "We could not save this change. Check your entries and enrollment access, then try again.";
 }

@@ -85,6 +85,18 @@ async function main() {
       await db.exec(match[0]);
     }
     await db.exec(read("supabase/migrations/20261014000200_student_guardian_enrollment.sql"));
+    await db.exec(
+      "alter table tenant_memberships add column membership_id uuid default gen_random_uuid(); create table tenant_role_assignments(tenant_id uuid,membership_id uuid,role_key text,status text,expires_at timestamptz)",
+    );
+    const sessions = read("supabase/migrations/20260823000500_exclusive_product_sessions.sql");
+    const foundationRole = sessions.match(
+      /create or replace function public\.has_foundation_tenant_role\([\s\S]*?\$\$;/,
+    );
+    assert.ok(foundationRole);
+    await db.exec(foundationRole[0]);
+    await db.exec(
+      read("supabase/migrations/20261015000100_student_enrollment_owner_governance.sql"),
+    );
     await actor(11);
     await assert.rejects(save(randomUUID()), /Guardian enrollment access required/);
     await assert.rejects(configure(true), /governance membership required/);
@@ -217,6 +229,60 @@ async function main() {
     await assert.rejects(configure(false), /governance membership required/);
     await assert.rejects(grant(11, "guardian"), /governance membership required/);
     await db.exec("reset role");
+    // Verified organization owner, with no platform role or implicit reviewer access.
+    await db.exec(
+      "insert into tenant_role_assignments select tenant_id,membership_id,'tenant_owner','active',null from tenant_memberships where person_id='00000000-0000-0000-0000-000000000014'",
+    );
+    await actor(14);
+    const ownContext = (await rows("select my_student_enrollment_context() as value"))[0].value;
+    assert.equal(ownContext.programs[0].canConfigure, true);
+    assert.equal(ownContext.programs[0].canReview, false);
+    assert.equal((await rows("select * from student_transportation_students")).length, 0);
+    assert.equal((await rows("select * from student_transportation_contacts")).length, 0);
+    await configure(false);
+    await configure(true);
+    await assert.rejects(
+      rows("select configure_student_enrollment_program($1,true,'pilot_setup')", [uuid(2)]),
+      /governance membership required/,
+    );
+    await assert.rejects(
+      rows("select set_student_enrollment_access($1,$2,'reviewer',true,'reviewer_assignment')", [
+        uuid(2),
+        "student-test-14@example.invalid",
+      ]),
+      /governance membership required/,
+    );
+    await grant(14, "reviewer");
+    assert.equal((await rows("select * from student_transportation_students")).length, 3);
+    await grant(14, "reviewer", false);
+    assert.equal((await rows("select * from student_transportation_students")).length, 0);
+    await db.exec("reset role; update tenant_role_assignments set role_key='tenant_admin'");
+    await actor(14);
+    await assert.rejects(configure(true), /governance membership required/);
+    await db.exec(
+      "reset role; update tenant_role_assignments set role_key='tenant_owner', expires_at=now()-interval '1 minute'",
+    );
+    await actor(14);
+    await assert.rejects(configure(true), /governance membership required/);
+    await db.exec(
+      "reset role; update tenant_role_assignments set expires_at=null; update tenant_memberships set status='suspended' where person_id='00000000-0000-0000-0000-000000000014'",
+    );
+    await actor(14);
+    await assert.rejects(configure(true), /governance membership required/);
+    await db.exec(
+      "reset role; update tenant_memberships set status='active'; update auth.users set email_confirmed_at=null where id='00000000-0000-0000-0000-000000000014'",
+    );
+    await actor(14);
+    await assert.rejects(configure(true), /governance membership required/);
+    await db.exec("reset role");
+    assert.equal(
+      (
+        await rows(
+          "select * from platform_role_assignments where person_id='00000000-0000-0000-0000-000000000014'",
+        )
+      ).length,
+      0,
+    );
     const audit = await rows("select * from tenant_audit_events");
     assert.ok(audit.length > 10);
     assert.ok(!JSON.stringify(audit).includes("TEST CHILD"));
@@ -238,7 +304,7 @@ async function main() {
       "disabled",
     );
     console.log(
-      "PASS verified identities, explicit admissions, multiple children/families, RLS contacts, tenant denial, idempotent saves/reviews, validation rollback, resubmission/withdrawal, revocation/pause/suspension, private audit and disabled ride operations. Existing auth helpers used; minimal legacy schema.",
+      "PASS organization-owner governance without platform elevation, cross-tenant denial, explicit reviewer admission, expired/suspended/unverified owner denial, guardian privacy, lifecycle, retries, audit and disabled rides. Actual existing identity/role helpers; minimal legacy schema.",
     );
   } finally {
     await db.close();

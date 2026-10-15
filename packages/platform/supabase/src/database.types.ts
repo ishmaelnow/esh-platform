@@ -2716,6 +2716,7 @@ export type Database = {
       has_workspace_role: { Args: { target_tenant_id: string; target_workspace_key: string; required_roles: string[] }; Returns: boolean }
       has_student_transportation_operational_access: { Args: { target_tenant_id: string; required_roles: string[] }; Returns: boolean }
       has_student_enrollment_access: { Args: { target_tenant_id: string; purpose: string }; Returns: boolean }
+      can_manage_student_enrollment: { Args: { target_tenant_id: string }; Returns: boolean }
       can_read_student_enrollment: { Args: { target_tenant_id: string; target_student_id: string }; Returns: boolean }
       configure_student_enrollment_program: { Args: { target_tenant_id: string; enabled_value: boolean; reason_value: string }; Returns: boolean }
       set_student_enrollment_access: { Args: { target_tenant_id: string; email_value: string; role_value: string; enabled_value: boolean; reason_value: string }; Returns: boolean }

@@ -82,7 +82,9 @@ async function main() {
       contacts = [],
       reviewer = false,
       failSave = true,
-      allowed = true;
+      allowed = true,
+      owner = false,
+      enrollmentEnabled = true;
     const saveIds = [];
     const failures = [];
     page.on("pageerror", (error) => failures.push(error.message));
@@ -100,8 +102,8 @@ async function main() {
                 name: "TEST enrollment program",
                 canEnroll: allowed && !reviewer,
                 canReview: allowed && reviewer,
-                canConfigure: false,
-                enrollmentEnabled: true,
+                canConfigure: owner,
+                enrollmentEnabled,
               },
             ],
           },
@@ -109,6 +111,20 @@ async function main() {
       if (url.pathname.endsWith("/logout")) {
         assert.equal(url.searchParams.get("scope"), "local");
         return route.fulfill({ json: {} });
+      }
+      if (url.pathname.endsWith("configure_student_enrollment_program")) {
+        assert.equal(body.target_tenant_id, tenant);
+        assert.equal(owner, true);
+        enrollmentEnabled = body.enabled_value;
+        return route.fulfill({ json: true });
+      }
+      if (url.pathname.endsWith("set_student_enrollment_access")) {
+        assert.equal(body.target_tenant_id, tenant);
+        assert.equal(owner, true);
+        assert.equal(body.role_value, "reviewer");
+        reviewer = body.enabled_value;
+        allowed = body.enabled_value;
+        return route.fulfill({ json: true });
       }
       if (url.pathname.endsWith("save_my_student_enrollment")) {
         saveIds.push(body.request_id_value);
@@ -240,6 +256,24 @@ async function main() {
       .getByText("You have not been admitted to this enrollment role.", { exact: true })
       .waitFor();
     assert.equal(await page.getByRole("heading", { name: "TEST Child", exact: true }).count(), 0);
+    await page.setViewportSize({ width: 414, height: 896 });
+    owner = true;
+    reviewer = false;
+    enrollmentEnabled = false;
+    await page.goto(origin + "/admin");
+    await page.getByRole("heading", { name: "Enrollment access setup", exact: true }).waitFor();
+    assert.equal(await page.getByRole("heading", { name: "TEST Child", exact: true }).count(), 0);
+    await page.getByRole("button", { name: "Enable enrollment pilot", exact: true }).click();
+    await page.getByRole("button", { name: "Pause enrollment pilot", exact: true }).waitFor();
+    await page.locator('input[name="email"]').fill("test-guardian@example.invalid");
+    await page.getByLabel("Enrollment role", { exact: true }).selectOption("reviewer");
+    await page.getByRole("button", { name: "Update access", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "Enrollment access updated" }).waitFor();
+    await page.getByRole("heading", { name: "TEST Child", exact: true }).waitFor();
+    await page.screenshot({
+      path: path.join(evidence, "owner-enrollment-controls.png"),
+      fullPage: true,
+    });
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await page.getByRole("heading", { name: "Secure sign-in", exact: true }).waitFor();
     assert.equal(await page.getByRole("heading", { name: "TEST Child", exact: true }).count(), 0);

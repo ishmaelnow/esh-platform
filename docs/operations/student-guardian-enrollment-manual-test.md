@@ -50,12 +50,24 @@ when intentionally testing its email flow; do not replace Rider/Driver/Admin cal
 No app/domain was deployed or configured in this repository session.
 
 Use existing verified ESH test accounts with active membership in the test tenant. In `/admin`,
-a platform administrator/member can deliberately enable the enrollment pilot, admit test guardians,
+a verified organization owner (or platform administrator/member) can deliberately enable the enrollment pilot, admit test guardians,
 and admit a different reviewer. Reviewer access is separate from governance rights. Admission does
 not send an invitation email; communicate the app URL through the normal owner-controlled process.
 Do not enable the Student product workspace or assign operational roles: foundation guards deny it.
 
 ## Acceptance
+
+Do not use the superseded manual owner-setup SQL script. Apply the owner-governance correction
+through migration `20261015000100_student_enrollment_owner_governance.sql` after owner dry-run
+verification. With the base migrations already applied, only that new file should be pending.
+Then sign in at https://school.eshapp.com/admin, select ESH Education and verify Enrollment access
+setup appears from existing ownership. Enable the enrollment pilot. To review records, enter your
+existing account email, select Reviewer / Grant access and Update access. Admission to Reviewer
+must be explicit; ownership alone must show no child records. Admit a different active member as
+Guardian for testing; self-review remains denied. No new tenant/account or platform role is required.
+Verify controls deny cross-tenant, expired-owner, suspended-member and unverified identity requests.
+The SQL harness uses the actual existing foundation owner helper and checks these cases. Browser
+tests exercise owner enablement/reviewer admission and organization scope using intercepted APIs.
 
 1. Guardian signs in through the correct app and sees only their admitted organization(s).
 2. Add two TEST children with grade, proposed school, contact phone and relationship. Add proposed

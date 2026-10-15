@@ -1,8 +1,9 @@
 # Student guardian enrollment pilot
 
 Status: implemented locally; owner confirms both Student migrations applied after matching dry run.
-Application is not yet pushed/deployed. No rides or live enrollment
-are enabled. Complements the [independent foundation](student-transportation-foundation.md).
+Base application deployed at school.eshapp.com at 843cbab. Owner confirms governance migration
+20261015000100 applied; paired UI/documentation commit is pending. Rides remain disabled.
+Complements the [independent foundation](student-transportation-foundation.md).
 
 ## Separate enrollment authorization
 
@@ -11,13 +12,22 @@ default-off gate, not a Transportation entitlement or product-session bypass for
 Enrollment accepts only verified Supabase identities with active person/tenant membership, an
 active tenant, an enabled enrollment program and explicit guardian/reviewer admission.
 
-Platform data administrators with active membership in the selected tenant may enable/pause the
+Verified organization owners, or platform data administrators with active membership in the selected tenant, may enable/pause the
 enrollment pilot and grant/revoke enrollment roles to existing active tenant members. These are
-governance actions. Platform or tenant ownership alone grants no student record access. A platform
+governance actions. Platform or tenant ownership alone grants no student record access. An organization or platform
 administrator must deliberately admit themselves as reviewer before viewing enrollment records.
 Fixed reason codes are audited; no free-text child names, contact details or review notes enter
 the shared audit. Generic access grants are independent of the nonassignable operational roles.
 Guardian self-service deliberately does not acquire the person-wide operational product lease.
+
+Migration `20261015000100_student_enrollment_owner_governance.sql` corrects the original
+platform-admin-only setup restriction. The new `can_manage_student_enrollment` helper uses the
+existing foundation owner-role helper, verified identity, active membership and exact tenant scope.
+The context read model exposes owner controls before enrollment activation or reviewer admission.
+Expired/suspended ownership, ordinary tenant_admin membership and other-tenant membership cannot
+configure the organization. No platform promotion, repeated ownership creation or manual setup
+SQL is needed. Owners still explicitly admit reviewers, including themselves, to view children.
+Operational product sessions and ride activation rules are unchanged.
 
 This slice is invitation-only: it reuses existing ESH identities and memberships. It does not create
 new accounts, memberships, co-guardian links or school staff authority. Those require separate,

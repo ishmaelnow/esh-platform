@@ -333,6 +333,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
               <label>
                 Organization
                 <select
+                  aria-label="Organization"
                   value={tenantId}
                   disabled={busy}
                   onChange={(event) => {
@@ -359,7 +360,14 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
             {mode === "admin" && program?.canConfigure ? (
               <div className="notice">
                 <h2>Enrollment access setup</h2>
-                <p>Setup changes enrollment only. Student ride operations stay disabled.</p>
+                <p>
+                  Managing enrollment for <strong>{program.name}</strong> only. Student ride
+                  operations stay disabled.
+                </p>
+                <p>
+                  Organization owners can manage access. Viewing children requires a separate
+                  Reviewer grant, including for yourself.
+                </p>
                 <button
                   type="button"
                   disabled={busy}
@@ -406,14 +414,14 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                   </label>
                   <label>
                     Enrollment role
-                    <select name="role" disabled={busy}>
+                    <select name="role" aria-label="Enrollment role" disabled={busy}>
                       <option value="guardian">Guardian</option>
                       <option value="reviewer">Reviewer</option>
                     </select>
                   </label>
                   <label>
                     Access action
-                    <select name="action" disabled={busy}>
+                    <select name="action" aria-label="Access action" disabled={busy}>
                       <option value="grant">Grant access</option>
                       <option value="revoke">Revoke access</option>
                     </select>
