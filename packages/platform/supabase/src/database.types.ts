@@ -1,4 +1,5 @@
 import type { NativePushRegistration, NativePushAttempt } from "./native-push.types";
+import type { StudentEnrollment, StudentEnrollmentContact } from "./student-transportation.types";
 export type Json =
   | string
   | number
@@ -40,6 +41,17 @@ export type Database = {
   }
   public: {
     Tables: {
+      student_transportation_enrollment_programs: { Row: { tenant_id: string; enrollment_enabled: boolean }; Insert: { tenant_id: string; enrollment_enabled?: boolean }; Update: { enrollment_enabled?: boolean }; Relationships: [] }
+      student_transportation_enrollment_access: { Row: { tenant_id: string; person_id: string; can_enroll: boolean; can_review: boolean }; Insert: { tenant_id: string; person_id: string; can_enroll?: boolean; can_review?: boolean }; Update: { can_enroll?: boolean; can_review?: boolean }; Relationships: [] }
+      student_transportation_students: { Row: StudentEnrollment; Insert: StudentEnrollment; Update: Partial<StudentEnrollment>; Relationships: [] }
+      student_transportation_contacts: { Row: StudentEnrollmentContact; Insert: StudentEnrollmentContact; Update: Partial<StudentEnrollmentContact>; Relationships: [] }
+      student_transportation_enrollment_mutations: { Row: { tenant_id: string; person_id: string; request_id: string; payload_hash: string; student_id: string }; Insert: { tenant_id: string; person_id: string; request_id: string; payload_hash: string; student_id: string }; Update: never; Relationships: [] }
+      student_transportation_launch_controls: {
+        Row: { tenant_id: string; operations_enabled: boolean; created_at: string }
+        Insert: { tenant_id: string; operations_enabled?: boolean; created_at?: string }
+        Update: { operations_enabled?: boolean }
+        Relationships: [{ foreignKeyName: "student_transportation_launch_controls_tenant_id_fkey"; columns: ["tenant_id"]; isOneToOne: true; referencedRelation: "tenants"; referencedColumns: ["tenant_id"] }]
+      }
       trip_share_links: {
         Row: { booking_id: string; tenant_id: string; rider_profile_id: string; driver_profile_id: string; token_hash: string; expires_at: string }
         Insert: { booking_id: string; tenant_id: string; rider_profile_id: string; driver_profile_id: string; token_hash: string; expires_at: string }
@@ -2702,6 +2714,14 @@ export type Database = {
       workspace_admin_snapshot: { Args: { target_tenant_id: string }; Returns: Json }
       my_workspace_access: { Args: never; Returns: { tenant_id: string; membership_id: string; workspace_key: string; workspace_name: string; role_keys: string[] }[] }
       has_workspace_role: { Args: { target_tenant_id: string; target_workspace_key: string; required_roles: string[] }; Returns: boolean }
+      has_student_transportation_operational_access: { Args: { target_tenant_id: string; required_roles: string[] }; Returns: boolean }
+      has_student_enrollment_access: { Args: { target_tenant_id: string; purpose: string }; Returns: boolean }
+      can_read_student_enrollment: { Args: { target_tenant_id: string; target_student_id: string }; Returns: boolean }
+      configure_student_enrollment_program: { Args: { target_tenant_id: string; enabled_value: boolean; reason_value: string }; Returns: boolean }
+      set_student_enrollment_access: { Args: { target_tenant_id: string; email_value: string; role_value: string; enabled_value: boolean; reason_value: string }; Returns: boolean }
+      my_student_enrollment_context: { Args: never; Returns: Json }
+      save_my_student_enrollment: { Args: { target_tenant_id: string; request_id_value: string; student_id_value: string | null; action_value: string; payload_value: Json }; Returns: string }
+      review_student_enrollment: { Args: { target_tenant_id: string; student_id_value: string; request_id_value: string; decision_value: string; notes_value: string }; Returns: string }
       set_tenant_workspace_status: { Args: { target_tenant_id: string; target_workspace_key: string; target_status: string; reason_value: string }; Returns: boolean }
       enroll_tenant_workspace_member: { Args: { target_tenant_id: string; target_membership_id: string; target_workspace_key: string; initial_role_key: string; reason_value: string; expires_at_value?: string | null }; Returns: string }
       assign_workspace_role: { Args: { target_enrollment_id: string; target_role_key: string; reason_value: string; expires_at_value?: string | null }; Returns: string }

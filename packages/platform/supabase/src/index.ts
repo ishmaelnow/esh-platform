@@ -41,6 +41,9 @@ export type {
   WorkspaceRoleKey,
 } from "./workspace.types";
 export type SupabaseAuthSession = Session;
+export { STUDENT_TRANSPORTATION_PRODUCT } from "./student-transportation.types";
+export type { StudentTransportationRole, StudentTransportationLaunchControls } from "./student-transportation.types";
+export type { StudentEnrollment, StudentEnrollmentContact, StudentEnrollmentStatus } from "./student-transportation.types";
 export type PlatformSupabaseClient = SupabaseClient<Database>;
 export type PublicSupabaseClientConfig = {
   url: string;

@@ -4,6 +4,11 @@
   "globalEnv": ["NEXT_PUBLIC_NATIVE_PUSH_ENABLED"],
   "globalPassThroughEnv": ["FIREBASE_SERVICE_ACCOUNT_JSON", "APNS_PRIVATE_KEY", "APNS_KEY_ID", "APNS_TEAM_ID"],
   "tasks": {
+    "@esh-platform/student-transportation#build": {
+      "dependsOn": ["^build"],
+      "env": ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "NEXT_PUBLIC_STUDENT_ENROLLMENT_ENABLED"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "dist/**", "!.next/cache/**"]
