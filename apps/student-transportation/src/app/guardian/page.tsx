@@ -1,4 +1,4 @@
-import { EnrollmentPortal } from "../../components/EnrollmentPortal";
+import { FoundationScreen } from "../../components/FoundationScreen";
 export default function Page() {
-  return <EnrollmentPortal mode="guardian" />;
+  return <FoundationScreen audience="guardian" />;
 }

@@ -1,10 +1,54 @@
 # Product and Platform Roadmap
 
+Student enrollment role correction (2026-10-15): school administrators enroll students;
+owners govern access and reviewers validate submissions. Parent access is reserved for future
+own-child tracking. Local migration 20261015000200 and staff UI await owner release.
+See architecture/student-school-enrollment.md.
+
 This roadmap tracks delivery order without changing the architectural boundaries in the detailed design
 documents. Transportation is the first product domain built on ESH Platform; reusable foundations must
 remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
+
+Student Transportation is an independent product, not a Rider booking-mode extension.
+Architecture assessment and gated implementation sequence are in
+`architecture/student-transportation-assessment.md`. Owner-approved first foundation slice is
+implemented and owner-deployed at school.eshapp.com (843cbab), with both foundation/enrollment
+migrations owner-confirmed applied. See `architecture/student-transportation-foundation.md`;
+no student operations or product activation exist.
+Guardian authorization/enrollment has a separately gated implementation in the independent
+app. Owner-governance correction is prepared in 20261015000100: existing active tenant owners
+manage only their organization's enrollment, with reviewer admission remaining separate. This
+replaces the superseded manual SQL owner-setup workaround. Correction pending owner rollout.
+Guardian authorization/enrollment includes explicitly admitted families, multiple children,
+proposed contacts, drafts/submission and explicit reviewer decisions. See
+`architecture/student-guardian-enrollment.md`. Geographic requests, routes, handoff and billing
+remain future slices.
+
+- Local ESH knowledge assistant prototype: separate localhost tool, allowlisted tracked
+  repository evidence, local Ollama keyword/semantic retrieval and cited answers. No production
+  data/tools or app runtime changes. See `architecture/local-esh-assistant.md` and
+  `operations/local-esh-assistant-manual-test.md`. Transportation audit is retained as the future
+  app-development handoff; this tool does not authorize background-location implementation.
+  Owner-authorized local tooling follow-up adds model-selected literal search, bounded file reads,
+  three fixed diagnostics and validated patch/new-file drafts with visible results. Owner-reviewed
+  local preparation includes conflict checks, backups and exact owner-run Git commands. No arbitrary
+  shell, Git mutation or production tools. Qwen tools remain local; Gemma retains RAG mode.
+  Capability testing exposed wrong-rule drafts and malformed CSS hex colors; draft targeting and
+  bounded color-token validation now reject these cases, without changing application styling.
+
+### Reconciled Transportation status (2026-10-14)
+
+Use `architecture/transportation-roadmap-reconciliation.md` for the current verified gap list.
+Older "in progress"/"pending" entries below are historical implementation checkpoints, not proof
+that a feature is missing. Native push, signed Rider/Driver shells, assigned-participant averages,
+fare reconciliation, refunds and automatic payout matching already have implementations.
+Owner pushed circle resizing at `403212e` and reports PASS. Polygon coverage and adjustable document
+reminders are explicitly deferred. No new runtime feature is authorized by this documentation audit.
+The main functional candidate is Driver background/locked-phone location continuity; SMS callbacks
+and advanced financial extensions remain separate deferred gaps. Store release and outstanding
+financial acceptance are verification/release work, not features to rebuild.
 
 - Saved Admin coverage circles are current local work: a read-only live street map of existing
   tenant center/radius records, individual/all-area selection, active/inactive styling and preserved
@@ -16,7 +60,7 @@ remain independent of transportation-specific workflows.
   passes, scoped lint and both production builds pass. Owner follow-up release/manual Edit acceptance
   completed at `543b334`. Visual resizing is now implemented locally: a draggable edge handle,
   dashed unsaved preview, keyboard adjustment and explicit Save/Cancel reuse existing Settings
-  authorization and validation. Owner hosted release and physical touch acceptance pending.
+  authorization and validation. Owner pushed `403212e` and reports PASS.
   No boundary-rule change. See
   `architecture/service-area-coverage-map.md` and `operations/service-area-coverage-map-manual-test.md`.
 
@@ -574,7 +618,9 @@ deferred from this milestone and were delivered under the later milestones below
    - Current stabilization: installed Rider and Driver shells now distinguish unavailable native
      push from browser Web Push, and SMS verification provides validated mobile inputs, one-time-code
      autofill, an explicit pending state, and inline provider errors.
-   - Remaining: native mobile push delivery and carrier delivery-status/STOP reconciliation.
+   - Native mobile push is implemented and owner-accepted on iPhone and Android; minute recovery
+     scheduling is deployed. Remaining: SMS carrier delivery-status/STOP reconciliation, subject
+     to provider readiness. Controlled push-provider outage testing remains verification work.
 6. **Reputation**
    - Current delivery: tenant-isolated post-trip Rider and Driver ratings, product-
      specific criteria, 30-day submission windows, retaliation-resistant delayed disclosure,
@@ -583,7 +629,8 @@ deferred from this milestone and were delivered under the later milestones below
    - Optional rating reminders and original rating appeals are owner-deployed; the trip-card review
      usability follow-up is locally verified as described
      above. Received-rating/review-decision alerts are in local verification as described above.
-     Remaining: aggregate public profiles, and any deliberate rating-based
+     Assigned Driver/Rider aggregate averages are implemented and owner-accepted. Remaining:
+     broader public profiles, and any deliberate rating-based
      matching policy.
 7. **Money and Ledger**
    - Current delivery: fixed tenant operating currency, integer minor-unit semantics,
@@ -620,17 +667,18 @@ deferred from this milestone and were delivered under the later milestones below
    - Current delivery in progress: tenant-scoped Rider trip credits, immutable wallet history,
      Admin issuance, automatic split wallet/card checkout, cancellation restoration, and ledger
      settlement without overstating Stripe-funded Driver earnings.
-   - Remaining: production verification, reversals,
-     payouts, statements, and reconciliation.
+   - Existing full refunds, manual journal reversals, payouts, statements and automatic payout
+     reconciliation have implementations. Remaining: scoped production acceptance and deliberate
+     extensions such as partial refunds, post-bank-payout recovery and manual-payout allocation.
 8. **Pricing and Billing**
    - Current delivery: tenant route-based trip rates, trusted pre-booking Rider quotes,
      15-minute fare locking, shared Rider/Driver/Admin display, pricing snapshots, audit, and
      completed-trip ledger posting.
    - Current delivery: catalog-backed toll pricing with DRPA as the initial westbound passenger
      route authority, effective-dated rates, aliases, source snapshots, and locked quote display.
-   - Remaining: actual-distance adjustments, additional catalog entries and vehicle/payment rules,
-     taxes/discounts,
-     subscriptions, usage metering, and tenant billing.
+   - Actual-distance reconciliation and service-type fare adjustments (including fixed discounts)
+     are implemented, with catalog tolls and a Google estimate fallback. Remaining: broader toll
+     catalog/vehicle rules, taxes, generalized promotions, subscriptions, usage metering and tenant billing.
 9. **Optimization**
    - Demand intelligence, performance, levels, loyalty, and incentives.
 
@@ -650,8 +698,9 @@ deferred from this milestone and were delivered under the later milestones below
 - Current delivery: Rider and Driver Android verified HTTPS App Links return authentication email
   links to the installed `com.esh.rider` and `com.esh.driver` apps, with retained custom-scheme
   fallbacks and Digital Asset Links verification.
-- Remaining: native platform projects, store signing, APNs/FCM push integration, and reviewed
-  background location behavior.
+- Rider/Driver native projects, signed APK/TestFlight delivery and APNs/FCM integration exist and
+  have owner acceptance. Remaining: reviewed background location behavior and public store-release
+  gates. Do not infer public store approval from signed internal builds.
 
 ## Release Gates for the Current Milestone
 

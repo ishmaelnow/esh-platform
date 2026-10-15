@@ -40,14 +40,14 @@ async function main() {
       otpRequest = { url: route.request().url(), body: route.request().postDataJSON() };
       return route.fulfill({ json: {} });
     });
-    await signedOut.goto(origin + "/guardian");
+    await signedOut.goto(origin + "/school");
     await signedOut
       .getByLabel("Email address", { exact: true })
       .fill("test-guardian@example.invalid");
     await signedOut.getByRole("button", { name: "Email me a secure link", exact: true }).click();
     await signedOut.getByRole("status").filter({ hasText: "Check your email" }).waitFor();
     assert.equal(otpRequest.body.create_user, false);
-    assert.ok(decodeURIComponent(otpRequest.url).includes(origin + "/guardian"));
+    assert.ok(decodeURIComponent(otpRequest.url).includes(origin + "/admin"));
     await signedOut.screenshot({ path: path.join(evidence, "414-sign-in.png"), fullPage: true });
     await signedOut.close();
     console.log("PASS sign-in redirect and existing-account restriction");
@@ -100,7 +100,7 @@ async function main() {
               {
                 tenantId: tenant,
                 name: "TEST enrollment program",
-                canEnroll: allowed && !reviewer,
+                canEnroll: allowed && (!reviewer || owner),
                 canReview: allowed && reviewer,
                 canConfigure: owner,
                 enrollmentEnabled,
@@ -121,8 +121,14 @@ async function main() {
       if (url.pathname.endsWith("set_student_enrollment_access")) {
         assert.equal(body.target_tenant_id, tenant);
         assert.equal(owner, true);
-        assert.equal(body.role_value, "reviewer");
-        reviewer = body.enabled_value;
+        assert.ok(["school_admin", "reviewer"].includes(body.role_value));
+        assert.equal(
+          body.reason_value,
+          body.role_value === "school_admin"
+            ? "school_administrator_assignment"
+            : "reviewer_assignment",
+        );
+        if (body.role_value === "reviewer") reviewer = body.enabled_value;
         allowed = body.enabled_value;
         return route.fulfill({ json: true });
       }
@@ -184,18 +190,20 @@ async function main() {
         return route.fulfill({ json: contacts });
       throw new Error("Unexpected test request: " + url.pathname);
     });
-    await page.goto(origin + "/guardian");
-    await page.getByRole("button", { name: "Add a child", exact: true }).click();
+    await page.goto(origin + "/school");
+    await page.getByRole("button", { name: "Add a student", exact: true }).click();
     await page.getByLabel("Student full name", { exact: true }).fill("TEST Child");
     await page.getByLabel("Grade", { exact: true }).selectOption("3");
     await page.getByLabel("School name", { exact: true }).fill("TEST School");
-    await page.getByLabel("Your contact phone", { exact: true }).fill("2025550101");
-    await page.getByLabel("Your relationship to the student", { exact: true }).fill("Guardian");
+    await page.getByLabel("Parent/guardian contact phone", { exact: true }).fill("2025550101");
+    await page
+      .getByLabel("Parent/guardian relationship to the student", { exact: true })
+      .fill("Guardian");
     await page.getByRole("button", { name: "Add contact", exact: true }).click();
     await page.getByLabel("Contact name", { exact: true }).fill("TEST Contact");
     await page.getByLabel("Contact phone", { exact: true }).fill("2025550102");
     await page.getByLabel("Contact relationship", { exact: true }).fill("Guardian");
-    await page.getByLabel("I confirm I am authorized", { exact: false }).check();
+    await page.getByLabel("I confirm my school is authorized", { exact: false }).check();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.screenshot({ path: path.join(evidence, "414-enrollment-form.png"), fullPage: true });
     await page.getByRole("button", { name: "Save draft", exact: true }).click();
@@ -230,7 +238,7 @@ async function main() {
     await page.getByRole("status").filter({ hasText: "Enrollment review saved" }).waitFor();
     await page.screenshot({ path: path.join(evidence, "414-review.png"), fullPage: true });
     reviewer = false;
-    await page.goto(origin + "/guardian");
+    await page.goto(origin + "/school");
     await page
       .getByText("Reviewer response: TEST: Please correct enrollment", { exact: true })
       .waitFor();
@@ -266,6 +274,10 @@ async function main() {
     await page.getByRole("button", { name: "Enable enrollment pilot", exact: true }).click();
     await page.getByRole("button", { name: "Pause enrollment pilot", exact: true }).waitFor();
     await page.locator('input[name="email"]').fill("test-guardian@example.invalid");
+    await page.getByLabel("Enrollment role", { exact: true }).selectOption("school_admin");
+    await page.getByRole("button", { name: "Update access", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "Enrollment access updated" }).waitFor();
+    await page.getByRole("link", { name: "Manage student enrollment", exact: false }).waitFor();
     await page.getByLabel("Enrollment role", { exact: true }).selectOption("reviewer");
     await page.getByRole("button", { name: "Update access", exact: true }).click();
     await page.getByRole("status").filter({ hasText: "Enrollment access updated" }).waitFor();
@@ -277,9 +289,12 @@ async function main() {
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await page.getByRole("heading", { name: "Secure sign-in", exact: true }).waitFor();
     assert.equal(await page.getByRole("heading", { name: "TEST Child", exact: true }).count(), 0);
+    await page.goto(origin + "/guardian");
+    await page.getByText("Parent access will be limited", { exact: false }).waitFor();
+    assert.equal(await page.locator("input, textarea, select, form").count(), 0);
     assert.deepEqual(failures, []);
     console.log(
-      "PASS isolated sign-in redirect, guardian form/contacts, same-ID retry, saved draft reload, submission, rejection/resubmission/withdrawal, revoked-access clearing, local sign-out and compact/mobile/desktop layout. Mock browser backend only; SQL tests verify permissions separately.",
+      "PASS isolated sign-in redirect, school staff form/contacts, same-ID retry, saved draft reload, submission, rejection/resubmission/withdrawal, staff/reviewer grants, revoked-access clearing, parent no-form, local sign-out and compact/mobile/desktop layout. Mock browser backend only; SQL tests verify permissions separately.",
     );
   } finally {
     if (browser) await browser.close();

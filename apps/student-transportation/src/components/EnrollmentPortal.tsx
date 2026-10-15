@@ -22,7 +22,7 @@ function textField(form: FormData, name: string) {
   return typeof value === "string" ? value : "";
 }
 
-export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
+export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const enabled = process.env.NEXT_PUBLIC_STUDENT_ENROLLMENT_ENABLED === "true";
@@ -52,7 +52,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
   const mutation = useRef<{ key: string; id: string } | null>(null);
   const authUser = session?.user.id;
   const program = context?.programs.find((row) => row.tenantId === tenantId);
-  const permitted = mode === "guardian" ? program?.canEnroll : program?.canReview;
+  const permitted = mode === "school" ? program?.canEnroll : program?.canReview;
 
   useEffect(() => {
     if (!client) return;
@@ -117,12 +117,12 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
       const access = next.programs.find((row) => row.tenantId === selectedId);
       let rows: StudentEnrollment[] = [];
       let contactRows: StudentEnrollmentContact[] = [];
-      if (selectedId && (mode === "guardian" ? access?.canEnroll : access?.canReview)) {
+      if (selectedId && (mode === "school" ? access?.canEnroll : access?.canReview)) {
         let query = client
           .from("student_transportation_students")
           .select("*")
           .eq("tenant_id", selectedId);
-        if (mode === "guardian") query = query.eq("guardian_person_id", next.personId);
+        if (mode === "school") query = query.eq("guardian_person_id", next.personId);
         const studentsResult = await query.order("updated_at", { ascending: false }).limit(100);
         if (studentsResult.error) throw studentsResult.error;
         rows = studentsResult.data;
@@ -246,7 +246,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
     await run(async () => {
       const result = await client!.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/${mode}` },
+        options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/admin` },
       });
       if (result.error) throw result.error;
       setMessage(
@@ -266,7 +266,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
       <section aria-labelledby="portal-title">
         <p className="eyebrow">Enrollment pilot · rides are not available</p>
         <h1 id="portal-title">
-          {mode === "guardian" ? "Your children’s enrollment" : "Enrollment administration"}
+          {mode === "school" ? "School enrollment" : "Enrollment administration"}
         </h1>
         <p>
           No transportation is booked here. Contact details are proposed contacts for review, not
@@ -398,8 +398,8 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                         reason_value:
                           form.get("action") !== "grant"
                             ? "access_revoked"
-                            : form.get("role") === "guardian"
-                              ? "guardian_invitation"
+                            : form.get("role") === "school_admin"
+                              ? "school_administrator_assignment"
                               : "reviewer_assignment",
                       });
                       if (result.error) throw result.error;
@@ -415,7 +415,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                   <label>
                     Enrollment role
                     <select name="role" aria-label="Enrollment role" disabled={busy}>
-                      <option value="guardian">Guardian</option>
+                      <option value="school_admin">School administrator</option>
                       <option value="reviewer">Reviewer</option>
                     </select>
                   </label>
@@ -430,6 +430,11 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                 </form>
               </div>
             ) : null}
+            {program?.canEnroll && mode === "admin" ? (
+              <Link className="back" href="/school">
+                Manage student enrollment →
+              </Link>
+            ) : null}
             {program && !permitted ? (
               <div className="notice">
                 {program.enrollmentEnabled
@@ -439,7 +444,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
             ) : null}
             {permitted ? (
               <>
-                {mode === "guardian" && !editing ? (
+                {mode === "school" && !editing ? (
                   <button
                     type="button"
                     disabled={busy}
@@ -454,10 +459,10 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                       mutation.current = null;
                     }}
                   >
-                    Add a child
+                    Add a student
                   </button>
                 ) : null}
-                {mode === "guardian" && editing ? (
+                {mode === "school" && editing ? (
                   <form
                     className="notice"
                     onSubmit={(event) => {
@@ -465,7 +470,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                       void save("submit");
                     }}
                   >
-                    <h2>{studentId ? "Update enrollment" : "Add a child"}</h2>
+                    <h2>{studentId ? "Update enrollment" : "Add a student"}</h2>
                     <fieldset disabled={busy}>
                       <label>
                         Student full name
@@ -505,7 +510,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                         />
                       </label>
                       <label>
-                        Your contact phone
+                        Parent/guardian contact phone
                         <input
                           type="tel"
                           required
@@ -518,7 +523,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                         />
                       </label>
                       <label>
-                        Your relationship to the student
+                        Parent/guardian relationship to the student
                         <input
                           required
                           maxLength={60}
@@ -530,8 +535,8 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                       </label>
                       <h3>Proposed pickup and drop-off contacts</h3>
                       <p>
-                        Add at least one contact before submitting. You may list yourself. These
-                        contacts must be reviewed before transport can begin.
+                        Add at least one contact before submitting. Include the proposed responsible
+                        adults. These contacts must be reviewed before transport can begin.
                       </p>
                       {input.contacts.map((contact, index) => (
                         <fieldset className="contact-card" key={index}>
@@ -663,8 +668,8 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                             setInput({ ...input, authorityAttested: event.target.checked })
                           }
                         />
-                        I confirm I am authorized to request enrollment for this child and provide
-                        these contacts.
+                        I confirm my school is authorized to submit enrollment for this student and
+                        provide these contacts.
                       </label>
                       <div className="portal-actions">
                         <button
@@ -692,7 +697,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                     </fieldset>
                   </form>
                 ) : null}
-                <h2>{mode === "guardian" ? "Your children" : "Enrollment requests"}</h2>
+                <h2>{mode === "school" ? "Students you enrolled" : "Enrollment requests"}</h2>
                 {!students.length ? <p>No enrollments yet.</p> : null}
                 {students.length === 100 ? (
                   <p>Showing the 100 most recently updated enrollments.</p>
@@ -713,7 +718,8 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                     {mode === "admin" ? (
                       <>
                         <p>
-                          Guardian: {row.guardian_relationship} · {row.guardian_phone}
+                          Parent/guardian relationship: {row.guardian_relationship} ·{" "}
+                          {row.guardian_phone}
                         </p>
                         <ul>
                           {contacts
@@ -728,7 +734,7 @@ export function EnrollmentPortal({ mode }: { mode: "guardian" | "admin" }) {
                         </ul>
                       </>
                     ) : null}
-                    {mode === "guardian" ? (
+                    {mode === "school" ? (
                       <div className="portal-actions">
                         {!["submitted", "approved"].includes(row.status) ? (
                           <button type="button" disabled={busy} onClick={() => edit(row)}>

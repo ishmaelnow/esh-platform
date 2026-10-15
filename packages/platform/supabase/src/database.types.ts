@@ -42,7 +42,7 @@ export type Database = {
   public: {
     Tables: {
       student_transportation_enrollment_programs: { Row: { tenant_id: string; enrollment_enabled: boolean }; Insert: { tenant_id: string; enrollment_enabled?: boolean }; Update: { enrollment_enabled?: boolean }; Relationships: [] }
-      student_transportation_enrollment_access: { Row: { tenant_id: string; person_id: string; can_enroll: boolean; can_review: boolean }; Insert: { tenant_id: string; person_id: string; can_enroll?: boolean; can_review?: boolean }; Update: { can_enroll?: boolean; can_review?: boolean }; Relationships: [] }
+      student_transportation_enrollment_access: { Row: { tenant_id: string; person_id: string; can_enroll: boolean; can_manage_enrollments: boolean; can_review: boolean }; Insert: { tenant_id: string; person_id: string; can_enroll?: boolean; can_manage_enrollments?: boolean; can_review?: boolean }; Update: { can_enroll?: boolean; can_manage_enrollments?: boolean; can_review?: boolean }; Relationships: [] }
       student_transportation_students: { Row: StudentEnrollment; Insert: StudentEnrollment; Update: Partial<StudentEnrollment>; Relationships: [] }
       student_transportation_contacts: { Row: StudentEnrollmentContact; Insert: StudentEnrollmentContact; Update: Partial<StudentEnrollmentContact>; Relationships: [] }
       student_transportation_enrollment_mutations: { Row: { tenant_id: string; person_id: string; request_id: string; payload_hash: string; student_id: string }; Insert: { tenant_id: string; person_id: string; request_id: string; payload_hash: string; student_id: string }; Update: never; Relationships: [] }

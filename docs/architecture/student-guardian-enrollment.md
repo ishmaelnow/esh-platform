@@ -1,5 +1,8 @@
 # Student guardian enrollment pilot
 
+Historical role model, superseded by [school-managed enrollment](student-school-enrollment.md).
+After migration 20261015000200 parents have no enrollment authority; school staff require fresh grants.
+
 Status: implemented locally; owner confirms both Student migrations applied after matching dry run.
 Base application deployed at school.eshapp.com at 843cbab. Owner confirms governance migration
 20261015000100 applied; paired UI/documentation commit is pending. Rides remain disabled.

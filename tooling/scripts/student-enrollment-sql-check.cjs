@@ -56,8 +56,8 @@ async function main() {
       role,
       enabled,
       enabled
-        ? role === "guardian"
-          ? "guardian_invitation"
+        ? role === "school_admin"
+          ? "school_administrator_assignment"
           : "reviewer_assignment"
         : "access_revoked",
     ]);
@@ -97,14 +97,26 @@ async function main() {
     await db.exec(
       read("supabase/migrations/20261015000100_student_enrollment_owner_governance.sql"),
     );
-    await actor(11);
-    await assert.rejects(save(randomUUID()), /Guardian enrollment access required/);
-    await assert.rejects(configure(true), /governance membership required/);
     await actor(13);
     await grant(11, "guardian");
-    await grant(12, "guardian");
+    await configure(true);
+    await db.exec("reset role");
+    await db.exec(read("supabase/migrations/20261015000200_school_managed_enrollment.sql"));
+    await actor(13);
+    await configure(false);
+    await assert.rejects(grant(12, "guardian"), /Invalid access request/);
     await actor(11);
-    await assert.rejects(save(randomUUID()), /Guardian enrollment access required/);
+    assert.equal(
+      (await rows("select has_student_enrollment_access($1,'guardian') as ok", [uuid(1)]))[0].ok,
+      false,
+    );
+    await assert.rejects(save(randomUUID()), /School administrator enrollment access required/);
+    await assert.rejects(configure(true), /governance membership required/);
+    await actor(13);
+    await grant(11, "school_admin");
+    await grant(12, "school_admin");
+    await actor(11);
+    await assert.rejects(save(randomUUID()), /School administrator enrollment access required/);
     await actor(13);
     await configure(true);
     assert.equal((await rows("select * from student_transportation_students")).length, 0);
@@ -122,7 +134,7 @@ async function main() {
     assert.equal((await rows("select * from student_transportation_students")).length, 1);
     await assert.rejects(
       save(randomUUID(), first, "submit", { ...payload, authorityAttested: false }),
-      /guardian authority/,
+      /school enrollment authority/,
     );
     await assert.rejects(
       save(randomUUID(), first, "submit", { ...payload, contacts: [] }),
@@ -162,7 +174,7 @@ async function main() {
     await assert.rejects(save(randomUUID(), first), /Owned enrollment required/);
     await assert.rejects(
       save(randomUUID(), null, "save", payload, uuid(2)),
-      /Guardian enrollment access required/,
+      /School administrator enrollment access required/,
     );
     await assert.rejects(review(first, randomUUID(), "approved"), /reviewer access required/);
     const other = await save(randomUUID(), null, "submit", {
@@ -188,16 +200,16 @@ async function main() {
     await review(first, randomUUID(), "approved");
     await grant(11, "reviewer");
     await actor(11);
-    await assert.rejects(review(second, randomUUID(), "approved"), /another guardian/);
+    await assert.rejects(review(second, randomUUID(), "approved"), /another submitter/);
     await save(randomUUID(), first, "withdraw");
     await actor(13);
     await grant(11, "reviewer", false);
-    await grant(11, "guardian", false);
+    await grant(11, "school_admin", false);
     await actor(11);
     assert.equal((await rows("select * from student_transportation_students")).length, 0);
     await assert.rejects(
       save(randomUUID(), second, "withdraw"),
-      /Guardian enrollment access required/,
+      /School administrator enrollment access required/,
     );
     await actor(13);
     await configure(false);
@@ -214,7 +226,7 @@ async function main() {
       "update auth.users set email_confirmed_at=null where id='00000000-0000-0000-0000-000000000012'",
     );
     await actor(12);
-    await assert.rejects(save(randomUUID()), /Guardian enrollment access required/);
+    await assert.rejects(save(randomUUID()), /School administrator enrollment access required/);
     await db.exec("reset role; set role anon");
     await assert.rejects(db.exec("select my_student_enrollment_context()"), /permission denied/);
     await assert.rejects(
@@ -227,7 +239,7 @@ async function main() {
     );
     await actor(13);
     await assert.rejects(configure(false), /governance membership required/);
-    await assert.rejects(grant(11, "guardian"), /governance membership required/);
+    await assert.rejects(grant(11, "school_admin"), /governance membership required/);
     await db.exec("reset role");
     // Verified organization owner, with no platform role or implicit reviewer access.
     await db.exec(
@@ -304,7 +316,7 @@ async function main() {
       "disabled",
     );
     console.log(
-      "PASS organization-owner governance without platform elevation, cross-tenant denial, explicit reviewer admission, expired/suspended/unverified owner denial, guardian privacy, lifecycle, retries, audit and disabled rides. Actual existing identity/role helpers; minimal legacy schema.",
+      "PASS organization-owner governance without platform elevation, cross-tenant denial, explicit reviewer admission, expired/suspended/unverified owner denial, school-submitter isolation and denied parent enrollment, lifecycle, retries, audit and disabled rides. Actual existing identity/role helpers; minimal legacy schema.",
     );
   } finally {
     await db.close();

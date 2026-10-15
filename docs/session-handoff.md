@@ -1,10 +1,267 @@
 # Session Handoff
 
-Last updated: 2026-10-14
+Last updated: 2026-10-15
 
 ## Current objective and checkpoint
 
-Current authorized objective: visually widen/shrink service-area circles (owner GO/CONTINUE).
+Current 2026-10-15 checkpoint supersedes the older Student notes below: owner pushed c68c6d0,
+saved school /admin and /guardian callback allowlist entries, and signed in successfully as the
+ESH Education owner. Read-only invalid-token routing probes confirmed both school callbacks;
+owner enabled pilot and granted themselves Reviewer, seeing No enrollments yet. No real emails
+or production grants were executed by Codex.
+
+Owner corrected intended roles: school administrators enroll; parents only track their own child's
+rides. Authorized GO. Local correction adds explicit can_manage_enrollments/school_admin grants,
+retires and audits old Guardian enrollment authority without automatic promotion, preserves
+reviewers/records and self-review denial. /school is staff enrollment; /guardian is closed parent
+tracking notice. Staff sign-in returns to existing /admin callback then links to /school.
+Parent tracking/relationships remain unavailable; do not pretend proposed contacts authorize it.
+Migration 20261015000200_school_managed_enrollment.sql is local only, NOT production-applied.
+SQL isolation/lifecycle/legacy-grant-retirement checks, app lint and shared typecheck pass.
+Eight focused unit checks, enabled production build and mocked staff enrollment browser flow pass
+(save retry, reload, contacts, submit/reject/resubmit/withdraw, grants, clearing and parent no-form).
+Complete 414px staff form screenshot inspected under tmp/student-enrollment-evidence; compact
+320px and desktop overflow checks pass. Final default-off build and 15 shell/viewport checks pass.
+Tests do not certify production RLS integration, actual email or native behavior.
+Read architecture/student-school-enrollment.md and operations/student-school-enrollment-manual-test.md.
+Next: finish checks, owner dry-run for only 20261015000200, then owner migration and scoped Git release.
+Preserve earlier assistant/docs work and generated Rider/Driver configs, unknown git/main and
+superseded manual SQL artifacts. No Git mutations or remote DB changes by Codex.
+
+### Historical Student checkpoint (superseded by the current role correction)
+
+Current operational checkpoint: owner pushed Student implementation at 843cbab and deployed the
+independent Vercel project, renamed esh-platform-student-transportation, in the existing Pro team.
+Owner verified root apps/student-transportation, school.eshapp.com valid Production DNS and the
+live home/admin sign-in screens. Public Supabase config and enrollment flag were owner-entered.
+Both Student migrations are owner-confirmed applied. Callback allowlist was instructed; its save
+and successful email return have not been confirmed. Owner authorized the governance correction below.
+Owner's real verified account has active memberships in two unrelated tenants but no platform role.
+Owner created separate ESH Education through existing /platform password sign-in/provisioning,
+accepted the real account's invitation and confirms owner membership verified. Product launcher
+shows ESH Education with no operational products, which is expected. Do not enable unrelated
+products or silently grant platform-wide administration. Student /admin configuration RPCs require
+platform governance membership, so organization ownership alone cannot configure the pilot.
+Owner rejected manual SQL setup as inconsistent with normal tenant ownership. One pasted script
+failed syntax due missing OR; no successful setup execution confirmed. Script is now marked
+superseded and retained untracked; do NOT instruct owner to run it or recreate ownership.
+Implemented proper correction: migration 20261015000100_student_enrollment_owner_governance.sql
+adds a verified, active, tenant-scoped governance helper using has_foundation_tenant_role and
+updates both governance RPCs plus context canConfigure. Existing tenant owners can configure
+enrollment through the UI without a platform role. No implicit reviewer/child access. UI states
+selected organization scope and explicit reviewer requirement; governance form labels clarified.
+SQL regressions pass owner/no-global-role setup, cross-tenant denial, explicit reviewer gating,
+expired/suspended/unverified owner denial and existing guardian/privacy/lifecycle cases. Enabled
+test build and browser owner enable/reviewer-grant flow pass. Lint/shared types pass.
+Owner confirmed migration 20261015000100 applied successfully. Dry-run output was not supplied
+in this latest message; successful db-push output was. Next owner commits/pushes scoped fix; existing deployed UI already
+supports the server-returned canConfigure flag, so DB correction unlocks controls even before
+the new explanatory UI copy deploys. Final default-off production build and diff/format checks
+passed; previous local preview session 34733 stopped for verification and is not running. No
+production calls, role grants, SQL setup, staging or deployment were executed by Codex.
+No live role/tenant mutations were executed by Codex. Existing assistant/docs/config/git/main preserved.
+
+### Implementation and validation checkpoint
+
+Active objective: owner approved guardian enrollment (GO) after the independent Student foundation.
+Implemented locally in apps/student-transportation: separately gated guardian/admin email sign-in,
+explicit enrollment admission, multiple children, proposed contacts, saved drafts, submission,
+withdrawal, reviewer approval/rejection, feedback and corrected resubmission. No student rides,
+routes, native releases, payment, notifications or verified physical handoff have been implemented.
+Owner confirmed successful remote application of migrations 20261014000100 and 20261014000200
+after the dry run listed exactly those two files. The former keeps
+product operations disabled; the latter adds default-off prelaunch enrollment with explicit access.
+Platform governance can enable enrollment/admit existing active tenant members, but must explicitly
+admit itself as reviewer to read children. Guardian admission does not grant general product access
+or legal-guardianship verification. Guardian self-service does not take an operational lease.
+Existing operational product union/governance menus and ordinary booking flows remain unchanged.
+No populated env files were opened/copied, no auth URLs/provider settings altered and no Git or
+production commands performed. Existing uncommitted assistant/docs/config/git/main preserved.
+
+Validation: isolated PGlite checks pass for both migrations, actual existing identity/membership
+helpers, RLS cross-family/tenant denial, contacts, idempotency, rollback, review/resubmission,
+revocation/pause/suspension/unverified identities and unchanged disabled transport operations.
+Harness uses minimal legacy schema, not full deployed integration or concurrent sessions.
+Eight unit tests pass (two enrollment parser/blank-state tests and six existing workspace tests).
+Student app lint/type checks, shared Supabase typecheck and enabled test-config build passed.
+Browser checks with disposable intercepted API fixtures passed sign-in URL/create-user=false,
+contacts, unchanged-ID failed-save retry, draft reload, submission, rejection/resubmission/withdrawal,
+revoked-access clearing and local sign-out; mobile/compact/desktop screenshots are under ignored
+tmp/student-enrollment-evidence. Full 414px form inspected. These do not prove SMTP/native behavior.
+The grade selector's accessible label was corrected after a browser check exposed the issue.
+Final default-off production build, 12 closed-shell screen/viewport checks, formatting and diff
+checks passed. Test-config enabled build was replaced with default-off output. Preview restored
+at http://127.0.0.1:3006; previous session 59942 stopped for builds. Actual enrollment preview needs
+independent configuration/migrations/admission; screenshots show disposable browser test data only.
+
+Next: owner commits/pushes the Student app, then creates a separate Vercel project in the existing
+Pro team with root apps/student-transportation and proposed domain school.eshapp.com. No Vercel
+project/domain has been created or verified. Configure independent public environment/auth URLs
+after deployment; do not replace existing app callbacks. Mixed roadmap/handoff changes include
+earlier assistant work and should not be broadly staged with this product commit.
+Read architecture/student-guardian-enrollment.md and operations/student-guardian-enrollment-manual-test.md. Do not collect
+real minors' data until privacy notices, authority review and retention/deletion procedures are approved.
+No automatic retention or invitation emails. Existing verified ESH identities/memberships only.
+Later: schools and geographic transportation requests/schedules, then dedicated-resource routes and
+individual handoff/eligibility. Cross-product reservation conflicts must be solved before sharing
+live drivers/vehicles. Remote assistant hosting remains deferred. Existing app runtime/styles intact.
+
+### Previous local-assistant checkpoint
+
+Current checkpoint: owner authorized future local model file-editing capability, explicitly not
+an application change. Latest capability-test weakness fix rejects malformed CSS hex colors at
+draft/new-file/apply preflight and checks positive selector targets, with a narrow known Rider
+booking-gradient mapping. Tests use isolated fixtures; no Rider styling is applied. Final checks
+pass: 29 unit checks, syntax/format/diff checks and isolated mobile/desktop approval UI.
+Server restarted as session 71082 at http://127.0.0.1:4317; prior session 11441 stopped and old
+review approvals expired with it. No live-model retry was performed for this follow-up; deterministic
+regressions cover the observed malformed color and wrong selector. Broader CSS correctness and model
+interpretation remain review responsibilities. The owner is testing tools, not asking to recolor UI.
+
+Earlier capability checkpoint: owner authorized future local model file-editing capability, explicitly not
+an application change or example color modification. Completed `draft_new_file`, owner-reviewed
+local apply UI/API, protected editable scope, batch conflict checks, backups/recovery, and exact
+per-file Git commands plus suggested checks. Model tools cannot approve writes, run Git, deploy
+or mutate a database. Existing migrations/config/native/tool policy remain protected.
+25 unit checks pass. Mobile/desktop approval UI passes with HTTP apply intercepted into an isolated
+cache fixture; no actual application/doc feature file was created or edited during verification.
+Syntax/format checks and git diff --check pass. No live model-generated feature implementation was
+tested. Server session 11441 runs http://127.0.0.1:4317. Refresh browser for new capability.
+Future workflow: ask for change, inspect drafts, explicitly approve local preparation, run suggested
+checks and supplied Git commands yourself. Nothing needs production deployment for this local tool.
+Preserve generated configs and unknown git/main. No Git mutations performed. Read updated local
+assistant architecture/operations docs. Transportation audit remains the future app-work handoff.
+
+### Earlier checkpoints (superseded where they describe no apply capability or old server sessions)
+
+Current completed fix: owner reported prose-only answer to explicit draft_patch request (owner fix it).
+Tool completion is now enforced from actual trace/results, not model prose. Named draft requests
+require a successful same-file read before a validated draft. Prose-only results get bounded retries;
+missing required results produce authoritative incomplete status and suppress pretend completion.
+Explicit execution requests with tools disabled receive an enable-tools error; source-search-only
+remains usable. UI distinguishes incomplete requests and received tool results. No edit/apply tool.
+16 unit checks pass, including false-success suppression, intent exclusions and retry-to-real-draft.
+Owner's exact original natural-language prompt passes real-Qwen regression: actual read_file and
+draft_patch traces, one validated draft/applied:false, unchanged Rider CSS hash. All fixed diagnostic
+checks and mobile/desktop tool UI/model gating pass. Syntax/format/diff checks pass. No app runtime,
+styles, schema, dependency, production or Git changes. All earlier local work/config/git/main preserved.
+Final local server is running as session 15822 at http://127.0.0.1:4317; previous sessions stopped.
+Next: owner refreshes browser and repeats original draft request; expect the separate
+BEFORE/PROPOSED draft card. If model cannot
+complete within bounds, it must explicitly say Tool request incomplete. No deployment/push needed.
+
+Completed authorized objective: add offline local tools to ESH assistant (owner ADD TOOLS).
+Implemented restricted Qwen tool calling: search_code, read_file, run_check and draft_patch. No
+arbitrary shell/apply-edit, Git mutation, deployment or database tools. Software enforces current
+indexed-file/root/symlink boundaries, strict argument names/types, fixed Node executable/check
+args, minimal nonsecret child env, 60s diagnostic timeout and bounded outputs. Drafts require one
+exact current match and expose before/after/hash/applied:false without writing source or drafts.
+At most six calls/four rounds, sequential. Tool results/diagnostics get citations and visible trace;
+UI defaults tools on for Qwen and disables them for Gemma. Ordinary RAG/search-only remain available.
+13 synthetic/process unit checks pass, covering protected paths, stale/ambiguous drafts, no-write
+hash, unknown commands/args and bounded loop. Real Qwen successfully searched, read and drafted;
+Rider CSS hash was unchanged. Mobile/desktop tool-result UI and model gating passed in first run.
+Final run also confirms assistant-unit and maps-unit fixed diagnostics pass; syntax, formatting
+and diff checks pass. Final real-model/UI rerun passes; complete mobile/desktop screenshots retained
+under ignored tmp/esh-assistant-evidence/tools-*.png and mobile evidence inspected. No app runtime/design/schema/dependency,
+production, Git or native change. All existing uncommitted work preserved, including configs/git/main.
+Local server session 59410 runs http://127.0.0.1:4317; old local sessions stopped. Next owner refreshes
+and tries “Use run_check to run assistant-syntax”. No deployment or push needed for local use.
+Read architecture/local-esh-assistant.md and operations/local-esh-assistant-manual-test.md. Tools
+remain local and need installed Ollama/dependencies, not a hosted model or production connection.
+Actual local source editing is NOT included; owner reviews drafts through existing development flow.
+
+Completed follow-up: improve local assistant styling answers (owner GO/CONTINUE). Earlier allowlist
+omitted CSS, so the model correctly lacked styling evidence but then misselected a home-map rule
+after basic CSS indexing. Now approved tracked app/shared CSS is indexed; styling retrieval scopes
+to the named product, focuses the target before "without affecting", expands panel/sheet and
+background/gradient, traces JSX wrappers/literal classes back to CSS, and allows three stylesheet
+passages. This retrieves the actual ride-sheet-backdrop::before booking gradient plus component
+evidence. No Rider/Driver/Admin production runtime/style changes. No new dependencies/migration.
+Seven unit checks and eight real-repository retrieval cases pass; strengthened styling case
+requires actual booking gradient and JSX evidence, not merely a styles.css path. Real-Qwen styling
+regression identifies correct file/selector; final prompt also preserves gradient direction/alpha
+for color-only proposals and requires them to be described as unverified suggestions.
+Index now ~544 files/2736 passages. Local server session 96454 is running at the same
+http://127.0.0.1:4317; earlier local server sessions are stopped. Syntax/format/diff checks pass.
+Final real-model answer identifies transparent sheet/card and actual booking-gradient selector/file;
+it did not emit the requested minimal proposed declaration despite prompt guidance. Treat editing
+advice as advisory, not a validated patch or proof of visual isolation. No styling proposal was
+applied or visually tested. Next: owner refreshes assistant and retries styling question; bring
+proposed changes back for implementation review. Retrieval and cited-source regression pass.
+No application CSS was changed, so no app build/mobile rebuild or production deployment required.
+Preserve earlier docs/tool changes, generated configs and unknown git/main. Future app work resumes
+from transportation-roadmap-reconciliation.md, not an automatic background-location implementation.
+
+Current authorized objective (owner GO): local read-only ESH knowledge assistant, separate from
+production apps. Implemented tooling/esh-assistant with Node built-ins, local browser UI on
+127.0.0.1:4317, Ollama only on 127.0.0.1:11434, tracked-file allowlist/redaction, line citations,
+keyword/semantic ranking, content-hash reuse and rescan before answers. No new dependencies,
+model downloads, env files, database/tenant/auth/runtime changes or production/Git mutation.
+Owner machine has ~16GB RAM, NVIDIA RTX 5070 Laptop/AMD graphics and installed gemma3:4b,
+qwen3.5:9b, nomic-embed-text:latest. Qwen is default after real-answer comparison; Gemma remains
+the lighter alternative. No hardware configuration changed. Index snapshot: 539 files/~2631
+passages; semantic embeddings generated locally in ignored .cache/esh-assistant/index.json.
+Five unit checks, six real-repository hybrid retrieval checks, syntax/format and browser checks
+pass. Final default-Qwen answer correctly explains average/disclosure; initial Gemma answer
+misstated a seven-day rule, prompting tighter evidence instructions and the default change.
+Citations do not certify model correctness; inspect evidence. Desktop/mobile complete screenshots
+inspected in ignored tmp/esh-assistant-evidence. HTTP checks cover foreign Origin, unknown source
+ID/path and disallowed model; mobile width/source expansion/search-only/real generation pass.
+Read architecture/local-esh-assistant.md and
+operations/local-esh-assistant-manual-test.md. New untracked source/docs are intentionally excluded
+from knowledge until owner tracks them. No chat-history persistence or tool execution capability.
+Local server left running at http://127.0.0.1:4317 (session 49734); if stopped, run
+node tooling/esh-assistant/server.mjs from repo root in Windows, with Windows Ollama running.
+Current correction: owner reported preorder explanation implying automatic rebooking. Source review
+confirms separate cancelBooking/bookAgain actions. Driver Preorders architecture now explicitly
+states cancellation never auto-rebooks and optional replacement requires fresh confirmation; its
+old pending-release label is reconciled to a5223dd/65b7ae3 owner acceptance. Assistant prompt now
+preserves actor/manual/optional/automatic causality and asks for decisive quotations when needed.
+Owner subsequently authorized correction of offer-time/release imprecision. Actual migration
+confirms offer expires_at is creation time plus configured timeout (90s fallback); readiness starts
+the process, not an instantaneous acceptance deadline. Future reservation release queues possible
+availability announcements, not an immediate timed offer. Knowledge document now states both.
+All seven retrieval checks and three real-Qwen answer regressions pass, including original
+no-auto-rebooking case; outputs inspected. Five unit checks, formatting and diff checks pass.
+Local semantic index refreshed; owner can ask again at the same localhost URL. No product code,
+database, native, production, dependencies or Git mutations. Evaluation regexes are limited checks,
+not an entailment guarantee for all questions/responses.
+Five unit checks, seven retrieval cases and real-model cancellation regression pass; answer
+correctly states no automatic replacement and quotes corrected evidence. Syntax/format/diff checks
+pass. Broad preorder retest initially added an unsupported post-cancellation retry claim. After
+refreshing changed-document semantic vectors and limiting unsolicited detail/test-scenario
+inferences, the final broad answer no longer invents automatic replacement. This is a targeted
+correction, not certification of every generated sentence. No app runtime behavior changed.
+Local server restarted as session 31385 at the same address; ~2632 passages embedded. Prior
+sessions 49734/11734 are stopped. Rescan still updates source text on every question; explicit
+semantic refresh improves ranking of changed documentation. Next: owner refreshes UI and asks
+again. RAG reduces rather than
+eliminates model interpretation errors. No push/deployment needed for local use.
+Preserve existing generated configs, unknown git/main and the earlier documentation audit edits.
+
+Owner-designated future app-work resume point (2026-10-14): the Transportation roadmap reconciliation below.
+Return to its verified gaps later; no new feature implementation authorized now. Current objective
+is manual testing of existing Rider/Driver/Admin functionality. Await owner test observations;
+do not infer passes, create production bookings/payments, or enable background tracking. Preserve
+approved designs, existing coverage and completed feature acceptance. Use identifiable test data,
+cancel unfinished bookings, return test Drivers Offline and restore temporary settings afterward.
+Next: guide owner through current app checks and record actual results/issues as supplied.
+
+Completed authorized audit: reconcile discussed Transportation roadmap gaps against implementation
+and owner acceptance (owner GO). See architecture/transportation-roadmap-reconciliation.md.
+Native push, financial core/refunds/reconciliation, assigned averages and native shell delivery
+must not be proposed as unimplemented. No runtime work, new migration, Git or production mutation.
+Confirmed meaningful candidate: Driver background/locked-phone coordinate publishing is not
+integrated; foreground watchPosition is the current ESH submission path. SMS carrier/STOP callbacks
+and advanced partial-refund/manual-payout cases remain deferred; remote provider readiness and
+financial production acceptance were not inspected. Owner explicitly defers custom boundaries and
+adjustable reminders. Next: owner selects work, or controlled physical background-location check;
+no native implementation authorized. Roadmap/docs-only diff; no application checks rerun.
+
+Completed objective: visually widen/shrink service-area circles (owner GO/CONTINUE).
+Owner pushed 403212e and reports PASS for visual resizing. Polygon boundaries and adjustable
+reminders are deferred by owner. Preserve circles; no feature expansion authorized.
 Baseline Edit discoverability fix is pushed at 543b334. Local draggable 44px edge handle renders
 a dashed unsaved radius preview; spherical distance is rounded/clamped to existing 0.01–1000km.
 Keyboard arrows/Shift/Home/End supported. Saved circle stays distinct. Explicit Save coverage

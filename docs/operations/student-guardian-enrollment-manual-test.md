@@ -1,5 +1,8 @@
 # Student guardian enrollment manual test
 
+Historical role acceptance steps are superseded by
+[school-managed enrollment](student-school-enrollment-manual-test.md). Do not grant Guardian access.
+
 Local implementation only. Do not enable real student transport or collect real minors' information
 until the privacy/retention/authorization requirements in the architecture document are approved.
 
