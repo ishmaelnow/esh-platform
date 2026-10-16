@@ -41,6 +41,7 @@ export type Database = {
   }
   public: {
     Tables: {
+      student_transportation_customer_invitations: { Row: { invitation_id: string; tenant_id: string; customer_id: string; normalized_email: string; status: string; expires_at: string; last_email_attempt_at: string | null; accepted_by: string | null; accepted_at: string | null }; Insert: never; Update: never; Relationships: [] }
       student_transportation_customers: { Row: { customer_id: string; tenant_id: string; display_name: string; customer_kind: string; status: string; created_by: string; request_id: string; creation_hash: string }; Insert: never; Update: never; Relationships: [] }
       student_transportation_customer_users: { Row: { tenant_id: string; customer_id: string; person_id: string }; Insert: never; Update: never; Relationships: [] }
       student_transportation_requests: { Row: { request_id: string; tenant_id: string; customer_id: string; submitted_by: string; idempotency_key: string; payload_hash: string; scheduled_at: string; destination_address: string; students: Json; status: string; created_at: string; updated_at: string }; Insert: never; Update: never; Relationships: [] }
@@ -2727,6 +2728,9 @@ export type Database = {
       has_student_customer_access: { Args: { target_tenant_id: string; target_customer_id: string }; Returns: boolean }
       can_manage_student_customers: { Args: { target_tenant_id: string }; Returns: boolean }
       my_student_customer_context: { Args: never; Returns: Json }
+      prepare_student_customer_invitation: { Args: { target_tenant_id: string; request_id_value: string; name_value: string; kind_value: string; email_value: string }; Returns: Json }
+      prepare_student_customer_resend: { Args: { target_tenant_id: string; target_customer_id: string }; Returns: Json }
+      accept_my_student_customer_invitations: { Args: never; Returns: number }
       create_student_customer: { Args: { target_tenant_id: string; request_id_value: string; name_value: string; kind_value: string; email_value: string }; Returns: string }
       submit_student_transport_request: { Args: { target_tenant_id: string; target_customer_id: string; idempotency_key_value: string; scheduled_at_value: string; destination_value: string; students_value: Json }; Returns: string }
       withdraw_student_transport_request: { Args: { target_tenant_id: string; target_request_id: string }; Returns: boolean }

@@ -16,6 +16,8 @@ import {
 import { FoundationScreen } from "./FoundationScreen";
 type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
 type AccountRow = Database["public"]["Tables"]["student_transportation_customers"]["Row"];
+type InvitationRow =
+  Database["public"]["Tables"]["student_transportation_customer_invitations"]["Row"];
 function field(form: FormData, name: string) {
   const value = form.get(name);
   return typeof value === "string" ? value : "";
@@ -44,6 +46,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
   const [selected, setSelected] = useState("");
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [students, setStudents] = useState<RequestStudent[]>([{ name: "", pickupAddress: "" }]);
   const [schedule, setSchedule] = useState("");
   const [destination, setDestination] = useState("");
@@ -59,6 +62,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
     setSelected("");
     setRequests([]);
     setAccounts([]);
+    setInvitations([]);
     setStudents([{ name: "", pickupAddress: "" }]);
     setSchedule("");
     setDestination("");
@@ -109,6 +113,8 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
           (p) => p.canConfigure || p.canEnroll || p.canReview,
         );
       } else {
+        const accepted = await client.rpc("accept_my_student_customer_invitations");
+        if (accepted.error) throw accepted.error;
         const result = await client.rpc("my_student_customer_context");
         if (result.error) throw result.error;
         options = readCustomers(result.data);
@@ -118,6 +124,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
       const tenant = internal ? id : options.find((c) => c.customerId === id)?.tenantId;
       let nextRequests: RequestRow[] = [];
       let nextAccounts: AccountRow[] = [];
+      let nextInvitations: InvitationRow[] = [];
       if (tenant) {
         let query = client
           .from("student_transportation_requests")
@@ -136,6 +143,13 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
             .limit(100);
           if (result.error) throw result.error;
           nextAccounts = result.data;
+          const invitationsResult = await client
+            .from("student_transportation_customer_invitations")
+            .select("*")
+            .eq("tenant_id", tenant)
+            .limit(100);
+          if (invitationsResult.error) throw invitationsResult.error;
+          nextInvitations = invitationsResult.data;
         }
       }
       if (current !== generation.current) return;
@@ -144,6 +158,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
       setSelected(id);
       setRequests(nextRequests);
       setAccounts(nextAccounts);
+      setInvitations(nextInvitations);
     },
     [client, internal],
   );
@@ -173,6 +188,29 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
       throw new Error("Unresolved request; retry unchanged or refresh first");
     retry.current ??= { signature, id: crypto.randomUUID() };
     return retry.current.id;
+  };
+  const sendInvitation = async (body: Record<string, string>) => {
+    const auth = await client!.auth.getSession();
+    if (auth.error || !auth.data.session) throw Error("Sign-in required");
+    const response = await fetch("/api/customers/invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.data.session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const result: unknown = await response.json();
+    const note =
+      result &&
+      typeof result === "object" &&
+      "message" in result &&
+      typeof result.message === "string"
+        ? result.message
+        : "Invitation could not be sent. Refresh and try again.";
+    await load(selected);
+    setMessage(note);
+    return response.ok;
   };
   if (!enabled) return <FoundationScreen audience={internal ? "admin" : "school"} />;
   if (!client)
@@ -300,15 +338,13 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
                   };
                   void run(async () => {
                     const id = requestKey(JSON.stringify(body));
-                    const result = await client.rpc("create_student_customer", {
+                    const sent = await sendInvitation({
                       ...body,
                       request_id_value: id,
                     });
-                    if (result.error) throw result.error;
+                    if (!sent) return;
                     retry.current = null;
                     element.reset();
-                    await load(selected);
-                    setMessage("Customer account created. No staff or tenant role was granted.");
                   });
                 }}
               >
@@ -327,14 +363,14 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
                     </select>
                   </label>
                   <label>
-                    Existing verified customer email
+                    School contact email
                     <input name="email" type="email" required />
                   </label>
                   <p>
-                    This pilot uses existing verified ESH identities. Customer access does not grant
-                    business administration.
+                    We will email an invitation. The contact can be new to ESH and receives customer
+                    access only.
                   </p>
-                  <button>Create customer account</button>
+                  <button>Create account and send invitation</button>
                 </fieldset>
               </form>
             ) : null}
@@ -345,6 +381,37 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
                     <p>
                       {a.customer_kind} · {a.status}
                     </p>
+                    {invitations
+                      .filter((i) => i.customer_id === a.customer_id)
+                      .map((i) => (
+                        <div key={i.invitation_id}>
+                          <p>
+                            {i.status === "accepted"
+                              ? "Invitation accepted"
+                              : new Date(i.expires_at) <= new Date()
+                                ? "Invitation expired"
+                                : "Invitation pending"}{" "}
+                            · {i.normalized_email}
+                          </p>
+                          {canManage && i.status === "pending" && a.status === "active" ? (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() =>
+                                void run(async () => {
+                                  const sent = await sendInvitation({
+                                    target_tenant_id: selected,
+                                    target_customer_id: a.customer_id,
+                                  });
+                                  if (sent) retry.current = null;
+                                })
+                              }
+                            >
+                              Resend invitation
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
                     {canManage ? (
                       <button
                         disabled={busy}

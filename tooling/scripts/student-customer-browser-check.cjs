@@ -66,6 +66,7 @@ async function main() {
         }),
       ),
     );
+    let invitations = [];
     let accounts = [],
       requests = [],
       allowed = true,
@@ -73,6 +74,45 @@ async function main() {
     const keys = [];
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
+    let emailFailed = true;
+    await context.route(origin + "/api/customers/invite", async (route) => {
+      const body = route.request().postDataJSON();
+      assert.ok(route.request().headers().authorization.startsWith("Bearer "));
+      assert.equal(body.target_tenant_id, tenant);
+      if (!body.target_customer_id) {
+        assert.equal(body.email_value, "TEST-school@example.invalid");
+        accounts = [
+          {
+            customer_id: customer,
+            tenant_id: tenant,
+            display_name: body.name_value,
+            customer_kind: "school",
+            status: "active",
+          },
+        ];
+        invitations = [
+          {
+            invitation_id: "TEST-INVITE",
+            customer_id: customer,
+            tenant_id: tenant,
+            normalized_email: body.email_value,
+            status: "pending",
+            expires_at: "2027-01-01",
+          },
+        ];
+      }
+      if (emailFailed) {
+        emailFailed = false;
+        return route.fulfill({
+          status: 502,
+          json: {
+            message:
+              "The account is saved, but the invitation email could not be sent. Use Resend invitation after one minute.",
+          },
+        });
+      }
+      return route.fulfill({ json: { message: "Invitation email requested." } });
+    });
     await context.route("http://127.0.0.1:54321/**", async (route) => {
       const req = route.request(),
         url = new URL(req.url());
@@ -93,6 +133,12 @@ async function main() {
             ],
           },
         });
+      if (url.pathname.endsWith("accept_my_student_customer_invitations")) {
+        if (allowed) invitations.forEach((i) => (i.status = "accepted"));
+        return route.fulfill({ json: allowed ? 1 : 0 });
+      }
+      if (url.pathname.endsWith("student_transportation_customer_invitations"))
+        return route.fulfill({ json: invitations });
       if (url.pathname.endsWith("my_student_customer_context"))
         return route.fulfill({
           json: {
@@ -156,10 +202,15 @@ async function main() {
     await page.goto(origin + "/clients");
     await page.getByLabel("School or organization name", { exact: true }).fill("TEST SCHOOL");
     await page
-      .getByLabel("Existing verified customer email", { exact: true })
+      .getByLabel("School contact email", { exact: true })
       .fill("TEST-school@example.invalid");
-    await page.getByRole("button", { name: "Create customer account", exact: true }).click();
-    await page.getByRole("status").filter({ hasText: "Customer account created" }).waitFor();
+    await page
+      .getByRole("button", { name: "Create account and send invitation", exact: true })
+      .click();
+    await page.getByRole("status").filter({ hasText: "account is saved" }).waitFor();
+    await page.getByRole("button", { name: "Resend invitation", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "Invitation email requested" }).waitFor();
+    assert.equal(accounts.length, 1);
     await page.screenshot({
       path: path.join(evidence, "414-internal-customers.png"),
       fullPage: true,
@@ -167,7 +218,9 @@ async function main() {
     await page.goto(origin + "/school");
     await page.getByRole("heading", { name: "Schedule a shared journey", exact: true }).waitFor();
     assert.equal(
-      await page.getByRole("button", { name: "Create customer account", exact: true }).count(),
+      await page
+        .getByRole("button", { name: "Create account and send invitation", exact: true })
+        .count(),
       0,
     );
     await page.getByLabel("Requested pickup time", { exact: true }).fill("2027-01-12T07:00");
@@ -232,7 +285,7 @@ async function main() {
     await page.getByRole("heading", { name: "Secure sign-in", exact: true }).waitFor();
     assert.deepEqual(errors, []);
     console.log(
-      "PASS customer callback, internal account creation, customer no-admin controls, three-student scheduling request, same-key failure retry, reload, withdrawal, access clearing, local signout and compact/mobile/desktop layout. Mock backend only.",
+      "PASS customer callback, invitation send failure/account preservation/resend and automatic acceptance, customer no-admin controls, three-student request, same-key retry, reload, withdrawal, clearing and compact/mobile/desktop layout. Mock backend only; no email sent.",
     );
   } finally {
     if (browser) await browser.close();

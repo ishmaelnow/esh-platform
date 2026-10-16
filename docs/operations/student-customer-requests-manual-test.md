@@ -1,25 +1,28 @@
 # School customer request pilot
 
 Use clearly labelled TEST accounts/students only. No real child data or student transportation.
-Owner confirmed migration 20261015000200 applied and pushed ff826ef. Do not reapply that migration.
+Owner applied 20261015000200 and 20261015000300; pushed 6f99ee9 and confirmed Ready.
+Owner also saved /school callback. Do not reapply these migrations or repeat that setup.
 
 ## Owner release
 
 Run corepack pnpm exec supabase db push --dry-run. It should list only
-20261015000300_student_customer_requests.sql. Inspect before issuing the real db push.
+20261015000400_student_customer_invitations.sql. Inspect before issuing the real db push.
 Then owner stages explicit feature files, commits/pushes and checks Student Vercel Ready.
-Add https://school.eshapp.com/school to Supabase Authentication redirect URLs. Keep /admin,
-/guardian and all existing product callbacks; keep Site URL. Customer sign-in returns to /school;
+Keep the already saved https://school.eshapp.com/school Supabase redirect URL, /admin,
+/guardian and all existing callbacks/Site URL. Customer verification returns to /school;
 internal staff sign-in returns to /admin. No native rebuild or new environment variable.
 
 ## Business test
 
 1. In /admin, as ESH Education owner, enable pilot and retain existing Reviewer access if reviewing
    child data. Grant Internal enrollment staff only to company personnel. Do not grant it to schools.
-2. Follow Customers and transportation requests to /clients. Add TEST SCHOOL and an existing
-   verified ESH email belonging to the customer. This does not require inviting them as tenant staff.
-   Account creation sends no email invitation; share the public portal URL yourself.
-3. In a separate browser profile/private window sign in at /school with that customer email.
+2. Follow Customers and transportation requests to /clients. Enter TEST SCHOOL and a NEW school
+   contact email; click Create account and send invitation. Do not pre-create an ESH account or
+   grant tenant/staff access. Expect Invitation pending and an email request success message.
+3. Open the verification email link in a separate browser profile/private window. It returns to
+   /school, verifies the email and automatically accepts customer-only access. Refresh the internal
+   account list to see Invitation accepted. For later sign-ins use /school with the same email.
    Verify customer account selector, no internal management or access-grant controls.
 4. Enter a future time (check displayed device time zone), a shared destination and three students
    with different pickup addresses. Submit. Expect one request, Awaiting review / ride not confirmed.
@@ -33,10 +36,18 @@ internal staff sign-in returns to /admin. No native rebuild or new environment v
 9. Check 414x896, 320px, desktop; change account and sign out, checking private state clears.
 10. No new ordinary Rider booking or Driver assignment should exist. This is request intake only.
 
+Invitation recovery: simulate unavailable email in local fixtures, confirm the account remains,
+and use Resend invitation after one minute. No duplicate customer should be created. Test expired
+admission/resend, wrong recipient, unverified auth, paused account/program, suspended profile and
+uninvited account. They must not gain access. Supabase must allow passwordless signup for first-time
+identity verification and have working email delivery; do not change shared auth settings blindly.
+The email uses the existing provider verification template. Actual mailbox/callback acceptance is
+an owner test; local mocks never send a real email.
+
 ## Local checks
 
     node tooling/scripts/student-enrollment-sql-check.cjs
-    corepack pnpm exec vitest run apps/student-transportation/src/lib/customer.test.ts apps/student-transportation/src/lib/enrollment.test.ts apps/admin/src/lib/workspace-admin/types.test.ts
+    corepack pnpm exec vitest run apps/student-transportation/src/app/api/customers/invite/route.test.ts apps/student-transportation/src/lib/customer.test.ts apps/student-transportation/src/lib/enrollment.test.ts apps/admin/src/lib/workspace-admin/types.test.ts
     corepack pnpm --filter @esh-platform/student-transportation lint
     corepack pnpm --filter @esh-platform/student-transportation typecheck
     corepack pnpm --filter @esh-platform/supabase typecheck
@@ -51,4 +62,8 @@ node tooling/scripts/student-transportation-browser-check.cjs.
 Evidence: tmp/student-customer-evidence. Tests do not send real email or contact production.
 The SQL fixture includes customer-without-tenant-membership, account/tenant denial, three-student
 grouping, retries/mismatches, malformed/past requests, pause, withdrawal, audit and no staff escalation.
-Browser fixtures check account creation, correct callback, form/retry/reload/withdrawal and clearing.
+Invitation checks additionally cover a new email with no person/tenant account, actual verified-email
+identity bootstrap, expiry/resend cooldown, paused customer, suspended/mismatched profile, wrong
+recipient, anonymous denial and acceptance retries with zero staff/tenant grants. API provider calls
+are mocked. Browser fixtures cover send failure, retained account, resend, automatic acceptance,
+correct callback, form/retry/reload/withdrawal and clearing.

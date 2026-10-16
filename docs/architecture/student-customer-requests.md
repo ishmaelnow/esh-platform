@@ -1,6 +1,7 @@
 # Student Transportation customers and shared requests
 
-Status: implemented locally; owner migration/deployment pending. Student operations remain closed.
+Status: owner applied 20261015000300, pushed 6f99ee9 and confirmed Student deployment Ready.
+Invitation completion in 20261015000400 is local pending owner release. Student operations remain closed.
 This supersedes earlier descriptions of client schools as enrollment administrators.
 
 ## Business boundary
@@ -39,9 +40,9 @@ visiting their URLs does not grant privileges. /guardian remains a closed tracki
 
 Migration 20261015000300_student_customer_requests.sql adds product-owned customers, customer
 users and transport requests. Tenant-bound composite FKs prevent account/request mismatches.
-Existing verified active identities can be explicitly admitted to accounts without business
-membership. Identity creation/onboarding invitations and extra customer contact management are
-not implemented in this pilot; internal staff enter an existing verified identity's email.
+Customer accounts do not require business membership. Internal staff enter a school name and
+new contact email; pending invitation acceptance is described below. Extra customer contact
+management remains future work.
 
 Customer authorization requires verified auth, active person, active customer/tenant and enabled
 enrollment pilot. Account members can see that account's requests, never another account's
@@ -52,8 +53,39 @@ direct writes or customer-user table reads. Security-definer RPCs retain narrow 
 Account creation and submission accept actor/tenant-scoped idempotency keys; payload mismatches
 fail. Uniqueness also handles concurrent retry inserts. Withdrawals are idempotent and account-
 authorized. Customer pause hides its data and blocks submissions; restore does not book a ride.
-Audit stores generic reasons, resource IDs and counts, not child names/addresses/email. No push,
-email, public realtime, browser persistence or additional file storage is introduced.
+Audit stores generic reasons, resource IDs and counts, not child names/addresses/email. Invitation
+verification email is the only added email flow; no trip email, push, public realtime, browser
+student-data persistence or additional file storage is introduced.
+
+## First-time customer invitation
+
+Migration 20261015000400 adds private, tenant/customer-bound pending invitations. The staff form
+calls a same-origin bearer-authenticated API; its caller-JWT RPC creates the customer and invitation
+transactionally, without requiring a person/auth account for the recipient. Names/emails are bounded;
+the server checks verified staff identity and database management authorization before requesting
+email. Customer creation retries reuse the same key/account. Email failure retains the saved account.
+
+The API uses the existing public Supabase client and signInWithOtp(shouldCreateUser:true) for the
+invited email. Supabase creates a first-time auth identity and sends its verification email; existing
+accounts receive a sign-in email. No service-role key, Resend credential, auth-admin creation, tenant
+invitation or existing app auth/template change is introduced. The destination is fixed to
+https://school.eshapp.com/school; caller-supplied email/redirect cannot redirect a resend.
+Provider signup/SMTP limits still apply; provider acceptance is not mailbox delivery.
+
+On verified /school sign-in, accept_my_student_customer_invitations matches the actual auth.users
+email, never browser payload/JWT user metadata. It accepts only unexpired invitations for active
+customers/tenants with the pilot enabled, then creates/reuses an active matching neutral identity
+and inserts customer membership. Suspended/deactivated identities and mismatched existing auth
+bindings are not reactivated/relinked. No invitation means no identity bootstrap or access.
+Acceptance retries do not duplicate membership/audit. It creates no tenant membership, enrollment
+staff, platform role, parent grant or operational lease. Existing account admission is preserved.
+
+Pending invitations expire after seven days; actual verification-link expiry follows Supabase's
+configuration. Internal staff see Pending/Expired/Accepted and can resend pending invitations;
+resend renews the admission expiry. Attempt reservations enforce a 60-second per-invitation cooldown,
+including failed sends. There is no background delivery retry. Last attempt is not proof of delivery.
+Pause prevents invitation acceptance and account use. Invitations/email addresses are readable only
+by customer-management staff, not school customers/Reviewers without management permission.
 
 Browser failures retain the unchanged submission key; changed data requires refresh. Saved
 requests survive reload; unsaved input does not. Identity/account changes clear private state,

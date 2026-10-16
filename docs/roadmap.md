@@ -3,11 +3,17 @@
 Student business-model clarification (2026-10-15): client schools/organizations/groups are
 customers, analogous to Riders in a separate service, never tenant administrators by default.
 Internal business staff administer enrollment and accounts. Parent access remains own-child
-tracking only. Owner applied 20261015000200 and pushed ff826ef. New local 20261015000300 adds
+tracking only. Owner applied 20261015000200/20261015000300, pushed 6f99ee9 and confirmed Ready.
+The request release adds
 explicit customer accounts without staff membership and grouped scheduled request intake;
 one request can contain three students at separate pickup addresses. No confirmed rides,
 route assignment, recurring schedules or student Driver execution yet. See
 architecture/student-customer-requests.md for the current slice and release/safety gates.
+
+Current invitation completion: local 20261015000400 lets internal staff create a school with a
+NEW email, send verification, and admit the verified recipient to only its customer account.
+No manual pre-registration, tenant or staff role is required. Resend/expiry/retry handling is
+included; owner migration and hosted release remain pending.
 
 This roadmap tracks delivery order without changing the architectural boundaries in the detailed design
 documents. Transportation is the first product domain built on ESH Platform; reusable foundations must

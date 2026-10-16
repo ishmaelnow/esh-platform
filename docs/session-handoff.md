@@ -4,42 +4,46 @@ Last updated: 2026-10-15
 
 ## Current objective and checkpoint
 
-Current 2026-10-15 objective: owner clarified client schools/organizations/groups are customers
-analogous to Riders, isolated from ordinary Transportation. Internal business staff administer;
-parents only track their own child; Drivers eventually execute consolidated student routes.
-Owner approved GO. Do not treat a school customer as tenant owner or internal school_admin.
-Owner applied 20261015000200 and pushed ff826ef (Git main/origin aligned); do not reapply it.
-ESH Education is the operating business tenant. /admin and /guardian callbacks are owner-saved;
-fresh owner sign-in and explicit Reviewer admission succeeded. School /school callback is new
-and requires owner addition before customer sign-in tests. Keep shared Site URL/other callbacks.
+Current 2026-10-15 objective: finish first-school customer onboarding. Owner correctly rejected
+the existing-verified-email prerequisite. Internal staff must enter a school and NEW contact email,
+send an invitation, and admit the verified recipient only to that customer account. GO authorized.
+Business model remains: schools/organizations/groups are customers, internal personnel administer,
+parents only track their child, Drivers eventually execute shared routes. No customer staff grants.
 
-Implemented locally: /school customer portal, /clients internal account/requests screen,
-/enrollment moved internal form. UI labels school_admin as Internal enrollment staff (legacy RPC
-key retained). Migration 20261015000300 adds customer accounts/membership and grouped scheduled
-request intake. Explicit customer admission needs an existing verified identity, not tenant
-membership or staff authority. Three students/three pickups create one request. Proposed text
-addresses and student snapshots await staff validation; no route, fare, driver or booking exists.
-Internal account creation/pause, customer list/submit/withdraw, tenant/account RLS, generic audit
-and idempotent retry are implemented. No ordinary Transportation/Community runtime changes.
-Reviewers/staff see tenant request queue; owners alone do not implicitly read student requests.
-Parents have no enrollment access. Recurring schedules, canonical student mapping, real geocoding,
-route approval/assignment, capacity/eligibility/handoff, tracking, billing and notifications remain
-future gates. Shared ordinary resources require cross-product reservation protection first.
+Owner applied 20261015000200/20261015000300, pushed 6f99ee9, confirmed Student Vercel Ready and
+saved /school redirect URL. Existing /admin and /guardian callbacks and Site URL stay intact.
+Account/request release is live; do not reapply its migrations or ask for manual pre-registration.
+Local new migration 20261015000400_student_customer_invitations.sql adds pending invitations,
+seven-day admission expiry, 60-second email-attempt cooldown and verified-email acceptance.
+The same-origin caller-JWT API prepares authorized account invitations then requests Supabase
+passwordless verification with shouldCreateUser:true for new emails. Fixed /school return; no
+service-role key, Resend key, tenant invitation or other-product auth/template change. Provider
+must support passwordless signup/email delivery; actual remote provider behavior remains owner test.
 
-Checks so far: actual SQL migration/minimal legacy fixture passes customer-without-membership,
-cross-account/tenant denial, no staff escalation, three-student request, duplicate/mismatched retry,
-invalid schedule/payload, pause, withdrawal, audit and disabled rides. App lint/shared types and
-10 focused unit checks pass. Enabled built app mocked customer flow and prior staff enrollment
-browser tests pass. Complete 414px customer form screenshot inspected; 320px/desktop checks pass.
-Final enabled build and both customer/staff browser reruns pass. Final default-off production
-build and 21 screen/viewport shell checks pass; no forms/data/external calls when disabled.
-SQL rerun passes after bounded-payload preflight and reviewer customer-name read access refinement.
-Existing Next ESLint-plugin warning remains nonblocking. Diff/format checks pass. Migration remains
-LOCAL ONLY; no owner dry run yet. No production mutation, real email or Git mutation by Codex.
+Customer load accepts matching active/unexpired invitations using actual verified auth email,
+creates/reuses neutral active identity, and grants customer membership only. Uninvited/wrong-email,
+unverified/expired/paused and suspended/mismatched-profile acceptance are denied. No tenant/staff,
+platform, enrollment or parent grant. Existing customer memberships persist. Staff form now says
+School contact email / Create account and send invitation. Pending/Expired/Accepted status and
+Resend invitation are visible. Failed sends retain account; retries/resends do not create a new one.
+No actual email was sent by Codex. All invitation endpoints/provider calls in tests are mocked.
+
+Checks: 19 focused unit/API tests; actual new SQL on minimal legacy fixtures including new-email
+identity creation, expiry/resend/wrong recipient/unverified denial and zero staff/tenant grants;
+scoped lint/types and enabled production build pass. Customer and existing internal enrollment
+browser flows pass, including send failure/recovery and shared-request regression. Complete 414px
+screenshots retained under tmp/student-customer-evidence and inspected; compact/desktop checks pass.
+Final default-off production build and 21 shell/viewport checks pass. Existing Supabase bundler
+and Next ESLint-plugin warnings are nonblocking. Diff/format checks pass. Tests are not production
+RLS/concurrency, real mailbox callback or physical-device certification.
+
 Read architecture/student-customer-requests.md and operations/student-customer-requests-manual-test.md.
-Next: finish checks; owner dry-run only 20261015000300, then migration/scoped Git release;
-add exact https://school.eshapp.com/school callback and test separate customer/internal accounts.
-Preserve existing assistant/docs work, Driver/Rider generated configs and unknown git/main.
+Next: finish checks; owner dry-run ONLY 20261015000400, then owner migration/scoped Git release.
+Test first-school invitation with a new email; do not grant tenant/staff roles to that customer.
+Requests remain intake only: routes, assignment, real geocoding, recurrence, canonical students,
+eligibility/capacity/boarding/handoff, private parent tracking and billing are still future gates.
+Preserve unrelated assistant/docs work, Driver/Rider generated configs and unknown git/main.
+No Git/deployment/production database mutation or actual email send by Codex.
 
 ### Historical Student checkpoint (superseded by the current role correction)
 
