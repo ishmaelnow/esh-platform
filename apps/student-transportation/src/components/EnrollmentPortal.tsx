@@ -266,7 +266,7 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
       <section aria-labelledby="portal-title">
         <p className="eyebrow">Enrollment pilot · rides are not available</p>
         <h1 id="portal-title">
-          {mode === "school" ? "School enrollment" : "Enrollment administration"}
+          {mode === "school" ? "Student enrollment · internal staff" : "Enrollment administration"}
         </h1>
         <p>
           No transportation is booked here. Contact details are proposed contacts for review, not
@@ -415,7 +415,7 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
                   <label>
                     Enrollment role
                     <select name="role" aria-label="Enrollment role" disabled={busy}>
-                      <option value="school_admin">School administrator</option>
+                      <option value="school_admin">Internal enrollment staff</option>
                       <option value="reviewer">Reviewer</option>
                     </select>
                   </label>
@@ -431,8 +431,13 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
               </div>
             ) : null}
             {program?.canEnroll && mode === "admin" ? (
-              <Link className="back" href="/school">
+              <Link className="back" href="/enrollment">
                 Manage student enrollment →
+              </Link>
+            ) : null}
+            {program && (program.canConfigure || program.canEnroll || program.canReview) ? (
+              <Link className="back" href="/clients">
+                Customers and transportation requests →
               </Link>
             ) : null}
             {program && !permitted ? (
@@ -668,8 +673,8 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
                             setInput({ ...input, authorityAttested: event.target.checked })
                           }
                         />
-                        I confirm my school is authorized to submit enrollment for this student and
-                        provide these contacts.
+                        I confirm our business is authorized to submit enrollment for this student
+                        and provide these contacts.
                       </label>
                       <div className="portal-actions">
                         <button

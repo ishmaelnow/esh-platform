@@ -1,9 +1,13 @@
 # Product and Platform Roadmap
 
-Student enrollment role correction (2026-10-15): school administrators enroll students;
-owners govern access and reviewers validate submissions. Parent access is reserved for future
-own-child tracking. Local migration 20261015000200 and staff UI await owner release.
-See architecture/student-school-enrollment.md.
+Student business-model clarification (2026-10-15): client schools/organizations/groups are
+customers, analogous to Riders in a separate service, never tenant administrators by default.
+Internal business staff administer enrollment and accounts. Parent access remains own-child
+tracking only. Owner applied 20261015000200 and pushed ff826ef. New local 20261015000300 adds
+explicit customer accounts without staff membership and grouped scheduled request intake;
+one request can contain three students at separate pickup addresses. No confirmed rides,
+route assignment, recurring schedules or student Driver execution yet. See
+architecture/student-customer-requests.md for the current slice and release/safety gates.
 
 This roadmap tracks delivery order without changing the architectural boundaries in the detailed design
 documents. Transportation is the first product domain built on ESH Platform; reusable foundations must

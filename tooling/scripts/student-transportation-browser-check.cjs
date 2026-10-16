@@ -50,7 +50,15 @@ async function main() {
       { width: 1280, height: 900 },
     ]) {
       await page.setViewportSize(viewport);
-      for (const route of ["/", "/guardian", "/school", "/operator", "/admin"]) {
+      for (const route of [
+        "/",
+        "/guardian",
+        "/school",
+        "/operator",
+        "/admin",
+        "/enrollment",
+        "/clients",
+      ]) {
         const response = await page.goto(origin + route);
         assert.equal(response.status(), 200);
         await page.getByRole("heading", { name: "Not open for bookings yet" }).waitFor();
@@ -66,14 +74,14 @@ async function main() {
       }
     }
     await page.goto(origin);
-    await page.getByRole("link", { name: "Schools" }).click();
+    await page.getByRole("link", { name: "Schools and organizations" }).click();
     await page.getByRole("heading", { name: "For schools" }).waitFor();
     await page.getByRole("link", { name: "← Home", exact: true }).click();
     await page.getByRole("heading", { name: "School journeys, thoughtfully planned" }).waitFor();
     assert.deepEqual(external, []);
     assert.deepEqual(errors, []);
     console.log(
-      "PASS 15 rendered screen/viewport combinations, entry/home navigation, no overflow, no data forms, no external requests or browser errors.",
+      "PASS 21 rendered screen/viewport combinations, entry/home navigation, no overflow, no data forms, no external requests or browser errors.",
     );
   } finally {
     if (browser) await browser.close();

@@ -1,4 +1,4 @@
-import { EnrollmentPortal } from "../../components/EnrollmentPortal";
+import { CustomerPortal } from "../../components/CustomerPortal";
 export default function Page() {
-  return <EnrollmentPortal mode="school" />;
+  return <CustomerPortal />;
 }

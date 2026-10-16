@@ -1,6 +1,10 @@
 # School-managed Student enrollment
 
-Status: local implementation; owner migration and hosted release pending.
+Status: owner applied migration 20261015000200 and pushed ff826ef.
+Terminology/routes corrected by [customer requests](student-customer-requests.md):
+"School administrator" means internal company enrollment staff, not a client school's staff.
+/enrollment now contains that internal form; /school is the separate customer request portal.
+The historical /school and no-requests descriptions below are superseded.
 Supersedes the role model in student-guardian-enrollment.md.
 
 Organization owners configure the pilot and explicitly admit School administrators and Reviewers.

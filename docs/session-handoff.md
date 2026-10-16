@@ -4,29 +4,42 @@ Last updated: 2026-10-15
 
 ## Current objective and checkpoint
 
-Current 2026-10-15 checkpoint supersedes the older Student notes below: owner pushed c68c6d0,
-saved school /admin and /guardian callback allowlist entries, and signed in successfully as the
-ESH Education owner. Read-only invalid-token routing probes confirmed both school callbacks;
-owner enabled pilot and granted themselves Reviewer, seeing No enrollments yet. No real emails
-or production grants were executed by Codex.
+Current 2026-10-15 objective: owner clarified client schools/organizations/groups are customers
+analogous to Riders, isolated from ordinary Transportation. Internal business staff administer;
+parents only track their own child; Drivers eventually execute consolidated student routes.
+Owner approved GO. Do not treat a school customer as tenant owner or internal school_admin.
+Owner applied 20261015000200 and pushed ff826ef (Git main/origin aligned); do not reapply it.
+ESH Education is the operating business tenant. /admin and /guardian callbacks are owner-saved;
+fresh owner sign-in and explicit Reviewer admission succeeded. School /school callback is new
+and requires owner addition before customer sign-in tests. Keep shared Site URL/other callbacks.
 
-Owner corrected intended roles: school administrators enroll; parents only track their own child's
-rides. Authorized GO. Local correction adds explicit can_manage_enrollments/school_admin grants,
-retires and audits old Guardian enrollment authority without automatic promotion, preserves
-reviewers/records and self-review denial. /school is staff enrollment; /guardian is closed parent
-tracking notice. Staff sign-in returns to existing /admin callback then links to /school.
-Parent tracking/relationships remain unavailable; do not pretend proposed contacts authorize it.
-Migration 20261015000200_school_managed_enrollment.sql is local only, NOT production-applied.
-SQL isolation/lifecycle/legacy-grant-retirement checks, app lint and shared typecheck pass.
-Eight focused unit checks, enabled production build and mocked staff enrollment browser flow pass
-(save retry, reload, contacts, submit/reject/resubmit/withdraw, grants, clearing and parent no-form).
-Complete 414px staff form screenshot inspected under tmp/student-enrollment-evidence; compact
-320px and desktop overflow checks pass. Final default-off build and 15 shell/viewport checks pass.
-Tests do not certify production RLS integration, actual email or native behavior.
-Read architecture/student-school-enrollment.md and operations/student-school-enrollment-manual-test.md.
-Next: finish checks, owner dry-run for only 20261015000200, then owner migration and scoped Git release.
-Preserve earlier assistant/docs work and generated Rider/Driver configs, unknown git/main and
-superseded manual SQL artifacts. No Git mutations or remote DB changes by Codex.
+Implemented locally: /school customer portal, /clients internal account/requests screen,
+/enrollment moved internal form. UI labels school_admin as Internal enrollment staff (legacy RPC
+key retained). Migration 20261015000300 adds customer accounts/membership and grouped scheduled
+request intake. Explicit customer admission needs an existing verified identity, not tenant
+membership or staff authority. Three students/three pickups create one request. Proposed text
+addresses and student snapshots await staff validation; no route, fare, driver or booking exists.
+Internal account creation/pause, customer list/submit/withdraw, tenant/account RLS, generic audit
+and idempotent retry are implemented. No ordinary Transportation/Community runtime changes.
+Reviewers/staff see tenant request queue; owners alone do not implicitly read student requests.
+Parents have no enrollment access. Recurring schedules, canonical student mapping, real geocoding,
+route approval/assignment, capacity/eligibility/handoff, tracking, billing and notifications remain
+future gates. Shared ordinary resources require cross-product reservation protection first.
+
+Checks so far: actual SQL migration/minimal legacy fixture passes customer-without-membership,
+cross-account/tenant denial, no staff escalation, three-student request, duplicate/mismatched retry,
+invalid schedule/payload, pause, withdrawal, audit and disabled rides. App lint/shared types and
+10 focused unit checks pass. Enabled built app mocked customer flow and prior staff enrollment
+browser tests pass. Complete 414px customer form screenshot inspected; 320px/desktop checks pass.
+Final enabled build and both customer/staff browser reruns pass. Final default-off production
+build and 21 screen/viewport shell checks pass; no forms/data/external calls when disabled.
+SQL rerun passes after bounded-payload preflight and reviewer customer-name read access refinement.
+Existing Next ESLint-plugin warning remains nonblocking. Diff/format checks pass. Migration remains
+LOCAL ONLY; no owner dry run yet. No production mutation, real email or Git mutation by Codex.
+Read architecture/student-customer-requests.md and operations/student-customer-requests-manual-test.md.
+Next: finish checks; owner dry-run only 20261015000300, then migration/scoped Git release;
+add exact https://school.eshapp.com/school callback and test separate customer/internal accounts.
+Preserve existing assistant/docs work, Driver/Rider generated configs and unknown git/main.
 
 ### Historical Student checkpoint (superseded by the current role correction)
 

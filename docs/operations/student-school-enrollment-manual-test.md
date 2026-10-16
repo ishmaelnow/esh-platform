@@ -1,5 +1,10 @@
 # School enrollment role correction
 
+Owner applied 20261015000200 and pushed ff826ef. Current terminology and routes are in
+[customer request testing](student-customer-requests-manual-test.md): grant Internal enrollment
+staff to company personnel, not school customers; the internal enrollment form is now /enrollment.
+Do not reapply the migration or follow historical customer-as-staff instructions below.
+
 Use identifiable TEST students only. Owner controls all release/production commands.
 
 Run corepack pnpm exec supabase db push --dry-run. Verify only

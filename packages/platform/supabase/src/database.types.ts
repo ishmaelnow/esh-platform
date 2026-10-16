@@ -41,6 +41,9 @@ export type Database = {
   }
   public: {
     Tables: {
+      student_transportation_customers: { Row: { customer_id: string; tenant_id: string; display_name: string; customer_kind: string; status: string; created_by: string; request_id: string; creation_hash: string }; Insert: never; Update: never; Relationships: [] }
+      student_transportation_customer_users: { Row: { tenant_id: string; customer_id: string; person_id: string }; Insert: never; Update: never; Relationships: [] }
+      student_transportation_requests: { Row: { request_id: string; tenant_id: string; customer_id: string; submitted_by: string; idempotency_key: string; payload_hash: string; scheduled_at: string; destination_address: string; students: Json; status: string; created_at: string; updated_at: string }; Insert: never; Update: never; Relationships: [] }
       student_transportation_enrollment_programs: { Row: { tenant_id: string; enrollment_enabled: boolean }; Insert: { tenant_id: string; enrollment_enabled?: boolean }; Update: { enrollment_enabled?: boolean }; Relationships: [] }
       student_transportation_enrollment_access: { Row: { tenant_id: string; person_id: string; can_enroll: boolean; can_manage_enrollments: boolean; can_review: boolean }; Insert: { tenant_id: string; person_id: string; can_enroll?: boolean; can_manage_enrollments?: boolean; can_review?: boolean }; Update: { can_enroll?: boolean; can_manage_enrollments?: boolean; can_review?: boolean }; Relationships: [] }
       student_transportation_students: { Row: StudentEnrollment; Insert: StudentEnrollment; Update: Partial<StudentEnrollment>; Relationships: [] }
@@ -2721,6 +2724,13 @@ export type Database = {
       configure_student_enrollment_program: { Args: { target_tenant_id: string; enabled_value: boolean; reason_value: string }; Returns: boolean }
       set_student_enrollment_access: { Args: { target_tenant_id: string; email_value: string; role_value: string; enabled_value: boolean; reason_value: string }; Returns: boolean }
       my_student_enrollment_context: { Args: never; Returns: Json }
+      has_student_customer_access: { Args: { target_tenant_id: string; target_customer_id: string }; Returns: boolean }
+      can_manage_student_customers: { Args: { target_tenant_id: string }; Returns: boolean }
+      my_student_customer_context: { Args: never; Returns: Json }
+      create_student_customer: { Args: { target_tenant_id: string; request_id_value: string; name_value: string; kind_value: string; email_value: string }; Returns: string }
+      submit_student_transport_request: { Args: { target_tenant_id: string; target_customer_id: string; idempotency_key_value: string; scheduled_at_value: string; destination_value: string; students_value: Json }; Returns: string }
+      withdraw_student_transport_request: { Args: { target_tenant_id: string; target_request_id: string }; Returns: boolean }
+      set_student_customer_status: { Args: { target_tenant_id: string; target_customer_id: string; active_value: boolean }; Returns: boolean }
       save_my_student_enrollment: { Args: { target_tenant_id: string; request_id_value: string; student_id_value: string | null; action_value: string; payload_value: Json }; Returns: string }
       review_student_enrollment: { Args: { target_tenant_id: string; student_id_value: string; request_id_value: string; decision_value: string; notes_value: string }; Returns: string }
       set_tenant_workspace_status: { Args: { target_tenant_id: string; target_workspace_key: string; target_status: string; reason_value: string }; Returns: boolean }

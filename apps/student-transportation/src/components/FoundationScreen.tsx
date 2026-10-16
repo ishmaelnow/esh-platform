@@ -36,14 +36,14 @@ export function FoundationScreen({
             {audience === "guardian"
               ? "Parent access will be limited to tracking their own child’s ride. Tracking is not available yet; parents cannot enroll students here."
               : enrollmentAvailable
-                ? "Enrollment is available to authorized school administrators. Transportation requests remain unavailable."
+                ? "Schools and organizations can submit scheduled requests after account admission. Internal staff review them; rides remain unavailable."
                 : "Enrollment and transportation requests are not available. No student information is collected here."}
           </p>
         </div>
         {!audience ? (
           <nav aria-label="Student Transportation entry">
             <Link href="/school">
-              Schools <span aria-hidden="true">→</span>
+              Schools and organizations <span aria-hidden="true">→</span>
             </Link>
             <Link href="/guardian">
               Parent tracking <span aria-hidden="true">→</span>
@@ -52,7 +52,7 @@ export function FoundationScreen({
               Operators <span aria-hidden="true">→</span>
             </Link>
             <Link href="/admin">
-              Administration <span aria-hidden="true">→</span>
+              Internal administration <span aria-hidden="true">→</span>
             </Link>
           </nav>
         ) : (

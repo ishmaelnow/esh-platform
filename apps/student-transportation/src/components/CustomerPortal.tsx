@@ -1,0 +1,544 @@
+"use client";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createIsolatedBrowserSupabaseClient,
+  type SupabaseAuthSession,
+  type Database,
+} from "@esh-platform/supabase";
+import { readEnrollmentContext, type EnrollmentProgram } from "../lib/enrollment";
+import {
+  readCustomers,
+  readRequestStudents,
+  type Customer,
+  type RequestStudent,
+} from "../lib/customer";
+import { FoundationScreen } from "./FoundationScreen";
+type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
+type AccountRow = Database["public"]["Tables"]["student_transportation_customers"]["Row"];
+function field(form: FormData, name: string) {
+  const value = form.get(name);
+  return typeof value === "string" ? value : "";
+}
+
+export function CustomerPortal({ internal = false }: { internal?: boolean }) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const enabled = process.env.NEXT_PUBLIC_STUDENT_ENROLLMENT_ENABLED === "true";
+  const client = useMemo(
+    () =>
+      enabled && url && key
+        ? createIsolatedBrowserSupabaseClient("esh-student-transportation-auth", {
+            url,
+            anonKey: key,
+          })
+        : null,
+    [enabled, url, key],
+  );
+  const [session, setSession] = useState<SupabaseAuthSession | null>(null);
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [programs, setPrograms] = useState<EnrollmentProgram[]>([]);
+  const [selected, setSelected] = useState("");
+  const [requests, setRequests] = useState<RequestRow[]>([]);
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [students, setStudents] = useState<RequestStudent[]>([{ name: "", pickupAddress: "" }]);
+  const [schedule, setSchedule] = useState("");
+  const [destination, setDestination] = useState("");
+  const retry = useRef<{ signature: string; id: string } | null>(null);
+  const generation = useRef(0);
+  const customer = customers.find((c) => c.customerId === selected);
+  const program = programs.find((p) => p.tenantId === selected);
+  const canManage = !!(program?.canConfigure || program?.canEnroll);
+  const clear = useCallback(() => {
+    generation.current++;
+    setCustomers([]);
+    setPrograms([]);
+    setSelected("");
+    setRequests([]);
+    setAccounts([]);
+    setStudents([{ name: "", pickupAddress: "" }]);
+    setSchedule("");
+    setDestination("");
+    retry.current = null;
+  }, []);
+  useEffect(() => {
+    if (!client) return;
+    let live = true;
+    let identity: string | null = null;
+    const accept = (next: SupabaseAuthSession | null) => {
+      if (!live) return;
+      if (identity !== (next?.user.id ?? null)) {
+        clear();
+        setMessage("");
+        identity = next?.user.id ?? null;
+      }
+      setSession(next);
+      setReady(true);
+    };
+    const { data } = client.auth.onAuthStateChange((_event, next) => accept(next));
+    void client.auth
+      .getSession()
+      .then((result) => {
+        if (result.error) throw result.error;
+        accept(result.data.session);
+      })
+      .catch(() => {
+        if (live) {
+          setReady(true);
+          setMessage("Sign-in could not be restored. Please try again.");
+        }
+      });
+    return () => {
+      live = false;
+      data.subscription.unsubscribe();
+    };
+  }, [client, clear]);
+  const load = useCallback(
+    async (choice = "") => {
+      if (!client) return;
+      const current = ++generation.current;
+      let options: Customer[] = [];
+      let nextPrograms: EnrollmentProgram[] = [];
+      if (internal) {
+        const result = await client.rpc("my_student_enrollment_context");
+        if (result.error) throw result.error;
+        nextPrograms = readEnrollmentContext(result.data).programs.filter(
+          (p) => p.canConfigure || p.canEnroll || p.canReview,
+        );
+      } else {
+        const result = await client.rpc("my_student_customer_context");
+        if (result.error) throw result.error;
+        options = readCustomers(result.data);
+      }
+      const ids = internal ? nextPrograms.map((p) => p.tenantId) : options.map((c) => c.customerId);
+      const id = ids.includes(choice) ? choice : (ids[0] ?? "");
+      const tenant = internal ? id : options.find((c) => c.customerId === id)?.tenantId;
+      let nextRequests: RequestRow[] = [];
+      let nextAccounts: AccountRow[] = [];
+      if (tenant) {
+        let query = client
+          .from("student_transportation_requests")
+          .select("*")
+          .eq("tenant_id", tenant);
+        if (!internal) query = query.eq("customer_id", id);
+        const result = await query.order("created_at", { ascending: false }).limit(100);
+        if (result.error) throw result.error;
+        nextRequests = result.data;
+        if (internal) {
+          const result = await client
+            .from("student_transportation_customers")
+            .select("*")
+            .eq("tenant_id", tenant)
+            .order("display_name")
+            .limit(100);
+          if (result.error) throw result.error;
+          nextAccounts = result.data;
+        }
+      }
+      if (current !== generation.current) return;
+      setCustomers(options);
+      setPrograms(nextPrograms);
+      setSelected(id);
+      setRequests(nextRequests);
+      setAccounts(nextAccounts);
+    },
+    [client, internal],
+  );
+  useEffect(() => {
+    if (!session?.user.id) return;
+    void load().catch(() => {
+      clear();
+      setMessage("We could not load your account. Please refresh.");
+    });
+  }, [session?.user.id, load, clear]);
+  const run = async (action: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      await action();
+    } catch {
+      setMessage(
+        "We could not complete this request. Refresh to check its status before trying again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const requestKey = (signature: string) => {
+    if (retry.current && retry.current.signature !== signature)
+      throw new Error("Unresolved request; retry unchanged or refresh first");
+    retry.current ??= { signature, id: crypto.randomUUID() };
+    return retry.current.id;
+  };
+  if (!enabled) return <FoundationScreen audience={internal ? "admin" : "school"} />;
+  if (!client)
+    return (
+      <main>
+        <h1>Student Transportation</h1>
+        <p>Service is temporarily unavailable.</p>
+      </main>
+    );
+  return (
+    <main className="enrollment-portal">
+      <header>
+        <Link href="/">
+          ESH <span>Student Transportation</span>
+        </Link>
+      </header>
+      <section>
+        <p className="eyebrow">Request pilot · rides are not available</p>
+        <h1>{internal ? "Customers and requests" : "School transportation"}</h1>
+        <p>
+          {internal
+            ? "Internal staff manage customer accounts and review scheduled requests."
+            : "Request a school, organization or group journey for students travelling together."}
+        </p>
+        <p>
+          Requests require operational review. No driver, vehicle, fare or ride is confirmed here.
+        </p>
+        {!ready ? (
+          <p role="status">Restoring sign-in…</p>
+        ) : !session ? (
+          <form
+            className="notice"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const email = field(new FormData(e.currentTarget), "email");
+              void run(async () => {
+                const result = await client.auth.signInWithOtp({
+                  email,
+                  options: {
+                    shouldCreateUser: false,
+                    emailRedirectTo: `${window.location.origin}/${internal ? "admin" : "school"}`,
+                  },
+                });
+                if (result.error) throw result.error;
+                setMessage(
+                  "Check your email for a secure sign-in link. Use the account admitted by your transportation provider.",
+                );
+              });
+            }}
+          >
+            <h2>Secure sign-in</h2>
+            <label>
+              Email address
+              <input name="email" type="email" required disabled={busy} />
+            </label>
+            <button disabled={busy}>Email me a secure link</button>
+          </form>
+        ) : (
+          <>
+            <p>Signed in as {session.user.email}</p>
+            <div className="portal-actions">
+              <button
+                disabled={busy}
+                onClick={() =>
+                  void run(async () => {
+                    clear();
+                    await load(selected);
+                    retry.current = null;
+                  })
+                }
+              >
+                Refresh requests
+              </button>
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() =>
+                  void run(async () => {
+                    const result = await client.auth.signOut({ scope: "local" });
+                    if (result.error) throw result.error;
+                    clear();
+                  })
+                }
+              >
+                Sign out
+              </button>
+            </div>
+            <label>
+              {internal ? "Operating business" : "Customer account"}
+              <select
+                value={selected}
+                disabled={busy}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  clear();
+                  void run(() => load(id));
+                }}
+              >
+                {!selected ? <option value="">No account access</option> : null}
+                {(internal
+                  ? programs.map((p) => ({ id: p.tenantId, name: p.name }))
+                  : customers.map((c) => ({ id: c.customerId, name: c.name }))
+                ).map((c) => (
+                  <option value={c.id} key={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {!selected ? (
+              <p>No account access is available. Contact your transportation provider.</p>
+            ) : null}
+            {internal && canManage ? (
+              <form
+                className="notice"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = new FormData(e.currentTarget);
+                  const element = e.currentTarget;
+                  const body = {
+                    target_tenant_id: selected,
+                    name_value: field(form, "name"),
+                    kind_value: field(form, "kind"),
+                    email_value: field(form, "email"),
+                  };
+                  void run(async () => {
+                    const id = requestKey(JSON.stringify(body));
+                    const result = await client.rpc("create_student_customer", {
+                      ...body,
+                      request_id_value: id,
+                    });
+                    if (result.error) throw result.error;
+                    retry.current = null;
+                    element.reset();
+                    await load(selected);
+                    setMessage("Customer account created. No staff or tenant role was granted.");
+                  });
+                }}
+              >
+                <h2>Add customer account</h2>
+                <fieldset disabled={busy}>
+                  <label>
+                    School or organization name
+                    <input name="name" required maxLength={160} />
+                  </label>
+                  <label>
+                    Customer type
+                    <select name="kind">
+                      <option value="school">School</option>
+                      <option value="organization">Organization</option>
+                      <option value="group">Group</option>
+                    </select>
+                  </label>
+                  <label>
+                    Existing verified customer email
+                    <input name="email" type="email" required />
+                  </label>
+                  <p>
+                    This pilot uses existing verified ESH identities. Customer access does not grant
+                    business administration.
+                  </p>
+                  <button>Create customer account</button>
+                </fieldset>
+              </form>
+            ) : null}
+            {internal
+              ? accounts.map((a) => (
+                  <article className="notice" key={a.customer_id}>
+                    <h2>{a.display_name}</h2>
+                    <p>
+                      {a.customer_kind} · {a.status}
+                    </p>
+                    {canManage ? (
+                      <button
+                        disabled={busy}
+                        onClick={() =>
+                          void run(async () => {
+                            const r = await client.rpc("set_student_customer_status", {
+                              target_tenant_id: selected,
+                              target_customer_id: a.customer_id,
+                              active_value: a.status !== "active",
+                            });
+                            if (r.error) throw r.error;
+                            await load(selected);
+                          })
+                        }
+                      >
+                        {a.status === "active"
+                          ? "Pause customer access"
+                          : "Restore customer access"}
+                      </button>
+                    ) : null}
+                  </article>
+                ))
+              : null}
+            {!internal && customer ? (
+              <form
+                className="notice"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void run(async () => {
+                    const body = {
+                      target_tenant_id: customer.tenantId,
+                      target_customer_id: customer.customerId,
+                      scheduled_at_value: new Date(schedule).toISOString(),
+                      destination_value: destination,
+                      students_value: students.map((s) => ({
+                        name: s.name,
+                        pickupAddress: s.pickupAddress,
+                      })),
+                    };
+                    const result = await client.rpc("submit_student_transport_request", {
+                      ...body,
+                      idempotency_key_value: requestKey(JSON.stringify(body)),
+                    });
+                    if (result.error) throw result.error;
+                    retry.current = null;
+                    setStudents([{ name: "", pickupAddress: "" }]);
+                    setSchedule("");
+                    setDestination("");
+                    await load(selected);
+                    setMessage(
+                      "Transportation request submitted for review. A ride has not been booked.",
+                    );
+                  });
+                }}
+              >
+                <h2>Schedule a shared journey</h2>
+                <fieldset disabled={busy}>
+                  <label>
+                    Requested pickup time
+                    <input
+                      type="datetime-local"
+                      required
+                      value={schedule}
+                      onChange={(e) => setSchedule(e.target.value)}
+                    />
+                  </label>
+                  <p>Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone}.</p>
+                  <label>
+                    School or shared destination address
+                    <input
+                      required
+                      minLength={5}
+                      maxLength={400}
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                    />
+                  </label>
+                  <p>
+                    Provide complete addresses. Your transportation provider will confirm the stops.
+                  </p>
+                  {students.map((s, i) => (
+                    <fieldset className="contact-card" key={i}>
+                      <legend>Student {i + 1}</legend>
+                      <label>
+                        Student name
+                        <input
+                          required
+                          maxLength={120}
+                          value={s.name}
+                          onChange={(e) =>
+                            setStudents(
+                              students.map((row, j) =>
+                                j === i ? { ...row, name: e.target.value } : row,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Pickup address
+                        <input
+                          required
+                          minLength={5}
+                          maxLength={400}
+                          value={s.pickupAddress}
+                          onChange={(e) =>
+                            setStudents(
+                              students.map((row, j) =>
+                                j === i ? { ...row, pickupAddress: e.target.value } : row,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      {students.length > 1 ? (
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => setStudents(students.filter((_, j) => j !== i))}
+                        >
+                          Remove student {i + 1}
+                        </button>
+                      ) : null}
+                    </fieldset>
+                  ))}
+                  <div className="portal-actions">
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={students.length >= 20}
+                      onClick={() => setStudents([...students, { name: "", pickupAddress: "" }])}
+                    >
+                      Add student
+                    </button>
+                    <button>Submit transportation request</button>
+                  </div>
+                  <p>
+                    Students are requested to travel together. Staff must validate capacity,
+                    eligibility and safe stops before any route is assigned.
+                  </p>
+                </fieldset>
+              </form>
+            ) : null}
+            <h2>{internal ? "Transportation requests" : "Your requests"}</h2>
+            {!requests.length ? <p>No requests yet.</p> : null}
+            {requests.length === 100 ? <p>Showing the latest 100 requests.</p> : null}
+            {requests.map((r) => (
+              <article className="notice" key={r.request_id}>
+                <h3>{new Date(r.scheduled_at).toLocaleString()}</h3>
+                {internal ? (
+                  <p>
+                    {accounts.find((a) => a.customer_id === r.customer_id)?.display_name ??
+                      "Customer account"}
+                  </p>
+                ) : null}
+                <p>{r.destination_address}</p>
+                <p>
+                  {r.status === "submitted" ? "Awaiting review · ride not confirmed" : "Withdrawn"}
+                </p>
+                <ul>
+                  {readRequestStudents(r.students).map((s, i) => (
+                    <li key={i}>
+                      {s.name} · {s.pickupAddress}
+                    </li>
+                  ))}
+                </ul>
+                {!internal && r.status === "submitted" ? (
+                  <button
+                    disabled={busy}
+                    onClick={() =>
+                      void run(async () => {
+                        const result = await client.rpc("withdraw_student_transport_request", {
+                          target_tenant_id: r.tenant_id,
+                          target_request_id: r.request_id,
+                        });
+                        if (result.error) throw result.error;
+                        await load(selected);
+                        setMessage("Request withdrawn.");
+                      })
+                    }
+                  >
+                    Withdraw request
+                  </button>
+                ) : null}
+              </article>
+            ))}
+          </>
+        )}
+        {message ? <p role="status">{message}</p> : null}
+        <Link className="back" href="/">
+          ← Home
+        </Link>
+      </section>
+      <footer>ESH Student Transportation</footer>
+    </main>
+  );
+}

@@ -296,6 +296,142 @@ async function main() {
       0,
     );
     const audit = await rows("select * from tenant_audit_events");
+    // New customer requests use account admission without granting tenant/staff membership.
+    await db.exec(read("supabase/migrations/20261015000300_student_customer_requests.sql"));
+    await db.exec(
+      "update auth.users set email_confirmed_at=now(); insert into auth.users values('00000000-0000-0000-0000-000000000021',now()),('00000000-0000-0000-0000-000000000022',now()); insert into person_profiles select id,id,'student-test-'||right(id::text,2)||'@example.invalid','active' from auth.users where id in ('00000000-0000-0000-0000-000000000021','00000000-0000-0000-0000-000000000022')",
+    );
+    await actor(14);
+    const createKey = randomUUID();
+    const create = async (key, email = "student-test-21@example.invalid") =>
+      (
+        await rows("select create_student_customer($1,$2,'TEST CUSTOMER','school',$3) as id", [
+          uuid(1),
+          key,
+          email,
+        ])
+      )[0].id;
+    const customer = await create(createKey);
+    assert.equal(await create(createKey), customer);
+    await assert.rejects(create(createKey, "student-test-22@example.invalid"), /already used/);
+    const secondCustomer = await create(randomUUID(), "student-test-22@example.invalid");
+    const setStatus = (active) =>
+      rows("select set_student_customer_status($1,$2,$3)", [uuid(1), customer, active]);
+    await actor(21);
+    assert.equal(
+      (await rows("select my_student_enrollment_context() as c"))[0].c.programs.length,
+      0,
+    );
+    assert.equal(
+      (await rows("select my_student_customer_context() as c"))[0].c.customers.length,
+      1,
+    );
+    await assert.rejects(create(randomUUID()), /Internal customer management/);
+    await assert.rejects(configure(true), /governance membership/);
+    await assert.rejects(save(randomUUID()), /School administrator enrollment/);
+    await assert.rejects(setStatus(false), /Internal customer management/);
+    const studentList = [
+      { name: "TEST STUDENT A", pickupAddress: "TEST PICKUP A" },
+      { name: "TEST STUDENT B", pickupAddress: "TEST PICKUP B" },
+      { name: "TEST STUDENT C", pickupAddress: "TEST PICKUP C" },
+    ];
+    const when = new Date(Date.now() + 3600000).toISOString();
+    const submit = async (
+      key,
+      list = studentList,
+      account = customer,
+      time = when,
+      tenant = uuid(1),
+    ) =>
+      (
+        await rows("select submit_student_transport_request($1,$2,$3,$4,$5,$6) as id", [
+          tenant,
+          account,
+          key,
+          time,
+          "TEST SCHOOL DESTINATION",
+          list,
+        ])
+      )[0].id;
+    const requestKey = randomUUID();
+    const transportRequest = await submit(requestKey);
+    assert.equal(await submit(requestKey), transportRequest);
+    assert.equal((await rows("select * from student_transportation_requests")).length, 1);
+    assert.equal(
+      (await rows("select * from student_transportation_requests"))[0].students.length,
+      3,
+    );
+    await assert.rejects(submit(requestKey, studentList.slice(0, 1)), /already used/);
+    await assert.rejects(submit(randomUUID(), []), /one and twenty/);
+    await assert.rejects(
+      submit(randomUUID(), [{ name: 42, pickupAddress: "TEST ADDRESS" }]),
+      /name and pickup/,
+    );
+    await assert.rejects(
+      submit(randomUUID(), [{ ...studentList[0], secret: "not allowed" }]),
+      /name and pickup/,
+    );
+    await assert.rejects(submit(randomUUID(), studentList, customer, "2000-01-01"), /Valid future/);
+    await assert.rejects(
+      submit(randomUUID(), studentList, customer, when, uuid(2)),
+      /Customer access/,
+    );
+    await assert.rejects(submit(randomUUID(), studentList, secondCustomer), /Customer access/);
+    await assert.rejects(
+      db.exec("update student_transportation_requests set status='withdrawn'"),
+      /permission denied/,
+    );
+    await actor(22);
+    assert.equal((await rows("select * from student_transportation_requests")).length, 0);
+    await assert.rejects(
+      rows("select withdraw_student_transport_request($1,$2)", [uuid(1), transportRequest]),
+      /Customer access/,
+    );
+    await actor(14);
+    await setStatus(false);
+    await actor(21);
+    assert.equal((await rows("select * from student_transportation_requests")).length, 0);
+    await assert.rejects(submit(randomUUID()), /Customer access/);
+    await actor(14);
+    await setStatus(true);
+    await configure(false);
+    await actor(21);
+    assert.equal((await rows("select * from student_transportation_requests")).length, 0);
+    await assert.rejects(submit(randomUUID()), /Customer access/);
+    await actor(14);
+    await configure(true);
+    await db.exec(
+      "reset role; update auth.users set email_confirmed_at=null where id='00000000-0000-0000-0000-000000000021'",
+    );
+    await actor(21);
+    await assert.rejects(submit(randomUUID()), /Customer access/);
+    await db.exec(
+      "reset role; update auth.users set email_confirmed_at=now() where id='00000000-0000-0000-0000-000000000021'",
+    );
+    await actor(21);
+    await rows("select withdraw_student_transport_request($1,$2)", [uuid(1), transportRequest]);
+    await rows("select withdraw_student_transport_request($1,$2)", [uuid(1), transportRequest]);
+    assert.equal(
+      (await rows("select status from student_transportation_requests"))[0].status,
+      "withdrawn",
+    );
+    await actor(12); // explicitly admitted internal enrollment staff
+    assert.equal((await rows("select * from student_transportation_requests")).length, 1);
+    await db.exec("reset role");
+    assert.equal(
+      (await rows("select * from tenant_memberships where person_id=$1", [uuid(21)])).length,
+      0,
+    );
+    const customerAudit = JSON.stringify(
+      await rows(
+        "select metadata,reason from tenant_audit_events where event_name like 'student_request.%'",
+      ),
+    );
+    assert.ok(!customerAudit.includes("TEST STUDENT"));
+    assert.ok(!customerAudit.includes("TEST PICKUP"));
+    await db.exec("set role anon");
+    await assert.rejects(db.exec("select my_student_customer_context()"), /permission denied/);
+    await db.exec("reset role");
     assert.ok(audit.length > 10);
     assert.ok(!JSON.stringify(audit).includes("TEST CHILD"));
     assert.ok(!JSON.stringify(audit).includes("2025550101"));
@@ -316,7 +452,7 @@ async function main() {
       "disabled",
     );
     console.log(
-      "PASS organization-owner governance without platform elevation, cross-tenant denial, explicit reviewer admission, expired/suspended/unverified owner denial, school-submitter isolation and denied parent enrollment, lifecycle, retries, audit and disabled rides. Actual existing identity/role helpers; minimal legacy schema.",
+      "PASS governance/enrollment regressions; customer without tenant/staff membership; account/tenant isolation; three-student grouped request; malformed/past request denial; retries; pause/unverified denial; withdrawal; private audit and disabled rides. Actual identity/role helpers and new migrations, minimal legacy schema.",
     );
   } finally {
     await db.close();

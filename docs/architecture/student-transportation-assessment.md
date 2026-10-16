@@ -6,6 +6,12 @@ Scope: repository inspection, not production database or provider verification.
 
 ## Accepted direction
 
+2026-10-15 owner clarification supersedes guardian/self-service enrollment below: schools,
+organizations and groups are customers, analogous to Riders but isolated from ordinary Rider
+accounts. Internal business staff administer; parents only track their own child. Shared requests
+can include multiple students and homes in one planned route. Current intake slice and remaining
+route/driver/safety gates are in student-customer-requests.md.
+
 Student Transportation is a separate ESH product alongside Transportation and Community.
 It shares suitable platform infrastructure, not ordinary booking or dispatch lifecycles.
 No Student Transportation option is added to the existing Rider booking selector in this plan.

@@ -40,7 +40,7 @@ async function main() {
       otpRequest = { url: route.request().url(), body: route.request().postDataJSON() };
       return route.fulfill({ json: {} });
     });
-    await signedOut.goto(origin + "/school");
+    await signedOut.goto(origin + "/enrollment");
     await signedOut
       .getByLabel("Email address", { exact: true })
       .fill("test-guardian@example.invalid");
@@ -190,7 +190,7 @@ async function main() {
         return route.fulfill({ json: contacts });
       throw new Error("Unexpected test request: " + url.pathname);
     });
-    await page.goto(origin + "/school");
+    await page.goto(origin + "/enrollment");
     await page.getByRole("button", { name: "Add a student", exact: true }).click();
     await page.getByLabel("Student full name", { exact: true }).fill("TEST Child");
     await page.getByLabel("Grade", { exact: true }).selectOption("3");
@@ -203,7 +203,7 @@ async function main() {
     await page.getByLabel("Contact name", { exact: true }).fill("TEST Contact");
     await page.getByLabel("Contact phone", { exact: true }).fill("2025550102");
     await page.getByLabel("Contact relationship", { exact: true }).fill("Guardian");
-    await page.getByLabel("I confirm my school is authorized", { exact: false }).check();
+    await page.getByLabel("I confirm our business is authorized", { exact: false }).check();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.screenshot({ path: path.join(evidence, "414-enrollment-form.png"), fullPage: true });
     await page.getByRole("button", { name: "Save draft", exact: true }).click();
@@ -238,7 +238,7 @@ async function main() {
     await page.getByRole("status").filter({ hasText: "Enrollment review saved" }).waitFor();
     await page.screenshot({ path: path.join(evidence, "414-review.png"), fullPage: true });
     reviewer = false;
-    await page.goto(origin + "/school");
+    await page.goto(origin + "/enrollment");
     await page
       .getByText("Reviewer response: TEST: Please correct enrollment", { exact: true })
       .waitFor();
