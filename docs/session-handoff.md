@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 
 ## Current objective and checkpoint
 
@@ -21,12 +21,19 @@ Private actor-bound server geography receipts prevent browser coordinate certifi
 submit RPC rechecks exact actor/customer/tenant, admission/expiry and serialized idempotent retries.
 
 Owner supplied intended-only dry-run and successful application of migration
-20261016000100_student_request_geography.sql. Do not reapply. Application rollout remains pending. Adds
+20261016000100_student_request_geography.sql. Do not reapply. Owner pushed application source as
+15166fc; Student hosted Ready and live mapping acceptance remain pending. Adds
 geography/requirements persistence and private immutable submission/withdrawal history; existing
 records get explicit baseline snapshots, not invented old events. Requests cannot be edited/deleted;
 correct by withdrawal/new request. Generic audit has counts/IDs only. History is database-enforced
 append-only, not external WORM storage. No new notification or Student transport activation.
-Independent Student deployment now needs public Mapbox token and server-only SUPABASE_SERVICE_ROLE_KEY
+Owner requested a clear Student-specific Vercel key name after conflicting assistant instructions.
+Owner clarified the final name is NEXT_STUDENT_SUPABASE_SECRET_KEY. Local follow-up reads only
+that variable and explicitly maps it into the unchanged shared factory. Keep it; remove duplicate
+STUDENT_SUPABASE_SECRET_KEY. NEXT_STUDENT is server-only, unlike NEXT_PUBLIC. No migration.
+This follow-up requires owner commit/push and Student redeploy; eight API checks and final Student
+production build/lint/types pass. No keys inspected, Git mutation or production action by Codex.
+Independent Student deployment now needs public Mapbox token and server-only NEXT_STUDENT_SUPABASE_SECRET_KEY
 for receipt writes. Service credential is privileged across shared DB; never expose it publicly.
 Thirty-minute receipt expiry is not deletion: actor-scoped opportunistic cleanup exists, inactive
 receipt retention maintenance remains an owner procedure before real child data. No secrets read.
@@ -42,14 +49,15 @@ screenshots inspected under ignored tmp/student-customer-evidence. Final default
 build and all 21 closed-shell screen/viewport checks pass. No live provider/email or production
 DB/role/booking/payment test was performed. Browser API/basemap/route fixtures are isolated.
 
-Production baseline remains owner-pushed e2fb5e1, main/local origin aligned. Owner previously applied
+Git release is owner-pushed 15166fc, main/local origin aligned; last confirmed Student Ready was
+e2fb5e1. Owner previously applied
 20261015000400, confirmed Student Ready and /school callback, and demonstrated customer access and
 successful two-student text request. Do not reapply existing migrations or repeat preregistration.
 No Git mutation, deployment or production DB command performed by Codex. Existing generated Rider/
 Driver configs, preorder docs, assistant work and unknown git/main remain preserved.
 
-Next: owner configures independent Student server variables, commits/pushes scoped feature files
-and confirms Student Ready. Migration dry-run/application are complete per supplied owner output.
+Next: owner confirms independent Student server variables and Student Vercel Ready at 15166fc,
+then performs controlled TEST address/route acceptance. Source push and migration are complete.
 Owner handles all Git/deployment/database mutations and independent Student server configuration.
 Then actual provider/street geometry and school-site loading-point manual acceptance. Keep ordinary
 apps, auth callbacks, dispatch/payment/native behavior and Student activation guards intact.

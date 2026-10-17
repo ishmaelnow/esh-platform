@@ -16,8 +16,8 @@ vi.mock("@esh-platform/supabase", () => ({
     auth: { getUser: mock.getUser },
     from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: mock.saved }) }) }) }),
   }),
-  createServiceSupabaseClient: () => {
-    mock.service();
+  createServiceSupabaseClient: (source: NodeJS.ProcessEnv) => {
+    mock.service(source);
     return {
       from: () => ({ delete: () => ({ eq: () => ({ lt: mock.cleanup }) }), insert: mock.insert }),
     };
@@ -60,6 +60,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("NEXT_PUBLIC_STUDENT_ENROLLMENT_ENABLED", "true");
   vi.stubEnv("NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN", "test-public-token");
+  vi.stubEnv("NEXT_STUDENT_SUPABASE_SECRET_KEY", "test-student-secret");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-other-product-secret");
   mock.getUser.mockResolvedValue({
     data: { user: { id: actor, email_confirmed_at: "2026-01-01" } },
     error: null,
@@ -91,6 +93,12 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("Student authoritative geography boundary", () => {
+  it("requires the Student-specific secret even when a generic key exists", async () => {
+    vi.stubEnv("NEXT_STUDENT_SUPABASE_SECRET_KEY", "");
+    expect((await POST(request())).status).toBe(503);
+    expect(mock.service).not.toHaveBeenCalled();
+    expect(mock.resolve).not.toHaveBeenCalled();
+  });
   it("fails closed when mapping configuration is missing", async () => {
     vi.stubEnv("NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN", "");
     expect((await POST(request())).status).toBe(503);
@@ -100,6 +108,7 @@ describe("Student authoritative geography boundary", () => {
   it("creates actor-bound proof from provider results, ignoring browser approval claims", async () => {
     const response = await POST(request());
     expect(response.status).toBe(200);
+    expect(mock.service).toHaveBeenCalledWith(expect.objectContaining({ SUPABASE_SERVICE_ROLE_KEY: "test-student-secret" }));
     expect(mock.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         tenant_id: tenant,

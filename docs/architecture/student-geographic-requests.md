@@ -1,6 +1,7 @@
 # Student geographic requests and lifecycle direction
 
-Status: local implementation, not deployed. Owner authorized mapping and accommodation intake after
+Status: owner-pushed 15166fc; Student hosted Ready/manual mapping acceptance pending.
+Owner authorized mapping and accommodation intake after
 partner review. Owner supplied intended-only dry-run and successful application of migration
 20261016000100; application deployment remains pending. Student transport execution stays locked;
 customer intake and geographic preview are separately enabled pilot features.
@@ -41,7 +42,8 @@ and actual result quality must be checked with the owner's configured provider a
 ## Server proof and persistence
 
 The independent Student server needs NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN and a server-only
-SUPABASE_SERVICE_ROLE_KEY. The existing shared service-client factory is reused; this credential
+NEXT_STUDENT_SUPABASE_SECRET_KEY (owner-selected name; no NEXT_PUBLIC prefix). The Student server maps this explicitly into the existing shared
+service-client factory; no ordinary app configuration changes. This credential
 is privileged across the shared database, not a Student-scoped database key. Never expose it to
 the browser or reuse a NEXT_PUBLIC variable. Only the server writes private short-lived geography
 receipts. Their actor comes from getUser, never a browser actor ID; payload includes canonical

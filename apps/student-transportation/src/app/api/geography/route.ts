@@ -130,7 +130,14 @@ export async function POST(request: Request) {
       return reply({ message: "Choose address suggestions and check student requirements." }, 400);
     }
     // Fail before provider calls when the independent server credential is not configured.
-    const service = createServiceSupabaseClient();
+    const studentSecret = process.env.NEXT_STUDENT_SUPABASE_SECRET_KEY;
+    if (!studentSecret) throw Error("Student server configuration unavailable");
+    const service = createServiceSupabaseClient({
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_ROLE_KEY: studentSecret,
+    });
     // Opportunistic expiry cleanup is actor-scoped; unused accounts still need the documented retention job.
     const cleanup = await service
       .from("student_request_geography_receipts")

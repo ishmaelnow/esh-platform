@@ -8,7 +8,10 @@ Keep operational activation guards closed. Do not change ordinary app domains/au
 ## Owner release
 
 In the independent Student Vercel project configure the existing public Supabase values, existing
-enrollment pilot flag, NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN and server-only SUPABASE_SERVICE_ROLE_KEY.
+enrollment pilot flag, NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN and server-only NEXT_STUDENT_SUPABASE_SECRET_KEY.
+Keep the owner-selected NEXT_STUDENT_SUPABASE_SECRET_KEY; remove duplicate STUDENT_SUPABASE_SECRET_KEY.
+The NEXT_STUDENT prefix is not NEXT_PUBLIC and does not expose this variable to browser bundles. The Student-specific variable name
+requires the follow-up application release; the shared service-client API remains unchanged.
 Never paste populated values into chat or use a NEXT_PUBLIC service key. Confirm provider token
 allows school.eshapp.com and permanent geocoding; leave ordinary deployments unchanged.
 
