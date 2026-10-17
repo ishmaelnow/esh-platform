@@ -7,13 +7,10 @@ import {
   type Database,
 } from "@esh-platform/supabase";
 import { readEnrollmentContext, type EnrollmentProgram } from "../lib/enrollment";
-import {
-  readCustomers,
-  readRequestStudents,
-  type Customer,
-  type RequestStudent,
-} from "../lib/customer";
+import { readCustomers, readRequestStudents, type Customer } from "../lib/customer";
 import { FoundationScreen } from "./FoundationScreen";
+import { GeographicRequestForm, SavedGeographicPreview } from "./GeographicRequest";
+import { ACCOMMODATIONS } from "../lib/geography";
 type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
 type AccountRow = Database["public"]["Tables"]["student_transportation_customers"]["Row"];
 type InvitationRow =
@@ -47,9 +44,6 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
-  const [students, setStudents] = useState<RequestStudent[]>([{ name: "", pickupAddress: "" }]);
-  const [schedule, setSchedule] = useState("");
-  const [destination, setDestination] = useState("");
   const retry = useRef<{ signature: string; id: string } | null>(null);
   const generation = useRef(0);
   const customer = customers.find((c) => c.customerId === selected);
@@ -63,9 +57,6 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
     setRequests([]);
     setAccounts([]);
     setInvitations([]);
-    setStudents([{ name: "", pickupAddress: "" }]);
-    setSchedule("");
-    setDestination("");
     retry.current = null;
   }, []);
   useEffect(() => {
@@ -436,124 +427,17 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
                 ))
               : null}
             {!internal && customer ? (
-              <form
-                className="notice"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void run(async () => {
-                    const body = {
-                      target_tenant_id: customer.tenantId,
-                      target_customer_id: customer.customerId,
-                      scheduled_at_value: new Date(schedule).toISOString(),
-                      destination_value: destination,
-                      students_value: students.map((s) => ({
-                        name: s.name,
-                        pickupAddress: s.pickupAddress,
-                      })),
-                    };
-                    const result = await client.rpc("submit_student_transport_request", {
-                      ...body,
-                      idempotency_key_value: requestKey(JSON.stringify(body)),
-                    });
-                    if (result.error) throw result.error;
-                    retry.current = null;
-                    setStudents([{ name: "", pickupAddress: "" }]);
-                    setSchedule("");
-                    setDestination("");
-                    await load(selected);
-                    setMessage(
-                      "Transportation request submitted for review. A ride has not been booked.",
-                    );
-                  });
+              <GeographicRequestForm
+                key={`${session.user.id}:${customer.customerId}:${generation.current}`}
+                client={client}
+                customer={customer}
+                onSaved={async () => {
+                  await load(selected);
+                  setMessage(
+                    "Transportation request submitted for review. A ride has not been booked.",
+                  );
                 }}
-              >
-                <h2>Schedule a shared journey</h2>
-                <fieldset disabled={busy}>
-                  <label>
-                    Requested pickup time
-                    <input
-                      type="datetime-local"
-                      required
-                      value={schedule}
-                      onChange={(e) => setSchedule(e.target.value)}
-                    />
-                  </label>
-                  <p>Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone}.</p>
-                  <label>
-                    School or shared destination address
-                    <input
-                      required
-                      minLength={5}
-                      maxLength={400}
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                    />
-                  </label>
-                  <p>
-                    Provide complete addresses. Your transportation provider will confirm the stops.
-                  </p>
-                  {students.map((s, i) => (
-                    <fieldset className="contact-card" key={i}>
-                      <legend>Student {i + 1}</legend>
-                      <label>
-                        Student name
-                        <input
-                          required
-                          maxLength={120}
-                          value={s.name}
-                          onChange={(e) =>
-                            setStudents(
-                              students.map((row, j) =>
-                                j === i ? { ...row, name: e.target.value } : row,
-                              ),
-                            )
-                          }
-                        />
-                      </label>
-                      <label>
-                        Pickup address
-                        <input
-                          required
-                          minLength={5}
-                          maxLength={400}
-                          value={s.pickupAddress}
-                          onChange={(e) =>
-                            setStudents(
-                              students.map((row, j) =>
-                                j === i ? { ...row, pickupAddress: e.target.value } : row,
-                              ),
-                            )
-                          }
-                        />
-                      </label>
-                      {students.length > 1 ? (
-                        <button
-                          type="button"
-                          className="secondary"
-                          onClick={() => setStudents(students.filter((_, j) => j !== i))}
-                        >
-                          Remove student {i + 1}
-                        </button>
-                      ) : null}
-                    </fieldset>
-                  ))}
-                  <div className="portal-actions">
-                    <button
-                      type="button"
-                      className="secondary"
-                      disabled={students.length >= 20}
-                      onClick={() => setStudents([...students, { name: "", pickupAddress: "" }])}
-                    >
-                      Add student
-                    </button>
-                    <button>Submit transportation request</button>
-                  </div>
-                  <p>
-                    Students are requested to travel together. Staff must validate capacity,
-                    eligibility and safe stops before any route is assigned.
-                  </p>
-                </fieldset>
-              </form>
+              />
             ) : null}
             <h2>{internal ? "Transportation requests" : "Your requests"}</h2>
             {!requests.length ? <p>No requests yet.</p> : null}
@@ -569,15 +453,34 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
                 ) : null}
                 <p>{r.destination_address}</p>
                 <p>
+                  {r.geography_status === "geocoded"
+                    ? "Geocoded · loading points unreviewed"
+                    : "Unverified text-only addresses · geographic review required"}
+                </p>
+                <p>
                   {r.status === "submitted" ? "Awaiting review · ride not confirmed" : "Withdrawn"}
                 </p>
                 <ul>
                   {readRequestStudents(r.students).map((s, i) => (
                     <li key={i}>
+                      {s.accommodations?.length ? (
+                        <span>
+                          Requirements: {s.accommodations.map((a) => ACCOMMODATIONS[a]).join(", ")}
+                          .{" "}
+                        </span>
+                      ) : null}
                       {s.name} · {s.pickupAddress}
                     </li>
                   ))}
                 </ul>
+                {r.geography_status === "geocoded" ? (
+                  <SavedGeographicPreview
+                    key={`${r.request_id}:${generation.current}`}
+                    client={client}
+                    tenantId={r.tenant_id}
+                    requestId={r.request_id}
+                  />
+                ) : null}
                 {!internal && r.status === "submitted" ? (
                   <button
                     disabled={busy}

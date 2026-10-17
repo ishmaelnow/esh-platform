@@ -102,6 +102,32 @@ main {
 }
 header,
 section,
+.student-address-picker {
+  min-width: 0;
+  margin-block: 16px;
+}
+.student-address-picker ul {
+  padding-left: 20px;
+}
+.student-address-picker button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.student-accommodations label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.student-accommodations input {
+  width: 20px;
+  min-height: 24px;
+}
+.student-route-preview {
+  min-width: 0;
+  overflow: hidden;
+  margin-block: 20px;
+}
 footer {
   width: min(100%, 720px);
   margin-inline: auto;

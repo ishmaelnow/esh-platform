@@ -1,3 +1,5 @@
+export { resolveStudentStop, studentRoadRoute } from "./student-geography";
+export type { StudentStop, StudentRoadRoute } from "./student-geography";
 export type MapPoint = { latitude: number; longitude: number; label: string };
 
 export type GeocodingContext = {

@@ -1,5 +1,10 @@
+import { ACCOMMODATIONS, type Accommodation } from "./geography";
 export type Customer = { customerId: string; tenantId: string; name: string };
-export type RequestStudent = { name: string; pickupAddress: string };
+export type RequestStudent = {
+  name: string;
+  pickupAddress: string;
+  accommodations?: Accommodation[];
+};
 export function readCustomers(value: unknown): Customer[] {
   if (
     !value ||
@@ -22,13 +27,26 @@ export function readCustomers(value: unknown): Customer[] {
 }
 export function readRequestStudents(value: unknown): RequestStudent[] {
   if (!Array.isArray(value)) return [];
-  return value.filter(
-    (row: unknown): row is RequestStudent =>
-      !!row &&
-      typeof row === "object" &&
-      "name" in row &&
-      typeof row.name === "string" &&
-      "pickupAddress" in row &&
-      typeof row.pickupAddress === "string",
-  );
+  return value
+    .filter(
+      (row: unknown): row is RequestStudent =>
+        !!row &&
+        typeof row === "object" &&
+        "name" in row &&
+        typeof row.name === "string" &&
+        "pickupAddress" in row &&
+        typeof row.pickupAddress === "string",
+    )
+    .map((row) => ({
+      name: row.name,
+      pickupAddress: row.pickupAddress,
+      ...(Array.isArray(row.accommodations)
+        ? {
+            accommodations: row.accommodations.filter(
+              (a): a is Accommodation =>
+                typeof a === "string" && Object.prototype.hasOwnProperty.call(ACCOMMODATIONS, a),
+            ),
+          }
+        : {}),
+    }));
 }

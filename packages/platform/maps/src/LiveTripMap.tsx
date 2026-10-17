@@ -6,6 +6,7 @@ import { formatRouteDistance, formatRouteDuration, type MapPoint } from "./index
 
 export { RiderHomeMap } from "./RiderHomeMap";
 export { ServiceAreaMap } from "./ServiceAreaMap";
+export { StudentRouteMap } from "./StudentRouteMap";
 
 export function LiveTripMap({ accessToken, pickup, destination, driver, passenger, tripStarted = false, showPickupEta = true }: {
   accessToken: string; pickup: MapPoint; destination: MapPoint; driver?: MapPoint | null; passenger?: MapPoint | null; tripStarted?: boolean; showPickupEta?: boolean;

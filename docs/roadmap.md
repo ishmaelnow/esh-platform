@@ -10,16 +10,28 @@ one request can contain three students at separate pickup addresses. No confirme
 route assignment, recurring schedules or student Driver execution yet. See
 architecture/student-customer-requests.md for the current slice and release/safety gates.
 
-Current invitation completion: local 20261015000400 lets internal staff create a school with a
+Current invitation completion: owner-applied 20261015000400 and deployed e2fb5e1 let internal staff create a school with a
 NEW email, send verification, and admit the verified recipient to only its customer account.
 No manual pre-registration, tenant or staff role is required. Resend/expiry/retry handling is
-included; owner migration and hosted release remain pending.
+included. Owner verified customer access and two-student request submission. Maps/geocoding remain
+unfinished. Isolation review at architecture/student-isolation-review.md passed 47 existing focused
+regressions and both Student SQL checks. Next bounded milestone is real address selection,
+server-validated coordinates and multi-stop map preview; actual routes/dispatch remain disabled.
 
 This roadmap tracks delivery order without changing the architectural boundaries in the detailed design
 documents. Transportation is the first product domain built on ESH Platform; reusable foundations must
 remain independent of transportation-specific workflows.
 
 ## Delivered Foundations
+
+Partner-approved Student next slice (2026-10-16): geographic request intake and actual ordered
+multi-stop road preview, precise permanent addresses/routable points with unreviewed school loading
+instructions, per-student equipment/attendant tags and immutable private request history. Local
+implementation locally verified, pending owner migration/deployment; see
+`architecture/student-geographic-requests.md`. Legacy text requests stay unverified. Subsequent
+architecture is institutional recurring schedule templates -> dated compliance manifests -> gated
+Driver/vehicle assignment -> individual boarding/handoff -> restricted own-child parent tracking.
+Mapping does not activate approval, optimization, dispatch, payments or Student operations.
 
 Student Transportation is an independent product, not a Rider booking-mode extension.
 Architecture assessment and gated implementation sequence are in

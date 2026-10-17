@@ -253,6 +253,9 @@ importers:
 
   apps/student-transportation:
     dependencies:
+      '@esh-platform/maps':
+        specifier: workspace:*
+        version: link:../../packages/platform/maps
       '@esh-platform/supabase':
         specifier: workspace:*
         version: link:../../packages/platform/supabase

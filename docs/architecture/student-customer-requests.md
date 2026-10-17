@@ -1,7 +1,16 @@
 # Student Transportation customers and shared requests
 
+Local follow-up: geographic request preview, per-student operational requirements and immutable
+request snapshots are locally verified pending owner rollout of 20261016000100. See
+[geographic requests and recurring lifecycle direction](student-geographic-requests.md). Text-only
+descriptions below remain accurate for deployed/legacy records until that release. No operational
+approval, compatibility matching, recurring schedule or dispatch is enabled by mapping.
+
 Status: owner applied 20261015000300, pushed 6f99ee9 and confirmed Student deployment Ready.
-Invitation completion in 20261015000400 is local pending owner release. Student operations remain closed.
+Owner applied 20261015000400, pushed e2fb5e1 and confirmed Student deployment Ready.
+Owner verified school customer access and submitted a two-student request. Geography remains text-only.
+Student operations remain closed. See student-isolation-review.md for the 2026-10-16 boundary audit
+and the next geographic-request milestone.
 This supersedes earlier descriptions of client schools as enrollment administrators.
 
 ## Business boundary

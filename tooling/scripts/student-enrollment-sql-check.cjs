@@ -585,6 +585,7 @@ async function main() {
       /permission denied/,
     );
     await db.exec("reset role");
+    await require("./student-geography-sql-cases.cjs")({ db, read, rows, actor, uuid, customer, when });
     assert.ok(!JSON.stringify(audit).includes("TEST CHILD"));
     assert.ok(!JSON.stringify(audit).includes("2025550101"));
     assert.equal(

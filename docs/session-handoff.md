@@ -1,49 +1,62 @@
 # Session Handoff
 
-Last updated: 2026-10-15
+Last updated: 2026-10-16
 
 ## Current objective and checkpoint
 
-Current 2026-10-15 objective: finish first-school customer onboarding. Owner correctly rejected
-the existing-verified-email prerequisite. Internal staff must enter a school and NEW contact email,
-send an invitation, and admit the verified recipient only to that customer account. GO authorized.
-Business model remains: schools/organizations/groups are customers, internal personnel administer,
-parents only track their child, Drivers eventually execute shared routes. No customer staff grants.
+Current objective (2026-10-16): owner returned partner approval to implement the bounded Student
+geographic-request/map milestone, with accurate school loading context, legacy-unverified records,
+per-student accommodation tags and immutable request history. Future architecture must follow
+institutional recurring templates and compliance manifests, then gated assignment, individual
+boarding/handoff and restricted parent tracking. No operational activation authorized.
 
-Owner applied 20261015000200/20261015000300, pushed 6f99ee9, confirmed Student Vercel Ready and
-saved /school redirect URL. Existing /admin and /guardian callbacks and Site URL stay intact.
-Account/request release is live; do not reapply its migrations or ask for manual pre-registration.
-Local new migration 20261015000400_student_customer_invitations.sql adds pending invitations,
-seven-day admission expiry, 60-second email-attempt cooldown and verified-email acceptance.
-The same-origin caller-JWT API prepares authorized account invitations then requests Supabase
-passwordless verification with shouldCreateUser:true for new emails. Fixed /school return; no
-service-role key, Resend key, tenant invitation or other-product auth/template change. Provider
-must support passwordless signup/email delivery; actual remote provider behavior remains owner test.
+Local implementation: Student-only authenticated address suggestions, permanent server geocoding,
+precise match/accuracy checks, preferred provider routable point and separate address coordinates,
+bounded gate/loading instructions, ordered actual multi-stop driving geometry with curb approaches,
+interactive preview/recovery and saved-request preview. All stops remain safety-unreviewed; a
+provider point/instruction is not an approved school gate. No optimization or compatibility filter.
+Per-student wheelchair lift/booster/car seat/attendant tags capture requested equipment/staffing,
+not diagnoses or verified IEP/compliance. Legacy text requests remain visible and unverified.
+Private actor-bound server geography receipts prevent browser coordinate certification. New
+submit RPC rechecks exact actor/customer/tenant, admission/expiry and serialized idempotent retries.
 
-Customer load accepts matching active/unexpired invitations using actual verified auth email,
-creates/reuses neutral active identity, and grants customer membership only. Uninvited/wrong-email,
-unverified/expired/paused and suspended/mismatched-profile acceptance are denied. No tenant/staff,
-platform, enrollment or parent grant. Existing customer memberships persist. Staff form now says
-School contact email / Create account and send invitation. Pending/Expired/Accepted status and
-Resend invitation are visible. Failed sends retain account; retries/resends do not create a new one.
-No actual email was sent by Codex. All invitation endpoints/provider calls in tests are mocked.
+Owner supplied intended-only dry-run and successful application of migration
+20261016000100_student_request_geography.sql. Do not reapply. Application rollout remains pending. Adds
+geography/requirements persistence and private immutable submission/withdrawal history; existing
+records get explicit baseline snapshots, not invented old events. Requests cannot be edited/deleted;
+correct by withdrawal/new request. Generic audit has counts/IDs only. History is database-enforced
+append-only, not external WORM storage. No new notification or Student transport activation.
+Independent Student deployment now needs public Mapbox token and server-only SUPABASE_SERVICE_ROLE_KEY
+for receipt writes. Service credential is privileged across shared DB; never expose it publicly.
+Thirty-minute receipt expiry is not deletion: actor-scoped opportunistic cleanup exists, inactive
+receipt retention maintenance remains an owner procedure before real child data. No secrets read.
 
-Checks: 19 focused unit/API tests; actual new SQL on minimal legacy fixtures including new-email
-identity creation, expiry/resend/wrong recipient/unverified denial and zero staff/tenant grants;
-scoped lint/types and enabled production build pass. Customer and existing internal enrollment
-browser flows pass, including send failure/recovery and shared-request regression. Complete 414px
-screenshots retained under tmp/student-customer-evidence and inspected; compact/desktop checks pass.
-Final default-off production build and 21 shell/viewport checks pass. Existing Supabase bundler
-and Next ESLint-plugin warnings are nonblocking. Diff/format checks pass. Tests are not production
-RLS/concurrency, real mailbox callback or physical-device certification.
+Verification complete locally: 48 Student/map unit/API checks and 32 existing booking/checkout/Driver/workspace
+regressions pass; both actual Student SQL harnesses pass, including receipt actor/tenant denial,
+forged receipt denial, tags, expiry/retry, immutable history and disabled operations. Minimal legacy
+fixtures are not full deployed schema/concurrency certification. Student lint/types/build and shared
+map/Supabase types pass. Enabled disposable-config customer and enrollment browser checks pass,
+including actual rendered fixture road geometry, map/provider failure/retry, middle-row removal,
+per-student tags, changed-loading-instruction invalidation and unchanged-key retry. Complete 414px
+screenshots inspected under ignored tmp/student-customer-evidence. Final default-off production
+build and all 21 closed-shell screen/viewport checks pass. No live provider/email or production
+DB/role/booking/payment test was performed. Browser API/basemap/route fixtures are isolated.
 
-Read architecture/student-customer-requests.md and operations/student-customer-requests-manual-test.md.
-Next: finish checks; owner dry-run ONLY 20261015000400, then owner migration/scoped Git release.
-Test first-school invitation with a new email; do not grant tenant/staff roles to that customer.
-Requests remain intake only: routes, assignment, real geocoding, recurrence, canonical students,
-eligibility/capacity/boarding/handoff, private parent tracking and billing are still future gates.
-Preserve unrelated assistant/docs work, Driver/Rider generated configs and unknown git/main.
-No Git/deployment/production database mutation or actual email send by Codex.
+Production baseline remains owner-pushed e2fb5e1, main/local origin aligned. Owner previously applied
+20261015000400, confirmed Student Ready and /school callback, and demonstrated customer access and
+successful two-student text request. Do not reapply existing migrations or repeat preregistration.
+No Git mutation, deployment or production DB command performed by Codex. Existing generated Rider/
+Driver configs, preorder docs, assistant work and unknown git/main remain preserved.
+
+Next: owner configures independent Student server variables, commits/pushes scoped feature files
+and confirms Student Ready. Migration dry-run/application are complete per supplied owner output.
+Owner handles all Git/deployment/database mutations and independent Student server configuration.
+Then actual provider/street geometry and school-site loading-point manual acceptance. Keep ordinary
+apps, auth callbacks, dispatch/payment/native behavior and Student activation guards intact.
+Read architecture/student-geographic-requests.md and operations/student-geographic-requests-manual-test.md.
+The earlier isolation review is architecture/student-isolation-review.md. No real minors' data until
+privacy, authority, retention/deletion and incident procedures are approved.
+
 
 ### Historical Student checkpoint (superseded by the current role correction)
 

@@ -72,6 +72,84 @@ async function main() {
       allowed = true,
       fail = true;
     const keys = [];
+    let geographicInput;
+    let previewFailure = true;
+    const stop = (choice) => ({
+      ...choice,
+      addressLatitude: choice.latitude,
+      addressLongitude: choice.longitude,
+      accuracy: "rooftop",
+      pointSource: "routable",
+      safetyStatus: "unreviewed",
+    });
+    const road = {
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [-75, 40],
+          [-75.01, 40.01],
+          [-75.02, 40.02],
+          [-75.03, 40.03],
+        ],
+      },
+      distanceMeters: 5000,
+      durationSeconds: 900,
+    };
+    let mapFailure = false;
+    await context.route("https://api.mapbox.com/**", (route) =>
+      mapFailure
+        ? route.fulfill({ status: 503, json: {} })
+        : route.fulfill({ json: { version: 8, sources: {}, layers: [] } }),
+    );
+    await context.route("https://events.mapbox.com/**", (route) => route.fulfill({ json: {} }));
+    await context.route(origin + "/api/geography", (route) => {
+      const body = route.request().postDataJSON();
+      if (body.action === "search") {
+        const offset = body.query.includes("DESTINATION")
+          ? 0.03
+          : Number(body.query.slice(-1)) / 100;
+        return route.fulfill({
+          json: {
+            suggestions: [
+              {
+                address: body.query,
+                latitude: 40 + offset,
+                longitude: -75 - offset,
+                loadingInstructions: "",
+              },
+            ],
+          },
+        });
+      }
+      if (body.action === "preview") {
+        if (previewFailure) {
+          previewFailure = false;
+          return route.fulfill({
+            status: 503,
+            json: { message: "TEST provider unavailable. Try again." },
+          });
+        }
+        geographicInput = body;
+        return route.fulfill({
+          json: {
+            receiptId: "00000000-0000-0000-0000-000000000080",
+            stops: [...body.students.map((s) => stop(s.pickup)), stop(body.destination)],
+            route: road,
+          },
+        });
+      }
+      if (body.action === "saved")
+        return route.fulfill({
+          json: {
+            stops: [
+              ...geographicInput.students.map((s) => stop(s.pickup)),
+              stop(geographicInput.destination),
+            ],
+            route: road,
+          },
+        });
+      throw Error("Unexpected geography action");
+    });
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     let emailFailed = true;
@@ -169,24 +247,30 @@ async function main() {
         ];
         return route.fulfill({ json: customer });
       }
-      if (url.pathname.endsWith("submit_student_transport_request")) {
+      if (url.pathname.endsWith("submit_geographic_student_request")) {
         keys.push(body.idempotency_key_value);
         if (fail) {
           fail = false;
           return route.abort("failed");
         }
-        assert.equal(body.students_value.length, 3);
+        assert.equal(geographicInput.students.length, 3);
         assert.equal(body.target_customer_id, customer);
         assert.equal(body.target_tenant_id, tenant);
-        assert.ok(body.scheduled_at_value.endsWith("Z"));
+        assert.ok(geographicInput.scheduledAt.endsWith("Z"));
+        assert.deepEqual(geographicInput.students[1].accommodations, ["wheelchair_lift"]);
         requests = [
           {
             request_id: "TEST-REQUEST",
             tenant_id: tenant,
             customer_id: customer,
-            scheduled_at: body.scheduled_at_value,
-            destination_address: body.destination_value,
-            students: body.students_value,
+            scheduled_at: geographicInput.scheduledAt,
+            destination_address: geographicInput.destination.address,
+            students: geographicInput.students.map((s) => ({
+              name: s.name,
+              pickupAddress: s.pickup.address,
+              accommodations: s.accommodations,
+            })),
+            geography_status: "geocoded",
             status: "submitted",
           },
         ];
@@ -227,24 +311,85 @@ async function main() {
     await page
       .getByLabel("School or shared destination address", { exact: true })
       .fill("TEST SCHOOL DESTINATION");
+    await page
+      .getByRole("button", { name: "Search school or shared destination address", exact: true })
+      .click();
+    await page.getByRole("button", { name: "TEST SCHOOL DESTINATION", exact: true }).click();
+    await page
+      .getByLabel("School or shared destination address gate or loading instructions (optional)", {
+        exact: true,
+      })
+      .fill("TEST NORTH GATE");
     await page.getByRole("button", { name: "Add student", exact: true }).click();
     await page.getByRole("button", { name: "Add student", exact: true }).click();
-    for (let i = 0; i < 3; i++) {
+    await page.getByRole("button", { name: "Add student", exact: true }).click();
+    for (let i = 0; i < 4; i++) {
       await page
         .getByLabel("Student name", { exact: true })
         .nth(i)
         .fill("TEST STUDENT " + i);
       await page
-        .getByLabel("Pickup address", { exact: true })
-        .nth(i)
+        .getByLabel("Pickup address " + (i + 1), { exact: true })
         .fill("TEST PICKUP ADDRESS " + i);
+      await page
+        .getByRole("button", { name: "Search pickup address " + (i + 1), exact: true })
+        .click();
+      await page.getByRole("button", { name: "TEST PICKUP ADDRESS " + i, exact: true }).click();
     }
+    await page.getByRole("button", { name: "Remove student 2", exact: true }).click();
+    assert.equal(
+      await page.getByLabel("Pickup address 2", { exact: true }).inputValue(),
+      "TEST PICKUP ADDRESS 2",
+    );
+    await page.getByLabel("Wheelchair lift", { exact: true }).nth(1).check();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Submit transportation request", exact: true })
+        .isEnabled(),
+      false,
+    );
+    await page.getByRole("button", { name: "Verify stops and preview route", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "TEST provider unavailable" }).waitFor();
+    await page.getByRole("button", { name: "Verify stops and preview route", exact: true }).click();
+    await page.getByText("Proposed road route:", { exact: false }).waitFor();
+    await page.locator('.student-route-preview[data-map-state="ready"]').waitFor();
+    assert.ok(await page.locator(".mapboxgl-ctrl-attrib").count());
+    for (const width of [320, 1280, 414]) {
+      await page.setViewportSize({ width, height: 896 });
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
+    // A changed loading instruction invalidates trusted preview and requires fresh verification.
+    await page
+      .getByLabel("School or shared destination address gate or loading instructions (optional)", {
+        exact: true,
+      })
+      .fill("TEST NORTH GATE UPDATED");
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Submit transportation request", exact: true })
+        .isEnabled(),
+      false,
+    );
+    assert.equal(await page.locator(".student-route-preview").count(), 0);
+    await page.getByRole("button", { name: "Verify stops and preview route", exact: true }).click();
+    await page.locator('.student-route-preview[data-map-state="ready"]').waitFor();
     await page.screenshot({
       path: path.join(evidence, "414-three-student-request.png"),
       fullPage: true,
     });
+    mapFailure = true;
+    await page
+      .getByLabel("School or shared destination address gate or loading instructions (optional)", {
+        exact: true,
+      })
+      .fill("TEST NORTH GATE FINAL");
+    await page.getByRole("button", { name: "Verify stops and preview route", exact: true }).click();
+    await page.getByRole("button", { name: "Retry map", exact: true }).waitFor();
+    mapFailure = false;
+    await page.getByRole("button", { name: "Retry map", exact: true }).click();
+    await page.locator('.student-route-preview[data-map-state="ready"]').waitFor();
     await page.getByRole("button", { name: "Submit transportation request", exact: true }).click();
-    await page.getByRole("status").filter({ hasText: "We could not complete" }).waitFor();
+    await page.getByRole("status").filter({ hasText: "Submission status is uncertain" }).waitFor();
     await page.getByRole("button", { name: "Submit transportation request", exact: true }).click();
     await page
       .getByRole("status")
@@ -253,7 +398,18 @@ async function main() {
     assert.equal(keys[0], keys[1]);
     assert.equal(requests.length, 1);
     await page.reload();
-    await page.getByText("TEST STUDENT 2 · TEST PICKUP ADDRESS 2", { exact: true }).waitFor();
+    await page
+      .getByRole("listitem")
+      .filter({ hasText: "TEST STUDENT 2 · TEST PICKUP ADDRESS 2" })
+      .waitFor();
+    assert.equal(
+      await page
+        .getByRole("listitem")
+        .filter({ hasText: "TEST STUDENT 2 · TEST PICKUP ADDRESS 2" })
+        .filter({ hasText: "Wheelchair lift" })
+        .count(),
+      1,
+    );
     await page.screenshot({
       path: path.join(evidence, "414-submitted-request.png"),
       fullPage: true,
@@ -272,7 +428,10 @@ async function main() {
     await page.getByRole("button", { name: "Refresh requests", exact: true }).click();
     await page.getByText("No account access is available.", { exact: false }).waitFor();
     assert.equal(
-      await page.getByText("TEST STUDENT 2 · TEST PICKUP ADDRESS 2", { exact: true }).count(),
+      await page
+        .getByRole("listitem")
+        .filter({ hasText: "TEST STUDENT 2 · TEST PICKUP ADDRESS 2" })
+        .count(),
       0,
     );
     assert.equal(
@@ -285,7 +444,7 @@ async function main() {
     await page.getByRole("heading", { name: "Secure sign-in", exact: true }).waitFor();
     assert.deepEqual(errors, []);
     console.log(
-      "PASS customer callback, invitation send failure/account preservation/resend and automatic acceptance, customer no-admin controls, three-student request, same-key retry, reload, withdrawal, clearing and compact/mobile/desktop layout. Mock backend only; no email sent.",
+      "PASS invitation regressions; selected addresses and three-student road geometry; per-student requirements; middle-row removal; provider/map failure and retry; changed-loading-point preview invalidation; same-key submit retry; reload/withdrawal/revoked clearing; compact/mobile/desktop layout. Mock backend/provider only; no email sent.",
     );
   } finally {
     if (browser) await browser.close();

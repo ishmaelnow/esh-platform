@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@esh-platform/maps": "workspace:*",
     "@esh-platform/supabase": "workspace:*",
     "next": "15.5.20",
     "react": "19.1.0",
