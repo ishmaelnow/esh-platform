@@ -128,6 +128,30 @@ section,
   overflow: hidden;
   margin-block: 20px;
 }
+.planning-workspace {
+  min-width: 0;
+  padding-block: 20px;
+  overflow-wrap: anywhere;
+}
+.planning-workspace summary {
+  cursor: pointer;
+  min-height: 44px;
+  font-weight: 700;
+}
+.planning-workspace textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  font: inherit;
+  border: 1px solid #dce5ef;
+  border-radius: 8px;
+}
+.planning-workspace li {
+  margin-block: 8px;
+}
+.planning-editor fieldset {
+  min-width: 0;
+}
 footer {
   width: min(100%, 720px);
   margin-inline: auto;

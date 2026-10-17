@@ -1,6 +1,9 @@
 # Student geographic requests and lifecycle direction
 
-Status: owner-pushed 15166fc; Student hosted Ready/manual mapping acceptance pending.
+Status: owner-pushed geographic feature 15166fc, secret-name correction 87ac00e and labels 351eca1.
+Owner accepted live customer submission, road-map display/reload, internal request/map view and
+withdrawn status on requests they withdrew. Exact cleanup coverage/full concurrency/security/site
+acceptance is not inferred; Vercel Ready was not separately supplied for these later releases.
 Owner authorized mapping and accommodation intake after
 partner review. Owner supplied intended-only dry-run and successful application of migration
 20261016000100; application deployment remains pending. Student transport execution stays locked;

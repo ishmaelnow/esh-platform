@@ -4,16 +4,67 @@ Last updated: 2026-10-17
 
 ## Current objective and checkpoint
 
-Current immediate objective (2026-10-17): owner paused live geographic acceptance because repeated
-destination wording made optional gate instructions look like a second address. Local copy fix uses
-Destination address / Search destination address, separate Gate or entrance instructions (optional),
-and numbered Pickup address with an explicit home/collection explanation and separate optional
-pickup instructions. Owner observed real address suggestions; no completed geographic submission
-or route acceptance reported. Labels-only follow-up is locally verified: updated customer browser
-flow passes, complete 414px screenshot inspected, enabled and restored default-off production builds
-(including lint/types) and diff check pass. Next: owner stages/pushes the component, updated browser
-script, operations manual and handoff, then confirms Student Ready and resumes the paused test.
-No schema, provider, authorization or existing product changes; do not proceed past this UI fix.
+Current authorized objective (2026-10-17, owner GO): Internal Route Review and Recurring Schedule
+Planning after partner review. Recovered baseline 351eca1, main/local origin aligned. Preserve
+accepted geographic intake and unrelated generated Rider/Driver configs, preorder docs, assistant
+files and unknown git/main. No Git/production mutation by Codex.
+
+Local implementation complete: private canonical student/authority/requirements reviews,
+versioned exact loading-point approval (curb/driveway/designated zone), configurable district
+qualification policy, dedicated planning resource/evidence registry, explicit inbound/outbound
+recurring drafts/calendar, server-road-proof planning approval and immutable dated manifests.
+Hard locks check per-segment seating/equipment and attendant seats, full-term base/equipment
+qualification dates, current reviewed reference versions and overlapping Student reservations.
+Source withdrawal cancels future output. All templates/manifests remain planning-only, never
+operationally ready. Manual evidence/dedicated-resource attestations do not establish ordinary-
+product/global resource exclusivity or automatically verify district credentials. No notifications,
+Driver execution, boarding/handoff, parent grants, payments or activation added.
+
+Owner confirmed intended-only dry-run and successful remote application of
+20261017000100_student_recurring_planning.sql. Do not reapply. Existing schema
+and shared types extended additively; ordinary product handlers/tables remain unchanged. Existing
+NEXT_STUDENT_SUPABASE_SECRET_KEY/public Mapbox configuration reused. No new environment variable.
+94 Student/map and existing booking/checkout/Driver/workspace unit/API checks pass. Both actual
+Student SQL harnesses pass expanded cases including three-student inbound/outbound segments,
+school-bound policy, missing/equipment-specific/expiring credentials, stale reviews, self-review,
+proof expiry, reservation/child conflicts, calendar/DST windows, revisions and source withdrawal.
+Minimal legacy fixtures are not full deployed schema or true concurrency certification. Planning,
+customer and enrollment browser flows pass with unchanged-key retry, compatibility, provider
+recovery, approval failure preservation, immutable manifest/cancellation history and revoked clearing
+at 320/414/desktop. Complete 414px screenshots and visible action footer inspected in ignored
+tmp/student-planning-evidence. Student enabled build/lint/types and shared map/Supabase checks pass
+with existing warnings. Initial ambiguous select labels corrected with explicit accessible names.
+Final default-off production build (lint/types included), all 21 closed-shell screen/viewport
+checks and scoped diff checks pass. No production data/provider/email call or Git/deployment action
+was performed. The independent Student server configuration is unchanged.
+Read architecture/student-recurring-planning.md and operations/student-recurring-planning-manual-test.md.
+Next: owner performs scoped source commit/push, confirms Student Vercel Ready, then completes
+internal planning manual acceptance. Source release is not yet confirmed. Local implementation/verification
+are complete. Do not repeat accepted mapping checks or reapply existing migrations. Dedicated
+resources are manually reviewed planning records; no actual Driver execution or live release.
+
+### Accepted geographic milestone (previous checkpoint)
+
+Current immediate checkpoint (2026-10-17): owner pushed label correction as 351eca1; main/local
+origin aligned. Owner supplied successful three-student geographic request view with one shared
+destination, separate pickup addresses, wheelchair-lift requirements on Students A/C and awaiting
+review / ride not confirmed status. Older text-only request remains explicitly unverified and
+withdrawn. This confirms the reported live intake result, not reload/internal-review/route-map
+acceptance or full RLS/concurrency. Do not copy private submitted addresses/names into this handoff.
+Owner then praised the displayed road map and reported PASS WITH FLYING COLOR after the requested
+reload/reopen check. Saved customer request and road-preview reload acceptance are owner-confirmed
+for that test; do not repeat them or infer broader school-site/permission/concurrency certification.
+Owner responded BOOM to the internal staff request/requirements/road-preview checklist, accepted
+as the reported internal-view pass. Owner subsequently reports withdrawing some requests and seeing
+Withdrawn. Withdrawal visibility is accepted for those requests; exact IDs and whether every TEST
+request was withdrawn were not supplied. Do not claim all test data cleaned up or deleted.
+Current bounded geographic milestone has owner acceptance for reported customer submission,
+saved route/reload, internal view and withdrawal visibility. Next: owner selects subsequent scope;
+no further runtime implementation authorized. Do not repeat migrations or accepted manual checks.
+No further implementation authorized by the reported success; keep Student operations closed.
+Label correction local browser, inspected 414px screenshot, enabled/default-off production builds
+(lint/types included) and diff checks passed. Hosted Ready was not separately supplied, but owner
+is successfully using the live geographic intake. Existing generated/config/assistant work preserved.
 
 Current objective (2026-10-16): owner returned partner approval to implement the bounded Student
 geographic-request/map milestone, with accurate school loading context, legacy-unverified records,
@@ -60,7 +111,7 @@ screenshots inspected under ignored tmp/student-customer-evidence. Final default
 build and all 21 closed-shell screen/viewport checks pass. No live provider/email or production
 DB/role/booking/payment test was performed. Browser API/basemap/route fixtures are isolated.
 
-Git release is owner-pushed 87ac00e (secret-name follow-up to 15166fc), main/local origin aligned; last confirmed Student Ready was
+Git release is owner-pushed 351eca1 (labels after secret-name follow-up 87ac00e), main/local origin aligned; last explicitly confirmed Student Ready was
 e2fb5e1. Owner previously applied
 20261015000400, confirmed Student Ready and /school callback, and demonstrated customer access and
 successful two-student text request. Do not reapply existing migrations or repeat preregistration.

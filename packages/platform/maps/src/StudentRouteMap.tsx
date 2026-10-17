@@ -8,10 +8,12 @@ export function StudentRouteMap({
   stops,
   route,
   accessToken,
+  reviewed = false,
 }: {
   stops: StudentStop[];
   route: StudentRoadRoute;
   accessToken: string;
+  reviewed?: boolean;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
@@ -80,8 +82,10 @@ export function StudentRouteMap({
       ) : null}
       <p>
         Proposed road route: {formatRouteDistance(route.distanceMeters)} ·{" "}
-        {formatRouteDuration(route.durationSeconds)}. Stop order follows the request. Loading points
-        need staff approval.
+        {formatRouteDuration(route.durationSeconds)}.{" "}
+        {reviewed
+          ? "Reviewed loading points in the explicit plan order. Planning only; transport is not released."
+          : "Stop order follows the request. Loading points need staff approval."}
       </p>
     </div>
   );

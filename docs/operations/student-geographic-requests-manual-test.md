@@ -1,5 +1,11 @@
 # Student geographic request rollout and acceptance
 
+Owner manual checkpoint (2026-10-17, latest source 351eca1): customer geographic submission with
+three students and per-student requirements, displayed road preview/reload, internal view and
+withdrawal visibility accepted for the reported tests. Owner withdrew some requests; no complete
+request-ID inventory or all-test-data cleanup confirmation supplied. Do not repeat accepted checks
+or infer all remaining isolation/provider-failure/school-site/concurrency scenarios passed.
+
 Local feature pending owner rollout. Use disposable TEST data; no real child data or transport.
 Owner supplied intended-only dry-run and successful application of 20261016000100. Do not repeat
 the migration steps below for this release; next are server configuration, scoped push and Ready.

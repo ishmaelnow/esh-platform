@@ -41,6 +41,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      student_planning_entities: { Row: { entity_id: string; tenant_id: string; customer_id: string | null; kind: string; reference: string }; Insert: never; Update: never; Relationships: [] }
+      student_planning_mutations: { Row: { tenant_id: string; actor_id: string; request_key: string; fingerprint: string; result: Json }; Insert: never; Update: never; Relationships: [] }
+      student_planning_versions: { Row: { tenant_id: string; entity_id: string; revision: number; state: string; data: Json; actor_id: string; recorded_at: string; reason: string }; Insert: never; Update: never; Relationships: [] }
+      student_planning_links: { Row: { tenant_id: string; schedule_id: string; schedule_revision: number; slot: string; entity_id: string; revision: number }; Insert: never; Update: never; Relationships: [] }
+      student_daily_manifests: { Row: { tenant_id: string; schedule_id: string; service_date: string; revision: number; schedule_revision: number; state: string; snapshot: Json; actor_id: string; recorded_at: string; reason: string }; Insert: never; Update: never; Relationships: [] }
+      student_planning_reservations: { Row: { tenant_id: string; schedule_id: string; service_date: string; manifest_revision: number; resource_id: string; resource_revision: number; starts_at: string; ends_at: string; active: boolean }; Insert: never; Update: never; Relationships: [] }
       student_transportation_customer_invitations: { Row: { invitation_id: string; tenant_id: string; customer_id: string; normalized_email: string; status: string; expires_at: string; last_email_attempt_at: string | null; accepted_by: string | null; accepted_at: string | null }; Insert: never; Update: never; Relationships: [] }
       student_transportation_customers: { Row: { customer_id: string; tenant_id: string; display_name: string; customer_kind: string; status: string; created_by: string; request_id: string; creation_hash: string }; Insert: never; Update: never; Relationships: [] }
       student_transportation_customer_users: { Row: { tenant_id: string; customer_id: string; person_id: string }; Insert: never; Update: never; Relationships: [] }
@@ -2736,6 +2742,12 @@ export type Database = {
       create_student_customer: { Args: { target_tenant_id: string; request_id_value: string; name_value: string; kind_value: string; email_value: string }; Returns: string }
       submit_student_transport_request: { Args: { target_tenant_id: string; target_customer_id: string; idempotency_key_value: string; scheduled_at_value: string; destination_value: string; students_value: Json }; Returns: string }
       submit_geographic_student_request: { Args: { target_tenant_id: string; target_customer_id: string; idempotency_key_value: string; receipt_id_value: string }; Returns: string }
+      my_student_planning: { Args: { t: string }; Returns: Json }
+      save_student_planning_record: { Args: { t: string; kind_value: string; customer_value: string | null; reference_value: string; entity_value: string | null; expected_revision: number; state_value: string; data_value: Json; reason_value: string; request_key: string }; Returns: Json }
+      save_student_route_plan: { Args: { t: string; entity_value: string | null; expected_revision: number; reference_value: string; data_value: Json; reason_value: string; request_key: string }; Returns: Json }
+      student_route_plan_preview: { Args: { t: string; id: string; revision_value: number }; Returns: Json }
+      approve_student_route_plan: { Args: { t: string; id: string; expected_revision: number; receipt_value: string; reason_value: string; request_key: string }; Returns: Json }
+      generate_student_manifests: { Args: { t: string; id: string; expected_revision: number; from_day: string; to_day: string; reason_value: string; request_key: string; cancel_value: boolean }; Returns: Json }
       withdraw_student_transport_request: { Args: { target_tenant_id: string; target_request_id: string }; Returns: boolean }
       set_student_customer_status: { Args: { target_tenant_id: string; target_customer_id: string; active_value: boolean }; Returns: boolean }
       save_my_student_enrollment: { Args: { target_tenant_id: string; request_id_value: string; student_id_value: string | null; action_value: string; payload_value: Json }; Returns: string }

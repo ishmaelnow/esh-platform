@@ -1,5 +1,14 @@
 # Product and Platform Roadmap
 
+Current Student work (owner GO 2026-10-17): internal route review and recurring planning, locally
+implemented and locally verified. Canonical authority/requirements, versioned loading-point review,
+district qualification policy, dedicated planning resources, explicit recurring school calendars,
+hard capacity/qualification/reservation checks and immutable dated planning manifests. Migration
+20261017000100 is owner-confirmed applied after intended-only dry-run; source deployment/manual acceptance remain. Execution and
+cross-product sharing stay closed. See architecture/student-recurring-planning.md.
+Geographic intake is owner-pushed through 351eca1 and accepted for reported submission, map/reload,
+internal view and withdrawal tests; older pending-map descriptions below are superseded.
+
 Student business-model clarification (2026-10-15): client schools/organizations/groups are
 customers, analogous to Riders in a separate service, never tenant administrators by default.
 Internal business staff administer enrollment and accounts. Parent access remains own-child

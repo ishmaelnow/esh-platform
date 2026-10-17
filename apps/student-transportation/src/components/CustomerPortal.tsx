@@ -11,6 +11,7 @@ import { readCustomers, readRequestStudents, type Customer } from "../lib/custom
 import { FoundationScreen } from "./FoundationScreen";
 import { GeographicRequestForm, SavedGeographicPreview } from "./GeographicRequest";
 import { ACCOMMODATIONS } from "../lib/geography";
+import { PlanningWorkspace } from "./PlanningWorkspace";
 type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
 type AccountRow = Database["public"]["Tables"]["student_transportation_customers"]["Row"];
 type InvitationRow =
@@ -44,6 +45,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
+  const [planningOpen, setPlanningOpen] = useState(false);
   const retry = useRef<{ signature: string; id: string } | null>(null);
   const generation = useRef(0);
   const customer = customers.find((c) => c.customerId === selected);
@@ -57,6 +59,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
     setRequests([]);
     setAccounts([]);
     setInvitations([]);
+    setPlanningOpen(false);
     retry.current = null;
   }, []);
   useEffect(() => {
@@ -440,6 +443,27 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
               />
             ) : null}
             <h2>{internal ? "Transportation requests" : "Your requests"}</h2>
+            {internal && selected && (program?.canReview || program?.canEnroll) ? (
+              <>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={() => setPlanningOpen((v) => !v)}
+                >
+                  {planningOpen ? "Close route planning" : "Open route planning"}
+                </button>
+                {planningOpen ? (
+                  <PlanningWorkspace
+                    key={`${session.user.id}:${selected}:${generation.current}`}
+                    client={client}
+                    tenantId={selected}
+                    canReview={!!program?.canReview}
+                    requests={requests}
+                  />
+                ) : null}
+              </>
+            ) : null}
             {!requests.length ? <p>No requests yet.</p> : null}
             {requests.length === 100 ? <p>Showing the latest 100 requests.</p> : null}
             {requests.map((r) => (
