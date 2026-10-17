@@ -33,6 +33,10 @@ approved retention process. History is intentionally immutable.
 
 ## Acceptance
 
+Form labels: Destination address is the shared drop-off street address; Search destination address
+finds selectable suggestions. Gate or entrance instructions (optional) is a separate notes field.
+Pickup address 1/2/3 is each student's collection address, with separate optional pickup notes.
+
 1. Sign in as an admitted customer. Select one shared school street address and three different
    pickup suggestions. Include actual school gate/loading instructions. Do not rely on a campus
    postal centroid or treat an address point as an approved loading zone.

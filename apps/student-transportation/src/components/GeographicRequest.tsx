@@ -40,12 +40,14 @@ async function geography<T>(
 }
 function AddressPicker({
   label,
+  instructionsLabel,
   value,
   onChange,
   client,
   customer,
 }: {
   label: string;
+  instructionsLabel: string;
   value: AddressChoice | null;
   onChange: (value: AddressChoice | null) => void;
   client: PlatformSupabaseClient;
@@ -146,8 +148,9 @@ function AddressPicker({
       {message ? <p role="status">{message}</p> : null}
       {value ? (
         <label>
-          {label} gate or loading instructions (optional)
+          {instructionsLabel}
           <input
+            placeholder="e.g. Use the north gate"
             maxLength={300}
             value={value.loadingInstructions}
             onChange={(e) => onChange({ ...value, loadingInstructions: e.target.value })}
@@ -291,7 +294,8 @@ export function GeographicRequestForm({
         <p>Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone}.</p>
         <AddressPicker
           key={formVersion}
-          label="School or shared destination address"
+          label="Destination address"
+          instructionsLabel="Gate or entrance instructions (optional)"
           value={destination}
           client={client}
           customer={customer}
@@ -301,8 +305,8 @@ export function GeographicRequestForm({
           }}
         />
         <p>
-          Select the precise street address serving the school gate or loading zone. Describe the
-          entrance above. Geocoding does not approve a safe stop.
+          All students travel to this destination. Enter the school or shared drop-off street
+          address, search, then select a result. Staff will review the loading point.
         </p>
         {students.map((s, i) => (
           <fieldset className="contact-card" key={s.id}>
@@ -323,6 +327,7 @@ export function GeographicRequestForm({
             </label>
             <AddressPicker
               label={`Pickup address ${i + 1}`}
+              instructionsLabel={`Pickup instructions for student ${i + 1} (optional)`}
               value={s.pickup}
               client={client}
               customer={customer}
@@ -331,6 +336,7 @@ export function GeographicRequestForm({
                 setStudents((rows) => rows.map((r, j) => (j === i ? { ...r, pickup: v } : r)));
               }}
             />
+            <p>Where this student will be collected, such as their home address.</p>
             <fieldset className="student-accommodations">
               <legend>Equipment or staffing requirements</legend>
               {Object.entries(ACCOMMODATIONS).map(([tag, label]) => (

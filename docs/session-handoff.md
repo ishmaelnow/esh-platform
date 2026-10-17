@@ -4,6 +4,17 @@ Last updated: 2026-10-17
 
 ## Current objective and checkpoint
 
+Current immediate objective (2026-10-17): owner paused live geographic acceptance because repeated
+destination wording made optional gate instructions look like a second address. Local copy fix uses
+Destination address / Search destination address, separate Gate or entrance instructions (optional),
+and numbered Pickup address with an explicit home/collection explanation and separate optional
+pickup instructions. Owner observed real address suggestions; no completed geographic submission
+or route acceptance reported. Labels-only follow-up is locally verified: updated customer browser
+flow passes, complete 414px screenshot inspected, enabled and restored default-off production builds
+(including lint/types) and diff check pass. Next: owner stages/pushes the component, updated browser
+script, operations manual and handoff, then confirms Student Ready and resumes the paused test.
+No schema, provider, authorization or existing product changes; do not proceed past this UI fix.
+
 Current objective (2026-10-16): owner returned partner approval to implement the bounded Student
 geographic-request/map milestone, with accurate school loading context, legacy-unverified records,
 per-student accommodation tags and immutable request history. Future architecture must follow
@@ -31,7 +42,7 @@ Owner requested a clear Student-specific Vercel key name after conflicting assis
 Owner clarified the final name is NEXT_STUDENT_SUPABASE_SECRET_KEY. Local follow-up reads only
 that variable and explicitly maps it into the unchanged shared factory. Keep it; remove duplicate
 STUDENT_SUPABASE_SECRET_KEY. NEXT_STUDENT is server-only, unlike NEXT_PUBLIC. No migration.
-This follow-up requires owner commit/push and Student redeploy; eight API checks and final Student
+Owner pushed this follow-up as 87ac00e; Student Vercel Ready remains unconfirmed. Eight API checks and final Student
 production build/lint/types pass. No keys inspected, Git mutation or production action by Codex.
 Independent Student deployment now needs public Mapbox token and server-only NEXT_STUDENT_SUPABASE_SECRET_KEY
 for receipt writes. Service credential is privileged across shared DB; never expose it publicly.
@@ -49,14 +60,15 @@ screenshots inspected under ignored tmp/student-customer-evidence. Final default
 build and all 21 closed-shell screen/viewport checks pass. No live provider/email or production
 DB/role/booking/payment test was performed. Browser API/basemap/route fixtures are isolated.
 
-Git release is owner-pushed 15166fc, main/local origin aligned; last confirmed Student Ready was
+Git release is owner-pushed 87ac00e (secret-name follow-up to 15166fc), main/local origin aligned; last confirmed Student Ready was
 e2fb5e1. Owner previously applied
 20261015000400, confirmed Student Ready and /school callback, and demonstrated customer access and
 successful two-student text request. Do not reapply existing migrations or repeat preregistration.
 No Git mutation, deployment or production DB command performed by Codex. Existing generated Rider/
 Driver configs, preorder docs, assistant work and unknown git/main remain preserved.
 
-Next: owner confirms independent Student server variables and Student Vercel Ready at 15166fc,
+Next: owner keeps NEXT_STUDENT_SUPABASE_SECRET_KEY, removes duplicate STUDENT_SUPABASE_SECRET_KEY,
+confirms independent Student server variables and Student Vercel Ready at 87ac00e,
 then performs controlled TEST address/route acceptance. Source push and migration are complete.
 Owner handles all Git/deployment/database mutations and independent Student server configuration.
 Then actual provider/street geometry and school-site loading-point manual acceptance. Keep ordinary

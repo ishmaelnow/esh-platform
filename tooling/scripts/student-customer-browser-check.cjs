@@ -308,15 +308,11 @@ async function main() {
       0,
     );
     await page.getByLabel("Requested pickup time", { exact: true }).fill("2027-01-12T07:00");
-    await page
-      .getByLabel("School or shared destination address", { exact: true })
-      .fill("TEST SCHOOL DESTINATION");
-    await page
-      .getByRole("button", { name: "Search school or shared destination address", exact: true })
-      .click();
+    await page.getByLabel("Destination address", { exact: true }).fill("TEST SCHOOL DESTINATION");
+    await page.getByRole("button", { name: "Search destination address", exact: true }).click();
     await page.getByRole("button", { name: "TEST SCHOOL DESTINATION", exact: true }).click();
     await page
-      .getByLabel("School or shared destination address gate or loading instructions (optional)", {
+      .getByLabel("Gate or entrance instructions (optional)", {
         exact: true,
       })
       .fill("TEST NORTH GATE");
@@ -360,7 +356,7 @@ async function main() {
     }
     // A changed loading instruction invalidates trusted preview and requires fresh verification.
     await page
-      .getByLabel("School or shared destination address gate or loading instructions (optional)", {
+      .getByLabel("Gate or entrance instructions (optional)", {
         exact: true,
       })
       .fill("TEST NORTH GATE UPDATED");
@@ -379,7 +375,7 @@ async function main() {
     });
     mapFailure = true;
     await page
-      .getByLabel("School or shared destination address gate or loading instructions (optional)", {
+      .getByLabel("Gate or entrance instructions (optional)", {
         exact: true,
       })
       .fill("TEST NORTH GATE FINAL");
