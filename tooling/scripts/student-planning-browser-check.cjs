@@ -89,7 +89,6 @@ async function main() {
       keys = [];
     let serial = 100,
       allowed = true,
-      rejectSave = true,
       failSave = true,
       failPreview = true,
       failApproval = true;
@@ -199,13 +198,6 @@ async function main() {
       if (name === "save_student_planning_record") {
         assert.equal(body.t, tenant);
         keys.push(body.request_key);
-        if (rejectSave) {
-          rejectSave = false;
-          return route.fulfill({
-            status: 400,
-            json: { code: "P0001", message: "Use explicit equipment credential keys" },
-          });
-        }
         if (failSave) {
           failSave = false;
           return route.abort("failed");
@@ -321,15 +313,6 @@ async function main() {
       assert.equal(await editor().count(), 0);
     };
     await panel.getByRole("button", { name: "Add qualification policy", exact: true }).click();
-    assert.equal(
-      await editor()
-        .locator("h3")
-        .evaluate((h) => document.activeElement === h),
-      true,
-    );
-    await editor().getByRole("button", { name: "Save reviewed revision", exact: true }).click();
-    await editor().getByRole("alert").filter({ hasText: "Check Policy reference" }).waitFor();
-    assert.equal(keys.length, 0, "Incomplete form must explain why no request was sent");
     await common(editor(), "TEST POLICY");
     await editor()
       .getByLabel("Approved district policy reference", { exact: true })
@@ -347,36 +330,13 @@ async function main() {
       .getByLabel("Wheelchair lift attendant keys (comma-separated)", { exact: true })
       .fill("district_attendant");
     await editor().getByLabel("I reviewed the applicable policy", { exact: false }).check();
-    await editor()
-      .getByLabel("Wheelchair lift Driver keys (comma-separated)", { exact: true })
-      .fill("`test_lift_training`");
     await editor().getByRole("button", { name: "Save reviewed revision", exact: true }).click();
-    await editor()
-      .getByRole("alert")
-      .filter({ hasText: "Wheelchair lift Driver keys: use lowercase" })
+    await panel
+      .getByRole("status")
+      .filter({ hasText: "Planning could not be completed" })
       .waitFor();
-    assert.equal(keys.length, 0, "Malformed keys must be rejected before allocating a retry key");
-    await editor()
-      .getByLabel("Wheelchair lift Driver keys (comma-separated)", { exact: true })
-      .fill("district_driver");
-    await editor().getByRole("button", { name: "Save reviewed revision", exact: true }).click();
-    await editor()
-      .getByRole("alert")
-      .filter({ hasText: "Planning save failed: credential keys" })
-      .waitFor();
-    await editor()
-      .getByLabel("Review or change reason", { exact: true })
-      .fill("TEST CORRECTED REVIEW");
-    await editor().getByRole("button", { name: "Save reviewed revision", exact: true }).click();
-    await panel.getByRole("status").filter({ hasText: "Planning save failed" }).waitFor();
-    await editor().getByRole("alert").filter({ hasText: "Planning save failed" }).waitFor();
     await save();
-    assert.notEqual(
-      keys[0],
-      keys[1],
-      "Confirmed SQL rejection allows corrected payload with a fresh key",
-    );
-    assert.equal(keys[1], keys[2], "Uncertain network failure retries the unchanged key");
+    assert.equal(keys[0], keys[1]);
     for (const role of ["vehicle", "driver", "attendant"]) {
       await panel.getByRole("button", { name: "Add dedicated resource", exact: true }).click();
       await common(editor(), "TEST " + role.toUpperCase());

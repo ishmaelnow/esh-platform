@@ -6,8 +6,6 @@ import {
   parseCalendar,
   planningStops,
   readPlanning,
-  reviewedCredentialKeys,
-  planningRecordFailure,
   type PlanningRecord,
 } from "./planning";
 const record = (data: PlanningRecord["data"]): PlanningRecord => ({
@@ -23,39 +21,6 @@ const record = (data: PlanningRecord["data"]): PlanningRecord => ({
   reason: "TEST REVIEW",
 });
 describe("Student planning review boundaries", () => {
-  it("allows corrections after confirmed SQL rejection but preserves uncertain retries", () => {
-    const rejected = planningRecordFailure({
-      code: "P0001",
-      message: "Use explicit equipment credential keys",
-    });
-    expect(rejected.canCorrect).toBe(true);
-    expect(rejected.message).toContain("Remove backticks");
-    expect(
-      planningRecordFailure({ code: "23505", message: "private constraint detail" }).message,
-    ).toContain("reference already exists");
-    const uncertain = planningRecordFailure({ message: "private transport detail" });
-    expect(uncertain.canCorrect).toBe(false);
-    expect(uncertain.message).not.toContain("private");
-    expect(
-      planningRecordFailure({ code: "42702", message: "private database detail" }).message,
-    ).toContain("42702");
-  });
-  it("rejects pasted formatting and malformed credential keys before a policy write", () => {
-    for (const value of [
-      "`test_lift_training`",
-      '"test_lift_training"',
-      "Test Training",
-      "test-driver",
-      "a".repeat(65),
-    ])
-      expect(() => reviewedCredentialKeys(value, "Wheelchair lift Driver keys")).toThrow(
-        "Remove backticks",
-      );
-    expect(
-      reviewedCredentialKeys("test_driver_clearance, test_lift_training", "Driver keys"),
-    ).toEqual(["test_driver_clearance", "test_lift_training"]);
-    expect(reviewedCredentialKeys("", "Car seat keys")).toEqual([]);
-  });
   it("reserves an attendant seat separately from an occupied wheelchair position", () => {
     const student = record({
       seating: "wheelchair",

@@ -1,35 +1,6 @@
 import type { Json, Database } from "@esh-platform/supabase";
 import { validCoordinates, type StudentStop } from "@esh-platform/maps";
 export type PlanningKind = "student" | "point" | "policy" | "resource" | "schedule";
-export function planningRecordFailure(error: { code?: string; message: string }) {
-  const code = /^[A-Z0-9]{5}$/.test(error.code ?? "") ? error.code : undefined;
-  const canCorrect = !!code && /^(P0001|22[A-Z0-9]{3}|23[A-Z0-9]{3}|42501)$/.test(code);
-  let message: string;
-  if (/^Use explicit (equipment )?credential keys$/.test(error.message))
-    message =
-      "Planning save failed: credential keys must use lowercase letters, numbers and underscores. Remove backticks and quotation marks.";
-  else if (code === "23505")
-    message =
-      "Planning save failed: that reference already exists. Find it in the reviewed record register instead of creating it again.";
-  else if (code === "42501")
-    message = "Planning save failed: your account does not have permission to save this review.";
-  else if (code?.startsWith("22"))
-    message = "Planning save failed: check the review dates and field values.";
-  else
-    message = `Planning save failed${code ? ` (${code})` : ""}. Check your entries and access. If the result is uncertain, retry unchanged or refresh planning before changing it.`;
-  return { message, canCorrect };
-}
-export function reviewedCredentialKeys(value: string, label: string): string[] {
-  const keys = value
-    .split(",")
-    .map((key) => key.trim())
-    .filter(Boolean);
-  if (keys.length > 20 || keys.some((key) => !/^[a-z][a-z0-9_]{1,63}$/.test(key)))
-    throw Error(
-      `${label}: use lowercase letters, numbers and underscores, starting with a letter. Remove backticks and quotation marks.`,
-    );
-  return keys;
-}
 export const scalarText = (value: unknown, fallback = ""): string =>
   typeof value === "string"
     ? value

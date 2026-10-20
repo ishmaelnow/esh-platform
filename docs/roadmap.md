@@ -1,17 +1,10 @@
 # Product and Platform Roadmap
 
-2026-10-19 Student follow-up: owner confirms geographic TEST submission/internal visibility and
-road previews; policy-save manual acceptance is blocked. Local repair makes validation/save
-errors visible, validates policy keys, supports corrected retries after confirmed SQL rejection,
-and scrolls newly opened review forms into view. Repair release/live acceptance pending; no new
-migration, permissions or operational activation.
-
 Current Student work (owner GO 2026-10-17): internal route review and recurring planning, locally
 implemented and locally verified. Canonical authority/requirements, versioned loading-point review,
 district qualification policy, dedicated planning resources, explicit recurring school calendars,
 hard capacity/qualification/reservation checks and immutable dated planning manifests. Migration
-20261017000100 is owner-confirmed applied after intended-only dry-run; b75afc6 is owner-pushed and
-Student Vercel Ready confirmed. Internal manual acceptance remains. Execution and
+20261017000100 is owner-confirmed applied after intended-only dry-run; source deployment/manual acceptance remain. Execution and
 cross-product sharing stay closed. See architecture/student-recurring-planning.md.
 Geographic intake is owner-pushed through 351eca1 and accepted for reported submission, map/reload,
 internal view and withdrawal tests; older pending-map descriptions below are superseded.

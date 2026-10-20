@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Database, PlatformSupabaseClient } from "@esh-platform/supabase";
-import { scalarText, planningRecordFailure } from "../lib/planning";
+import { scalarText } from "../lib/planning";
 import { StudentRouteMap } from "@esh-platform/maps/client";
 import { ACCOMMODATIONS, type GeographicPreview } from "../lib/geography";
 import { readRequestStudents } from "../lib/customer";
@@ -27,7 +27,7 @@ type Editor =
   | { kind: "schedule"; record?: PlanningRecord };
 const errorMessage = (error: unknown) => {
   const message = error instanceof Error ? error.message : "";
-  return /required|missing|expires|expiring|cannot satisfy|already reserved|overlapping|superseded|refresh|changed|Current draft|Road duration|service window|Historical manifests|Review every|Explicit unique|requested student|Loading point moved|Resolve seating|Request identifier|Use one closure|Use explicit (equipment )?credential keys|Planning save failed|does not cover|does not match|different reviewer|Record changed/i.test(
+  return /required|missing|expires|expiring|cannot satisfy|already reserved|overlapping|superseded|refresh|changed|Current draft|Road duration|service window|Historical manifests|Review every|Explicit unique|requested student|Loading point moved|Resolve seating|Request identifier|Use one closure|does not cover|does not match|different reviewer|Record changed/i.test(
     message,
   )
     ? message.slice(0, 350)
@@ -268,12 +268,7 @@ export function PlanningWorkspace({
         reason_value: body.reason,
         request_key: key,
       });
-      if (result.error) {
-        const failure = planningRecordFailure(result.error);
-        // A returned SQL error rolls back this RPC. Transport failures remain uncertain.
-        if (failure.canCorrect) retry.current = null;
-        throw Error(failure.message);
-      }
+      if (result.error) throw Error(result.error.message);
       await saved();
     });
   const saveSchedule = (body: ScheduleSubmission) =>
@@ -462,7 +457,6 @@ export function PlanningWorkspace({
                   {...(request ? { request } : {})}
                   initialIndex={editor.index ?? 0}
                   busy={busy}
-                  saveMessage={message}
                   onSave={saveRecord}
                   onClose={() => setEditor(null)}
                 />
