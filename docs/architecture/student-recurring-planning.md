@@ -1,10 +1,23 @@
 # Student internal review and recurring planning
 
-Status: locally implemented and verified; migration owner-applied, source deployment/manual acceptance pending.
+Status: locally implemented and verified; migration owner-applied, b75afc6 owner-pushed and Student
+Vercel Ready confirmed. Internal manual acceptance pending.
 Owner GO on 2026-10-17 after accepting geographic
 intake and partner constraints. Owner confirmed intended-only dry-run and successful application of
 20261017000100_student_recurring_planning.sql on 2026-10-17. Do not reapply.
 No operational activation, ordinary dispatch/resource mutation, native, payment or parent access.
+
+2026-10-19 local repair: opening a review scrolls/focuses its heading; missing required fields and
+malformed policy credential keys display an explanation beside Save rather than a silent native
+validation block or hidden generic error. Literal formatting characters are rejected, never silently
+rewritten into a different credential. Server failures show safe guidance/SQL codes without raw
+database details. Confirmed SQL rejections permit corrected inputs with a fresh mutation key;
+uncertain network failures retain unchanged-key retry. No migration or authorization change.
+Owner live policy save remains unconfirmed; malformed-key rejection is locally reproduced, not
+proof of the exact live failure. Review history remains authoritative for whether a save occurred.
+Nine planning unit checks, actual SQL rejection/persistence checks and expanded enabled planning
+browser flow pass for the repair, including corrected validation and unchanged uncertain retry.
+Existing geographic customer/address-search browser regressions and enabled build/lint/types pass.
 
 ## Internal review boundary
 

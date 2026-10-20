@@ -1,6 +1,6 @@
 "use client";
-import { scalarText } from "../lib/planning";
-import { useState, type FormEvent } from "react";
+import { scalarText, reviewedCredentialKeys } from "../lib/planning";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Json, Database } from "@esh-platform/supabase";
 import { ACCOMMODATIONS } from "../lib/geography";
 import { readRequestStudents } from "../lib/customer";
@@ -55,17 +55,13 @@ export function TextField({
   );
 }
 export const formText = (form: FormData, key: string) => scalarText(form.get(key) ?? "").trim();
-const keys = (value: string) =>
-  value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
 export function PlanningRecordEditor({
   kind,
   record,
   request,
   initialIndex = 0,
   busy,
+  saveMessage = "",
   onSave,
   onClose,
 }: {
@@ -74,6 +70,7 @@ export function PlanningRecordEditor({
   request?: RequestRow;
   initialIndex?: number;
   busy: boolean;
+  saveMessage?: string;
   onSave: (body: RecordSubmission) => void;
   onClose: () => void;
 }) {
@@ -91,10 +88,24 @@ export function PlanningRecordEditor({
       : (students[initialIndex]?.accommodations ?? []),
   );
   const [error, setError] = useState("");
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.scrollIntoView({ block: "center" });
+    heading.current?.focus({ preventScroll: true });
+  }, []);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     try {
+      const invalid = event.currentTarget.querySelector<HTMLInputElement | HTMLSelectElement>(
+        "input:invalid, select:invalid, textarea:invalid",
+      );
+      if (invalid) {
+        const label =
+          invalid.labels?.[0]?.textContent?.trim().replace(/\s+/g, " ") ?? "review field";
+        invalid.focus();
+        throw Error(`Check ${label}: ${invalid.validationMessage}`);
+      }
       const f = new FormData(event.currentTarget);
       const common = { validFrom: formText(f, "validFrom"), validUntil: formText(f, "validUntil") };
       let next: Json;
@@ -126,18 +137,30 @@ export function PlanningRecordEditor({
         next = {
           ...common,
           sourceReference: formText(f, "sourceReference"),
-          driverKeys: keys(formText(f, "driverKeys")),
-          attendantKeys: keys(formText(f, "attendantKeys")),
+          driverKeys: reviewedCredentialKeys(
+            formText(f, "driverKeys"),
+            "Required Driver credential keys",
+          ),
+          attendantKeys: reviewedCredentialKeys(
+            formText(f, "attendantKeys"),
+            "Required attendant credential keys",
+          ),
           equipmentDriverKeys: Object.fromEntries(
             ["wheelchair_lift", "booster_seat", "car_seat"].map((tag) => [
               tag,
-              keys(formText(f, `driver_${tag}`)),
+              reviewedCredentialKeys(
+                formText(f, `driver_${tag}`),
+                `${ACCOMMODATIONS[tag as keyof typeof ACCOMMODATIONS]} Driver keys`,
+              ),
             ]),
           ),
           equipmentAttendantKeys: Object.fromEntries(
             ["wheelchair_lift", "booster_seat", "car_seat"].map((tag) => [
               tag,
-              keys(formText(f, `attendant_${tag}`)),
+              reviewedCredentialKeys(
+                formText(f, `attendant_${tag}`),
+                `${ACCOMMODATIONS[tag as keyof typeof ACCOMMODATIONS]} attendant keys`,
+              ),
             ]),
           ),
           policyReviewed: f.has("policyReviewed"),
@@ -184,8 +207,8 @@ export function PlanningRecordEditor({
     resource: "Dedicated planning resource",
   }[kind];
   return (
-    <form className="notice planning-editor" onSubmit={submit}>
-      <h3>
+    <form className="notice planning-editor" onSubmit={submit} noValidate>
+      <h3 ref={heading} tabIndex={-1}>
         {record ? "New revision: " : "Add "}
         {title}
       </h3>
@@ -562,6 +585,7 @@ export function PlanningRecordEditor({
           </>
         ) : null}
         <TextField label="Review or change reason" name="reason" maxLength={300} />
+        {error || saveMessage ? <p role="alert">{error || saveMessage}</p> : null}
         <div className="portal-actions">
           <button>Save reviewed revision</button>
           <button type="button" className="secondary" onClick={onClose}>
@@ -569,7 +593,6 @@ export function PlanningRecordEditor({
           </button>
         </div>
       </fieldset>
-      {error ? <p role="alert">{error}</p> : null}
     </form>
   );
 }

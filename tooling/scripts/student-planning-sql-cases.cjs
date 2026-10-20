@@ -44,6 +44,20 @@ module.exports = async function planningCases({ db, read, rows, actor, uuid, cus
     equipmentDriverKeys: { wheelchair_lift: ["district_driver"] },
     equipmentAttendantKeys: { wheelchair_lift: ["district_attendant"] },
   };
+  await assert.rejects(
+    () =>
+      save(
+        "policy",
+        { ...policyData, equipmentDriverKeys: { wheelchair_lift: ["`test_lift_training`"] } },
+        "TEST INVALID POLICY",
+        customer,
+      ),
+    /Use explicit equipment credential keys/,
+  );
+  assert.equal(
+    (await rows("select * from student_planning_entities where kind='policy'")).length,
+    0,
+  );
   const policy = await save("policy", policyData, "TEST POLICY", customer);
   const studentData = {
     ...dates,

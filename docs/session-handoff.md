@@ -1,11 +1,36 @@
 # Session Handoff
 
-Last updated: 2026-10-17
+Last updated: 2026-10-19
 
 ## Current objective and checkpoint
 
+Current repair (owner GO 2026-10-19): policy editor opens but live save is unconfirmed;
+owner reported generic failure and could not locate a Network request. Do not repeat DevTools
+instructions or ask owner to recreate the accepted request. December TEST request has three
+equipment/staffing tags, is visible internally under the correct business, and owner confirms
+road previews work. An earlier empty list was Community Hub selection, resolved by choosing the
+correct business; not evidence of request deletion. Internal email and school customer email have
+distinct roles. No live policy, resource, canonical identity, loading review, schedule approval or
+manifest generation has been accepted. Leave the current TEST source submitted.
+
+Local repair adds explicit required-field feedback, policy-key validation (no literal backticks/
+quotes), save errors beside Save with sanitized SQL codes, corrected-write retry after confirmed
+SQL rollback, unchanged-key retry for uncertain transport failures, and focus/scroll on opening a
+review form. Actual SQL reproduces malformed-key rejection without persisting a record. This
+does not prove the exact cause of the owner's latest live failure: no response was captured.
+No new migration/environment variable. Repair source release and live acceptance remain pending.
+Repair verification: nine planning unit checks, actual enrollment/geography/planning SQL harness,
+enabled production build/lint/types, expanded planning browser regression (missing required field,
+literal-key rejection without RPC, confirmed SQL rejection/corrected payload, uncertain network
+same-key retry, normal reviews/manifests) and existing customer/address-search browser checks pass.
+Browser fixtures use isolated intercepted APIs, not the live database. Initial browser map check
+needed the disposable public Mapbox token restored; final configured run passes. Final default-off
+production build/lint/types, all 21 closed-shell viewport checks and diff whitespace checks pass.
+Existing Supabase/Next build warnings remain. No production mutation or Git mutation by Codex.
+
 Current authorized objective (2026-10-17, owner GO): Internal Route Review and Recurring Schedule
-Planning after partner review. Recovered baseline 351eca1, main/local origin aligned. Preserve
+Planning after partner review. Owner pushed b75afc6, main/local origin aligned, and confirmed
+Student Vercel Ready. Internal planning manual acceptance is now the active checkpoint. Preserve
 accepted geographic intake and unrelated generated Rider/Driver configs, preorder docs, assistant
 files and unknown git/main. No Git/production mutation by Codex.
 
@@ -38,8 +63,10 @@ Final default-off production build (lint/types included), all 21 closed-shell sc
 checks and scoped diff checks pass. No production data/provider/email call or Git/deployment action
 was performed. The independent Student server configuration is unchanged.
 Read architecture/student-recurring-planning.md and operations/student-recurring-planning-manual-test.md.
-Next: owner performs scoped source commit/push, confirms Student Vercel Ready, then completes
-internal planning manual acceptance. Source release is not yet confirmed. Local implementation/verification
+Next: owner commits/pushes the scoped repair, then confirms Student Vercel Ready
+and resume saving the policy against the EXISTING submitted December TEST request. Do not restart
+intake, repeat accepted maps or request another fresh test submission. Source release and Student
+Ready are owner-confirmed at b75afc6; the repair is not deployed. Original local implementation/verification
 are complete. Do not repeat accepted mapping checks or reapply existing migrations. Dedicated
 resources are manually reviewed planning records; no actual Driver execution or live release.
 

@@ -1,6 +1,7 @@
 # Student internal review and recurring planning acceptance
 
-Source release pending. Migration 20261017000100 is owner-confirmed applied. Use clearly labelled TEST-only students,
+Owner pushed b75afc6 and confirmed Student Vercel Ready. Migration 20261017000100 is owner-confirmed applied.
+Internal manual acceptance remains pending. Use clearly labelled TEST-only students,
 policy/evidence references and dedicated resources. No real minors' data or student transportation.
 Preserve ordinary products and Student operational lock; use existing NEXT_STUDENT_SUPABASE_SECRET_KEY
 and public Mapbox configuration. No new variable, callback, native build, email or payment setup.
@@ -13,6 +14,21 @@ Owner supplied an intended-only dry-run followed by successful application of
 and checks Student Vercel Ready. Existing unrelated config/assistant/preorder changes remain separate.
 
 ## Internal acceptance
+
+Current owner checkpoint (2026-10-19): the existing December TEST request is submitted, visible
+internally and has working road previews. Do not recreate it. Policy save is unconfirmed; resume
+at step 3 after the local save-feedback repair is released. Select the correct Operating business
+first: Community Hub previously displayed a separate empty queue. /school is the customer intake;
+/clients is internal review. Sign out only when actually changing identities.
+
+Opening Add qualification policy now scrolls to its form. Required-field and key-format errors
+appear beside Save; the invalid required field receives focus. Credential keys use lowercase
+letters, digits and underscores, start with a letter, and contain no backticks/quotes. Empty
+equipment-specific lists remain optional. Correct validation entries in place. A confirmed SQL
+rejection permits a fresh corrected save; a transport failure has uncertain outcome, so retry
+unchanged or refresh planning to inspect records before changing it. A successful save closes the
+editor, displays "Planning revision saved" and adds a register entry. A visible form alone never
+proves persistence. Copy the visible error/SQL code if a failure remains; no DevTools required.
 
 1. Create a fresh disposable geographic customer request through the existing /school flow (do not
    reuse a withdrawn request). Include distinct TEST students requiring a lift, a restraint and a
