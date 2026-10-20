@@ -172,16 +172,22 @@ export function PlanningWorkspace({
   tenantId,
   canReview,
   requests,
+  onBusyChange,
 }: {
   client: PlatformSupabaseClient;
   tenantId: string;
   canReview: boolean;
   requests: RequestRow[];
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [context, setContext] = useState<PlanningContext | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [requestId, setRequest] = useState("");
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [busy, onBusyChange]);
   const [message, setMessage] = useState("");
   const [selectedPlan, setPlan] = useState("");
   const [preview, setPreview] = useState<

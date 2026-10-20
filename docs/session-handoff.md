@@ -1,8 +1,127 @@
 # Session Handoff
 
-Last updated: 2026-10-17
+Last updated: 2026-10-20
 
 ## Current objective and checkpoint
+
+### Current authorized work — unified staff portal (2026-10-20)
+
+Owner explicitly approved "yes consolidate": one internal staff portal, separate school portal.
+Implemented locally from 519320b: /admin Staff portal owns one auth client/session, business
+selector, refresh/sign-out and Requests and planning / Enrollment / Administration sections.
+/clients redirects /admin; /enrollment redirects /admin?section=enrollment. /school/invitation
+flow remains customer-only. Existing /admin email return and storage key preserved; no new
+callback/config/env/key/migration or role grant. Embedded existing components retain RPC/RLS,
+audit/idempotency and role gates. Initial business prefers an enabled admitted reviewer/staff
+pilot; tenant/identity/section changes clear private child workspace state. No new storage.
+Safe load diagnostics show fixed operation, HTTP status and bounded code, never raw provider
+details/token headers. This is NOT a claimed fix for live 401 or reintroduction of reverted
+510fab1 save-feedback code. No unrelated stash contents restored. Existing owner backup remains.
+
+Verification so far: eight scoped unit tests, enabled production build/lint/types, new staff
+callback/session/navigation/tenant/revocation/sanitized-401 browser check, existing enrollment
+lifecycle/governance, customer/address-search and planning browser scripts PASS. Intercepted
+fixtures only, not production auth certification. 414px complete staff screenshot inspected;
+320/414/desktop overflow checks pass. Busy guard test holds a governance write in flight and
+confirms navigation, business choice and sign-out disable until settled; enrollment/planning
+regressions pass after nested busy propagation. No reintroduction of reverted policy behavior.
+Final default-off production build/lint/types, 21 closed-shell screen/viewport checks, formatting
+and diff whitespace checks PASS. Existing Supabase realtime/Next ESLint plugin warnings remain.
+SDK source confirms built-in URL handling for both implicit and PKCE callbacks; shell uses that
+single initializer rather than duplicating exchange handlers. No production provider/email calls.
+Read architecture/student-staff-portal.md and operations/student-staff-portal-manual-test.md.
+Next: owner stages scoped consolidation code/tests/docs, commits and pushes main
+through GitHub and confirms Student Ready before one /admin acceptance. No Vercel override,
+database/billing/credential/account mutation or repeated manual sign-ins. Production remains
+owner-confirmed 519320b until new push/deploy evidence. Keep existing December source submitted.
+
+The detailed rollback/diagnostic checkpoints below are retained evidence; navigation is superseded
+by this local consolidation, not proof that it has been deployed or that API access works.
+
+### Active controlled rollback test — resume here
+
+Owner reverted 510fab1 using git revert --no-edit, creating 519320b, verified
+git diff --exit-code b75afc6 HEAD printed nothing, pushed main, and supplied Vercel Ready /
+Production for 519320b. Local main/origin align at 519320b. This was a normal GitHub deployment,
+NOT a Vercel Instant Rollback. Prior deployments remain history. No DB rollback or auth settings
+change confirmed. Recurring-planning migration remains applied. Stash@{0}, "Backup before Student
+Transportation rollback", exists; owner reports -u backup. Do not apply/pop/drop it during test.
+
+Objective: compare internal sign-in/session behavior on restored b75afc6 source before resuming
+policy-save testing. Same Student domain/browser; change one variable at a time. The internal
+review account used successfully is ishmaelkosh@gmail.com; school customer koach2025@gmail.com
+uses /school and is not the account for this internal test. No account grants, new requests,
+browser clearing, Supabase configuration edits, or production mail by Codex.
+
+Confirmed prior manual checkpoint: existing December TEST request with three distinct
+equipment/staffing tags is submitted and owner-confirmed visible internally under ESH Education;
+road preview works. Community Hub was a separate empty queue. Keep source request submitted.
+Policy save remains unconfirmed. Do not restart intake or assume canonical/resource reviews exist.
+Both b75afc6/510fab1 sign-in source requests /admin from /clients; shared Student auth storage.
+Reported /school callback and enrollment load failure are unresolved. No verified cause yet.
+
+Test tracker:
+CONFIRMED HTTP failure (owner logs 2026-10-20): POST /rest/v1/rpc/my_student_enrollment_context
+returns 401 from browser (00:03:10 and 00:01:26/18 log timestamps). Customer RPC
+accept_my_student_customer_invitations also 401; OPTIONS 200. Native worker claim_native_push_attempts
+continues 401 every minute. Thus requests DO reach the expected project API; this is an auth/API
+rejection, not evidence of absent tenant admission. No 402 in supplied excerpt. Exact API key vs
+JWT cause unconfirmed; no new client/email/role or repeated sign-in tests. Next inspect ONE failed
+Student event for safe error fields (sb_error_code/error code/message), never header/token values.
+
+Current provider clue: owner sees Supabase "Your grace period is over" banner, grace ended
+18 Sep 2026, warning over-quota projects may return HTTP 402. This is NOT proof the organization
+is currently restricted or that a 402 occurred. Supabase docs permit dashboard data access while
+API requests are restricted, so passing SQL + browser failures is compatible with this hypothesis.
+Next owner View usage read-only: identify plan, over-quota metric and any active restriction notice.
+No upgrade/spend-cap/billing changes, deletions or database/auth mutations authorized by this clue.
+Earlier logs showed no entries; owner reports slow internet. No confirmed failed HTTP status yet.
+Owner now supplied unified logs: API Gateway has entries, including health checks 200 and repeated
+POST /rest/v1/rpc/claim_native_push_attempts HTTP 401 from node at one-minute intervals. Scheduled
+DB cron runs shown completed. No Student context RPC or 402 is visible in supplied excerpt.
+401 native-push is a separate concrete auth failure/shared-credential clue, not proof of Student
+cause or quota restriction. Do not rotate keys or change ordinary worker/config from this excerpt.
+Next filter Pathname for /rest/v1/rpc/my_student_enrollment_context, perform one existing-session
+/clients Refresh requests, collect matching status/timestamp and sanitized error code/message.
+
+1. PASS — 519320b source equality, owner push and Student Ready/Production confirmed.
+2. PASS — owner opened requested /clients and pasted Customers and requests / Secure sign-in.
+   Signed out. Final address-bar URL not separately pasted; no redirect inferred from this result.
+3. PARTIAL PASS / LOAD FAILURE — owner supplied final https://school.eshapp.com/admin#,
+   Enrollment administration, Signed in as ishmaelkosh@gmail.com, and "We could not load
+   enrollment. Refresh or contact your program administrator." Email-link auth restored correct
+   identity on expected /admin callback; enrollment-data load failed on restored source as well.
+   This does not establish why data load failed or whether /clients can load; no browser/settings
+   blame and no new email required. Earlier reported /school redirect not reproduced in this run.
+4. AUTH SESSION PASS / ACCOUNT LOAD FAILURE — owner opened /clients and pasted Customers and
+   requests, Signed in as ishmaelkosh@gmail.com, Operating business No account access, No requests
+   yet, and "We could not load your account. Please refresh." Correct identity persists between
+   /admin and /clients. Both page data loads fail on restored b75afc6 source (deployed 519320b).
+   Do not claim source rollback restored access, nor infer requests deleted or roles removed.
+   Enrollment/context failure vs downstream RLS/provider/config still unisolated.
+   Next: owner-run context diagnostic tooling/sql/student-internal-context-diagnostic.sql in
+   the Student Supabase project, to expose my_student_enrollment_context result/error for the
+   actual internal UID. No account mutation/grants/migration or real sign-in email. Requires SQL
+   Editor owner privileges; a single SELECT with materialized CTE sets transaction-local request
+   UID/claims (auto-expire at statement transaction end) and returns account_found/context only.
+   This checks identity/context function, not PostgREST grants/browser JWT validity. Owner ran
+   query: account_found=true, valid personId string; ESH Education has canReview=true,
+   canConfigure=true, enrollmentEnabled=true, canEnroll=false. Community Hub and THE REAL TEST
+   have configure only and pilot disabled. Database reviewer admission is present; no role/email
+   changes justified. SQL-owner context read succeeds; browser error remains unresolved.
+   Owner confirmed authenticated EXECUTE privilege on my_student_enrollment_context() = true.
+   Neither absent reviewer admission nor absent execute grant explains the observed failure.
+   Still unverified: actual browser request status/response, browser JWT/project/config and
+   downstream table reads. Do not claim SQL-owner result proves browser authorization success.
+   Next: Supabase Logs/API Gateway read-only inspection, correlate ONE /clients Refresh requests
+   action with /rest/v1/rpc/my_student_enrollment_context and subsequent table requests; collect
+   only timestamp/path/status/error code, no headers/JWT/student payload. Avoid another DevTools loop.
+   Never request tokens. User discussed clearer email aliases; no new identity was authorized
+   or created, and aliases must not be substituted during this controlled test.
+5. NOT STARTED — resume policy-save investigation only after internal access passes.
+Guide ONE step per reply, record actual results and advance tracker; do not repeat completed
+steps or attribute failures to the owner/browser without evidence. The older checkpoints below
+are historical and superseded by this active test.
 
 Current authorized objective (2026-10-17, owner GO): Internal Route Review and Recurring Schedule
 Planning after partner review. Recovered baseline 351eca1, main/local origin aligned. Preserve

@@ -1,4 +1,4 @@
-import { EnrollmentPortal } from "../../components/EnrollmentPortal";
+import { redirect } from "next/navigation";
 export default function Page() {
-  return <EnrollmentPortal mode="school" />;
+  redirect("/admin?section=enrollment");
 }

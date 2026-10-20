@@ -12,6 +12,7 @@ import { FoundationScreen } from "./FoundationScreen";
 import { GeographicRequestForm, SavedGeographicPreview } from "./GeographicRequest";
 import { ACCOMMODATIONS } from "../lib/geography";
 import { PlanningWorkspace } from "./PlanningWorkspace";
+import { studentRequestError, type StaffWorkspace } from "../lib/staff";
 type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
 type AccountRow = Database["public"]["Tables"]["student_transportation_customers"]["Row"];
 type InvitationRow =
@@ -21,23 +22,43 @@ function field(form: FormData, name: string) {
   return typeof value === "string" ? value : "";
 }
 
-export function CustomerPortal({ internal = false }: { internal?: boolean }) {
+export function CustomerPortal({
+  internal = false,
+  workspace,
+}: {
+  internal?: boolean;
+  workspace?: StaffWorkspace;
+}) {
+  const staffClient = workspace?.client;
+  const staffTenant = workspace?.tenantId;
+  const updateContext = workspace?.onContext;
+  const workspaceError = workspace?.onError;
+  const reportBusy = workspace?.onBusy;
+  const embedded = !!workspace;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const enabled = process.env.NEXT_PUBLIC_STUDENT_ENROLLMENT_ENABLED === "true";
   const client = useMemo(
     () =>
-      enabled && url && key
+      staffClient ??
+      (enabled && url && key
         ? createIsolatedBrowserSupabaseClient("esh-student-transportation-auth", {
             url,
             anonKey: key,
           })
-        : null,
-    [enabled, url, key],
+        : null),
+    [enabled, url, key, staffClient],
   );
-  const [session, setSession] = useState<SupabaseAuthSession | null>(null);
-  const [ready, setReady] = useState(false);
+  const [ownSession, setSession] = useState<SupabaseAuthSession | null>(null);
+  const [ownReady, setReady] = useState(false);
+  const session = workspace?.session ?? ownSession;
+  const ready = embedded || ownReady;
   const [busy, setBusy] = useState(false);
+  const [planningBusy, setPlanningBusy] = useState(false);
+  useEffect(() => {
+    reportBusy?.(busy || planningBusy);
+    return () => reportBusy?.(false);
+  }, [busy, planningBusy, reportBusy]);
   const [message, setMessage] = useState("");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [programs, setPrograms] = useState<EnrollmentProgram[]>([]);
@@ -63,7 +84,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
     retry.current = null;
   }, []);
   useEffect(() => {
-    if (!client) return;
+    if (!client || embedded) return;
     let live = true;
     let identity: string | null = null;
     const accept = (next: SupabaseAuthSession | null) => {
@@ -93,7 +114,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
       live = false;
       data.subscription.unsubscribe();
     };
-  }, [client, clear]);
+  }, [client, clear, embedded]);
   const load = useCallback(
     async (choice = "") => {
       if (!client) return;
@@ -102,8 +123,12 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
       let nextPrograms: EnrollmentProgram[] = [];
       if (internal) {
         const result = await client.rpc("my_student_enrollment_context");
-        if (result.error) throw result.error;
-        nextPrograms = readEnrollmentContext(result.data).programs.filter(
+        if (current !== generation.current) return;
+        if (result.error)
+          throw studentRequestError("Load staff access", result.error, result.status);
+        const nextContext = readEnrollmentContext(result.data);
+        updateContext?.(nextContext);
+        nextPrograms = nextContext.programs.filter(
           (p) => p.canConfigure || p.canEnroll || p.canReview,
         );
       } else {
@@ -114,7 +139,8 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
         options = readCustomers(result.data);
       }
       const ids = internal ? nextPrograms.map((p) => p.tenantId) : options.map((c) => c.customerId);
-      const id = ids.includes(choice) ? choice : (ids[0] ?? "");
+      const wanted = staffTenant ?? choice;
+      const id = ids.includes(wanted) ? wanted : embedded ? "" : (ids[0] ?? "");
       const tenant = internal ? id : options.find((c) => c.customerId === id)?.tenantId;
       let nextRequests: RequestRow[] = [];
       let nextAccounts: AccountRow[] = [];
@@ -126,7 +152,8 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
           .eq("tenant_id", tenant);
         if (!internal) query = query.eq("customer_id", id);
         const result = await query.order("created_at", { ascending: false }).limit(100);
-        if (result.error) throw result.error;
+        if (result.error)
+          throw studentRequestError("Load transportation requests", result.error, result.status);
         nextRequests = result.data;
         if (internal) {
           const result = await client
@@ -135,14 +162,20 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
             .eq("tenant_id", tenant)
             .order("display_name")
             .limit(100);
-          if (result.error) throw result.error;
+          if (result.error)
+            throw studentRequestError("Load school customers", result.error, result.status);
           nextAccounts = result.data;
           const invitationsResult = await client
             .from("student_transportation_customer_invitations")
             .select("*")
             .eq("tenant_id", tenant)
             .limit(100);
-          if (invitationsResult.error) throw invitationsResult.error;
+          if (invitationsResult.error)
+            throw studentRequestError(
+              "Load customer invitations",
+              invitationsResult.error,
+              invitationsResult.status,
+            );
           nextInvitations = invitationsResult.data;
         }
       }
@@ -154,15 +187,19 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
       setAccounts(nextAccounts);
       setInvitations(nextInvitations);
     },
-    [client, internal],
+    [client, internal, staffTenant, embedded, updateContext],
   );
   useEffect(() => {
     if (!session?.user.id) return;
-    void load().catch(() => {
+    void load().catch((error: unknown) => {
       clear();
+      workspaceError?.(error);
       setMessage("We could not load your account. Please refresh.");
     });
-  }, [session?.user.id, load, clear]);
+    return () => {
+      generation.current++;
+    };
+  }, [session?.user.id, load, clear, workspaceError]);
   const run = async (action: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -214,21 +251,30 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
         <p>Service is temporarily unavailable.</p>
       </main>
     );
+  const Container = embedded ? "div" : "main";
   return (
-    <main className="enrollment-portal">
-      <header>
-        <Link href="/">
-          ESH <span>Student Transportation</span>
-        </Link>
-      </header>
+    <Container className={embedded ? "staff-embedded" : "enrollment-portal"}>
+      {!embedded ? (
+        <header>
+          <Link href="/">
+            ESH <span>Student Transportation</span>
+          </Link>
+        </header>
+      ) : null}
       <section>
-        <p className="eyebrow">Request pilot · rides are not available</p>
-        <h1>{internal ? "Customers and requests" : "School transportation"}</h1>
-        <p>
-          {internal
-            ? "Internal staff manage customer accounts and review scheduled requests."
-            : "Request a school, organization or group journey for students travelling together."}
-        </p>
+        {!embedded ? (
+          <>
+            <p className="eyebrow">Request pilot · rides are not available</p>
+            <h1>{internal ? "Customers and requests" : "School transportation"}</h1>
+            <p>
+              {internal
+                ? "Internal staff manage customer accounts and review scheduled requests."
+                : "Request a school, organization or group journey for students travelling together."}
+            </p>
+          </>
+        ) : (
+          <h2>Customers and requests</h2>
+        )}
         <p>
           Requests require operational review. No driver, vehicle, fare or ride is confirmed here.
         </p>
@@ -264,56 +310,60 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
           </form>
         ) : (
           <>
-            <p>Signed in as {session.user.email}</p>
-            <div className="portal-actions">
-              <button
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    clear();
-                    await load(selected);
-                    retry.current = null;
-                  })
-                }
-              >
-                Refresh requests
-              </button>
-              <button
-                className="secondary"
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const result = await client.auth.signOut({ scope: "local" });
-                    if (result.error) throw result.error;
-                    clear();
-                  })
-                }
-              >
-                Sign out
-              </button>
-            </div>
-            <label>
-              {internal ? "Operating business" : "Customer account"}
-              <select
-                value={selected}
-                disabled={busy}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  clear();
-                  void run(() => load(id));
-                }}
-              >
-                {!selected ? <option value="">No account access</option> : null}
-                {(internal
-                  ? programs.map((p) => ({ id: p.tenantId, name: p.name }))
-                  : customers.map((c) => ({ id: c.customerId, name: c.name }))
-                ).map((c) => (
-                  <option value={c.id} key={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {!embedded ? (
+              <>
+                <p>Signed in as {session.user.email}</p>
+                <div className="portal-actions">
+                  <button
+                    disabled={busy}
+                    onClick={() =>
+                      void run(async () => {
+                        clear();
+                        await load(selected);
+                        retry.current = null;
+                      })
+                    }
+                  >
+                    Refresh requests
+                  </button>
+                  <button
+                    className="secondary"
+                    disabled={busy}
+                    onClick={() =>
+                      void run(async () => {
+                        const result = await client.auth.signOut({ scope: "local" });
+                        if (result.error) throw result.error;
+                        clear();
+                      })
+                    }
+                  >
+                    Sign out
+                  </button>
+                </div>
+                <label>
+                  {internal ? "Operating business" : "Customer account"}
+                  <select
+                    value={selected}
+                    disabled={busy}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      clear();
+                      void run(() => load(id));
+                    }}
+                  >
+                    {!selected ? <option value="">No account access</option> : null}
+                    {(internal
+                      ? programs.map((p) => ({ id: p.tenantId, name: p.name }))
+                      : customers.map((c) => ({ id: c.customerId, name: c.name }))
+                    ).map((c) => (
+                      <option value={c.id} key={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : null}
             {!selected ? (
               <p>No account access is available. Contact your transportation provider.</p>
             ) : null}
@@ -460,6 +510,7 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
                     tenantId={selected}
                     canReview={!!program?.canReview}
                     requests={requests}
+                    onBusyChange={setPlanningBusy}
                   />
                 ) : null}
               </>
@@ -528,11 +579,13 @@ export function CustomerPortal({ internal = false }: { internal?: boolean }) {
           </>
         )}
         {message ? <p role="status">{message}</p> : null}
-        <Link className="back" href="/">
-          ← Home
-        </Link>
+        {!embedded ? (
+          <Link className="back" href="/">
+            ← Home
+          </Link>
+        ) : null}
       </section>
-      <footer>ESH Student Transportation</footer>
-    </main>
+      {!embedded ? <footer>ESH Student Transportation</footer> : null}
+    </Container>
   );
 }

@@ -52,7 +52,7 @@ export function FoundationScreen({
               Operators <span aria-hidden="true">→</span>
             </Link>
             <Link href="/admin">
-              Internal administration <span aria-hidden="true">→</span>
+              Staff portal <span aria-hidden="true">→</span>
             </Link>
           </nav>
         ) : (

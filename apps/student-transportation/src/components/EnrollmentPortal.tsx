@@ -16,29 +16,50 @@ import {
   type EnrollmentInput,
 } from "../lib/enrollment";
 import { FoundationScreen } from "./FoundationScreen";
+import { studentRequestError, type StaffWorkspace } from "../lib/staff";
 
 function textField(form: FormData, name: string) {
   const value = form.get(name);
   return typeof value === "string" ? value : "";
 }
 
-export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
+export function EnrollmentPortal({
+  mode,
+  workspace,
+}: {
+  mode: "school" | "admin";
+  workspace?: StaffWorkspace;
+}) {
+  const staffClient = workspace?.client;
+  const staffTenant = workspace?.tenantId;
+  const updateContext = workspace?.onContext;
+  const workspaceError = workspace?.onError;
+  const reportBusy = workspace?.onBusy;
+  const embedded = !!workspace;
+  const administrationOnly = workspace?.section === "administration";
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const enabled = process.env.NEXT_PUBLIC_STUDENT_ENROLLMENT_ENABLED === "true";
   const client = useMemo(
     () =>
-      enabled && url && key
+      staffClient ??
+      (enabled && url && key
         ? createIsolatedBrowserSupabaseClient("esh-student-transportation-auth", {
             url,
             anonKey: key,
           })
-        : null,
-    [enabled, url, key],
+        : null),
+    [enabled, url, key, staffClient],
   );
-  const [session, setSession] = useState<SupabaseAuthSession | null>(null);
-  const [resolved, setResolved] = useState(false);
+  const [ownSession, setSession] = useState<SupabaseAuthSession | null>(null);
+  const [ownResolved, setResolved] = useState(false);
+  const session = workspace?.session ?? ownSession;
+  const resolved = embedded || ownResolved;
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    reportBusy?.(busy);
+    return () => reportBusy?.(false);
+  }, [busy, reportBusy]);
   const [message, setMessage] = useState("");
   const [context, setContext] = useState<EnrollmentContext | null>(null);
   const [tenantId, setTenantId] = useState("");
@@ -52,10 +73,15 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
   const mutation = useRef<{ key: string; id: string } | null>(null);
   const authUser = session?.user.id;
   const program = context?.programs.find((row) => row.tenantId === tenantId);
-  const permitted = mode === "school" ? program?.canEnroll : program?.canReview;
+  const permitted =
+    workspace?.section === "administration"
+      ? false
+      : mode === "school"
+        ? program?.canEnroll
+        : program?.canReview;
 
   useEffect(() => {
-    if (!client) return;
+    if (!client || embedded) return;
     let active = true;
     let currentIdentity: string | null = null;
     const acceptSession = (next: SupabaseAuthSession | null) => {
@@ -102,29 +128,44 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [client]);
+  }, [client, embedded]);
 
   const load = useCallback(
     async (selected = "") => {
       if (!client) return;
       const generation = ++loadGeneration.current;
       const result = await client.rpc("my_student_enrollment_context");
-      if (result.error) throw result.error;
+      if (generation !== loadGeneration.current) return;
+      if (result.error)
+        throw studentRequestError("Load enrollment access", result.error, result.status);
       const next = readEnrollmentContext(result.data);
-      const selectedId = next.programs.some((row) => row.tenantId === selected)
-        ? selected
-        : (next.programs[0]?.tenantId ?? "");
+      updateContext?.(next);
+      const wanted = staffTenant ?? selected;
+      const selectedId = next.programs.some((row) => row.tenantId === wanted)
+        ? wanted
+        : embedded
+          ? ""
+          : (next.programs[0]?.tenantId ?? "");
       const access = next.programs.find((row) => row.tenantId === selectedId);
       let rows: StudentEnrollment[] = [];
       let contactRows: StudentEnrollmentContact[] = [];
-      if (selectedId && (mode === "school" ? access?.canEnroll : access?.canReview)) {
+      if (
+        selectedId &&
+        (mode === "school" ? access?.canEnroll : access?.canReview) &&
+        !administrationOnly
+      ) {
         let query = client
           .from("student_transportation_students")
           .select("*")
           .eq("tenant_id", selectedId);
         if (mode === "school") query = query.eq("guardian_person_id", next.personId);
         const studentsResult = await query.order("updated_at", { ascending: false }).limit(100);
-        if (studentsResult.error) throw studentsResult.error;
+        if (studentsResult.error)
+          throw studentRequestError(
+            "Load student enrollments",
+            studentsResult.error,
+            studentsResult.status,
+          );
         rows = studentsResult.data;
         if (rows.length) {
           const contactResult = await client
@@ -135,7 +176,12 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
               "student_id",
               rows.map((row) => row.student_id),
             );
-          if (contactResult.error) throw contactResult.error;
+          if (contactResult.error)
+            throw studentRequestError(
+              "Load enrollment contacts",
+              contactResult.error,
+              contactResult.status,
+            );
           contactRows = contactResult.data;
         }
       }
@@ -146,7 +192,7 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
       setContacts(contactRows);
       mutation.current = null;
     },
-    [client, mode],
+    [client, mode, staffTenant, embedded, updateContext, administrationOnly],
   );
 
   useEffect(() => {
@@ -162,12 +208,15 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
     if (!authUser) return;
     setBusy(true);
     void load()
-      .catch(() => setMessage(enrollmentError("load")))
+      .catch((error: unknown) => {
+        workspaceError?.(error);
+        setMessage(enrollmentError("load"));
+      })
       .finally(() => setBusy(false));
     return () => {
       ++loadGeneration.current;
     };
-  }, [authUser, load]);
+  }, [authUser, load, workspaceError]);
 
   async function run(task: () => Promise<void>, action: "load" | "save" | "access" | "auth") {
     setBusy(true);
@@ -256,18 +305,22 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
   }
 
   if (!enabled) return <FoundationScreen audience={mode} />;
+  const Container = embedded ? "div" : "main";
+  const Heading = embedded ? "h2" : "h1";
   return (
-    <main className="enrollment-portal">
-      <header>
-        <Link href="/">
-          ESH <span>Student Transportation</span>
-        </Link>
-      </header>
+    <Container className={embedded ? "staff-embedded" : "enrollment-portal"}>
+      {!embedded ? (
+        <header>
+          <Link href="/">
+            ESH <span>Student Transportation</span>
+          </Link>
+        </header>
+      ) : null}
       <section aria-labelledby="portal-title">
-        <p className="eyebrow">Enrollment pilot · rides are not available</p>
-        <h1 id="portal-title">
+        {!embedded ? <p className="eyebrow">Enrollment pilot · rides are not available</p> : null}
+        <Heading id="portal-title">
           {mode === "school" ? "Student enrollment · internal staff" : "Enrollment administration"}
-        </h1>
+        </Heading>
         <p>
           No transportation is booked here. Contact details are proposed contacts for review, not
           verified handoff authorization.
@@ -295,41 +348,45 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
           </form>
         ) : (
           <>
-            <div className="portal-actions">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  void run(async () => {
-                    await load(tenantId);
-                    setEditing(false);
-                    setInput(blankEnrollment());
-                  }, "load");
-                }}
-              >
-                Refresh enrollment
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy}
-                onClick={() => {
-                  void run(async () => {
-                    const result = await client.auth.signOut({ scope: "local" });
-                    if (result.error) throw result.error;
-                  }, "auth");
-                }}
-              >
-                Sign out
-              </button>
-            </div>
-            <p>Signed in as {session.user.email}</p>
+            {!embedded ? (
+              <>
+                <div className="portal-actions">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      void run(async () => {
+                        await load(tenantId);
+                        setEditing(false);
+                        setInput(blankEnrollment());
+                      }, "load");
+                    }}
+                  >
+                    Refresh enrollment
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={busy}
+                    onClick={() => {
+                      void run(async () => {
+                        const result = await client.auth.signOut({ scope: "local" });
+                        if (result.error) throw result.error;
+                      }, "auth");
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+                <p>Signed in as {session.user.email}</p>
+              </>
+            ) : null}
             {context && !context.programs.length ? (
               <div className="notice">
                 No enrollment access is available. Ask your program administrator for admission.
               </div>
             ) : null}
-            {context?.programs.length ? (
+            {!embedded && context?.programs.length ? (
               <label>
                 Organization
                 <select
@@ -357,7 +414,7 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
                 </select>
               </label>
             ) : null}
-            {mode === "admin" && program?.canConfigure ? (
+            {mode === "admin" && program?.canConfigure && (!embedded || administrationOnly) ? (
               <div className="notice">
                 <h2>Enrollment access setup</h2>
                 <p>
@@ -430,17 +487,19 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
                 </form>
               </div>
             ) : null}
-            {program?.canEnroll && mode === "admin" ? (
+            {!embedded && program?.canEnroll && mode === "admin" ? (
               <Link className="back" href="/enrollment">
                 Manage student enrollment →
               </Link>
             ) : null}
-            {program && (program.canConfigure || program.canEnroll || program.canReview) ? (
+            {!embedded &&
+            program &&
+            (program.canConfigure || program.canEnroll || program.canReview) ? (
               <Link className="back" href="/clients">
                 Customers and transportation requests →
               </Link>
             ) : null}
-            {program && !permitted ? (
+            {program && !permitted && !administrationOnly ? (
               <div className="notice">
                 {program.enrollmentEnabled
                   ? "You have not been admitted to this enrollment role."
@@ -829,11 +888,13 @@ export function EnrollmentPortal({ mode }: { mode: "school" | "admin" }) {
         <p role="status" aria-live="polite">
           {busy ? "Please wait…" : message}
         </p>
-        <Link className="back" href="/">
-          ← Home
-        </Link>
+        {!embedded ? (
+          <Link className="back" href="/">
+            ← Home
+          </Link>
+        ) : null}
       </section>
-      <footer>Private enrollment · Student Transportation</footer>
-    </main>
+      {!embedded ? <footer>Private enrollment · Student Transportation</footer> : null}
+    </Container>
   );
 }

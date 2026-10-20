@@ -1,5 +1,12 @@
 # Product and Platform Roadmap
 
+Owner-approved 2026-10-20: consolidate Student staff experience at /admin (Requests and planning,
+Enrollment, Administration) with one sign-in/business selector. Legacy staff URLs redirect;
+/school remains customer-only. Local implementation/verification complete; owner release pending.
+No schema/auth grants/environment changes. Hosted 401 persists on reverted 519320b and is NOT
+claimed fixed; safe operation/status diagnostics are included. See architecture/student-staff-portal.md
+and operations/student-staff-portal-manual-test.md. Keep the owner's backup stash and TEST request.
+
 Current Student work (owner GO 2026-10-17): internal route review and recurring planning, locally
 implemented and locally verified. Canonical authority/requirements, versioned loading-point review,
 district qualification policy, dedicated planning resources, explicit recurring school calendars,

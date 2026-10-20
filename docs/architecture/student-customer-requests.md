@@ -1,5 +1,10 @@
 # Student Transportation customers and shared requests
 
+Current navigation (2026-10-20): staff workflows are consolidated at /admin; /clients is a legacy
+redirect to its Requests and planning section. /school remains the separate customer portal.
+See student-staff-portal.md for shared session/tenant controls, permission boundaries and safe
+load diagnostics. Earlier separate-page descriptions below are historical.
+
 Local follow-up: geographic request preview, per-student operational requirements and immutable
 request snapshots are locally verified pending owner rollout of 20261016000100. See
 [geographic requests and recurring lifecycle direction](student-geographic-requests.md). Text-only

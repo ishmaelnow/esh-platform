@@ -188,6 +188,14 @@ async function main() {
       }
       if (url.pathname.endsWith("student_transportation_contacts"))
         return route.fulfill({ json: contacts });
+      if (
+        [
+          "student_transportation_requests",
+          "student_transportation_customers",
+          "student_transportation_customer_invitations",
+        ].some((name) => url.pathname.endsWith(name))
+      )
+        return route.fulfill({ json: [] });
       throw new Error("Unexpected test request: " + url.pathname);
     });
     await page.goto(origin + "/enrollment");
@@ -228,6 +236,7 @@ async function main() {
     await page.screenshot({ path: path.join(evidence, "414-submitted.png"), fullPage: true });
     reviewer = true;
     await page.goto(origin + "/admin");
+    await page.getByRole("button", { name: "Enrollment", exact: true }).click();
     await page.getByRole("button", { name: "Reject enrollment", exact: true }).waitFor();
     assert.equal(
       await page.getByRole("button", { name: "Reject enrollment", exact: true }).isEnabled(),
@@ -259,16 +268,16 @@ async function main() {
       });
     }
     allowed = false;
-    await page.getByRole("button", { name: "Refresh enrollment", exact: true }).click();
-    await page
-      .getByText("You have not been admitted to this enrollment role.", { exact: true })
-      .waitFor();
+    await page.getByRole("button", { name: "Refresh workspace", exact: true }).click();
+    await page.getByRole("button", { name: "Requests and planning", exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Enrollment", exact: true }).count(), 0);
     assert.equal(await page.getByRole("heading", { name: "TEST Child", exact: true }).count(), 0);
     await page.setViewportSize({ width: 414, height: 896 });
     owner = true;
     reviewer = false;
     enrollmentEnabled = false;
     await page.goto(origin + "/admin");
+    await page.getByRole("button", { name: "Administration", exact: true }).click();
     await page.getByRole("heading", { name: "Enrollment access setup", exact: true }).waitFor();
     assert.equal(await page.getByRole("heading", { name: "TEST Child", exact: true }).count(), 0);
     await page.getByRole("button", { name: "Enable enrollment pilot", exact: true }).click();
@@ -277,10 +286,11 @@ async function main() {
     await page.getByLabel("Enrollment role", { exact: true }).selectOption("school_admin");
     await page.getByRole("button", { name: "Update access", exact: true }).click();
     await page.getByRole("status").filter({ hasText: "Enrollment access updated" }).waitFor();
-    await page.getByRole("link", { name: "Manage student enrollment", exact: false }).waitFor();
+    await page.getByRole("button", { name: "Enrollment", exact: true }).waitFor();
     await page.getByLabel("Enrollment role", { exact: true }).selectOption("reviewer");
     await page.getByRole("button", { name: "Update access", exact: true }).click();
     await page.getByRole("status").filter({ hasText: "Enrollment access updated" }).waitFor();
+    await page.getByRole("button", { name: "Enrollment", exact: true }).click();
     await page.getByRole("heading", { name: "TEST Child", exact: true }).waitFor();
     await page.screenshot({
       path: path.join(evidence, "owner-enrollment-controls.png"),

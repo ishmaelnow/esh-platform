@@ -79,6 +79,24 @@
   flex-wrap: wrap;
   margin-block: 16px;
 }
+.staff-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 20px 8px;
+}
+.staff-navigation button {
+  flex: 1 1 150px;
+}
+.staff-embedded > section {
+  padding-block: 16px;
+}
+.staff-embedded h1 {
+  font-size: 24px;
+}
+.staff-section-help {
+  font-size: 14px;
+}
 .enrollment-portal .status {
   font-weight: 700;
   text-transform: capitalize;
