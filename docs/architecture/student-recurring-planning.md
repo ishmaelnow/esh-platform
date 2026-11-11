@@ -61,6 +61,24 @@ model and is not silently inferred.
 
 ## Recurring templates and hard locks
 
+### Defensive qualification-policy entry
+
+The policy editor disables Save reviewed revision until the required references, reason,
+real ordered effective dates, base Driver/attendant key lists and policy-review confirmation
+are complete. Every supplied base/equipment key must match the existing SQL credential format:
+2–64 lowercase letters/numbers/underscores, starting with a letter, at most20 keys per list.
+Comma-separated keys are trimmed as before; quotes/backticks and internal spaces are rejected,
+not silently rewritten. Optional equipment lists remain optional when saving a policy; route
+approval still requires the qualifications matching its actual requirements.
+
+An accessible checklist beside Save explains unmet checks and updates as inputs change.
+Submit rechecks the same validation, including programmatic submissions. Existing immutable
+references are used when revising a record whose reference input is disabled. Server/network
+feedback also appears beside Save, preserving the draft and existing same-key retry behavior.
+Client checks improve entry feedback; SQL remains authoritative for identity, tenant access,
+review state, uniqueness, dates, immutable versions and all planning/approval constraints.
+No grants, schema, mutation payload, Auth configuration or transport activation change is needed.
+
 Each versioned template binds one geographic customer request to every canonical student and every
 reviewed loading-point version, an explicit stop order, direction, school IANA time zone, term dates,
 ISO weekdays, same-day first-pickup/final-drop-off window, resource buffer and reasoned calendar

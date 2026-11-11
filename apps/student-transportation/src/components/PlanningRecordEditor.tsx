@@ -1,6 +1,6 @@
 "use client";
 import { scalarText } from "../lib/planning";
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { Json, Database } from "@esh-platform/supabase";
 import { ACCOMMODATIONS } from "../lib/geography";
 import { readRequestStudents } from "../lib/customer";
@@ -12,6 +12,7 @@ import {
   type PlanningKind,
 } from "../lib/planning";
 import { readSavedStops } from "../lib/geography";
+import { policyReviewIssues } from "../lib/policy-review-validation";
 type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
 export type RecordSubmission = {
   kind: Exclude<PlanningKind, "schedule">;
@@ -66,6 +67,7 @@ export function PlanningRecordEditor({
   request,
   initialIndex = 0,
   busy,
+  saveError = "",
   onSave,
   onClose,
 }: {
@@ -74,6 +76,7 @@ export function PlanningRecordEditor({
   request?: RequestRow;
   initialIndex?: number;
   busy: boolean;
+  saveError?: string;
   onSave: (body: RecordSubmission) => void;
   onClose: () => void;
 }) {
@@ -91,11 +94,30 @@ export function PlanningRecordEditor({
       : (students[initialIndex]?.accommodations ?? []),
   );
   const [error, setError] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  const [issues, setIssues] = useState<string[]>(
+    kind === "policy" ? ["Complete the required policy fields and confirm the review."] : [],
+  );
+  const existingReference = record?.reference;
+  const updateValidation = useCallback(
+    (form: HTMLFormElement) => {
+      setIssues(kind === "policy" ? policyReviewIssues(new FormData(form), existingReference) : []);
+    },
+    [kind, existingReference],
+  );
+  useEffect(() => {
+    if (formRef.current) updateValidation(formRef.current);
+  }, [updateValidation]);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     try {
       const f = new FormData(event.currentTarget);
+      if (kind === "policy") {
+        const nextIssues = policyReviewIssues(f, existingReference);
+        setIssues(nextIssues);
+        if (nextIssues.length) return;
+      }
       const common = { validFrom: formText(f, "validFrom"), validUntil: formText(f, "validUntil") };
       let next: Json;
       if (kind === "student")
@@ -184,7 +206,13 @@ export function PlanningRecordEditor({
     resource: "Dedicated planning resource",
   }[kind];
   return (
-    <form className="notice planning-editor" onSubmit={submit}>
+    <form
+      ref={formRef}
+      className="notice planning-editor"
+      onSubmit={submit}
+      onInput={(event) => updateValidation(event.currentTarget)}
+      onChange={(event) => updateValidation(event.currentTarget)}
+    >
       <h3>
         {record ? "New revision: " : "Add "}
         {title}
@@ -562,8 +590,24 @@ export function PlanningRecordEditor({
           </>
         ) : null}
         <TextField label="Review or change reason" name="reason" maxLength={300} />
+        {issues.length ? (
+          <div id="planning-review-checks" aria-live="polite">
+            <p>Before you can save:</p>
+            <ul>
+              {issues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {saveError ? <p role="alert">{saveError}</p> : null}
         <div className="portal-actions">
-          <button>Save reviewed revision</button>
+          <button
+            disabled={busy || issues.length > 0}
+            aria-describedby={issues.length ? "planning-review-checks" : undefined}
+          >
+            Save reviewed revision
+          </button>
           <button type="button" className="secondary" onClick={onClose}>
             Cancel review
           </button>

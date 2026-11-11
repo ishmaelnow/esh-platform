@@ -1,5 +1,5 @@
 // Disposable intercepted TEST fixtures only. No real accounts, routes, email or database calls.
-const { chromium } = require("@playwright/test");
+const { chromium, expect } = require("@playwright/test");
 const { spawn } = require("node:child_process");
 const path = require("node:path"),
   fs = require("node:fs/promises"),
@@ -313,6 +313,10 @@ async function main() {
       assert.equal(await editor().count(), 0);
     };
     await panel.getByRole("button", { name: "Add qualification policy", exact: true }).click();
+    const policySave = () =>
+      editor().getByRole("button", { name: "Save reviewed revision", exact: true });
+    await expect(policySave()).toBeDisabled();
+    await expect(editor().getByText("Before you can save:", { exact: true })).toBeVisible();
     await common(editor(), "TEST POLICY");
     await editor()
       .getByLabel("Approved district policy reference", { exact: true })
@@ -330,11 +334,44 @@ async function main() {
       .getByLabel("Wheelchair lift attendant keys (comma-separated)", { exact: true })
       .fill("district_attendant");
     await editor().getByLabel("I reviewed the applicable policy", { exact: false }).check();
+    await expect(policySave()).toBeEnabled();
+    for (const field of [
+      "Required Driver credential keys (comma-separated)",
+      "Wheelchair lift attendant keys (comma-separated)",
+    ]) {
+      const input = editor().getByLabel(field, { exact: true });
+      const original = await input.inputValue();
+      await input.fill("`invalid_key`");
+      await expect(policySave()).toBeDisabled();
+      await expect(
+        editor().getByText(/Remove quotes, backticks and spaces inside keys/),
+      ).toBeVisible();
+      await editor().evaluate((form) => form.requestSubmit());
+      assert.equal(keys.length, 0, "Invalid policy must also block programmatic form submission");
+      await input.fill(original);
+      await expect(policySave()).toBeEnabled();
+    }
+    await editor().getByLabel("Review valid through", { exact: true }).fill("2025-12-31");
+    await expect(policySave()).toBeDisabled();
+    await expect(editor().getByText(/must be on or after Review valid from/)).toBeVisible();
+    await editor().getByLabel("Review valid through", { exact: true }).fill("2028-12-31");
+    await editor().getByLabel("Review or change reason", { exact: true }).fill("  ");
+    await expect(policySave()).toBeDisabled();
+    await editor()
+      .getByLabel("Review or change reason", { exact: true })
+      .fill("TEST VERIFIED REVIEW");
+    await editor().getByLabel("I reviewed the applicable policy", { exact: false }).uncheck();
+    await expect(policySave()).toBeDisabled();
+    await editor().getByLabel("I reviewed the applicable policy", { exact: false }).check();
+    await expect(policySave()).toBeEnabled();
+    assert.equal(keys.length, 0, "Invalid policy editing must not send any save RPC");
     await editor().getByRole("button", { name: "Save reviewed revision", exact: true }).click();
     await panel
       .getByRole("status")
       .filter({ hasText: "Planning could not be completed" })
       .waitFor();
+    await expect(editor().getByRole("alert")).toContainText("Planning could not be completed");
+    await expect(policySave()).toBeEnabled();
     await save();
     assert.equal(keys[0], keys[1]);
     for (const role of ["vehicle", "driver", "attendant"]) {

@@ -464,6 +464,7 @@ export function PlanningWorkspace({
                   initialIndex={editor.index ?? 0}
                   busy={busy}
                   onSave={saveRecord}
+                  saveError={message}
                   onClose={() => setEditor(null)}
                 />
               ) : null}

@@ -23,6 +23,13 @@ and checks Student Vercel Ready. Existing unrelated config/assistant/preorder ch
 3. Select the source geographic request, then add its customer-bound qualification policy: use an approved TEST policy reference, required base Driver/attendant
    credential keys and equipment-specific keys matching the TEST credential records you will enter.
    Explicitly review the policy. Do not enter assumed legal requirements or real credentials in TEST.
+   Save reviewed revision should start disabled, with a checklist beside it. Complete required
+   fields and confirmation: Save enables. Put literal backticks around a base or equipment key,
+   reverse effective dates, clear a required field/reason, or uncheck review: Save disables with
+   the specific field guidance. Correct the entry: Save enables again. Optional equipment lists
+   may stay blank; this does not bypass later route qualification requirements. A server/network
+   rejection must also appear beside Save and preserve entries for unchanged retry. A successful
+   save closes the editor and shows the policy revision in Reviewed record register after refresh.
 4. Add dedicated vehicle, Driver and attendant records. Record reviewed effective dates/evidence.
    Use one reviewed vehicle configuration and reserve attendant seating separately. Enter required
    human credential keys/dates/evidence references. Do not use resources shared with live products.
