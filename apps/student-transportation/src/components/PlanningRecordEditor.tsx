@@ -12,7 +12,12 @@ import {
   type PlanningKind,
 } from "../lib/planning";
 import { readSavedStops } from "../lib/geography";
-import { policyReviewIssues } from "../lib/policy-review-validation";
+import {
+  credentialKeys,
+  normalizeCredentialKey,
+  qualificationName,
+  policyReviewIssues,
+} from "../lib/policy-review-validation";
 type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
 export type RecordSubmission = {
   kind: Exclude<PlanningKind, "schedule">;
@@ -56,11 +61,6 @@ export function TextField({
   );
 }
 export const formText = (form: FormData, key: string) => scalarText(form.get(key) ?? "").trim();
-const keys = (value: string) =>
-  value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
 export function PlanningRecordEditor({
   kind,
   record,
@@ -148,18 +148,18 @@ export function PlanningRecordEditor({
         next = {
           ...common,
           sourceReference: formText(f, "sourceReference"),
-          driverKeys: keys(formText(f, "driverKeys")),
-          attendantKeys: keys(formText(f, "attendantKeys")),
+          driverKeys: credentialKeys(formText(f, "driverKeys")),
+          attendantKeys: credentialKeys(formText(f, "attendantKeys")),
           equipmentDriverKeys: Object.fromEntries(
             ["wheelchair_lift", "booster_seat", "car_seat"].map((tag) => [
               tag,
-              keys(formText(f, `driver_${tag}`)),
+              credentialKeys(formText(f, `driver_${tag}`)),
             ]),
           ),
           equipmentAttendantKeys: Object.fromEntries(
             ["wheelchair_lift", "booster_seat", "car_seat"].map((tag) => [
               tag,
-              keys(formText(f, `attendant_${tag}`)),
+              credentialKeys(formText(f, `attendant_${tag}`)),
             ]),
           ),
           policyReviewed: f.has("policyReviewed"),
@@ -172,7 +172,7 @@ export function PlanningRecordEditor({
           dedicatedReviewed: f.has("dedicatedReviewed"),
           evidenceReference: formText(f, "evidenceReference"),
           credentials: credentials.map((_, i) => ({
-            key: formText(f, `credentialKey${i}`),
+            key: normalizeCredentialKey(formText(f, `credentialKey${i}`)),
             reference: formText(f, `credentialReference${i}`),
             validFrom: formText(f, `credentialFrom${i}`),
             validUntil: formText(f, `credentialUntil${i}`),
@@ -407,51 +407,48 @@ export function PlanningRecordEditor({
               value={stringValue(data, "sourceReference")}
             />
             <TextField
-              label="Required Driver credential keys (comma-separated)"
+              label="Required Driver qualifications (comma-separated)"
               name="driverKeys"
               value={arrayValue(data, "driverKeys")
-                .map((v) => scalarText(v))
+                .map((v) => qualificationName(scalarText(v)))
                 .join(", ")}
             />
             <TextField
-              label="Required attendant credential keys (comma-separated)"
+              label="Required attendant qualifications (comma-separated)"
               name="attendantKeys"
               value={arrayValue(data, "attendantKeys")
-                .map((v) => scalarText(v))
+                .map((v) => qualificationName(scalarText(v)))
                 .join(", ")}
             />
-            <p>
-              Use your reviewed policy's evidence identifiers, such as district_driver_clearance. No
-              jurisdiction's requirements are assumed by the software.
-            </p>
+            <p>Enter qualification names from your reviewed policy, separated by commas.</p>
             <fieldset>
-              <legend>Equipment-specific qualification keys</legend>
+              <legend>Equipment qualifications</legend>
               <p>
-                For each equipment type used by a route, specify matching Driver and attendant
-                qualifications. The same approved credential key may cover multiple requirements.
+                Add the Driver and attendant qualifications required for each type of equipment
+                used.
               </p>
               {(["wheelchair_lift", "booster_seat", "car_seat"] as const).map((tag) => (
                 <div key={tag}>
                   <TextField
-                    label={`${ACCOMMODATIONS[tag]} Driver keys (comma-separated)`}
+                    label={`${ACCOMMODATIONS[tag]} Driver qualifications (comma-separated)`}
                     name={`driver_${tag}`}
                     required={false}
                     value={
                       jsonObject(data.equipmentDriverKeys)
                         ? arrayValue(data.equipmentDriverKeys, tag)
-                            .map((v) => scalarText(v))
+                            .map((v) => qualificationName(scalarText(v)))
                             .join(", ")
                         : ""
                     }
                   />
                   <TextField
-                    label={`${ACCOMMODATIONS[tag]} attendant keys (comma-separated)`}
+                    label={`${ACCOMMODATIONS[tag]} attendant qualifications (comma-separated)`}
                     name={`attendant_${tag}`}
                     required={false}
                     value={
                       jsonObject(data.equipmentAttendantKeys)
                         ? arrayValue(data.equipmentAttendantKeys, tag)
-                            .map((v) => scalarText(v))
+                            .map((v) => qualificationName(scalarText(v)))
                             .join(", ")
                         : ""
                     }
@@ -545,9 +542,9 @@ export function PlanningRecordEditor({
                 <fieldset key={i} className="contact-card">
                   <legend>Credential {i + 1}</legend>
                   <TextField
-                    label="Credential key"
+                    label="Qualification name"
                     name={`credentialKey${i}`}
-                    value={stringValue(c, "key")}
+                    value={qualificationName(stringValue(c, "key"))}
                     maxLength={64}
                   />
                   <TextField
@@ -591,14 +588,9 @@ export function PlanningRecordEditor({
         ) : null}
         <TextField label="Review or change reason" name="reason" maxLength={300} />
         {issues.length ? (
-          <div id="planning-review-checks" aria-live="polite">
-            <p>Before you can save:</p>
-            <ul>
-              {issues.map((issue) => (
-                <li key={issue}>{issue}</li>
-              ))}
-            </ul>
-          </div>
+          <p id="planning-review-checks" aria-live="polite">
+            {issues[0]}
+          </p>
         ) : null}
         {saveError ? <p role="alert">{saveError}</p> : null}
         <div className="portal-actions">

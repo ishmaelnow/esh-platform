@@ -67,11 +67,20 @@ The policy editor disables Save reviewed revision until the required references,
 real ordered effective dates, base Driver/attendant key lists and policy-review confirmation
 are complete. Every supplied base/equipment key must match the existing SQL credential format:
 2–64 lowercase letters/numbers/underscores, starting with a letter, at most20 keys per list.
-Comma-separated keys are trimmed as before; quotes/backticks and internal spaces are rejected,
-not silently rewritten. Optional equipment lists remain optional when saving a policy; route
+The UI asks for ordinary qualification names, not credential keys. Text stays as typed while
+editing; users do not enter invented code-like examples. The app generates the existing internal
+matching identifiers for validation/submission: quotes/backticks removed, case/accents normalized,
+word separators converted to underscores, numeric/single-letter names given an internal prefix.
+Resource qualification entry uses the same mapping so independently reviewed evidence matches
+policy requirements. Saved identifiers display as readable names on reopening only when that
+display round-trips to the exact existing identifier; legacy identifiers are never changed merely
+by editing a review. Unrelated references, reasons and evidence are not normalized. Nothing is
+truncated and normalization grants no qualification or approval. Optional equipment
+lists remain optional when saving a policy; route
 approval still requires the qualifications matching its actual requirements.
 
-An accessible checklist beside Save explains unmet checks and updates as inputs change.
+One short accessible message beside Save explains the next unmet check and updates as inputs
+change; repeated format warnings and long validation lists do not push Save down the page.
 Submit rechecks the same validation, including programmatic submissions. Existing immutable
 references are used when revising a record whose reference input is disabled. Server/network
 feedback also appears beside Save, preserving the draft and existing same-key retry behavior.

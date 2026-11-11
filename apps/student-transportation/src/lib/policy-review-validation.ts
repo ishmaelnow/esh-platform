@@ -9,6 +9,28 @@ const isDate = (value: string) => {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
+export const normalizeCredentialKey = (value: string) => {
+  const name = value
+    .trim()
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[`'"\u2018\u2019\u201c\u201d]/g, "")
+    .toLowerCase();
+  if (/^[a-z][a-z0-9_]{1,63}$/.test(name)) return name;
+  const key = name.replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+  if (!key) return "";
+  return /^[0-9]/.test(key) || key.length === 1 ? `qualification_${key}` : key;
+};
+
+export const credentialKeys = (value: string) =>
+  value.split(",").map(normalizeCredentialKey).filter(Boolean);
+
+export const qualificationName = (key: string) => {
+  const name = key.replaceAll("_", " ");
+  // Show readable saved names only when editing them preserves the exact existing identifier.
+  return normalizeCredentialKey(name) === key ? name : key;
+};
+
 export function policyReviewIssues(form: FormData, existingReference?: string): string[] {
   const issues: string[] = [];
   for (const [name, label, min, max] of [
@@ -28,28 +50,27 @@ export function policyReviewIssues(form: FormData, existingReference?: string): 
     issues.push("Review valid through must be on or after Review valid from.");
 
   const fields: Array<[string, string, boolean]> = [
-    ["driverKeys", "Required Driver credential keys", true],
-    ["attendantKeys", "Required attendant credential keys", true],
+    ["driverKeys", "Required Driver qualifications", true],
+    ["attendantKeys", "Required attendant qualifications", true],
   ];
   for (const [tag, label] of [
     ["wheelchair_lift", "Wheelchair lift"],
     ["booster_seat", "Booster seat"],
     ["car_seat", "Car seat"],
   ]) {
-    fields.push([`driver_${tag}`, `${label} Driver keys`, false]);
-    fields.push([`attendant_${tag}`, `${label} attendant keys`, false]);
+    fields.push([`driver_${tag}`, `${label} Driver qualifications`, false]);
+    fields.push([`attendant_${tag}`, `${label} attendant qualifications`, false]);
   }
   for (const [name, label, required] of fields) {
-    const keys = text(form, name)
+    const keys = credentialKeys(text(form, name));
+    const unusable = text(form, name)
       .split(",")
-      .map((key) => key.trim())
-      .filter(Boolean);
-    if (required && keys.length === 0) issues.push(`${label}: enter at least one key.`);
-    if (keys.length > 20) issues.push(`${label}: enter no more than 20 keys.`);
+      .some((value) => value.trim() && !normalizeCredentialKey(value));
+    if ((required && keys.length === 0) || unusable)
+      issues.push(`${label}: enter a qualification name.`);
+    if (keys.length > 20) issues.push(`${label}: enter no more than 20 qualifications.`);
     if (keys.some((key) => !/^[a-z][a-z0-9_]{1,63}$/.test(key)))
-      issues.push(
-        `${label}: each key must start with a lowercase letter and contain 2–64 lowercase letters, numbers or underscores. Remove quotes, backticks and spaces inside keys.`,
-      );
+      issues.push(`${label}: shorten the qualification name.`);
   }
   if (!form.has("policyReviewed"))
     issues.push("Confirm that you reviewed the policy and qualifications.");

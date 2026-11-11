@@ -197,6 +197,14 @@ async function main() {
           : route.fulfill({ status: 403, json: { message: "Internal planning access required" } });
       if (name === "save_student_planning_record") {
         assert.equal(body.t, tenant);
+        if (body.kind_value === "policy") {
+          assert.deepEqual(body.data_value.driverKeys, ["district_driver"]);
+          assert.deepEqual(body.data_value.equipmentAttendantKeys.wheelchair_lift, [
+            "district_attendant",
+          ]);
+        }
+        if (body.kind_value === "resource" && body.data_value.role !== "vehicle")
+          assert.equal(body.data_value.credentials[0].key, "district_" + body.data_value.role);
         keys.push(body.request_key);
         if (failSave) {
           failSave = false;
@@ -316,36 +324,42 @@ async function main() {
     const policySave = () =>
       editor().getByRole("button", { name: "Save reviewed revision", exact: true });
     await expect(policySave()).toBeDisabled();
-    await expect(editor().getByText("Before you can save:", { exact: true })).toBeVisible();
+    await expect(editor().locator("#planning-review-checks")).toBeVisible();
+    assert.equal(await editor().locator("#planning-review-checks li").count(), 0);
     await common(editor(), "TEST POLICY");
     await editor()
       .getByLabel("Approved district policy reference", { exact: true })
       .fill("TEST POLICY DOCUMENT");
     await editor()
-      .getByLabel("Required Driver credential keys (comma-separated)", { exact: true })
+      .getByLabel("Required Driver qualifications (comma-separated)", { exact: true })
       .fill("district_driver");
     await editor()
-      .getByLabel("Required attendant credential keys (comma-separated)", { exact: true })
+      .getByLabel("Required attendant qualifications (comma-separated)", { exact: true })
       .fill("district_attendant");
     await editor()
-      .getByLabel("Wheelchair lift Driver keys (comma-separated)", { exact: true })
+      .getByLabel("Wheelchair lift Driver qualifications (comma-separated)", { exact: true })
       .fill("district_driver");
     await editor()
-      .getByLabel("Wheelchair lift attendant keys (comma-separated)", { exact: true })
+      .getByLabel("Wheelchair lift attendant qualifications (comma-separated)", { exact: true })
       .fill("district_attendant");
     await editor().getByLabel("I reviewed the applicable policy", { exact: false }).check();
     await expect(policySave()).toBeEnabled();
     for (const field of [
-      "Required Driver credential keys (comma-separated)",
-      "Wheelchair lift attendant keys (comma-separated)",
+      "Required Driver qualifications (comma-separated)",
+      "Wheelchair lift attendant qualifications (comma-separated)",
     ]) {
       const input = editor().getByLabel(field, { exact: true });
       const original = await input.inputValue();
-      await input.fill("`invalid_key`");
+      const naturalName = "`" + original.replaceAll("_", " ").toUpperCase() + "`";
+      await input.fill(naturalName);
+      await expect(policySave()).toBeEnabled();
+      await editor().getByLabel("Review or change reason", { exact: true }).focus();
+      await expect(input).toHaveValue(naturalName);
+      await input.fill("***");
       await expect(policySave()).toBeDisabled();
-      await expect(
-        editor().getByText(/Remove quotes, backticks and spaces inside keys/),
-      ).toBeVisible();
+      await expect(editor().locator("#planning-review-checks")).toContainText(
+        "enter a qualification name",
+      );
       await editor().evaluate((form) => form.requestSubmit());
       assert.equal(keys.length, 0, "Invalid policy must also block programmatic form submission");
       await input.fill(original);
@@ -365,6 +379,10 @@ async function main() {
     await editor().getByLabel("I reviewed the applicable policy", { exact: false }).check();
     await expect(policySave()).toBeEnabled();
     assert.equal(keys.length, 0, "Invalid policy editing must not send any save RPC");
+    await editor()
+      .getByLabel("Required Driver qualifications (comma-separated)", { exact: true })
+      .fill("`DISTRICT DRIVER`");
+    await expect(policySave()).toBeEnabled();
     await editor().getByRole("button", { name: "Save reviewed revision", exact: true }).click();
     await panel
       .getByRole("status")
@@ -397,8 +415,8 @@ async function main() {
       } else {
         await editor().getByRole("button", { name: "Add credential", exact: true }).click();
         await editor()
-          .getByLabel("Credential key", { exact: true })
-          .fill(role === "driver" ? "district_driver" : "district_attendant");
+          .getByLabel("Qualification name", { exact: true })
+          .fill(role === "driver" ? "`DISTRICT DRIVER`" : "District Attendant");
         await editor()
           .getByLabel("Credential evidence reference", { exact: true })
           .fill("TEST CREDENTIAL");
