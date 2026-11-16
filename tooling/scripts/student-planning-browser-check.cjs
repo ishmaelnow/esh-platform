@@ -393,9 +393,40 @@ async function main() {
     await save();
     assert.equal(keys[0], keys[1]);
     for (const role of ["vehicle", "driver", "attendant"]) {
+      if (role === "driver") {
+        const vehicleReview = panel
+          .locator("details")
+          .filter({
+            has: page
+              .locator("summary")
+              .filter({ hasText: "resource: TEST VEHICLE · revision 1 · active" }),
+          })
+          .first();
+        await vehicleReview.locator("summary").click();
+        await vehicleReview
+          .getByRole("button", { name: "Revise or revoke review", exact: true })
+          .click();
+        await expect(editor().getByLabel("Resource role", { exact: true })).toBeDisabled();
+        await expect(editor().getByLabel("Resource role", { exact: true })).toHaveValue("vehicle");
+      }
       await panel.getByRole("button", { name: "Add dedicated resource", exact: true }).click();
+      const roleControl = editor().getByLabel("Resource role", { exact: true });
+      await expect(roleControl).toBeEnabled();
+      await expect(
+        editor().getByLabel("Unique person or vehicle reference", { exact: true }),
+      ).toHaveValue("");
       await common(editor(), "TEST " + role.toUpperCase());
-      await editor().getByLabel("Resource role", { exact: true }).selectOption(role);
+      // Exercise the real dropdown with mouse/keyboard, not only selectOption injection.
+      await roleControl.click();
+      await page.keyboard.press("Home");
+      for (let i = 0; i < ["vehicle", "driver", "attendant"].indexOf(role); i++)
+        await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(roleControl).toHaveValue(role);
+      assert.equal(
+        await editor().getByText("Reviewed vehicle configuration", { exact: true }).count(),
+        role === "vehicle" ? 1 : 0,
+      );
       await editor()
         .getByLabel("Resource display name", { exact: true })
         .fill("TEST " + role.toUpperCase());
@@ -437,7 +468,12 @@ async function main() {
     for (let i = 0; i < 2; i++) {
       await panel.getByRole("button", { name: "Review loading point", exact: true }).click();
       await common(editor(), "TEST POINT " + i);
-      await editor().getByLabel("Source stop", { exact: true }).selectOption(String(i));
+      const sourceStop = editor().getByLabel("Source stop", { exact: true });
+      await sourceStop.click();
+      await page.keyboard.press("Home");
+      for (let stop = 0; stop < i; stop++) await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(sourceStop).toHaveValue(String(i));
       await editor()
         .getByLabel("Approved point label", { exact: true })
         .fill(i ? "TEST NORTH GATE" : "TEST HOME CURB");

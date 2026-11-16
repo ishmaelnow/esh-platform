@@ -88,6 +88,12 @@ Client checks improve entry feedback; SQL remains authoritative for identity, te
 review state, uniqueness, dates, immutable versions and all planning/approval constraints.
 No grants, schema, mutation payload, Auth configuration or transport activation change is needed.
 
+Live input validation updates are scoped to the policy editor. Other record kinds must not
+update policy validation state during native input events: an unrelated synchronous rerender
+can restore a controlled resource-role/source-stop select's old value before its change event
+commits. Browser regression uses real dropdown click/keyboard interaction, including a fresh
+resource opened from a saved Vehicle review; saved resource roles remain immutable.
+
 Each versioned template binds one geographic customer request to every canonical student and every
 reviewed loading-point version, an explicit stop order, direction, school IANA time zone, term dates,
 ISO weekdays, same-day first-pickup/final-drop-off window, resource buffer and reasoned calendar

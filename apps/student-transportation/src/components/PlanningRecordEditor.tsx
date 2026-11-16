@@ -101,7 +101,7 @@ export function PlanningRecordEditor({
   const existingReference = record?.reference;
   const updateValidation = useCallback(
     (form: HTMLFormElement) => {
-      setIssues(kind === "policy" ? policyReviewIssues(new FormData(form), existingReference) : []);
+      if (kind === "policy") setIssues(policyReviewIssues(new FormData(form), existingReference));
     },
     [kind, existingReference],
   );

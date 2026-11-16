@@ -36,6 +36,10 @@ and checks Student Vercel Ready. Existing unrelated config/assistant/preorder ch
    rejection must also appear beside Save and preserve entries for unchanged retry. A successful
    save closes the editor and shows the policy revision in Reviewed record register after refresh.
 4. Add dedicated vehicle, Driver and attendant records. Record reviewed effective dates/evidence.
+   Use the actual dropdown (mouse/keyboard), not only automation's selectOption: a new resource
+   must allow Vehicle -> Driver -> Attendant. Vehicle capacity fields disappear for people.
+   Open a saved Vehicle review: its role remains locked; click Add dedicated resource and verify
+   the new form has an empty reference and allows a different role. No saved Vehicle is converted.
    Use one reviewed vehicle configuration and reserve attendant seating separately. Enter required
    human credential keys/dates/evidence references. Do not use resources shared with live products.
 5. Select the source geographic request. Register canonical student identities with stable school
@@ -46,6 +50,7 @@ and checks Student Vercel Ready. Existing unrelated config/assistant/preorder ch
    designated-zone type, effective dates, loading instructions and site/district approval reference.
    Verify coordinates on the actual site; do not treat the geocoder as an approval. Revise one point
    after creating a draft and verify the old reference fails until explicitly updated.
+   Change Source stop using the actual dropdown and confirm the selection remains selected.
 7. Create recurring schedule: name/reference, inbound/outbound direction, school time zone, term,
    weekdays, pickup/drop-off window, explicit reservation buffer and reasoned school closure dates.
    Confirm the calendar. Explicitly match each request child to a canonical student, confirm each
