@@ -84,6 +84,21 @@ async function main() {
       ],
       geography: { safetyStatus: "unreviewed", stops: [point(0), point(1)] },
     };
+    const groupedSource = {
+      ...source,
+      request_id: "00000000-0000-0000-0000-000000000071",
+      destination_address: "TEST GROUP SCHOOL",
+      students: [
+        {
+          name: "TEST GROUP AA",
+          pickupAddress: "TEST HOME A",
+          accommodations: ["wheelchair_lift"],
+        },
+        { name: "TEST GROUP BB", pickupAddress: "TEST HOME B", accommodations: ["booster_seat"] },
+        { name: "TEST GROUP CC", pickupAddress: "TEST HOME C", accommodations: ["attendant"] },
+      ],
+      geography: { safetyStatus: "unreviewed", stops: [point(0), point(0), point(0), point(1)] },
+    };
     const records = [],
       manifests = [],
       keys = [];
@@ -190,7 +205,8 @@ async function main() {
         });
       if (name === "student_transportation_customer_invitations")
         return route.fulfill({ json: [] });
-      if (name === "student_transportation_requests") return route.fulfill({ json: [source] });
+      if (name === "student_transportation_requests")
+        return route.fulfill({ json: [source, groupedSource] });
       if (name === "my_student_planning")
         return allowed
           ? route.fulfill({ json: { records, manifests, operationallyReady: false } })
@@ -456,7 +472,42 @@ async function main() {
       }
       await save();
     }
+    await panel
+      .getByLabel("Source geographic request", { exact: true })
+      .selectOption(groupedSource.request_id);
+    for (let index = 0; index < groupedSource.students.length; index++) {
+      const register = page.getByRole("button", {
+        name: `Register student ${index + 1} identity`,
+        exact: true,
+      });
+      const card = panel.locator(".contact-card").filter({ has: register });
+      await register.click();
+      await expect(card.locator("form.planning-editor")).toHaveCount(1);
+      await expect(editor()).toHaveCount(1);
+      await expect(card.getByRole("alert")).toHaveCount(0);
+      await expect(card.getByLabel("Canonical student name", { exact: true })).toHaveValue(
+        groupedSource.students[index].name,
+      );
+      await expect(card.getByLabel("School student reference", { exact: true })).toHaveValue("");
+      await card
+        .getByLabel("School student reference", { exact: true })
+        .fill(`TEST UNSAVED CHILD ${index + 1}`);
+      if (index === 0) {
+        const inlineEvidence = path.resolve(__dirname, "../../tmp/student-planning-evidence");
+        await fs.mkdir(inlineEvidence, { recursive: true });
+        await card.screenshot({ path: path.join(inlineEvidence, "inline-student-1.png") });
+      }
+    }
+    for (const width of [320, 414, 1280]) {
+      await page.setViewportSize({ width, height: 896 });
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
+    await page.setViewportSize({ width: 414, height: 896 });
+    await editor().getByRole("button", { name: "Cancel review", exact: true }).click();
+    await expect(editor()).toHaveCount(0);
+    await panel.getByRole("button", { name: "Register student 1 identity", exact: true }).click();
     await panel.getByLabel("Source geographic request", { exact: true }).selectOption(requestId);
+    await expect(editor()).toHaveCount(0);
     await panel.getByRole("button", { name: "Register student 1 identity", exact: true }).click();
     await common(editor(), "TEST DISTRICT CHILD");
     await editor()

@@ -44,6 +44,10 @@ and checks Student Vercel Ready. Existing unrelated config/assistant/preorder ch
    human credential keys/dates/evidence references. Do not use resources shared with live products.
 5. Select the source geographic request. Register canonical student identities with stable school
    references and authority/requirements review, including a deliberate review when no tags apply.
+   Click Register student1 identity: its form appears directly beneath that button inside student1's
+   card, before student2. Repeat for students2/3: exactly one form, under the selected student,
+   with that student's name/requirements. Unsaved reference text must not carry between students.
+   Cancel closes it; changing source request clears it. Check320/414/desktop without overflow.
    A child name alone must not automatically bind identity or parent access. An occupied wheelchair
    position must not be counted as a passenger seat. Source requirements cannot silently disappear.
 6. Review each home and school loading point: exact coordinates, meaningful label, curb/driveway/

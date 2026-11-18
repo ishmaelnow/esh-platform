@@ -334,6 +334,22 @@ export function PlanningWorkspace({
       false,
     );
   };
+  const recordEditor =
+    editor && editor.kind !== "schedule" ? (
+      <PlanningRecordEditor
+        key={`${editor.kind}:${editor.record?.id ?? "new"}:${editor.index ?? 0}:${requestId}`}
+        kind={editor.kind}
+        {...(editor.record ? { record: editor.record } : {})}
+        {...(request ? { request } : {})}
+        initialIndex={editor.index ?? 0}
+        busy={busy}
+        onSave={saveRecord}
+        saveError={message}
+        onClose={() => setEditor(null)}
+      />
+    ) : null;
+  const inlineStudentIndex =
+    editor?.kind === "student" && !editor.record && request ? (editor.index ?? 0) : null;
   return (
     <section className="planning-workspace" aria-label="Internal route planning">
       <h2>Internal route review and recurring planning</h2>
@@ -431,10 +447,20 @@ export function PlanningWorkspace({
                       <button
                         type="button"
                         disabled={busy}
-                        onClick={() => setEditor({ kind: "student", index: i })}
+                        aria-expanded={inlineStudentIndex === i}
+                        aria-controls={
+                          inlineStudentIndex === i ? `student-identity-editor-${i}` : undefined
+                        }
+                        onClick={() => {
+                          setMessage("");
+                          setEditor({ kind: "student", index: i });
+                        }}
                       >
                         Register student {i + 1} identity
                       </button>
+                      {inlineStudentIndex === i ? (
+                        <div id={`student-identity-editor-${i}`}>{recordEditor}</div>
+                      ) : null}
                     </div>
                   ))}
                   <div className="portal-actions">
@@ -455,19 +481,7 @@ export function PlanningWorkspace({
                   </div>
                 </>
               ) : null}
-              {editor && editor.kind !== "schedule" ? (
-                <PlanningRecordEditor
-                  key={`${editor.kind}:${editor.record?.id ?? "new"}:${editor.index ?? 0}:${requestId}`}
-                  kind={editor.kind}
-                  {...(editor.record ? { record: editor.record } : {})}
-                  {...(request ? { request } : {})}
-                  initialIndex={editor.index ?? 0}
-                  busy={busy}
-                  onSave={saveRecord}
-                  saveError={message}
-                  onClose={() => setEditor(null)}
-                />
-              ) : null}
+              {inlineStudentIndex === null ? recordEditor : null}
               {editor?.kind === "schedule" && request ? (
                 <PlanningScheduleEditor
                   key={`${editor.record?.id ?? "new"}:${requestId}`}

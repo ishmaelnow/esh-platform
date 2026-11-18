@@ -25,6 +25,13 @@ matched. Intake requirements cannot be silently dropped. Empty requirements requ
 no diagnoses/IEP files or medical notes are collected. Correct an erroneous intake via withdrawal/
 new submission. Occupied wheelchair and passenger-seat/restraint use must be resolved explicitly.
 
+Register student N identity opens the new identity editor directly below that student's button
+inside the request student's card. Only one editor is mounted. Its existing request/index key
+keeps prefilled names/requirements separate, and changing student/request clears the unsaved
+editor as before. Cancel and successful save close the inline editor. Existing canonical record
+revisions remain in the reviewed-register workflow; they are not silently matched to an intake
+child by name. Other policy/resource/loading-point/schedule editor locations are unchanged.
+
 ## Versioned loading points and resources
 
 Planning entities have immutable identity/reference/customer/kind and append-only numbered versions.
