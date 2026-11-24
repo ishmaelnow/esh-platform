@@ -79,6 +79,42 @@
   flex-wrap: wrap;
   margin-block: 16px;
 }
+.planning-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.planning-progress li {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #edf2f8;
+}
+.planning-progress [aria-current="step"] {
+  background: #153258;
+  color: white;
+  font-weight: 700;
+}
+.guided-planner .schedule-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+.enrollment-portal .guided-planner .service-weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-block: 16px;
+}
+.enrollment-portal .guided-planner .service-weekdays .check {
+  margin-block: 8px;
+}
+@media (max-width: 520px) {
+  .guided-planner .schedule-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .staff-navigation {
   display: flex;
   flex-wrap: wrap;

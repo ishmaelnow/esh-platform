@@ -1,10 +1,117 @@
 # Student internal review and recurring planning
 
-Status: locally implemented and verified; migration owner-applied, source deployment/manual acceptance pending.
+Status: guided flow and school-specific policies implemented/tested locally; owner confirmed
+application of the policy migration after intended-only dry-run. Application deployment and hosted
+acceptance remain pending. Original planning migration is also already applied.
 Owner GO on 2026-10-17 after accepting geographic
 intake and partner constraints. Owner confirmed intended-only dry-run and successful application of
 20261017000100_student_recurring_planning.sql on 2026-10-17. Do not reapply.
 No operational activation, ordinary dispatch/resource mutation, native, payment or parent access.
+
+## School-owned policy rules (2026-11-24)
+
+Owner clarified that the problem was fixed requirements, not merely screen layout. New policies
+use policyVersion2 in the existing immutable policy JSON/RPC contract. This is a bounded policy
+model, not an arbitrary executable rule language or a statement of legal requirements.
+
+| School setting | Behavior |
+| --- | --- |
+| Driver and attendant qualifications | Require only selected qualification lists. Empty reviewed categories impose no extra qualification; attendant lists apply only when an attendant is assigned. |
+| Equipment qualifications | Require only the school's selected Driver/attendant training for each equipment type actually used. Empty lists mean reviewed no additional training, not missing equipment permission. |
+| Minimum route attendants | School may require0–20 total attendants. Effective demand is the greater of this minimum and the number of students needing distinct dedicated attendants. Reserve seats for all attendants. |
+| Loading procedure | Optional school procedure shown beside the stop reviews; each actual point still requires its own site verification. |
+| Review coverage | Whole-term validity, or validity for each included service date. Default remains whole term. |
+
+Per-service-date mode checks the next upcoming included school day when saving/previewing/
+approving the plan, using the schedule's school time zone, weekdays and closures. Every generated
+included manifest date independently rechecks all linked student/point/policy/resource reviews
+and required credentials. An uncovered date rejects the transaction, including any earlier dates
+in the same batch. Approval remains planning-only and is not permission to execute future service.
+Renewed evidence creates a new immutable version; revise/re-preview/reapprove the schedule to bind
+it explicitly. Old schedules never silently substitute new evidence or bypass revoked reviews.
+
+Legacy policies lack policyVersion2 and keep their original mandatory base/equipment checks and
+whole-term coverage. Revising one keeps legacy behavior unless the reviewer explicitly selects
+school-specific rules and confirms the review. New settings and policy revision are retained in
+approval/daily-manifest snapshots. Older clients cannot strip settings from an existing v2 policy
+by saving it without its versioned rules.
+
+Universal guards remain access/tenant isolation, audit/version integrity, real vehicle capacity,
+required student equipment/accommodations, valid evidence for the applicable service date and
+reservation conflicts. Existing bounded request sizes, payload limits and supported accommodation
+types remain technical product limits, not assumed district rules. Custom ratios, new equipment
+types and arbitrary district-specific automation require separate deliberate model extensions.
+
+Migration20261122000100_student_school_policy_rules.sql replaces policy save/snapshot/manifest
+logic and adds a private date-scoped snapshot helper. No existing rows are rewritten, no RLS or
+operational grants change, public RPC signatures/client JSON types remain compatible. The private
+helper has no PUBLIC/anon/authenticated/service_role execution grant. Owner must apply this one
+migration before deploying the new UI. No environment or Auth changes.
+
+The older whole-term/mandatory-key descriptions below apply to legacy policies unless explicitly
+superseded by this section. See the new policy acceptance section in the manual-test document.
+
+## Guided planning workflow (local implementation, 2026-11-21)
+
+Owner paused manual acceptance because creating a route required assembling too many individual
+records and dropdown mappings. Simplicity is now an explicit product requirement. Owner GO
+authorized implementing the three-stage preview. Local implementation reuses the existing RPCs;
+no operational activation accompanies this change. The subsequent school-policy enhancement
+above adds one migration; the guided-layout work itself required none.
+
+Entry: staff /admin -> Requests and planning -> Open route planning -> Source geographic request.
+Selecting a submitted geographic request opens Plan this request. Use three stages:
+
+1. **Review request.** Load intake students, pickup addresses and requested accommodations.
+   Surface applicable saved student reviews and explicitly confirm their association with this
+   request. Do not silently bind by name. Ambiguous/missing matches are resolved inside the
+   student's card; new review captures real authority/requirements/seating decisions in place.
+2. **Review stops.** Load every pickup plus destination automatically into the map/stop list.
+   Reuse only exact source-request/stop-bound, current reviewed point versions. Display missing
+   reviews as actions on their actual stop, not empty dropdowns or a separate record register.
+   Prefill address/coordinates/requested instructions; human still verifies the actual loading
+   location and supporting review reference. Coordinates alone never establish physical safety.
+3. **Schedule and resources.** Show recurring dates/times/days and the school time zone/calendar.
+   Suggest the sole same-school policy covering the term, sole capacity-compatible vehicle and
+   sole qualified Driver covering the term. Suggest attendants only when the eligible count equals
+   dedicated demand. Suggestions do not claim reservation availability or operational eligibility.
+   Staff may change/clear choices. Drafts may omit resources; authoritative qualification/capacity/
+   reservation/road-time checks remain required for approval. Save selects the resulting draft
+   for the existing reviewed-road preview and planning approval below.
+
+Policies belong in school setup; qualifications/evidence belong in maintained resource records.
+Creating each route should reuse those reviews, not require repeating setup. The UI manages
+internal loading-point/schedule references, linked record versions and prefilled action-derived
+creation reasons. A NEW student still needs the school's actual student reference and real
+authority evidence; this identity information is not replaced with a generated matching code.
+Material revisions/revocations still require their proper reason and immutable history.
+Dates, identity/authority, site approval and qualifications remain explicit accountable decisions;
+do not manufacture approval evidence, make resources operational, or treat suggestions as grants.
+
+Implementation must preserve authorization/RLS/audit, actor-bound road proof, current-version
+checks, idempotency and source withdrawal. Reuse existing records and RPCs where their contracts
+fit. Existing draft save requires complete student/point bindings, so partial/incomplete draft
+persistence is not currently promised. Any partial-save persistence or extra mapping contract
+needs deliberate schema/API design and review; browser storage must not become a child-data cache.
+
+The live deployment remains unchanged until the owner releases this version. The earlier
+conversation prototype is illustrative. Local browser acceptance uses intercepted synthetic
+records, including saved-review reuse and a missing-stop save/retry. It does not establish which
+live stop RETESTING belongs to or certify live resource compatibility. Step 2 reuses the existing
+saved-request map preview, labelled proposed/unreviewed; the authoritative reviewed road proof
+is still generated after draft save, not inferred from the intake map.
+
+Identity confirmations bind exact saved revisions; changing selection clears confirmation and
+revised/revoked records invalidate it. Duplicate canonical identities cannot satisfy two children.
+Loading-point matching requires exact customer/request/source stop, with ambiguity resolved in
+place. Missing review editors are siblings of the schedule form, never nested forms. Inline saves
+reuse the existing mutation guard/idempotency key, reload records, and link only the returned ID
+and revision. Errors preserve input and appear beside Save. A full refresh/source change clears
+unsaved choices. Back navigation retains schedule fields in memory. No child data cache added.
+
+School setup and advanced reviews retains policy/resource creation and the existing explicit
+record/schedule editors. Reviewed records, revision history, road proof, approval and immutable
+daily-manifest actions remain available. No legal/site attestation is filled automatically.
 
 ## Internal review boundary
 

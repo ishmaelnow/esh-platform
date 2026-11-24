@@ -124,12 +124,19 @@ export const stringValue = (data: Record<string, Json | undefined>, key: string,
   typeof data[key] === "string" ? data[key] : fallback;
 export const arrayValue = (data: Record<string, Json | undefined>, key: string): Json[] =>
   Array.isArray(data[key]) ? (data[key] as Json[]) : [];
-export function vehicleBlockers(vehicle: PlanningRecord, students: PlanningRecord[]) {
+export function vehicleBlockers(
+  vehicle: PlanningRecord,
+  students: PlanningRecord[],
+  minimumAttendants = 0,
+) {
   const d = vehicle.data;
   const requirements = (s: PlanningRecord) => arrayValue(s.data, "requirements");
   const seats = students.filter((s) => s.data.seating !== "wheelchair").length;
   const wheels = students.length - seats;
-  const attendants = students.filter((s) => requirements(s).includes("attendant")).length;
+  const attendants = Math.max(
+    minimumAttendants,
+    students.filter((s) => requirements(s).includes("attendant")).length,
+  );
   const blockers: string[] = [];
   for (const [key, count, label] of [
     ["seats", seats + attendants, "passenger/attendant seats"],
@@ -190,8 +197,50 @@ export function policyCredentialKeys(
   );
   for (const tag of tags) {
     const conditional = jsonObject(equipment) ? arrayValue(equipment, tag) : [];
-    if (!conditional.length) return null;
+    if (!conditional.length && policy.data.policyVersion !== 2) return null;
     keys.push(...conditional);
   }
-  return keys.length ? keys : null;
+  return keys.length || policy.data.policyVersion === 2 ? keys : null;
+}
+
+export function attendantDemand(policy: PlanningRecord | undefined, students: PlanningRecord[]) {
+  const dedicated = students.filter((s) =>
+    arrayValue(s.data, "requirements").includes("attendant"),
+  ).length;
+  return Math.max(
+    dedicated,
+    policy?.data.policyVersion === 2 ? Number(policy.data.minimumRouteAttendants ?? 0) : 0,
+  );
+}
+
+export function reviewWindow(
+  policy: PlanningRecord | undefined,
+  from: string,
+  until: string,
+  weekdays: number[] = [1, 2, 3, 4, 5],
+  exceptions: string[] = [],
+  timeZone = "UTC",
+) {
+  if (
+    policy?.data.policyVersion !== 2 ||
+    policy.data.reviewCoverage !== "service_date" ||
+    !from ||
+    !until
+  )
+    return { from, until };
+  // Preview suggestions only; the database computes its own first upcoming service date.
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: timeZone || "UTC" });
+  const first = from > today ? from : today;
+  const day = new Date(`${first}T00:00:00Z`);
+  if (!Number.isFinite(day.getTime())) return { from: "", until: "" };
+  for (
+    let i = 0;
+    i < 367 && day.toISOString().slice(0, 10) <= until;
+    i++, day.setUTCDate(day.getUTCDate() + 1)
+  ) {
+    const date = day.toISOString().slice(0, 10);
+    if (weekdays.includes(day.getUTCDay() || 7) && !exceptions.includes(date))
+      return { from: date, until: date };
+  }
+  return { from: "", until: "" };
 }

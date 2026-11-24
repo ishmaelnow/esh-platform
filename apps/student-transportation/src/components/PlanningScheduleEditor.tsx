@@ -13,6 +13,8 @@ import {
   parseCalendar,
   vehicleBlockers,
   credentialsCover,
+  attendantDemand,
+  reviewWindow,
   type PlanningRecord,
 } from "../lib/planning";
 import { TextField, formText } from "./PlanningRecordEditor";
@@ -30,6 +32,7 @@ export function PlanningScheduleEditor({
   request,
   records,
   busy,
+  guided,
   onSave,
   onClose,
 }: {
@@ -37,6 +40,15 @@ export function PlanningScheduleEditor({
   request: RequestRow;
   records: PlanningRecord[];
   busy: boolean;
+  guided?: {
+    students: Array<{
+      id: string;
+      revision: number;
+      sourceIndex: number;
+      identityConfirmed: boolean;
+    }>;
+    points: Array<{ id: string; revision: number }>;
+  };
   onSave: (body: ScheduleSubmission) => void;
   onClose: () => void;
 }) {
@@ -59,16 +71,23 @@ export function PlanningScheduleEditor({
   const [direction, setDirection] = useState(stringValue(d, "direction", "inbound"));
   const [from, setFrom] = useState(stringValue(d, "startDate"));
   const [until, setUntil] = useState(stringValue(d, "endDate"));
-  const [policyId, setPolicy] = useState(refId(d.policy));
-  const [driverId, setDriver] = useState(refId(d.driver));
-  const [vehicleId, setVehicle] = useState(refId(d.vehicle));
-  const [attendants, setAttendants] = useState<string[]>(() =>
-    arrayValue(d, "attendants").map(refId),
+  const [timeZone, setTimeZone] = useState(stringValue(d, "timeZone"));
+  const [exceptionsText, setExceptionsText] = useState(() =>
+    arrayValue(d, "exceptions")
+      .filter(jsonObject)
+      .map((e) => `${scalarText(e.date)} ${scalarText(e.reason)}`)
+      .join("\n"),
+  );
+  const [chosenPolicy, setPolicy] = useState<string | null>(guided ? null : refId(d.policy));
+  const [chosenDriver, setDriver] = useState<string | null>(guided ? null : refId(d.driver));
+  const [chosenVehicle, setVehicle] = useState<string | null>(guided ? null : refId(d.vehicle));
+  const [chosenAttendants, setAttendants] = useState<string[] | null>(() =>
+    guided ? null : arrayValue(d, "attendants").map(refId),
   );
   const [weekdays, setWeekdays] = useState<number[]>(() =>
     d.weekdays ? arrayValue(d, "weekdays").map(Number) : [1, 2, 3, 4, 5],
   );
-  const [mapping, setMapping] = useState<
+  const [savedMapping, setMapping] = useState<
     Array<{ sourceIndex: number; id: string; confirmed: boolean }>
   >(() =>
     d.students
@@ -81,7 +100,7 @@ export function PlanningScheduleEditor({
           }))
       : source.map((_, i) => ({ sourceIndex: i, id: "", confirmed: false })),
   );
-  const [pointIds, setPointIds] = useState<Record<number, string>>(() => {
+  const [savedPointIds, setPointIds] = useState<Record<number, string>>(() => {
     const result: Record<number, string> = {};
     for (const p of arrayValue(d, "points")) {
       const id = refId(p);
@@ -90,11 +109,55 @@ export function PlanningScheduleEditor({
     }
     return result;
   });
+  const mapping = guided
+    ? guided.students.map((s) => ({ ...s, confirmed: s.identityConfirmed }))
+    : savedMapping;
+  const pointIds = guided
+    ? Object.fromEntries(guided.points.map((p, i) => [i, p.id]))
+    : savedPointIds;
+  const [generatedReference] = useState(() => `schedule-${crypto.randomUUID()}`);
   const [error, setError] = useState("");
   const selectedStudents = mapping
     .map((s) => students.find((r) => r.id === s.id))
     .filter((v): v is PlanningRecord => !!v);
+  const windowFor = (p: PlanningRecord | undefined) =>
+    reviewWindow(
+      p,
+      from,
+      until,
+      weekdays,
+      exceptionsText.split(/\r?\n/).map((line) => line.trim().slice(0, 10)),
+      timeZone,
+    );
+  const covers = (r: PlanningRecord, window: { from: string; until: string }) =>
+    !!window.from &&
+    !!window.until &&
+    window.from <= window.until &&
+    typeof r.data.validFrom === "string" &&
+    typeof r.data.validUntil === "string" &&
+    r.data.validFrom <= window.from &&
+    r.data.validUntil >= window.until;
+  const matchingPolicies = policies.filter((p) => covers(p, windowFor(p)));
+  const policyId =
+    chosenPolicy ?? (guided && matchingPolicies.length === 1 ? matchingPolicies[0]!.id : "");
   const policy = policies.find((p) => p.id === policyId);
+  const reviewDates = windowFor(policy);
+  const termCovers = (r: PlanningRecord) => covers(r, reviewDates);
+  const crewCount = attendantDemand(policy, selectedStudents);
+  const matchingResources = (role: "driver" | "vehicle" | "attendant") =>
+    resources.filter((r) => {
+      if (r.data.role !== role || !termCovers(r)) return false;
+      if (role === "vehicle") return !vehicleBlockers(r, selectedStudents, crewCount).length;
+      const keys =
+        policy && termCovers(policy) ? policyCredentialKeys(policy, role, selectedStudents) : null;
+      return !!keys && credentialsCover(r, keys, reviewDates.from, reviewDates.until);
+    });
+  const drivers = matchingResources("driver"),
+    vehicles = matchingResources("vehicle"),
+    crew = matchingResources("attendant");
+  const driverId = chosenDriver ?? (guided && drivers.length === 1 ? drivers[0]!.id : "");
+  const vehicleId = chosenVehicle ?? (guided && vehicles.length === 1 ? vehicles[0]!.id : "");
+  const attendants = chosenAttendants ?? (crew.length === crewCount ? crew.map((r) => r.id) : []);
   const orderedIndices =
     direction === "inbound"
       ? [...mapping.map((s) => s.sourceIndex), source.length]
@@ -108,6 +171,23 @@ export function PlanningScheduleEditor({
     setError("");
     try {
       const f = new FormData(e.currentTarget);
+      if (
+        guided &&
+        [...guided.students, ...guided.points].some(
+          (binding) => !active.some((r) => r.id === binding.id && r.revision === binding.revision),
+        )
+      )
+        throw Error("A reviewed record changed. Return to request and stops before saving.");
+      if (guided) {
+        const uncovered = [
+          ...selectedStudents,
+          ...guided.points.map((p) => active.find((r) => r.id === p.id)!),
+        ].find((r) => !termCovers(r));
+        if (uncovered)
+          throw Error(
+            `Review dates do not cover the school's required review window: ${scalarText(uncovered.data.name ?? uncovered.data.label)}. Revise the review in school setup or adjust the term.`,
+          );
+      }
       const bindings = mapping.map((m) => {
         const ref = getRef(m.id);
         if (!ref || !m.confirmed) throw Error("Confirm each student identity mapping.");
@@ -121,8 +201,10 @@ export function PlanningScheduleEditor({
       onSave({
         id: record?.id ?? null,
         revision: record?.revision ?? 0,
-        reference: record?.reference ?? formText(f, "reference"),
-        reason: formText(f, "reason"),
+        reference: record?.reference ?? (guided ? generatedReference : formText(f, "reference")),
+        reason: guided
+          ? "Created recurring planning draft from reviewed request and loading points."
+          : formText(f, "reason"),
         data: {
           requestId: request.request_id,
           name: formText(f, "name"),
@@ -152,23 +234,29 @@ export function PlanningScheduleEditor({
   };
   return (
     <form className="notice planning-editor" onSubmit={save}>
-      <h3>{record ? "Revise" : "Create"} recurring schedule draft</h3>
+      <h3 {...(guided ? { "data-step-heading": true, tabIndex: -1 } : {})}>
+        {guided
+          ? "3. Schedule and resources"
+          : `${record ? "Revise" : "Create"} recurring schedule draft`}
+      </h3>
       <p>
         One school/group request per schedule. Use separate morning and afternoon templates. Changes
         create a new draft requiring fresh road preview and planning approval.
       </p>
       <fieldset disabled={busy}>
-        <TextField
-          label="Schedule reference"
-          name="reference"
-          value={record?.reference ?? ""}
-          disabled={!!record}
-          maxLength={100}
-        />
+        {!guided ? (
+          <TextField
+            label="Schedule reference"
+            name="reference"
+            value={record?.reference ?? ""}
+            disabled={!!record}
+            maxLength={100}
+          />
+        ) : null}
         <TextField
           label="Schedule name"
           name="name"
-          value={stringValue(d, "name")}
+          value={stringValue(d, "name", guided ? "School recurring journey" : "")}
           maxLength={120}
         />
         <label>
@@ -187,7 +275,8 @@ export function PlanningScheduleEditor({
           <select
             aria-label="School local time zone"
             name="timeZone"
-            defaultValue={stringValue(d, "timeZone")}
+            value={timeZone}
+            onChange={(e) => setTimeZone(e.target.value)}
             required
           >
             <option value="">Choose time zone</option>
@@ -205,26 +294,30 @@ export function PlanningScheduleEditor({
             ))}
           </select>
         </label>
-        <label>
-          Term start
-          <input type="date" required value={from} onChange={(e) => setFrom(e.target.value)} />
-        </label>
-        <label>
-          Term end
-          <input type="date" required value={until} onChange={(e) => setUntil(e.target.value)} />
-        </label>
-        <TextField
-          label="First pickup time (school local)"
-          name="startTime"
-          type="time"
-          value={stringValue(d, "startTime")}
-        />
-        <TextField
-          label="Final drop-off deadline (school local)"
-          name="endTime"
-          type="time"
-          value={stringValue(d, "endTime")}
-        />
+        <div className={guided ? "schedule-fields" : undefined}>
+          <label>
+            Term start
+            <input type="date" required value={from} onChange={(e) => setFrom(e.target.value)} />
+          </label>
+          <label>
+            Term end
+            <input type="date" required value={until} onChange={(e) => setUntil(e.target.value)} />
+          </label>
+        </div>
+        <div className={guided ? "schedule-fields" : undefined}>
+          <TextField
+            label="First pickup time (school local)"
+            name="startTime"
+            type="time"
+            value={stringValue(d, "startTime")}
+          />
+          <TextField
+            label="Final drop-off deadline (school local)"
+            name="endTime"
+            type="time"
+            value={stringValue(d, "endTime")}
+          />
+        </div>
         <label>
           Resource reservation buffer before and after (minutes)
           <input
@@ -236,7 +329,7 @@ export function PlanningScheduleEditor({
             defaultValue={Number(d.bufferMinutes ?? 0)}
           />
         </label>
-        <fieldset>
+        <fieldset className={guided ? "service-weekdays" : undefined}>
           <legend>School service weekdays</legend>
           {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(
             (day, i) => (
@@ -261,10 +354,8 @@ export function PlanningScheduleEditor({
             name="exceptions"
             maxLength={15000}
             placeholder="2026-11-26 School closed"
-            defaultValue={arrayValue(d, "exceptions")
-              .filter(jsonObject)
-              .map((e) => `${scalarText(e.date)} ${scalarText(e.reason)}`)
-              .join("\n")}
+            value={exceptionsText}
+            onChange={(e) => setExceptionsText(e.target.value)}
           />
         </label>
         <p>
@@ -280,116 +371,125 @@ export function PlanningScheduleEditor({
           />
           I reviewed school dates, direction, service windows and calendar exceptions.
         </label>
-        <fieldset>
-          <legend>Canonical students and explicit stop order</legend>
-          {mapping.map((m, i) => (
-            <fieldset className="contact-card" key={m.sourceIndex}>
-              <legend>
-                Stop order {i + 1}: {source[m.sourceIndex]?.name}
-              </legend>
-              <p>Requested pickup: {source[m.sourceIndex]?.pickupAddress}</p>
-              <label>
-                Reviewed student identity
+        {!guided ? (
+          <fieldset>
+            <legend>Canonical students and explicit stop order</legend>
+            {mapping.map((m, i) => (
+              <fieldset className="contact-card" key={m.sourceIndex}>
+                <legend>
+                  Stop order {i + 1}: {source[m.sourceIndex]?.name}
+                </legend>
+                <p>Requested pickup: {source[m.sourceIndex]?.pickupAddress}</p>
+                <label>
+                  Reviewed student identity
+                  <select
+                    aria-label="Reviewed student identity"
+                    required
+                    value={m.id}
+                    onChange={(e) =>
+                      setMapping((rows) =>
+                        rows.map((r, j) =>
+                          i === j ? { ...r, id: e.target.value, confirmed: false } : r,
+                        ),
+                      )
+                    }
+                  >
+                    <option value="">Select canonical student</option>
+                    {students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.reference} — {scalarText(s.data.name)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p>
+                  Reviewed requirements:{" "}
+                  {selectedStudents.find((s) => s.id === m.id)
+                    ? arrayValue(selectedStudents.find((s) => s.id === m.id)!.data, "requirements")
+                        .map(
+                          (tag) =>
+                            ACCOMMODATIONS[tag as keyof typeof ACCOMMODATIONS] ?? scalarText(tag),
+                        )
+                        .join(", ") || "Reviewed: none recorded"
+                    : "Select a reviewed student"}
+                </p>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={m.confirmed}
+                    onChange={(e) =>
+                      setMapping((rows) =>
+                        rows.map((r, j) => (i === j ? { ...r, confirmed: e.target.checked } : r)),
+                      )
+                    }
+                  />
+                  I confirmed this request entry is the selected student.
+                </label>
+                <div className="portal-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={i === 0}
+                    onClick={() =>
+                      setMapping((rows) => {
+                        const next = [...rows];
+                        [next[i - 1], next[i]] = [next[i]!, next[i - 1]!];
+                        return next;
+                      })
+                    }
+                  >
+                    Move earlier
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={i === mapping.length - 1}
+                    onClick={() =>
+                      setMapping((rows) => {
+                        const next = [...rows];
+                        [next[i], next[i + 1]] = [next[i + 1]!, next[i]!];
+                        return next;
+                      })
+                    }
+                  >
+                    Move later
+                  </button>
+                </div>
+              </fieldset>
+            ))}
+          </fieldset>
+        ) : (
+          <p>
+            Student identities and loading points are linked from your reviews. Pickup order follows
+            the request.
+          </p>
+        )}
+        {!guided ? (
+          <fieldset>
+            <legend>Approved loading points in route order</legend>
+            {orderedIndices.map((index, i) => (
+              <label key={index}>
+                Stop {i + 1}: {index === source.length ? "School" : source[index]?.name}
                 <select
-                  aria-label="Reviewed student identity"
+                  aria-label={`Stop ${i + 1}: ${index === source.length ? "School" : source[index]?.name}`}
                   required
-                  value={m.id}
-                  onChange={(e) =>
-                    setMapping((rows) =>
-                      rows.map((r, j) =>
-                        i === j ? { ...r, id: e.target.value, confirmed: false } : r,
-                      ),
-                    )
-                  }
+                  value={pointIds[index] ?? ""}
+                  onChange={(e) => setPointIds((p) => ({ ...p, [index]: e.target.value }))}
                 >
-                  <option value="">Select canonical student</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.reference} — {scalarText(s.data.name)}
-                    </option>
-                  ))}
+                  <option value="">Select reviewed loading point</option>
+                  {points
+                    .filter((p) => Number(p.data.stopIndex) === index)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {scalarText(p.data.label)} — {scalarText(p.data.loadingType)}
+                      </option>
+                    ))}
                 </select>
               </label>
-              <p>
-                Reviewed requirements:{" "}
-                {selectedStudents.find((s) => s.id === m.id)
-                  ? arrayValue(selectedStudents.find((s) => s.id === m.id)!.data, "requirements")
-                      .map(
-                        (tag) =>
-                          ACCOMMODATIONS[tag as keyof typeof ACCOMMODATIONS] ?? scalarText(tag),
-                      )
-                      .join(", ") || "Reviewed: none recorded"
-                  : "Select a reviewed student"}
-              </p>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  required
-                  checked={m.confirmed}
-                  onChange={(e) =>
-                    setMapping((rows) =>
-                      rows.map((r, j) => (i === j ? { ...r, confirmed: e.target.checked } : r)),
-                    )
-                  }
-                />
-                I confirmed this request entry is the selected student.
-              </label>
-              <div className="portal-actions">
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={i === 0}
-                  onClick={() =>
-                    setMapping((rows) => {
-                      const next = [...rows];
-                      [next[i - 1], next[i]] = [next[i]!, next[i - 1]!];
-                      return next;
-                    })
-                  }
-                >
-                  Move earlier
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={i === mapping.length - 1}
-                  onClick={() =>
-                    setMapping((rows) => {
-                      const next = [...rows];
-                      [next[i], next[i + 1]] = [next[i + 1]!, next[i]!];
-                      return next;
-                    })
-                  }
-                >
-                  Move later
-                </button>
-              </div>
-            </fieldset>
-          ))}
-        </fieldset>
-        <fieldset>
-          <legend>Approved loading points in route order</legend>
-          {orderedIndices.map((index, i) => (
-            <label key={index}>
-              Stop {i + 1}: {index === source.length ? "School" : source[index]?.name}
-              <select
-                aria-label={`Stop ${i + 1}: ${index === source.length ? "School" : source[index]?.name}`}
-                required
-                value={pointIds[index] ?? ""}
-                onChange={(e) => setPointIds((p) => ({ ...p, [index]: e.target.value }))}
-              >
-                <option value="">Select reviewed loading point</option>
-                {points
-                  .filter((p) => Number(p.data.stopIndex) === index)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {scalarText(p.data.label)} — {scalarText(p.data.loadingType)}
-                    </option>
-                  ))}
-              </select>
-            </label>
-          ))}
-        </fieldset>
+            ))}
+          </fieldset>
+        ) : null}
         <fieldset>
           <legend>Dedicated resources (required before planning approval)</legend>
           <label>
@@ -418,7 +518,7 @@ export function PlanningScheduleEditor({
               {resources
                 .filter((r) => r.data.role === "vehicle")
                 .map((r) => {
-                  const blockers = vehicleBlockers(r, selectedStudents);
+                  const blockers = vehicleBlockers(r, selectedStudents, crewCount);
                   return (
                     <option key={r.id} value={r.id} disabled={!!blockers.length}>
                       {scalarText(r.data.label)}
@@ -442,7 +542,9 @@ export function PlanningScheduleEditor({
                   const requiredKeys = policy
                     ? policyCredentialKeys(policy, "driver", selectedStudents)
                     : null;
-                  const eligible = !!requiredKeys && credentialsCover(r, requiredKeys, from, until);
+                  const eligible =
+                    !!requiredKeys &&
+                    credentialsCover(r, requiredKeys, reviewDates.from, reviewDates.until);
                   return (
                     <option key={r.id} value={r.id} disabled={!eligible}>
                       {scalarText(r.data.label)}
@@ -467,13 +569,15 @@ export function PlanningScheduleEditor({
                       !credentialsCover(
                         r,
                         policyCredentialKeys(policy, "attendant", selectedStudents) ?? [],
-                        from,
-                        until,
+                        reviewDates.from,
+                        reviewDates.until,
                       )
                     }
                     onChange={(e) =>
                       setAttendants((ids) =>
-                        e.target.checked ? [...ids, r.id] : ids.filter((id) => id !== r.id),
+                        e.target.checked
+                          ? [...(ids ?? attendants), r.id]
+                          : (ids ?? attendants).filter((id) => id !== r.id),
                       )
                     }
                   />
@@ -482,11 +586,21 @@ export function PlanningScheduleEditor({
               ))}
           </fieldset>
           <p>
-            One distinct attendant per student requesting a dedicated attendant. Capacity, evidence
-            dates and overlapping reservations are also enforced by the server.
+            Required attendants: {crewCount}. Dedicated student needs and the school's route minimum
+            both apply. Attendants consume passenger seats; the server also checks evidence and
+            reservations.
           </p>
         </fieldset>
-        <TextField label="Schedule change reason" name="reason" maxLength={300} />
+        {guided ? (
+          <p>
+            Matching reviewed resources are suggested when there is one choice. The server checks
+            the school's review window and overlapping reservations before planning approval.
+            Missing resources can be added in school setup; a draft does not reserve or approve
+            transport.
+          </p>
+        ) : (
+          <TextField label="Schedule change reason" name="reason" maxLength={300} />
+        )}
         <div className="portal-actions">
           <button>Save schedule draft</button>
           <button type="button" className="secondary" onClick={onClose}>

@@ -213,7 +213,7 @@ async function main() {
           : route.fulfill({ status: 403, json: { message: "Internal planning access required" } });
       if (name === "save_student_planning_record") {
         assert.equal(body.t, tenant);
-        if (body.kind_value === "policy") {
+        if (body.kind_value === "policy" && body.reference_value !== "TEST MINIMAL POLICY") {
           assert.deepEqual(body.data_value.driverKeys, ["district_driver"]);
           assert.deepEqual(body.data_value.equipmentAttendantKeys.wheelchair_lift, [
             "district_attendant",
@@ -317,10 +317,19 @@ async function main() {
     await page.goto(origin + "/clients");
     await page.getByRole("button", { name: "Open route planning", exact: true }).click();
     const panel = page.getByRole("region", { name: "Internal route planning", exact: true });
-    await panel.getByRole("button", { name: "Add qualification policy", exact: true }).waitFor();
+    await panel.getByText("School setup and advanced reviews", { exact: true }).click();
     await panel.getByLabel("Source geographic request", { exact: true }).selectOption(requestId);
-    const editor = () => panel.locator("form.planning-editor");
+    const editor = () => panel.locator("form.planning-editor:visible");
     const common = async (form, reference) => {
+      if (await form.locator('[name="policyVersion"]').count()) {
+        for (const name of [
+          "driverKeys",
+          "attendantKeys",
+          "driver_wheelchair_lift",
+          "attendant_wheelchair_lift",
+        ])
+          await form.locator(`[name="require_${name}"]`).check();
+      }
       await form
         .getByLabel(/reference$/i)
         .first()
@@ -625,6 +634,180 @@ async function main() {
       await page.setViewportSize({ width, height: 896 });
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     }
+    // Primary guided path: reuse exact reviews, review only a missing stop, then save a draft.
+    // Remove only the synthetic school-point fixture to exercise the missing-review path.
+    records.splice(
+      records.findIndex((r) => r.kind === "point" && r.data.stopIndex === 1),
+      1,
+    );
+    await panel.getByRole("button", { name: "Refresh planning", exact: true }).click();
+    await panel.getByLabel("Source geographic request", { exact: true }).selectOption(requestId);
+    const guided = page.getByRole("region", { name: "Plan this request", exact: true });
+    await expect(
+      guided.getByRole("button", { name: "Continue to stops", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      guided.getByLabel("School student review for TEST REQUEST CHILD", { exact: true }),
+    ).toHaveValue(student.id);
+    await guided.getByLabel("I confirm the school reference", { exact: false }).check();
+    await guided.getByRole("button", { name: "Continue to stops", exact: true }).click();
+    await expect(guided.getByRole("button", { name: "Review this stop", exact: true })).toHaveCount(
+      1,
+    );
+    await expect(guided.getByText(/Reviewed: TEST HOME CURB/)).toBeVisible();
+    await guided.getByRole("button", { name: "Review this stop", exact: true }).click();
+    const inline = guided.locator("form.planning-editor:visible");
+    await expect(inline.getByLabel("Source stop", { exact: true })).toHaveValue("1");
+    await expect(inline.getByLabel("Source stop", { exact: true })).toBeDisabled();
+    await inline.getByLabel("Review valid from", { exact: true }).fill("2026-01-01");
+    await inline.getByLabel("Review valid through", { exact: true }).fill("2028-12-31");
+    await inline
+      .getByLabel("Approved point label", { exact: true })
+      .fill("TEST GUIDED SCHOOL GATE");
+    await inline
+      .getByLabel("Site or district loading approval reference", { exact: true })
+      .fill("TEST GUIDED INSPECTION");
+    await inline.getByLabel("I verified this specific loading point", { exact: false }).check();
+    failSave = true;
+    const keyCount = keys.length;
+    await inline.getByRole("button", { name: "Save reviewed revision", exact: true }).click();
+    await panel
+      .getByRole("status")
+      .filter({ hasText: "Planning could not be completed" })
+      .waitFor();
+    await inline.getByRole("button", { name: "Save reviewed revision", exact: true }).click();
+    await panel.getByRole("status").filter({ hasText: "Review saved. Continue" }).waitFor();
+    assert.equal(
+      keys[keyCount],
+      keys[keyCount + 1],
+      "Inline review retries must use the same idempotency key",
+    );
+    assert.equal(
+      records.filter((r) => r.kind === "student").length,
+      1,
+      "Reuse saved student instead of creating duplicates",
+    );
+    await guided.getByRole("button", { name: "Continue to schedule", exact: true }).click();
+    const schedule = guided.locator("form.planning-editor:visible");
+    await expect(schedule.getByLabel("Schedule reference", { exact: true })).toHaveCount(0);
+    await expect(schedule.getByLabel("Reviewed student identity", { exact: true })).toHaveCount(0);
+    await schedule
+      .getByLabel("School local time zone", { exact: true })
+      .selectOption("America/New_York");
+    await schedule.getByLabel("Term start", { exact: true }).fill("2027-01-10");
+    await schedule.getByLabel("Term end", { exact: true }).fill("2027-01-31");
+    await schedule.getByLabel("First pickup time (school local)", { exact: true }).fill("07:00");
+    await schedule
+      .getByLabel("Final drop-off deadline (school local)", { exact: true })
+      .fill("08:00");
+    await expect(schedule.getByLabel("Qualification policy", { exact: true })).toHaveValue(
+      policy.id,
+    );
+    await expect(schedule.getByLabel("Vehicle configuration", { exact: true })).toHaveValue(
+      vehicle.id,
+    );
+    await expect(schedule.getByLabel("Driver", { exact: true })).toHaveValue(driver.id);
+    await schedule.getByLabel("I reviewed school dates", { exact: false }).check();
+    // Moving back through the stages must not discard entered schedule fields.
+    await guided.getByRole("button", { name: "Back to stops", exact: true }).click();
+    await guided.getByRole("button", { name: "Continue to schedule", exact: true }).click();
+    await expect(schedule.getByLabel("Term start", { exact: true })).toHaveValue("2027-01-10");
+    for (const width of [320, 736, 1280]) {
+      await page.setViewportSize({ width, height: 896 });
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
+    await schedule.screenshot({ path: path.join(evidence, "guided-schedule.png") });
+    await schedule.getByRole("button", { name: "Save schedule draft", exact: true }).click();
+    await panel.getByRole("status").filter({ hasText: "Planning revision saved" }).waitFor();
+    const guidedPlan = records.filter((r) => r.kind === "schedule").at(-1);
+    assert.equal(guidedPlan.data.students[0].id, student.id);
+    assert.deepEqual(
+      guidedPlan.data.points.map((p) => p.id),
+      records.filter((r) => r.kind === "point").map((p) => p.id),
+    );
+    await expect(panel.getByLabel("Recurring schedule", { exact: true })).toHaveValue(
+      guidedPlan.id,
+    );
+    // The owner's grouped shape: three saved students, one exact stop review, three missing.
+    groupedSource.students.forEach((s, i) =>
+      records.push({
+        ...student,
+        id: nextId(),
+        reference: `TEST GROUP SCHOOL ID ${i}`,
+        data: { ...student.data, name: s.name, requirements: s.accommodations ?? [] },
+      }),
+    );
+    const homePoint = records.find((r) => r.kind === "point" && r.data.stopIndex === 0);
+    records.push({
+      ...homePoint,
+      id: nextId(),
+      data: { ...homePoint.data, requestId: groupedSource.request_id, stopIndex: 1 },
+    });
+    await panel.getByRole("button", { name: "Refresh planning", exact: true }).click();
+    await panel
+      .getByLabel("Source geographic request", { exact: true })
+      .selectOption(groupedSource.request_id);
+    for (const s of groupedSource.students) {
+      await expect(
+        guided.getByLabel(`School student review for ${s.name}`, { exact: true }),
+      ).not.toHaveValue("");
+      await guided
+        .getByLabel(`I confirm the school reference and requirements identify ${s.name}.`, {
+          exact: true,
+        })
+        .check();
+    }
+    await guided.getByRole("button", { name: "Continue to stops", exact: true }).click();
+    await expect(guided.getByRole("button", { name: "Review this stop", exact: true })).toHaveCount(
+      3,
+    );
+    await expect(
+      guided.getByRole("button", { name: "Continue to schedule", exact: true }),
+    ).toBeDisabled();
+    await panel.getByLabel("Source geographic request", { exact: true }).selectOption(requestId);
+    await expect(
+      guided.getByRole("button", { name: "Continue to stops", exact: true }),
+    ).toBeDisabled();
+    console.log(
+      "PASS guided route: explicit identity confirmation, saved-review reuse, missing-stop inline save/retry, generated references, compatible suggestions, back navigation, draft persistence, three-student/four-stop exact matching, source-change clearing and responsive layout.",
+    );
+    // A school may explicitly review a policy requiring no additional qualifications.
+    await panel.getByRole("button", { name: "Add qualification policy", exact: true }).click();
+    await expect(
+      editor().getByLabel("Required Driver qualifications (comma-separated)", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      editor().getByLabel("Required attendant qualifications (comma-separated)", { exact: true }),
+    ).toHaveCount(0);
+    await editor().getByLabel("Policy reference", { exact: true }).fill("TEST MINIMAL POLICY");
+    await editor().getByLabel("Review valid from", { exact: true }).fill("2026-01-01");
+    await editor().getByLabel("Review valid through", { exact: true }).fill("2028-12-31");
+    await editor()
+      .getByLabel("Approved district policy reference", { exact: true })
+      .fill("TEST MINIMAL POLICY");
+    await editor()
+      .getByLabel("Review or change reason", { exact: true })
+      .fill("TEST REVIEWED NO EXTRA QUALIFICATIONS");
+    await editor().getByLabel("I reviewed the applicable policy", { exact: false }).check();
+    await expect(
+      editor().getByRole("button", { name: "Save reviewed revision", exact: true }),
+    ).toBeEnabled();
+    await editor().getByLabel("Require Driver qualifications", { exact: true }).check();
+    await editor()
+      .getByLabel("Required Driver qualifications (comma-separated)", { exact: true })
+      .fill("***");
+    await expect(
+      editor().getByRole("button", { name: "Save reviewed revision", exact: true }),
+    ).toBeDisabled();
+    await editor().getByLabel("Require Driver qualifications", { exact: true }).uncheck();
+    await expect(
+      editor().getByRole("button", { name: "Save reviewed revision", exact: true }),
+    ).toBeEnabled();
+    await save();
+    const minimalPolicy = records.find((r) => r.reference === "TEST MINIMAL POLICY");
+    assert.equal(minimalPolicy.data.policyVersion, 2);
+    assert.deepEqual(minimalPolicy.data.driverKeys, []);
+    assert.deepEqual(minimalPolicy.data.attendantKeys, []);
     allowed = false;
     await panel.getByRole("button", { name: "Refresh planning", exact: true }).click();
     await panel

@@ -48,20 +48,46 @@ export function policyReviewIssues(form: FormData, existingReference?: string): 
   if (!isDate(through)) issues.push("Review valid through: enter a valid date.");
   if (isDate(from) && isDate(through) && through < from)
     issues.push("Review valid through must be on or after Review valid from.");
+  if (text(form, "policyVersion") === "2") {
+    const minimum = text(form, "minimumRouteAttendants");
+    if (!/^\d+$/.test(minimum) || Number(minimum) > 20)
+      issues.push("Enter an attendant minimum from 0 to 20.");
+    if (!["full_term", "service_date"].includes(text(form, "reviewCoverage")))
+      issues.push("Choose how reviews cover the school schedule.");
+    if (text(form, "loadingProcedure").length > 500)
+      issues.push("Keep the school loading procedure within 500 characters.");
+  }
 
   const fields: Array<[string, string, boolean]> = [
-    ["driverKeys", "Required Driver qualifications", true],
-    ["attendantKeys", "Required attendant qualifications", true],
+    [
+      "driverKeys",
+      "Required Driver qualifications",
+      text(form, "policyVersion") !== "2" || form.has("require_driverKeys"),
+    ],
+    [
+      "attendantKeys",
+      "Required attendant qualifications",
+      text(form, "policyVersion") !== "2" || form.has("require_attendantKeys"),
+    ],
   ];
   for (const [tag, label] of [
     ["wheelchair_lift", "Wheelchair lift"],
     ["booster_seat", "Booster seat"],
     ["car_seat", "Car seat"],
   ]) {
-    fields.push([`driver_${tag}`, `${label} Driver qualifications`, false]);
-    fields.push([`attendant_${tag}`, `${label} attendant qualifications`, false]);
+    fields.push([
+      `driver_${tag}`,
+      `${label} Driver qualifications`,
+      form.has(`require_driver_${tag}`),
+    ]);
+    fields.push([
+      `attendant_${tag}`,
+      `${label} attendant qualifications`,
+      form.has(`require_attendant_${tag}`),
+    ]);
   }
   for (const [name, label, required] of fields) {
+    if (text(form, "policyVersion") === "2" && !form.has(`require_${name}`)) continue;
     const keys = credentialKeys(text(form, name));
     const unusable = text(form, name)
       .split(",")

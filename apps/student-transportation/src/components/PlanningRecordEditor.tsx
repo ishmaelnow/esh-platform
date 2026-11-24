@@ -12,6 +12,7 @@ import {
   type PlanningKind,
 } from "../lib/planning";
 import { readSavedStops } from "../lib/geography";
+import { SchoolPolicyFields } from "./SchoolPolicyFields";
 import {
   credentialKeys,
   normalizeCredentialKey,
@@ -29,37 +30,8 @@ export type RecordSubmission = {
   data: Json;
   reason: string;
 };
-export function TextField({
-  label,
-  name,
-  value = "",
-  type = "text",
-  maxLength = 200,
-  required = true,
-  disabled = false,
-}: {
-  label: string;
-  name: string;
-  value?: string;
-  type?: string;
-  maxLength?: number;
-  required?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <label>
-      {label}
-      <input
-        name={name}
-        type={type}
-        defaultValue={value}
-        maxLength={maxLength}
-        required={required}
-        disabled={disabled}
-      />
-    </label>
-  );
-}
+import { TextField } from "./PlanningTextField";
+export { TextField } from "./PlanningTextField";
 export const formText = (form: FormData, key: string) => scalarText(form.get(key) ?? "").trim();
 export function PlanningRecordEditor({
   kind,
@@ -68,6 +40,7 @@ export function PlanningRecordEditor({
   initialIndex = 0,
   busy,
   saveError = "",
+  guided = false,
   onSave,
   onClose,
 }: {
@@ -77,10 +50,12 @@ export function PlanningRecordEditor({
   initialIndex?: number;
   busy: boolean;
   saveError?: string;
+  guided?: boolean;
   onSave: (body: RecordSubmission) => void;
   onClose: () => void;
 }) {
   const data = record?.data ?? {};
+  const [generatedReference] = useState(() => `${kind}-${crypto.randomUUID()}`);
   const students = request ? readRequestStudents(request.students) : [];
   const stops = request?.geography_status === "geocoded" ? readSavedStops(request.geography) : [];
   const [index, setIndex] = useState(Number(data.stopIndex ?? initialIndex));
@@ -147,6 +122,14 @@ export function PlanningRecordEditor({
       } else if (kind === "policy")
         next = {
           ...common,
+          ...(formText(f, "policyVersion") === "2"
+            ? {
+                policyVersion: 2,
+                minimumRouteAttendants: Number(formText(f, "minimumRouteAttendants")),
+                reviewCoverage: formText(f, "reviewCoverage"),
+                loadingProcedure: formText(f, "loadingProcedure"),
+              }
+            : {}),
           sourceReference: formText(f, "sourceReference"),
           driverKeys: credentialKeys(formText(f, "driverKeys")),
           attendantKeys: credentialKeys(formText(f, "attendantKeys")),
@@ -222,21 +205,25 @@ export function PlanningRecordEditor({
         authorize a ride.
       </p>
       <fieldset disabled={busy}>
-        <TextField
-          label={
-            kind === "student"
-              ? "School student reference"
-              : kind === "resource"
-                ? "Unique person or vehicle reference"
-                : kind === "point"
-                  ? "Loading point reference"
-                  : "Policy reference"
-          }
-          name="reference"
-          value={record?.reference ?? ""}
-          maxLength={100}
-          disabled={!!record}
-        />
+        {guided && kind === "point" ? (
+          <input type="hidden" name="reference" value={generatedReference} />
+        ) : (
+          <TextField
+            label={
+              kind === "student"
+                ? "School student reference"
+                : kind === "resource"
+                  ? "Unique person or vehicle reference"
+                  : kind === "point"
+                    ? "Loading point reference"
+                    : "Policy reference"
+            }
+            name="reference"
+            value={record?.reference ?? ""}
+            maxLength={100}
+            disabled={!!record}
+          />
+        )}
         <label>
           Review status
           <select aria-label="Review status" name="state" defaultValue={record?.state ?? "active"}>
@@ -322,7 +309,7 @@ export function PlanningRecordEditor({
               <select
                 aria-label="Source stop"
                 value={index}
-                disabled={!!record}
+                disabled={!!record || guided}
                 onChange={(e) => setIndex(Number(e.target.value))}
               >
                 {stops.map((s, i) => (
@@ -399,69 +386,7 @@ export function PlanningRecordEditor({
             </p>
           </>
         ) : null}
-        {kind === "policy" ? (
-          <>
-            <TextField
-              label="Approved district policy reference"
-              name="sourceReference"
-              value={stringValue(data, "sourceReference")}
-            />
-            <TextField
-              label="Required Driver qualifications (comma-separated)"
-              name="driverKeys"
-              value={arrayValue(data, "driverKeys")
-                .map((v) => qualificationName(scalarText(v)))
-                .join(", ")}
-            />
-            <TextField
-              label="Required attendant qualifications (comma-separated)"
-              name="attendantKeys"
-              value={arrayValue(data, "attendantKeys")
-                .map((v) => qualificationName(scalarText(v)))
-                .join(", ")}
-            />
-            <p>Enter qualification names from your reviewed policy, separated by commas.</p>
-            <fieldset>
-              <legend>Equipment qualifications</legend>
-              <p>
-                Add the Driver and attendant qualifications required for each type of equipment
-                used.
-              </p>
-              {(["wheelchair_lift", "booster_seat", "car_seat"] as const).map((tag) => (
-                <div key={tag}>
-                  <TextField
-                    label={`${ACCOMMODATIONS[tag]} Driver qualifications (comma-separated)`}
-                    name={`driver_${tag}`}
-                    required={false}
-                    value={
-                      jsonObject(data.equipmentDriverKeys)
-                        ? arrayValue(data.equipmentDriverKeys, tag)
-                            .map((v) => qualificationName(scalarText(v)))
-                            .join(", ")
-                        : ""
-                    }
-                  />
-                  <TextField
-                    label={`${ACCOMMODATIONS[tag]} attendant qualifications (comma-separated)`}
-                    name={`attendant_${tag}`}
-                    required={false}
-                    value={
-                      jsonObject(data.equipmentAttendantKeys)
-                        ? arrayValue(data.equipmentAttendantKeys, tag)
-                            .map((v) => qualificationName(scalarText(v)))
-                            .join(", ")
-                        : ""
-                    }
-                  />
-                </div>
-              ))}
-            </fieldset>
-            <label className="check">
-              <input type="checkbox" name="policyReviewed" required />I reviewed the applicable
-              policy and its required qualifications.
-            </label>
-          </>
-        ) : null}
+        {kind === "policy" ? <SchoolPolicyFields {...(record ? { record } : {})} /> : null}
         {kind === "resource" ? (
           <>
             <label>
@@ -586,7 +511,16 @@ export function PlanningRecordEditor({
             </fieldset>
           </>
         ) : null}
-        <TextField label="Review or change reason" name="reason" maxLength={300} />
+        <TextField
+          label="Review or change reason"
+          name="reason"
+          maxLength={300}
+          value={
+            guided
+              ? `Reviewed ${kind === "point" ? "loading point" : "student identity and requirements"} for this request.`
+              : ""
+          }
+        />
         {issues.length ? (
           <p id="planning-review-checks" aria-live="polite">
             {issues[0]}

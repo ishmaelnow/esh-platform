@@ -3,6 +3,7 @@ const { randomUUID } = require("node:crypto");
 module.exports = async function planningCases({ db, read, rows, actor, uuid, customer }) {
   await db.exec("reset role");
   await db.exec(read("supabase/migrations/20261017000100_student_recurring_planning.sql"));
+  await db.exec(read("supabase/migrations/20261122000100_student_school_policy_rules.sql"));
   await actor(13); // Already explicitly admitted reviewer, unlike owner-only actor 14.
   const today = new Date();
   today.setUTCDate(today.getUTCDate() + 10);
@@ -685,6 +686,7 @@ module.exports = async function planningCases({ db, read, rows, actor, uuid, cus
   await assert.rejects(rows("select my_student_planning($1)", [uuid(1)]), /permission denied/);
   await assert.rejects(rows("select * from student_daily_manifests"), /permission denied/);
   await db.exec("reset role");
+  await require("./student-school-policy-sql-cases.cjs")({db, rows, actor, uuid, customer, request});
   console.log(
     "PASS Student planning canonical/point/resource/policy revisions, schedule preview/approval, immutable manifests, reservations/conflicts, cancellation, source withdrawal and internal-only access (minimal actual SQL fixtures).",
   );

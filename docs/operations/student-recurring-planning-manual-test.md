@@ -5,6 +5,45 @@ policy/evidence references and dedicated resources. No real minors' data or stud
 Preserve ordinary products and Student operational lock; use existing NEXT_STUDENT_SUPABASE_SECRET_KEY
 and public Mapbox configuration. No new variable, callback, native build, email or payment setup.
 
+## School-specific policy release and acceptance (2026-11-24)
+
+Current checkpoint: owner supplied an intended-only dry-run and successful application of
+20261122000100_student_school_policy_rules.sql. Database prerequisite is satisfied; do not
+repeat the push. Next owner commits/pushes the application changes through GitHub and verifies
+the Student deployment Ready before hosted acceptance.
+
+The latest local change adds migration20261122000100_student_school_policy_rules.sql. Apply it
+before releasing the new UI; it is backward compatible with existing policies/clients. Owner runs
+`corepack pnpm exec supabase db push --dry-run` from C:\Users\koshi\esh-platform. Confirm that
+ONLY that intended migration is listed before providing/running the real push command. Do not
+reapply old migrations, reset a database, or change credentials. Owner deploys through GitHub.
+
+After migration and Student deployment Ready, use TEST-only policy data in staff /admin:
+
+1. Open route planning, select the existing test school request, then School setup and advanced
+   reviews -> Add qualification policy. Only choose qualification categories that this school's
+   documented policy requires. No invented Driver/attendant codes or unrelated equipment entries.
+2. A policy with no additional qualification requirements may leave all qualification toggles off.
+   Set route minimum0 if no general monitor is required; dedicated student needs still apply.
+   Enter policy references/dates/reason and explicitly review it. Save must work. Selecting a
+   qualification category requires its actual qualification names; removing that category stops
+   demanding its inputs, including clearing its validation error.
+3. A different school policy can require named Driver training, equipment training and/or a route
+   monitor. Its rules must be applied only to that customer's route, with reserved attendant seats.
+   Missing required training, lift/restraints or capacity must still block planning approval.
+4. Existing legacy policies remain legacy on reopen/revision. Only the explicit checkbox to use
+   school-specific rules may change that interpretation, with a new reviewed revision. Do not
+   modify the owner's saved TESTING TODAY policy simply to repeat already accepted form tests.
+5. Review coverage defaults to whole term. Per-service-date mode may plan beyond evidence expiry,
+   but each manifest must have valid evidence for its actual date. A batch crossing expiry fails
+   atomically; no partial manifests. Renew/review evidence and explicitly revise/reapprove linked
+   schedule versions before later dates. An existing manifest's immutable snapshot stays intact.
+6. Optional school loading procedure appears beside stop review; it does not approve geocoded pins.
+   Customer accounts/unrelated schools/tenants must not gain policy write or planning access.
+
+Local automated tests use isolated SQL and intercepted browser fixtures; no production student,
+policy, resource, reservation or manifest mutation is performed by those tests.
+
 ## Owner release
 
 Owner supplied an intended-only dry-run followed by successful application of
@@ -12,7 +51,48 @@ Owner supplied an intended-only dry-run followed by successful application of
 20261016000100 or any earlier accepted migration. Owner performs all staging/commit/push/deployment
 and checks Student Vercel Ready. Existing unrelated config/assistant/preorder changes remain separate.
 
-## Internal acceptance
+## Guided route acceptance (new release)
+
+Use the existing saved TEST request and reviews; do not recreate the customer, policy, resources
+or students. This local change is not live until owner Git push and Student deployment Ready.
+Apply the school-policy migration above before this UI release. No environment-variable change
+is required; no old planning/geography migration needs to be reapplied.
+
+1. Open https://school.eshapp.com/admin as admitted staff ishmaelkosh@gmail.com. Select ESH
+   Education -> Requests and planning -> Open route planning.
+2. In Source geographic request choose the existing December12 THIRD SCHOOL TEST request.
+   Plan this request opens at 1. Review request. Saved same-school students are suggested;
+   inspect the school reference and requirements and explicitly confirm each child. No name
+   match may check the confirmation automatically. Missing/ambiguous identities resolve beside
+   that student. A new identity still needs its real school reference and authority review.
+3. Continue to stops. The list contains three homes plus school; saved reviews appear only at
+   their exact request stop. RETESTING's actual binding is still unverified until seen here.
+   Use Review this stop only for missing points. Its inline form locks the source stop and
+   generates its internal reference. Staff supply real dates/site evidence/verified coordinates
+   and review attestation; test entries certify software behavior only, not physical safety.
+   Save stays within the flow. Use Show proposed road route for context; it does not approve stops.
+4. Continue to schedule. Enter school time zone, term, service times/days and calendar review.
+   Student/point links are already carried over. Compatible unique resources/policy are suggested
+   after dates are entered; resolve alternatives or missing evidence in School setup and advanced
+   reviews. Existing TEST qualifications are not guaranteed to match until actually checked.
+   Back to stops then Continue to schedule must preserve entered schedule fields.
+5. Save schedule draft. Success selects that saved draft under Recurring schedule; use Preview
+   reviewed route for its reviewed-point road proof. Only then test planning approval. Preserve
+   hard locks for expired/missing credentials, insufficient vehicle/attendant capacity, changed
+   reviews, unsafe calendar/service windows and overlapping reservations. No ride is released.
+6. One browser refresh after successful draft save should retain the persisted draft. Unsaved
+   choices are intentionally memory-only; do not refresh between the steps. Existing record
+   history and immutable daily-manifest generation/cancellation tests below still apply.
+
+Local automated evidence covers exact binding, confirmation/revocation, missing-stop inline
+save/retry, resource suggestions, draft save/selection, Back navigation and320/736/desktop layout.
+Browser fixtures use intercepted APIs; separate isolated actual migration SQL checks enforce
+authorization, versioning, reservations, approval and manifest contracts. Hosted acceptance pending.
+
+## Advanced setup and regression reference
+
+The longer sequence below describes the retained setup/editors and foundational regression
+coverage. It is not an instruction to repeat already accepted setup in the current owner test.
 
 1. Create a fresh disposable geographic customer request through the existing /school flow (do not
    reuse a withdrawn request). Include distinct TEST students requiring a lift, a restraint and a

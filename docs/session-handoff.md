@@ -1,8 +1,1020 @@
 # Session Handoff
 
-Last updated: 2026-10-20
+Last updated: 2026-11-24
 
 ## Current objective and checkpoint
+
+### Current direction — school-specific planning constraints (2026-11-24)
+
+Owner clarified that the real issue is fixed constraints; different schools need different rules.
+GO authorized correcting the policy model before pushing the guided screens. Local v2 policies now
+configure optional base/equipment qualifications, minimum route attendants, loading procedure and
+whole-term versus per-service-date review coverage. This is a bounded structured policy, not a
+generic executable rules engine. Dedicated student accommodations, actual capacity/attendant seats,
+valid evidence for service, tenant/reviewer admission, immutable history and reservations remain.
+
+Legacy policy JSON/versions retain their original interpretation. Converting a legacy review to
+school-specific settings requires explicit opt-in plus new review/reason. Existing v2 settings cannot
+be silently stripped by an older client. Save and public RPC signatures stay compatible; policy JSON
+contains the new fields. No existing records rewritten, Auth/env/roles/RLS or operational flags changed.
+
+Owner confirmed intended-only dry-run and successful remote application of
+20261122000100_student_school_policy_rules.sql (Finished supabase db push). Do not reapply it.
+Application commit/push/deployment remains pending. It replaces policy save/snapshot/daily generation logic, with a private
+date-scoped snapshot helper denied to PUBLIC/anon/authenticated/service_role. Whole-term behavior
+remains for legacy/default policies. Per-date policies check the next upcoming included school day
+for planning and every generated manifest date separately; an uncovered date rolls the batch back.
+New evidence versions require explicit schedule revision, road preview and reapproval. No daily
+manifest may bypass expiry or silently adopt a newer review. Student transport remains unavailable.
+
+The guided-layout work below remains included; its earlier no-migration statement concerns layout
+only and is superseded for the combined release. The migration prerequisite is now satisfied.
+
+Owner GO after the three-stage design authorized runtime implementation. Original ESH repo,
+not independent eFare. Local primary flow: select Source geographic request -> Plan this request:
+1 Review request, 2 Review stops, 3 Schedule/resources. Do not send the owner back through the old
+record-assembly setup or recreate saved policy/resources/students. No new migration or environment
+variables, Git mutations, production deployment or live DB writes performed by Codex.
+
+GuidedRoutePlanner reuses same-school student reviews as suggestions only; school reference and
+requirements require explicit confirmation for each request entry and exact revision. Duplicate
+identity binding blocks progress. Missing students review inline, with actual school reference,
+authority and requirements attestation retained. Exact customer/request/stop-bound point reviews
+are reused; missing point review opens at that stop, with source locked and generated reference.
+Dates/site evidence/coordinates and actual human approval remain required. Inline write failure
+preserves inputs; same-key retry reloads records and binds returned ID/revision. Step2 reuses the
+proposed intake-road map; it does not certify reviewed geometry/site safety.
+
+Schedule fields retain entries on Back. Confirmed student/point links carry forward automatically;
+internal schedule reference and initial audit reason are generated. Sole term-covering policy,
+capacity-compatible vehicle and qualified Driver are suggested; attendant suggestion requires an
+exact eligible count. All suggestions remain subject to authoritative server checks. Draft save
+selects the result in the existing preview/approval section. Planning only; no release/dispatch.
+Advanced policy/resource setup, record revisions/history, schedule revisions and manifest actions
+remain available. Full refresh/source change clears unsaved choices; no browser child-data cache.
+
+Files: new SchoolPolicyFields.tsx, shared PlanningTextField.tsx, school-policy.test.ts,
+student-school-policy-sql-cases.cjs and the new SQL migration; planning.ts/policy validation changes.
+Also included: new GuidedRoutePlanner.tsx; guided-planning.ts and tests; changes to PlanningWorkspace,
+PlanningScheduleEditor and PlanningRecordEditor, Student styles, durable student-planning-browser-check.cjs;
+architecture/student-recurring-planning.md and operations/student-recurring-planning-manual-test.md.
+Local lint/typecheck and27 unit tests PASS. Original guided env-free enabled/default-off builds,
+full browser regression including guided saves/retries/layout and actual isolated SQL regression
+PASS (no provider/live traffic). Final-tree production builds/browser/SQL checks PASS, plus the
+three-student/four-stop case: exactly one source-bound review reused, three missing stops shown,
+and source change clears identity confirmations. Narrow layouts and schedule screenshot inspected.
+School-specific actual SQL tests PASS: optional qualifications, school isolation, route monitors/
+seats, dedicated needs, legacy behavior, daily expiry, atomic manifests, immutable snapshots and
+renewed-version binding. Final combined enabled/default-off production builds, full browser checks
+(including a reviewed policy with no extra qualifications) and actual SQL integration PASS. No
+production dry-run/push was run by Codex. Narrow layouts and existing native role/stop controls pass.
+Existing Supabase realtime/Next ESLint build warnings only.
+Ignored local runner/evidence: tmp/student-policy-diagnostics; no secrets/populated env copied.
+
+Release: main/origin remain fc7e339 pending owner commit/push. Preserve unrelated Admin/VPS/local
+config edits, untracked scripts, snippets and stash. Owner performs explicit per-file staging and
+GitHub-triggered deployment. NEXT explicit per-file Git release for the combined guided flow and
+school-specific policies, then verify Student Vercel Ready at the new commit and perform ONE
+guided acceptance of the existing December request. No further database push is needed for this release.
+Actual RETESTING stop binding and real saved-resource qualification compatibility remain unverified;
+do not claim hosted schedule approval or manifest acceptance. Sign-in email product branding is a
+separate requested follow-up, not implemented here. See the new guided manual-test section.
+
+Older manual-test notes below retain evidence and actual saved names, not instructions to repeat
+their setup or continue the superseded manual record-assembly workflow.
+
+### Active ESH Student Transportation checkpoint (2026-11-11)
+
+CURRENT SCHEDULE DRAFT BLOCKER (2026-11-19): after a full refresh, owner reopened December
+request and Create recurring schedule. Suggested TEST term2026-12-14..18,07:00..08:00,
+America/New_York,10min buffer,Mon–Fri; actual entered time/term values not independently confirmed.
+Current UI shows AA mapped to TESTING FORM PROXIMITY — TEST STUDENT AA with Wheelchair lift.
+BB/CC mappings/confirmations not shown in the latest excerpt; don't assume missing or complete.
+Current route order is BB,CC,AA,School (AA was moved; no user blame or required reset).
+All FOUR loading-point dropdowns show Select reviewed loading point. Qualification policy,
+vehicle and Driver are Not selected; attendant checkbox state unknown. Change reason entered
+RECURRING TEST REASON. Browser says select item in list; no successful schedule save reported.
+Actual register shows ONLY ONE point, RETESTING revision1 active, plus three student records,
+three resources and TESTING TODAY policy. Earlier instructions for all four point reviews were
+not evidence of completion. Do not claim four points saved or ask owner to recreate existing
+records. NEXT open Stop3: TEST STUDENT AA loading-point dropdown and inspect available option;
+determine whether RETESTING belongs to that source stop before selecting or creating other points.
+Dropdown filters by exact source request and stop index. Keep unsaved draft; do not refresh or
+restart. Full three-student schedule needs all reviewed student/point mappings before draft save;
+resources must satisfy policy/capacity/term before planning approval. Operations remain closed.
+
+LOADING POINT1 SAVE CHECKPOINT (2026-11-17): owner opened Student1 home loading review and
+reports reviewed/saved without error after TEST-only fixture instructions. Exact saved entity,
+reference/revision/coordinates not separately inspected. Do not recreate that point or repeat
+the same form test. NEXT enter remaining Student2 home, Student3 home and shared school loading
+reviews as one setup batch; select Source stop FIRST so default coordinates/fields follow the
+chosen stop. TEST-only labels/evidence, policy-compatible validity through2027-06-06, geocoded
+coordinates retained only for software testing, not claimed physically verified/safe. Then
+recurring schedule draft with explicit student/point/policy/resource mappings; operations closed.
+
+ALL THREE STUDENTS SAVE CONFIRMED (2026-11-17): owner clarified "I HAVE DONE ALL3 SAVED NO
+ERROR". AA/BB/CC registration saves are owner-confirmed; earlier CC-unconfirmed notes are
+superseded. Exact entity IDs/revisions/seating/requirements not separately inspected. Do not
+repeat registration or create more identities. NEXT Review loading point for existing December
+request: one home stop per student plus shared school point, then recurring schedule planning.
+Saved identity mappings must still be explicitly selected in schedule; no automatic match or
+operational release implied. Preserve policy/resources/all student reviews.
+
+REGISTRATION TEST STOP (2026-11-17): owner reports re-registering Student BB and considers
+registration testing sufficient. Student AA had already saved successfully. Do not ask to
+register/re-register BB or repeat the same form/save test. Exact BB entity/reference/revision
+and possible prior records not inspected; preserve records and do not assume cleanup/deletion.
+Student CC review remains unconfirmed, so full three-student schedule approval is not accepted.
+NEXT move to Review loading point for the existing December request, as a separate test step.
+Remaining required identity mappings must be satisfied before any later full-route approval;
+do not invent CC review or weaken guards merely to finish the test. Operations remain closed.
+
+STUDENT1 SAVE CHECKPOINT (2026-11-17): owner reports reviewing Student1, making changes and
+saving without error. Exact canonical reference/name/requirements/seating/revision not supplied;
+do not invent values or claim full identity/compliance approval. Do not recreate Student1.
+NEXT existing December request -> Register student2 identity for TEST STUDENT BB; its requested
+Booster seat requirement must remain. Then Student3, loading points and recurring planning.
+Git HEAD fc7e339 contains the inline-layout change; hosted deployment SHA/Ready not separately
+captured. Prior saved policy/resources remain, no operations or manifest release accepted.
+
+CURRENT UX REQUEST (2026-11-17): after selecting December request, owner opened Register student1
+identity (canonical TEST STUDENT AA) and requested it open immediately below Student1, rather
+than below all students. Local PlanningWorkspace change reuses the exact keyed record editor,
+renders NEW student editors inside only the selected request-student card, and leaves other
+editors/existing canonical revisions in their existing location. Expanded/controls accessibility
+attributes added to each registration button. No save/role/Auth/SQL/migration change.
+Three-student browser regression PASS: selected-card placement, correct prefilled name, exactly
+one editor, no unsaved reference crossing students, cancellation/source-change clearing and
+320/414/desktop layout. Before-fix placement test failed as expected. Opening registration also
+clears the previous action's message so an unsaved form does not display an earlier success.
+Full planning browser/SQL regression, actual isolated SQL policy save/retry/revision, Student
+lint/typecheck, enabled/default-off production builds and formatting/diff checks PASS. Visually
+inspected tmp/student-planning-evidence/inline-student-1.png: form directly under student's button.
+Existing nonfatal Supabase/Next build warnings remain. No production/Git/deployment changes.
+Ready for owner scoped4-file release: PlanningWorkspace.tsx, student-planning-browser-check.cjs,
+student-recurring-planning architecture and manual test. Preserve unrelated/mixed local work.
+Live page still has the Student1 form in its old location, not yet saved; all3resources and policy
+confirmed in actual register: ATTENDANT RESOURCE ONE / DRIVER RESOURCE TEST / TEST ACCESSIBLE VAN /
+TESTING TODAY, each revision1 active. These actual names override earlier suggested defaults.
+NEXT owner scoped release, then reopen existing December request and register Student1 inline;
+then remaining identity/loading-point/schedule acceptance. No operational transport release.
+
+ATTENDANT SAVE CHECKPOINT (2026-11-17): owner reports dedicated TEST attendant saved without
+error after the supplied TEST ATTENDANT01 / TEST SCHOOL ATTENDANT instructions, dates
+2026-11-17 through2027-06-06 and actual policy names test attendant today / wheelchari lift /
+test today. Actual register revision/reload not separately supplied. Vehicle, Driver and attendant
+save actions now owner-reported successful; do not recreate them. NEXT existing December request
+-> Register student1 identity for TEST STUDENT AA, then review canonical identity/authority/
+requirements/seating (synthetic only). Do not assume canonical students or loading points already
+reviewed. No schedule approval, manifests, actual transport or parent access accepted yet.
+
+CURRENT MANUAL ACCEPTANCE (2026-11-17): owner reports TEST Driver saved without error after
+guidance for Driver role, TEST DRIVER01 / TEST SCHOOL DRIVER, simulated evidence, effective
+2026-11-17 through2027-06-06, qualifications test driver today / test today / testoday with
+matching simulated evidence/dates. Exact register entry and reload not separately supplied;
+do not recreate this Driver. Policy TESTING TODAY persistence and prior vehicle save retained.
+Git inspection: main/origin main align at f2d0356 (dropdown fix), following0d5957e (simplified UX);
+no new Git mutation by Codex. Vercel Ready/source SHA and full role-toggle PASS not separately
+captured, but owner progressed to no-error save. NEXT add synthetic dedicated Attendant with
+actual policy qualifications test attendant today / wheelchari lift / test today, preserving
+that actual policy spelling. Then continue canonical student/loading-point/schedule acceptance.
+Do not repeat onboarding, policy/vehicle/Driver creation or database migrations. Operations closed.
+
+RESOLVED LOCAL RESOURCE ROLE BUG (2026-11-14): owner repeatedly reports new-resource role cannot change
+from Vehicle; earlier Codex assumption of editing a locked saved Vehicle was incorrect for the
+reproduced case. Local browser repro with actual click/Home/ArrowDown/Enter FAILED before fix:
+expected Driver, actual Vehicle. Earlier selectOption-based browser tests missed this. Form-wide
+policy validation was calling setIssues([]) on non-policy native input events; that rerender can
+restore a controlled select before its change handler commits. Minimal local fix: update policy
+validation state ONLY for kind=policy. Resource-role mouse/keyboard test now passes for Vehicle,
+Driver and attendant; saved Vehicle edit stays locked; fresh Add resource clears old reference
+and allows role change. Source-stop selection regression also added using actual dropdown events.
+Student lint/typecheck, enabled/default-off production builds, full planning browser checks
+(including actual source-stop selection) and geography/planning/enrollment SQL suites PASS.
+Actual rendered-form -> isolated SQL policy save/retry/reload/revision also PASS. Test data and
+server are isolated; no production calls/writes. Formatting/diff checks PASS; pre-existing
+Supabase dynamic-dependency and Next ESLint-plugin warnings remain nonfatal. Source fix is
+one conditional update line; scoped release is4 files (editor, browser regression, architecture,
+manual test). Existing mixed roadmap/handoff and unrelated work remain unstaged.
+No schema/Auth/role/provider/Git/deployment change. Owner's unsaved Driver attempt is not saved;
+policy TESTING TODAY and previously reported vehicle save remain. Main is0d5957e (simplified UX).
+NEXT owner scoped release of this verified bugfix before retrying role selection; no DB push.
+Do not ask owner to repeat Cancel/Add again on the unfixed hosted version or blame their actions.
+
+SAVED POLICY INSPECTED (2026-11-12): owner opened TESTING TODAY revision1 (inspection only,
+no policy revision saved). Valid2026-09-09 through2027-06-06, source reference Testing today.
+Actual displayed qualification names: Driver base="test driver today"; attendant base="test
+attendant today"; lift Driver="test today", lift attendant="wheelchari lift" (preserve this
+actual spelling); booster Driver="testoday", booster attendant="test today"; car-seat Driver=
+"seat today", car-seat attendant="seat again today". Existing December request needs lift,
+booster and dedicated attendant, not a car seat. Driver therefore needs three distinct reviewed
+qualifications: test driver today / test today / testoday. Attendant later needs test attendant
+today / wheelchari lift / test today. Do not invent or correct names without policy revision.
+Policy editor currently open with blank change reason and unchecked review confirmation;
+cancel it without saving. NEXT Add dedicated resource -> Driver using TEST-only evidence covering
+the intended term (must fit policy dates ending2027-06-06). Vehicle save reported previously.
+
+VEHICLE REVIEW CHECKPOINT (2026-11-12): owner opened Add dedicated resource and received
+TEST VEHICLE01 / TEST ACCESSIBLE VAN instructions: synthetic evidence, valid2026-11-11 through
+2027-06-30,3 passenger seats plus1 wheelchair position,1 booster,0 car seats, lift/securement and
+dedicated-review confirmations. Actual entered fields not separately inspected. Owner accidentally
+clicked Add credential while creating Vehicle; instructed Remove last credential because this
+vehicle fixture needs no human qualification rows. Owner now reports REVIEW SAVED. Treat save
+as owner-reported successful; exact resource register entry/revision and reload not captured.
+Do not recreate vehicle or policy. NEXT inspect actual saved TESTING TODAY policy qualification
+names before adding Driver/attendant. Prior suggested values are not proof of saved names; owner
+had entered their own case/spaced text. Use Revise or revoke review only to inspect, copy required
+names, then Cancel review without saving an unnecessary revision. No operational activation.
+
+LIVE POLICY SAVE PASS: owner reports pushing the simplified qualification UX (new commit SHA
+and Vercel Ready not separately captured). Hosted browser shows save_student_planning_record200
+followed by my_student_planning200. Owner confirms Reviewed record register displays
+"policy: TESTING TODAY · revision 1 · active". This actual reference supersedes suggested
+TEST POLICY NOV11 B; do not create another policy or ask to repeat data entry. Dedicated
+resources/student/loading-point/schedule review and approval/manifests are not yet accepted.
+PERSISTENCE PASS: owner used Ctrl+Shift+R (full browser reload), reopened planning and confirms
+"policy: TESTING TODAY · revision 1 · active" remains. No policy re-entry/recreation needed.
+NEXT resume dedicated planning resource setup for the existing December TEST request, one step
+at a time: Add dedicated resource, start with a synthetic dedicated vehicle, then qualified Driver
+and attendant records matching the actual saved policy requirements. Exact saved qualification
+names have not yet been supplied; inspect/reuse them rather than guessing when entering people.
+Student operations remain closed. Actual production failure is resolved for this policy save;
+do not infer the original exact error cause or wider operations acceptance.
+
+OWNER UX CORRECTION: a472b42's repeated formatting warnings were rejected. Owner explicitly
+requires natural typing and app-managed formatting, plus a complete recheck BEFORE another push.
+Local follow-up now asks for qualification names, not credential keys, and preserves typed text
+including capitalization on blur. Internal matching identifiers are generated only for validation/
+submission; never tell owner to invent driver_today or manually format lowercase/underscores.
+Policy and resource qualifications use the same mapping. Quotes/backticks, case/accents and word
+separators handled automatically; numeric/single-letter names get an internal prefix. Existing
+valid identifiers preserved. Saved names show readable spaces only when re-saving preserves the
+exact original identifier. No truncation, qualification grants or unrelated text normalization.
+Only ONE short unmet-check message beside Save. Required review/date/evidence and SQL rules intact.
+20 unit checks, Student lint/typecheck, enabled production build and full planning browser
+regression PASS, including matching policy/resource qualifications, invalid submit denial, same-key
+retry, compact feedback and320/414/desktop. Additional actual-browser-to-migration-SQL integration
+PASS using owner-style eight mixed-case/spaced entries and dates: save, aborted-network draft
+preservation, same-key retry produces one row, refresh/reopen, then revision2 preserves original
+identifiers and immutable reference. SQL suites including geography/enrollment/authorization and
+closed operations PASS. This integration bridges intercepted transport to actual isolated PGlite
+SQL (minimal legacy schema), not production PostgREST/auth/concurrency certification. Test adapter
+fixture/query/role-cleanup bugs were corrected; they were not app or production causes.
+Screenshot tmp/student-policy-diagnostics/natural-policy-form.png visually inspected: normal
+capitalized input, no formatting list, enabled Save. Default-off production build and all21
+closed-shell screen/viewport checks PASS, with no external requests or browser errors.
+Formatting/diff checks PASS; existing nonfatal build warnings unchanged. No new Git action.
+Follow-up release consists of six scoped files: PlanningRecordEditor.tsx, policy-review-validation.ts
+and its test, student-planning-browser-check.cjs, recurring-planning architecture and manual test.
+Do not stage unrelated existing Admin/config/docs work. All scoped verification is complete.
+NEXT owner scoped commit/push, confirm Student Ready at new SHA, retry same TEST policy with ordinary
+typing. No database push. Actual hosted policy-save failure remains unproven until live acceptance.
+Owner actual form/date/review state preserved on live a472b42; do not instruct more re-entry until
+follow-up verified and released. Earlier strict-format checklist below is superseded by this UX.
+
+OWNER RELEASE CONFIRMED: owner staged exactly seven scoped files, committed defensive policy
+validation as a472b42 and supplied successful push main3eb3766..a472b42 to ishmaelnow/esh-platform.
+No database migration needed. Owner supplied esh-platform-student-transportation Ready/Production
+at a472b42 (56s); ordinary transport-platform-admin also Ready from the same monorepo push.
+NEXT owner reloads /admin,
+ESH Education -> existing December TEST request -> policy form and tests disabled/valid Save.
+Preserve any unsaved draft before reloading. Actual policy persistence remains unaccepted.
+
+LATEST IMPLEMENTATION: owner explicitly requested defensive checks disabling Save. Implemented
+qualification-policy client validation in PlanningRecordEditor with policy-review-validation.ts:
+required references/reason, real ordered dates, base key lists, review confirmation, and all
+supplied equipment/base key formats/counts matching SQL. Save disabled until valid; accessible
+checklist beside Save explains blockers. Submit also revalidates; existing disabled immutable
+reference respected for revisions. Optional equipment lists remain optional at policy-save stage.
+PlanningWorkspace passes existing message beside Save so server/network failures remain visible.
+No schema/Auth/role/provider/data changes or new submit payload/retry contract. Student-specific
+sign-in email requirement remains pending and is not included in this UI patch.
+Focused18 unit checks, Student lint/typecheck, enabled/default-off production builds and full
+planning browser regression passed locally in isolated env-free synthetic snapshots. Browser
+checks cover disabled/enabled transitions, malformed base/equipment keys, reversed dates, blank
+reason/review checkbox, no invalid-save RPCs (including programmatic submission), visible
+save-adjacent network error, retained draft and unchanged same-key retry; ordinary planning
+lifecycle and320/414/desktop checks passed. Windows sandbox denied Vitest bundler parent traversal;
+approved escalated focused runs passed. Existing Supabase dynamic-dependency and Next ESLint-plugin
+build warnings remain nonfatal. Architecture/manual acceptance updated. No Git mutation/deployment;
+source production remains3eb3766 until owner performs scoped GitHub release. Actual hosted save
+failure cause unconfirmed. NEXT: owner release bounded policy guard and resume existing December
+TEST request policy acceptance; no setup repeats or database push needed. Earlier recommendations
+below describe the pre-fix diagnostic checkpoint, not more required implementation.
+
+Owner explicitly returned to ESH Student Transportation in this workspace. eFare is a separate
+repository and is not the current task. Resume internal recurring-planning manual acceptance;
+do not repeat migrations, geographic intake, staff consolidation, tenant admission or rollback.
+Owner now confirms https://school.eshapp.com/admin loads successfully signed in as
+ishmaelkosh@gmail.com, with ESH Education selected and Requests and planning / Enrollment /
+Administration visible. Previous401/PGRST303 is not reproduced in this check; its technical
+resolution is unknown. Staff-context access is accepted, not yet policy-save or full planning.
+Next owner action: in Requests and planning, locate the existing submitted December TEST request,
+then Open route planning and select it as Source geographic request. Do not create a duplicate.
+If the existing request is absent or withdrawn, inspect actual state before deciding a substitute.
+Qualification-policy save remains unconfirmed; resume there after selecting the existing request.
+
+Latest owner test: December source request present/submitted, planning opened and selected;
+qualification-policy form submitted but remains open, reviewed register empty. Owner captured
+"Planning could not be completed. Check your access and entries, then refresh before retrying."
+Policy persistence is NOT accepted. Provided TEST_POLICY_20261111 values and2026-11-11 through
+2027-06-30 dates; actual entered credential values and actual server response remain uncollected.
+Reason text showed backticks, which by itself does not establish a credential validation error.
+Owner struggled with DevTools and explicitly asked Codex to test; stop repeated owner Network loops.
+Codex isolated browser testing (2026-11-11), disposable env-free source snapshot/dummy backend,
+passed valid save/refresh and same-key network retry; reproduced rejected credential keys leaving
+form open with generic error above viewport at Save. Blank required driverKeys prevents browser
+submission entirely (no Network row). API errors in browser are intercepted fixtures, not captured
+production responses. Actual migration SQL in isolated PGlite also passes the exact recommended
+test policy and rejects backticks in base/equipment credential keys with specific messages.
+Existing geography/planning/enrollment SQL regressions pass. Evidence:
+tmp/student-policy-diagnostics/invalid-policy-mobile.png (visually inspected), browser.cjs,
+harness.cjs and policy-sql-cases.cjs; all ignored local synthetic diagnostics. Browser harness
+needed a wait for editor removal after async refresh; corrected diagnostic race, no app edit.
+Test server stopped; no production data/email/provider/Git mutation. Root cause of actual hosted
+failure remains unproven. Recommended next bounded correction: explicit credential-key validation
+and visible useful error beside Save, preserving draft/retry safety, grants and immutable history.
+
+Owner requirement: sign-in emails must clearly identify ESH Student Transportation / school
+access, rather than generic ESH, because several products share the platform. Record as pending
+mail identity/subject/body review, not a completed implementation. Inspect actual delivery/template
+scope before any change: do not modify shared Supabase Auth branding for other products blindly.
+No email/template/provider change made or new sign-in email sent by Codex in this checkpoint.
+Keep Student operations planning-only. Existing uncommitted work/stash and live ESH products remain.
+The eFare transfer direction below is historical and does not override this resumed Student task.
+
+### Current owner direction — finish hosting, stop expanding scope
+
+INDEPENDENT PROJECT DECISION (2026-10-28): owner explicitly clarified parallel means independent
+of ESH, then authorized preparation. Use a NEW private GitHub repository and separate Vercel
+projects, not additional deployments connected to the ESH repository. Vercel frontends + existing
+OVH self-hosted Supabase + efareride.com remain selected. Preserve ESH Git, live projects and data.
+TRANSFER CONFIRMED: owner successfully copied source to C:\Users\koshi\efare-platform. Codex
+installed fresh independent docs/session-handoff.md, docs/roadmap.md and adapted AGENTS.md there;
+file hashes verified and source-copy manifest updated preserving original copy hashes. Continue
+in that workspace, not this ESH repository. New private GitHub repo creation/URL remains unconfirmed.
+Do not repeat the folder copy. The eFare handoff now holds the active hosting checkpoint.
+Prepared source-only copy at .cache/efare-independent-20261028: 1,184 copied files, all seven web
+apps/shared packages and153 migrations, including current working-tree fixes. No .git/remotes,
+populated envs, provider project links, dependencies/caches/backups or owner Studio snippets copied.
+In COPY ONLY: root package name/local Supabase project_id efare-platform; internal package scopes
+preserved; apps/packages eshapp.com references changed to efareride.com; Vercel crons removed;
+production Driver E2E workflow moved outside active workflows. Ordinary CI retained. Source hashes
+verified; high-confidence credential-pattern scan passed (not exhaustive). Native IDs unchanged:
+no native release authorized; documentation explicitly marks native/provider setup pending.
+INDEPENDENT-PROJECT.md and SOURCE-COPY-MANIFEST.json explain boundaries and provenance.
+No Git initialization, repository creation, frontend deployment or source ESH app edit performed.
+Next owner step: copy this prepared folder to C:\Users\koshi\efare-platform with an existence
+guard; then owner creates new private GitHub repo and performs reviewed Git initialization/push.
+Never push ESH main to publish eFare. Older same-repository deployment advice is superseded.
+
+HTTPS CHECKPOINT (2026-10-28): owner opened UFW TCP80/443 (SSH22 retained), created
+compose.esh-https.yml with only caddy.environment.PROXY_DOMAIN=api.efareride.com, and validated
+Compose order: base, docker-compose.caddy.yml, compose.esh-private.yml, compose.esh-https.yml.
+Gateway8000, Mailpit8025 and pooler5432/6543 remain bound127.0.0.1; Caddy publishes80/443.
+Owner started only caddy using up -d --no-deps caddy; image caddy:2 pulled and certificate/config
+volumes created. HTTPS curl validates certificate: Auth health without apikey401, with existing
+ANON_KEY privately piped from .env200. Public Studio root without credentials401 as intended.
+These supersede older statements that no HTTPS/proxy was applied. User login/Data API over
+public HTTPS are not yet verified. Auth external/site/redirect URLs have not been changed.
+Next: separate Vercel Platform project from the NEW independent repo, no edits to live projects. Existing
+local3010/3014 tests and backend synthetic data remain; public frontend deployment still pending.
+
+NEW DOMAIN DECISION: owner provided efareride.com, registered through Netlify, dashboard shows
+no DNS records. Use this domain exclusively for parallel setup; do NOT ask owner to create
+vps-api.eshapp.com. Existing eshapp.com apps/DNS/Vercel envs/hosted Supabase remain untouched.
+First proposed record: A api ->40.160.152.133, TTL default in efareride.com Netlify DNS.
+No record creation confirmed yet. Backend https://api.efareride.com after DNS+HTTPS setup;
+frontend origins/deployment projects remain to be prepared separately using same repo/source.
+New domain is environment branding/isolation, not authorization for a new product or rewrite.
+
+HOSTING DECISION (2026-10-27): owner explicitly accepted the recommendation: Vercel hosts the
+parallel frontend apps; the OVH VPS hosts self-managed Supabase. Use separate Vercel projects
+and efareride.com hostnames, preserving GitHub deployment workflow and all live eshapp.com
+projects/settings. Do not repoint existing projects. This supersedes earlier undecided/VPS-only
+statements. Owner executes server, Git and deployment commands. Next: inspect the existing pinned
+Caddy configuration without secrets, prepare HTTPS for api.efareride.com, then configure separate
+frontend projects and exact Auth callback origins. No HTTPS or frontend deployment applied yet.
+Owner saved Netlify A api.efareride.com ->40.160.152.133, TTL3600. Public/default and authoritative
+DNS lookups both confirmed40.160.152.133. Next scoped action is HTTPS API on working VPS,
+before configuring the separate Vercel frontend projects. No proxy/deployment changes performed yet.
+
+EXPLICIT OWNER BOUNDARY: keep every live app unchanged. Treat VPS-backed apps as a separate
+environment until owner decides they are ready. Use distinct app/backend hostnames and isolated
+deployment configuration (separate Vercel project or explicitly isolated deployment), same
+existing source architecture. This does not authorize a new product or frontend rewrite.
+Do not edit live Vercel environment variables, production app DNS, hosted Supabase data/keys,
+or production GitHub deployment settings. No production cutover/live data migration authorized.
+Public DNS lookup established Netlify DNS: dns1-4.p04.nsone.net and SOA contact
+domains+netlify.netlify.com. Official Netlify docs confirm its nsone name-server convention.
+No need to ask owner to discover DNS provider again. vps-api.eshapp.com A/CNAME lookups returned
+no records. Proposed separate backend hostname vps-api.eshapp.com ->40.160.152.133, new A record
+only. NEXT owner in Netlify team DNS ->eshapp.com adds that record, TTL default; do not change
+nameservers/apex/live app records. No DNS record written by Codex; no DNS connector available.
+Then Codex verifies public resolution before server HTTPS configuration. No new app frontend
+project or Auth callback choice finalized yet. Preserve existing live Vercel settings.
+
+LATEST OWNER CORRECTION: this was meant to be straightforward hosting/migration, not an
+end-to-end product certification project. Owner asks finish now. Supersedes the journey-test
+and Community NEXT actions below. No new features, wallet test credit, onboarding project or
+duplicate disaster-recovery retry should be started. Keep GitHub -> Vercel frontend workflow.
+Working VPS is a parallel backend with synthetic data, not a replacement containing live users.
+Never repoint Production Vercel envs to this test database or claim live data migrated.
+
+Remaining hosting boundary: public HTTPS backend via domain/DNS + proxy, Auth external URLs/
+callback settings for chosen app origins, then deliberate app environment/deployment smoke
+checks. Public hostname/DNS access not known. No relevant DNS/Vercel/GitHub connector available;
+owner remains executor for server/deploy/Git changes. Async question sent: where DNS for
+eshapp.com is managed. Await actual answer before provider-specific DNS instructions; no
+password/key needed. Supabase pinned source includes docker-compose.caddy.yml and proxy config;
+official HTTPS guidance checked. Do not install a parallel stack or rotate existing keys.
+No DNS, firewall, proxy, app env or production changes made in this turn. Backend currently
+loopback-only, Auth mail captured in Mailpit. Existing tested frontend apps still run on owner's
+computer; they are not hosted on VPS. Need explicit distinction between parallel hosting finish
+and any later live-data cutover. Reviewable finite hosting runbook is next artifact.
+
+### Superseded product-acceptance direction (retain evidence, not current tasks)
+
+Owner exhausted by repeated manual recovery commands. Owner accepted setting the unfinished
+full-stack duplicate rehearsal aside and explicitly approved repository review + one product
+checklist. Then owner corrected proposed switch to Community: FINISH TRANSPORTATION end-to-end
+before expanding. Owner GO authorized dependency audit/shortest coherent journey plan. This
+supersedes lower NEXT Community/duplicate-preparation/retry actions. Do not ask owner to
+repeat backup checks or retry duplicate-stack scripts. Preserve failed candidate/test resources;
+no deletion/reset or production change authorized.
+
+Completed review: seven packages (admin,transportation,community-admin,community,student-
+transportation,rider,driver). Generic workspace keys are transportation/community; Student has
+separate program/staff/customer admission. Rider/Driver are Transportation interfaces, not
+additional generic workspace roles. Existing accounts: admin@example.test (Platform),
+owner@example.test (tenant owner + Transportation administrator). All other identities in new
+checklist are proposed, not created/enrolled. Current listener status not rechecked; don't infer
+runtime solely from earlier Ready output.
+
+Canonical test register: docs/operations/vps-product-acceptance.md, with verified entry routes,
+current3010/3014 launcher URLs, clearly reserved (not running)3011/3012/3013/3015/3016 ports,
+per-product account/admission/dependency checks and bounded finish lines. Passed: Platform+
+Transportation administration and representative settings/invitation/re-sign-in; other products
+NOT verified. Student guardian/operator are closed foundations, not operational features.
+Audit completed: docs/operations/vps-transportation-journey-test.md. Existing full-wallet checkout
+supports one ride without Stripe; current unpaid booking path cannot skip payment/wallet gate.
+Required next prep: isolated Rider3011/Driver3012 launchers (not present), same-VPS server-only
+Supabase credentials, deliberately scoped Mapbox token/origins, account/admission workflows,
+actual tenant capability/coverage/ledger/pricing/readiness inventory, compliant Driver/vehicle.
+SMS/push/card/payout outside first wallet-funded test; Driver funding must remain honest/pending.
+No provider secrets read/changed, apps launched, accounts created or financial credit issued by
+audit. Documentation/source review only, no implementation tests needed. NEXT prepare whole
+bounded setup before owner actions, not Community. No manual command needed for this audit.
+Do not describe all ESH or full Transportation operations as VPS-accepted.
+
+### OVHcloud self-hosted recovery environment — current checkpoint
+
+Owner's separate VPS vps-c1bc4b11.vps.ovh.us / 40.160.152.133 is active:
+Ubuntu 26.04, 4 vCPU, 8 GB RAM, 75 GB disk, Oregon. Order 9268733, monthly/no commitment.
+Updates, reboot, official Docker installation and hello-world passed. UFW permits SSH22 only;
+all four Docker published ports bind 127.0.0.1. Owner now verified OVH Standard automated backup
+restore point listed for2026-10-26 at03:36 UTC, daily schedule03:36 UTC. No restore point mounted
+and no restore performed. Earlier backup-option dashboard error is superseded. Listing a restore
+point is not a tested ESH database restore or off-server logical backup.
+
+Official Supabase self-hosted/v0.8.3 source is in ~/esh-supabase-source; isolated running
+configuration is ~/esh-supabase-recovery (0700), .env0600 with freshly generated secrets.
+Do not rerun key generators or expose .env. Explicit Compose project esh-recovery and files
+docker-compose.yml + compose.esh-private.yml are required. Owner confirmed all12 services
+Healthy, including PostgreSQL17.6.1.136, PostgREST14.18, Auth, Envoy and Studio.
+Private published ports: gateway8000, session pooler5432, transaction pooler6543, Mailpit8025.
+Mailpit captures Auth mail; application invitation delivery needs separate setup later.
+Production, Windows ESH-local and FairFare remain unchanged.
+
+Schema installation PASS, owner verified in VPS psql: migration_count153,
+latest_migration20261017000100, tenants_table_exists=true. Owner copied153 SQL files into
+.cache/esh-vps-recovery/supabase/migrations with minimal isolated config and explicit DB URL.
+Interrupted SSH connection initially stopped the client around20260823000200; database history
+recorded that migration. Subsequent reviewed dry run listed only20260823000300 onward; owner
+applied remaining migrations successfully. Do not reset/reinstall/repeat completed migrations.
+No production data copied. Synthetic VPS account/tenant workflow now passed as detailed below.
+
+CLI2.109.1 recovery connection required PGSSLMODE=disable plus percent-encoded password inside
+explicit URL to postgres.your-tenant-id@127.0.0.1:55432/postgres. Separate password environment
+and flag attempts failed; do not repeat them. File/container passwords compared equal and
+container psql direct DB and pooler authentication both passed. Password fetched privately
+through SSH into memory; temporary URL/password cleared in finally. Never print either.
+Windows loopback55432 forwards VPS5432. SSH resets have repeatedly dropped tunnels; use
+keepalives and never assume an old tunnel or per-window PowerShell variable still exists.
+Owner strongly requests fewer windows, self-contained commands, exact shell/folder and an
+explanation of every command. Avoid repeated checks/retries without new evidence.
+
+Current objective: connect one isolated Platform app to VPS, then synthetic sign-in and tenant
+provisioning/invitation acceptance. Owner re-established combined tunnel8000/8025/55432 with
+keepalives and confirmed Studio Default Project loads again. Keep this one tunnel window open.
+Existing local-platform.cjs remains hard-locked to Windows ESH-local; it was not repointed.
+New owner-run tooling/scripts/recovery-platform.cjs uses Platform3010, invitation bridge58128,
+VPS API8000/Mailpit8025, isolated ignored source snapshot and fresh SSH retrieval of only ANON_KEY.
+Checks anon role/expiry, Auth/mail endpoints; rejects privileged keys, inherited provider envs,
+external invitation recipients and occupied app/bridge ports. No DB/grant/user mutations.
+Shared development-only mail helper gains optional deliver callback; default SMTP remains same.
+Four focused Node tests PASS (local mail regression, credential isolation, recovery mail capture/
+rejection/failure, read-only endpoint preflight); syntax, Prettier and git diff --check PASS.
+Owner acceptance PASS: admin@example.test created in VPS Studio, password sign-in, owner-run
+recovery-platform-admin-bootstrap.sql applied (platform_admin active), /platform UI loads,
+VPS RECOVERY TEST created through UI, invitation and confirmation captured in VPS Mailpit,
+owner@example.test signup/confirmation and invitation acceptance, tenant active, Transportation
+entitlement granted. Owner confirmed six enabled capabilities, driver/vehicle management enabled,
+app.rider/app.driver disabled. Then /governance enabled Transportation workspace and explicitly
+enrolled owner@example.test as Transportation administrator; owner supplied1 enrolled.
+No Auth redirect config change verified; don't repeat signup/bootstrap/tenant/enrollment.
+Correct routes: /platform=Platform admin, /governance=tenant owner, /=product selection.
+Incorrect /admin advice produced404; do not give that URL for Platform governance again.
+
+Owner GO authorized recovery Transportation launch. Extended same recovery-platform.cjs to
+start Platform3010 + Transportation3014 in one app window (no extra terminal). Platform's entry
+URL now3014; product shell tenant-admin API rewrite explicitly targets recovery Platform3010,
+both use VPS API8000. Separate snapshots for shell/shared source; original local launchers and
+app envs unchanged. Transportation receives no provider/service credentials. Other products
+remain unavailable local links. Ctrl+C stops both owned apps/capture adapter; existing tunnel
+stays separately owned. Five focused Node tests PASS, Transportation snapshot tsc --noEmit PASS,
+snapshot roots checked free of env files. No authenticated VPS access available to Codex.
+Owner restarted combined launcher; both Ready. Platform3010 -> Transportation3014 required
+separate owner sign-in. Dashboard acceptance PASS: active VPS RECOVERY TEST, owner@example.test,
+active profile/membership, tenant_owner,1 membership,0 pending invitations,6 enabled capabilities
+(app.admin, driver.management, tenant.audit, tenant.memberships, tenant.roles, vehicle.management).
+Eight recent audit events shown, including workspace.member_enrolled, workspace.status_changed,
+product_session.entered and superseded. Do not repeat provisioning/enrollment/sign-in setup.
+This verifies representative recovery reads and product entry, not full dispatch/payment/native
+operation or adversarial isolation. No production data/settings/cutover changed.
+VPS Settings persistence acceptance PASS: owner confirmed original Branding reference blank,
+entered VPS-PERSISTENCE-TEST, observed Settings saved, refreshed and confirmed value retained,
+then cleared/saved/refreshed and reported clear. Original blank restored; no temporary setting
+cleanup outstanding. This was through Transportation app/backend, not SQL seeding.
+Fresh-session acceptance PASS: owner signed out from Transportation3014, saw the product sign-in
+form, signed back in as owner@example.test, saw VPS RECOVERY TEST and re-entered its populated
+dashboard. Access persists across sign-out/sign-in. No process/container restart was tested.
+Representative self-hosted workflow through invitation, product entry, dashboard, fresh sign-in
+and authorized save/reload/restore is owner-confirmed. No further DB mutation needed for this
+completed check. Remaining recovery gaps include redirect configuration, verified backup/restore,
+storage/functions and wider product tests before any cutover proposal.
+
+HEADER INCIDENT RESOLVED: actual read-only VPS Studio query proved display_name contained
+embedded page text (Exit Transportation / Active tenant / owner role); legal_name was correct.
+Owner corrected only Display name through Transportation Settings to VPS RECOVERY TEST, saved/
+refreshed and supplied clean header. Cause of the original bad write is not established; do not
+claim a paste, browser bug or CSS failure as its origin. Two identical clean names are expected:
+display name and legal name. No additional tenant cleanup or restart required for this incident.
+
+Earlier Codex CSS diagnosis was premature. Separate uncommitted layout changes remain in shared
+styles and HeaderBlock identity class: width constraints, wrapping and natural workspace rows.
+Synthetic browser fixture reproduced long-label overflow and passed seven widths after these
+changes, with typecheck/lint/format checks PASS, but this was NOT the cause/fix of the owner's
+actual corrupted header. Script transportation-layout-check.cjs and screenshots under ignored
+tmp/transportation-layout are synthetic evidence only. Do not present these changes as required
+to resolve the saved-name incident or ask owner to restart to prove the already-resolved issue.
+CURRENT OBJECTIVE: owner GO authorized private database backup and isolated restore rehearsal.
+OVH restore point existence confirmed above; do not restore over the running VPS. Owner Studio
+inventory: postgres24MB, extensions
+pg_cron,pg_net,pg_stat_statements,pgcrypto,plpgsql,supabase_vault,uuid-ossp. Owner stopped combined
+app launcher and confirmed PowerShell work prompt ready; tunnel should remain open.
+Owner ran tooling/scripts/backup-vps-recovery.ps1 successfully (PowerShell parse and execution PASS):
+fixed VPS/container, migration checkpoint guard, private unique backup directory, full custom
+database dump + role SQL, archive-list/checksum checks, no contents printed, no restore command.
+Backup created at /home/ubuntu/esh-recovery-backups/backup-20261026T180022Z-qU6bJ2, size2.9M.
+Owner output confirms archive catalog and checksum verification PASS. No restore performed or
+restore-test container created. Owner copied the full backup directory via scp to
+C:\Users\koshi\ESH-Recovery-Backups\backup-20261026T180022Z-qU6bJ2 (outside Git).
+Owner Get-FileHash SHA256 comparison against copied SHA256SUMS returned True for database.dump,
+roles.sql, archive-index.txt and manifest.txt. Off-server transfer/integrity PASS; keep files
+private (Auth/role material). No backup contents printed. Do not repeat backup/copy/check for context.
+Owner checked image tools: initdb/postgres under /nix/var/nix/profiles/default/bin,
+gosu /usr/local/bin/gosu; Linux postgres UID100/GID101. Prepared owner-run
+tooling/scripts/test-vps-recovery-restore.ps1 using the exact archive and source immutable image ID.
+Fresh labelled target container+volume, network none, no ports, Unix sockets only, cron disabled
+before restore,1GB/1CPU limit. Restores roles/full archive with transactions and stop-on-error;
+all sensitive output stays private. Compares critical data/checkpoint/extensions/RLS flags to
+read-only current source; stops test target on finish, retains volume/logs, never restores source.
+PowerShell parse + Bash syntax + seven fake-Docker control/cleanup tests PASS. Owner ran real
+test: target esh-restore-test-20261026T183016Z-qjSOGL, private logs
+/home/ubuntu/esh-recovery-restore-tests/test-20261026T183016Z-qjSOGL. Failed at restore-roles,
+before archive restore. Exit trap should stop target; no cleanup warning reported. No restore
+PASS; preserve test container/volume/logs and original backup, do not repeat/reset blindly.
+Owner read first ERROR safely: permission denied to grant privileges as role "supabase_admin".
+Owner source pg_roles oid10 query confirmed supabase_admin. Original script used different
+bootstrap user esh_restore_bootstrap, causing GRANTED BY supabase_admin replay failure under
+PostgreSQL17 grantor rules. Corrected script initializes target as supabase_admin too and skips
+only its duplicate CREATE ROLE in a private derived replay file. Original backup unchanged;
+all ALTER ROLE/membership options/GRANTED BY preserved, no errors ignored. Verification now
+also compares role membership/grantor/options. PowerShell/Bash checks and seven simulated control
+tests passed. Owner corrected restore execution PASS: esh-restore-test-20261026T184040Z-A9kNYn,
+private logs /home/ubuntu/esh-recovery-restore-tests/test-20261026T184040Z-A9kNYn. Role and full
+archive restoration completed without ignored errors; critical data/checkpoint, extension
+versions, public-table RLS flags and role membership/grantor/options matched current source.
+Script exit stops test container; separate test volume/private logs retained. Original failed
+test also retained; no cleanup deletion authorized/performed. Working source not restored,
+stopped or changed. Off-server copy still verified; no need to repeat backup/restore acceptance.
+Database restore rehearsal PASS is not full app-stack disaster recovery, vault decryption,
+storage-object recovery or external configuration recovery. NEXT explain result/scope, then
+review remaining recovery configuration/storage gaps and a bounded cleanup/restart plan.
+Owner restarted combined recovery launcher and confirmed both Ready. Owner then opened3014,
+signed in anew as owner@example.test and supplied populated active VPS RECOVERY TEST dashboard:
+one membership,zero pending invitations,six capabilities,twelve recent audit events, including
+new product_session.entered at2026-10-26 14:09 local. Post-rehearsal app restart/sign-in/dashboard
+PASS. Both recovery apps were running at that checkpoint; tunnel separately owned. Governance enrollment remains
+one Transportation administrator. Do not repeat sign-in or restore acceptance for context.
+Owner ran read-only inventory successfully: pinned sourcebc27d2661edd09a5d0b8d76ce33da6d4071a756e;
+deployment .env/Compose files exist (also .old copies). Active binds under recovery/volumes:
+storage (8.0K; do not assume empty), functions, snippets, api/envoy, pooler and DB init SQL.
+Live PostgreSQL data is volumes/db/data; exclude it from file copying. Named custom configuration
+volume esh-recovery_db-config is mounted at /etc/postgresql-custom. Mailpit data and regenerable
+Deno cache are separate named volumes; not part of required deployment/storage archive.
+CURRENT NEXT: prepared tooling/scripts/backup-vps-recovery-files.ps1, owner execution pending.
+Owner executed file backup PASS: /home/ubuntu/esh-recovery-file-backups/files-20261027T010827Z-ymqREs,
+size1.2M. Deployment/custom-config archives extracted separately and original file hashes matched;
+archive checksums verified. Live deployment/database not restored/stopped/changed; DB data excluded.
+Private unique directory under ~/esh-recovery-file-backups; entire deployment archive excluding
+live DB data, plus custom DB-config archive. No contents printed. Extracts only into private
+verification directories and checks original file hashes; verifies overall archive hashes too.
+Leaves live deployment/database unchanged. Files may include secrets; never paste/archive in Git.
+PowerShell/Bash syntax + three synthetic archive/exclusion/extraction tests PASS. Tests mock
+Docker, no actual VPS action by Codex. Owner copied new file-backup folder to
+C:\Users\koshi\ESH-Recovery-Backups\files-20261027T010827Z-ymqREs and confirmed all five local
+SHA256 comparisons True: deployment-files.tar.gz, db-config.tar.gz, deployment-files.sha256,
+db-config-files.sha256, manifest.txt. Configuration/files off-server transfer/integrity PASS.
+Existing database backup/off-server/isolated restore acceptance also PASS. Do not repeat completed
+backup/copy/hash work. Owner GO authorized separate whole-stack rehearsal. Prepared read-only
+inspect-vps-full-stack-restore.ps1 (PowerShell/Bash syntax PASS), owner execution completed:
+capacity/disk, database names, filtered Compose service names/dependencies/ports/network/volume
+names only, no environment values. Owner output: availableRAM5.7GiB, disk60GB free; databases
+postgres AND _supabase. Existing tested archive covers postgres, not _supabase. Twelve services
+all on default network, fixed names except Mailpit; named db-config/deno-cache/mailpit-data
+not external. Ports loopback8000/8025/5432/6543. No duplicate stack created or started.
+NEXT: prepared backup-vps-recovery-metadata.ps1 (PowerShell/Bash syntax PASS); owner runs
+powershell -NoProfile -File tooling/scripts/backup-vps-recovery-metadata.ps1
+Owner auxiliary backup execution PASS: /home/ubuntu/esh-recovery-metadata-backups/
+metadata-20261027T012944Z-XdPJMC,32K; archive catalog/checksums verified, source unchanged.
+Owner copied metadata folder to C:\Users\koshi\ESH-Recovery-Backups\metadata-20261027T012944Z-XdPJMC
+and confirmed metadata.dump/archive-index.txt/manifest.txt SHA256 matches all True. Auxiliary
+off-server transfer/integrity PASS. Do not repeat copy/check. Auxiliary restore pending; full-stack
+namespace/isolation preparation follows. No need to repeat existing backup generation.
+Prepared prepare-vps-full-stack-restore.ps1 plus pure full-stack-rehearsal-model.cjs. Owner
+execution pending. Verifies all three backup sets, extracts configuration/files into unique
+private ~/esh-full-stack-rehearsals folder preserving original modes/UIDs, generates private
+Compose JSON using copied configuration. Model removes fixed container names, namespaces
+volumes/network, pins installed image IDs, validates new bind roots, rejects external DB URLs/
+host namespaces, preserves service aliases, sets internal network, loopback58000/58025 only
+and cron disabled. No services/volumes/networks started. Uses existing Studio Node only as
+pure in-memory transform; no source file/DB mutation. Private model contains secrets; filtered
+plan only is printed. Owner actual preparation FAILED in private folder
+/home/ubuntu/esh-full-stack-rehearsals/rehearsal-20261027T070649Z-OAmz2a; no stage printed by
+old script and no startup/restore requested. User explicitly exhausted by manual back-and-forth;
+do not ask another retry now or repeat completed backups. Preserve private failed candidate/logs.
+Local inspection found definite validator bug: pinned source db service POSTGRES_HOST is the
+local Unix socket /var/run/postgresql, not network name db. Corrected exception only for that
+exact db-service setting; all inter-service hosts still restricted. Ecto DB URLs now checked too.
+Eight model tests PASS with actual Unix-socket fixture. Validator emits only deliberately safe
+constant error reasons; preparation now records stage/path on failure without dumping secrets.
+Actual cause/stage of this failed VPS run is not yet confirmed from private diagnostics; local
+bug is evidence, not proof that no earlier preparation step failed. NEXT when owner ready:
+inspect safe failure stage of this exact candidate before another run. No new owner command
+requested in latest response. Full-stack startup/auxiliary restore remain pending.
+Do not repeat previously verified postgres/files backup; this fills a newly discovered gap.
+No new terminal, container or file backup needed. Source Compose has fixed container names and
+volume/network names; full-stack duplicate must remove/remap these, use new private bind paths,
+loopback-only alternate ports, its own internal network and disabled cron. Source Envoy routes
+use service DNS plus realtime-dev.supabase-realtime alias; preserve alias inside isolated network.
+Check auxiliary databases (e.g. Supavisor metadata) before assuming the postgres archive alone
+reconstructs the entire stack. Backed-up config contains secrets; never print full Compose JSON.
+Full-stack startup still untested; no production cutover or source reset authorized.
+Source changes since backup could cause comparison mismatch without archive corruption.
+Preserve running source database. App work window is at repository PowerShell prompt; apps
+were stopped for backup, tunnel separately owned. Creation/catalog/checksum success is not
+restore verification. Off-server copy is now confirmed, but isolated restore remains pending. Repository
+migrations install pg_cron; cannot assume a scratch database in the existing cluster is a safe
+restore target. Test isolation must prevent cron/provider side effects and preserve working DB.
+Supabase backup guidance reviewed; database dumps do not include stored object bytes or full
+deployment secrets/configuration. No production cutover authorized. Preserve two existing windows
+and all uncommitted work. Explain one bounded step at a time; use existing browser where possible.
+Explain just one owner step at a time; no redundant folder commands or additional windows.
+Historical scoped grants may need review only on actual failure, not blanket application.
+Runbook: docs/development/vps-recovery.md. Do not use production-linked CLI defaults.
+
+Owner runs server/database/Git mutation commands; Codex has no authenticated VPS SSH access.
+Explain commands before execution, state where to run them, and proceed one bounded step at a time.
+Synthetic test data only; retain tenant provisioning and email invitation workflow. No production
+cutover, DNS/key rotation, cloud export, automatic failover or architecture replacement authorized.
+Preserve existing repository changes, owner stash and supabase/snippets. Local acceptance below
+is complete; older server-not-provisioned and cleanup-pending statements are superseded.
+
+### Active local Supabase setup (owner approved 2026-10-23)
+
+CURRENT COMPLETED LOCAL ACCEPTANCE: owner observed Settings saved. for LOCAL-PERSISTENCE-TEST,
+reloaded and confirmed the value persisted, then cleared/saved/reloaded and reports CLEAR.
+Read-only local DB query confirms branding_restored_blank=true. Temporary persistence value
+cleanup is complete; do not repeat the test or restore TEST value. Verified local workflow:
+tenant provisioning -> local invitation delivery -> recipient credential creation/acceptance ->
+active owner membership -> Transportation entitlement/workspace/enrollment -> product entry and
+dashboard -> authorized settings write -> reload persistence -> restore original blank.
+This is a representative workflow pass, not full payments/maps/native/dispatch certification.
+Next discuss/inventory owner's server for a separate official self-hosted Docker Compose recovery
+environment. No server address/specifications/access verified yet; do not install/deploy, copy
+production data, rotate credentials or change production DNS without a concrete approved plan.
+Keep both existing local ESH and FairFare stacks intact. Current local launchers: Platform53604,
+Transportation48604; existing isolated local mail bridge is owned by Platform. Production remains
+unchanged. Earlier Settings retry and cleanup-pending statements below are superseded.
+
+CURRENT ACCEPTED CHECKPOINT: owner enabled capabilities through Platform UI, then reloaded
+local Transportation and supplied a populated active LOCAL TEST ESH dashboard: owner@example.test,
+active profile/membership, tenant_owner, one membership, zero pending invitations and visible
+audit history. Six enabled capabilities reported: app.admin, driver.management, vehicle.management,
+tenant.audit, tenant.memberships, tenant.roles. Vehicle management is enabled in supplied actual
+state despite earlier guidance to leave it unchanged; do not assume only drivers changed or
+silently alter it. No app.rider/app.driver shown enabled. Local invitation -> owner credentials ->
+acceptance -> entitlement -> workspace enablement -> operational enrollment -> Transportation
+entry/session -> dashboard read is owner-confirmed PASS. Product session entered/ended/superseded
+events are visible; this is not a complete adversarial session-exclusivity certification.
+NEXT: inspect Settings UI with owner, perform one bounded reversible local-only setting change,
+reload/verify and restore original. Do not create live-provider payments, real mail/SMS, drivers,
+or bookings to prove persistence. Hosted apps/FairFare untouched; no production cutover authorized.
+Older error/retry instructions below are resolved history, not tasks to repeat.
+Owner opened Settings: display/legal LOCAL TEST ESH, zone America/Chicago, support@example.test,
+Branding reference blank. Preparing reversible branding-reference persistence check through
+existing local backend rewrite, not SQL seeding. Save endpoint PATCH directly updates five
+tenant_configurations fields. Added only those five column UPDATE grants to local-platform-grants.sql
+and applied ESH-local; existing owner/admin/Platform RLS unchanged. Rolled-back verification with
+actual owner's existing product-session context: owner_role=true, owner_update_count=1,
+unrelated_update_count=0, original branding blank after rollback. Initial subject-only probe
+returned0 because product-session context was omitted; corrected full-context test passes.
+Next owner enter LOCAL-PERSISTENCE-CHECK in Branding reference, Save settings, reload Settings
+and report whether retained. Then clear it, save/reload and verify original blank state restored.
+No permanent branding test write yet; no app restart needed.
+Owner then reported Save not working. Read-only DB check proves actual saved branding is
+LOCAL-PERSISTENCE-TEST (owner-entered value differs from suggested CHECK); original was blank.
+Transportation HTTP200, no server restart needed. Settings success handler only refreshes, no
+success message, explaining lack of visible confirmation; no code change made for feedback.
+Actual local write reached DB. Next owner reload Settings and confirm LOCAL-PERSISTENCE-TEST
+still visible, then clear/save/reload to restore original blank. Cleanup remains pending.
+
+LATEST SETTINGS CHECKPOINT (supersedes retry/unchanged-code statements above): owner disputed
+saving again; prior DB value is NOT proof of their latest attempt. Asked intended new value vs
+clear; answer not supplied yet. Found source issues: no progress/success feedback, uncaught
+network failure and API200 even if RLS UPDATE affects zero rows. Minimal uncommitted fixes:
+SettingsPanel shows Saving settings… / Settings saved. / visible error, blocks duplicate submits,
+catches network errors and retains rejected draft. PATCH returns updated tenant_id and403 if no
+row; auth/validation/RLS unchanged. No DB/policy change in this step. Three focused API tests,
+Admin typecheck/scoped ESLint/format PASS. tooling/scripts/local-settings-check.cjs browser check
+PASS: busy feedback, value save/reload, clear/reload, rejected/network draft retention. Fixtures
+only, no real tenant writes; last observed real branding remains LOCAL-PERSISTENCE-TEST.
+Restarted verified local app trees: Platform PID53604 (was40792), Transportation PID48604
+(was34432), isolated snapshots now contain fixes. No Docker/FairFare/production change.
+NEXT OWNER: reload /transportation, Settings, attempt intended edit once, report exact new success
+or failure text and post-reload field value. Original blank restoration remains pending.
+
+LATEST CHECKPOINT: owner GO authorized local Transportation launch after its port3004 was refused.
+It is now running persistently via tooling/scripts/local-transportation.cjs, launcher PID34432.
+Platform remains PID40792/port3000; local mail54428 belongs to Platform launcher. Transportation
+port3004 binds loopback, snapshot copies Transportation/shared Admin source but no env files;
+explicit backend rewrite targets Platform3000, Supabase API54421. No privileged/provider keys,
+Mapbox setup or production source/environment changes. Forty explicit RLS-protected dashboard
+table SELECT grants applied only to supabase_db_esh-platform (local-transportation-grants.sql);
+no write/anonymous grants, RLS policy changes or admission bypass. Syntax/format checks pass.
+Verified Transportation / and /transportation HTTP200; rewritten anonymous API POST401; isolated
+browser sign-in visible and zero external host requests. Read-only actual-owner RPC returns
+transportation:transportation_admin; unrelated identity gets zero workspace/tenant rows, anon
+driver SELECT=false. No test session or enrollment was persisted by diagnostics.
+NEXT OWNER STEP: open http://127.0.0.1:3004, sign in as owner@example.test using the password created
+during invitation acceptance, then report the tenant/entry screen. Do not use admin@example.test
+for product entry or assume authenticated dashboard acceptance has passed. Do not revisit
+governance as that owner while testing an exclusive Transportation session.
+
+LATEST OWNER RESULT: Transportation entry succeeded and reached /transportation with all tabs,
+but showed Unable to load / Unable to load tenant administration. Local role/session/profile/
+foundation-table/directory read checks all pass. Reproduced loadTenantSummary's maintenance RPCs
+as actual local owner/session in rollback transaction: expire_dispatch_offers OK,
+activate_due_scheduled_bookings raises P0001 "dispatch access is required". Exact DB permission
+function can_manage_dispatch requires tenant owner/admin AND driver.management enabled; local
+driver.management=false, vehicle.management=false, app.driver=false. Generic UI loses the plain
+PostgREST error object message (cause instanceof Error test); no UI/DB change made for this issue.
+Earlier instruction to leave driver.management disabled missed this setup dependency.
+NEXT owner action supersedes entry instruction above: Platform /platform as admin@example.test,
+click Enable drivers for LOCAL TEST ESH (driver.management only, not app.driver) with local-test
+reason. Keep vehicle/app.driver/other product capabilities unchanged. Then retry local
+Transportation page as owner@example.test. Use existing audited UI, not direct capability SQL.
+No additional enrollment, auth/policy/code change or production action needed for this blocker.
+Owner reached Platform tenant table but reports Permission denied clicking Enable drivers.
+Inspected existing /api/platform-admin/capabilities: direct UPDATE enabled/enabled_at/disabled_at
+on tenant_capabilities; local role had no UPDATE grant. Added only those three column grants to
+local-platform-grants.sql and reapplied ONLY to ESH-local. Existing RLS remains Platform-admin-only.
+Rollback test: admin@example.test update_count=1, owner@example.test update_count=0; rollback
+confirmed driver.management remains false. No persistent capability change/enrollment or policy
+rewrite. No app restart needed. Next owner: click Enable drivers once on current /platform table
+as admin@example.test; expect button Disable drivers. This route has NO reason prompt; prior
+instruction to enter a reason was unnecessary. Then test Transportation reload. No production change.
+
+Strategic direction: owner follows recommendation to finish one representative local workflow,
+then assess their server for a separate official Docker Compose Supabase recovery environment.
+This preserves app/Supabase interfaces while becoming independent of hosted Supabase Cloud.
+CLI local stack is not a production server deployment. No remote deployment, cloud migration,
+automatic failover, synchronization or standalone-PostgreSQL replacement authorized/performed.
+
+Owner decision 2026-10-24: KEEP the working local Supabase stack. Standalone PostgreSQL and a
+fully Supabase-independent app/backend were discussed, then explicitly deferred after assessing
+the Auth/API/Storage replacement work. No standalone PostgreSQL container or replacement backend
+was created. Preserve the working application's architecture and use local Supabase for local
+development independent of hosted outages. Any dependency/exit-path documentation is future work,
+not permission to begin migration or refactoring. Resume at the existing local launch/invitation
+checkpoint below; do not restart setup, seed tenants directly or bypass the email onboarding flow.
+
+Owner authorized local Supabase for testing during the hosted outage, and explicitly requires
+separation from other applications. Existing Git work/stash preserved; runtime auth architecture,
+cloud keys, RLS and hosted settings remain unchanged. No Git mutations or production DB commands.
+Docker Desktop and CLI 2.109.1 were installed; engine was stopped. Codex started Docker Desktop
+in background. Existing FairFare containers auto-resumed: fairfare-driver-compliance owns
+54321 API, 54322 DB, 54323 Studio, 54324 email and 54327 analytics, its own network and volumes.
+No FairFare data/configuration/container stop or deletion was performed.
+
+ESH config retains project_id esh-platform, moves local ports to 54420–54429, and allows local
+Auth callbacks on 127.0.0.1 app ports 3000–3006. This avoids adopting FairFare's API/database.
+Added development/local-supabase.md with ownership, startup/stop and environment/data boundaries.
+Downloads and local initialization completed, verified 2026-10-24. Startup applied all 153
+repository migrations through 20261017000100 and seed.sql. Read-only query in specifically named
+supabase_db_esh-platform confirms migration count=153, max(version)=20261017000100.
+Ten ESH service containers run, with expected health indicators; local Auth and Studio HTTP
+checks pass. tooling/scripts/local-supabase-check.cjs verified ESH-only network/named volumes,
+no FairFare host-port reuse and exact API origin. FairFare remains healthy and separate.
+ESH Studio http://127.0.0.1:54423; email viewer http://127.0.0.1:54424; API port54421; DB54422.
+Optional imgproxy/analytics/vector/pooler are stopped as reported by CLI. Default Docker host
+bindings are 0.0.0.0/IPv6, not loopback-only; different-stack isolation is not LAN isolation.
+
+Exec startup session49784 has finished; do not retry start based solely on its PowerShell wrapper
+exit1: captured output said Started supabase local development setup, and independent service,
+ownership and migration checks PASS. Wrapper emitted RemoteException objects for warning stderr;
+no migration failure observed. CLI still warns deprecated inbucket config and available upgrade;
+neither CLI nor production was upgraded. No keys printed. Existing app environment files were
+not opened or changed. Only isolated Platform development app is now connected to local Supabase;
+other local apps are not launched. Next: application-driven local tenant invitation acceptance.
+Do not reset either stack or copy data/credentials from FairFare or production.
+
+Owner created admin@example.test in ESH Studio and ran the supplied active person/platform_admin
+bootstrap; read-only DB check confirmed active person and active platform_admin role. No tenants
+exist yet. Owner explicitly reminded that tenant setup must retain the application's existing
+email/invitation lifecycle, not direct SQL tenant seeding. Proposed synthetic-tenant SQL shortcut
+was removed; interrupted command was checked read-only: zero tenants and no listener on port3000.
+Do not create tenant memberships/product admissions directly to bypass invitations.
+Prepared tooling/scripts/local-platform.cjs: source snapshot under ignored
+.cache, no .env files copied, OS-only inherited variables plus verified ESH-local public config,
+loopback Platform port3000 and local product launcher URLs. Syntax/format pass. Launcher started
+2026-10-24, exec session13543: Next Ready and HTTP200 with Sign in page verified at
+http://127.0.0.1:3000. Uses only ESH-local Supabase API54421, not hosted config or FairFare.
+Owner signed in with admin@example.test and reported Your products / Unable to load workspaces /
+permission denied for table person_profiles. Local read-only inspection confirmed schema USAGE
+true but authenticated SELECT false on foundation tables, existing RLS enabled and policies
+present. This is fresh-local base-grant omission, separate from hosted PGRST303. Applied scoped
+tooling/sql/local-platform-grants.sql ONLY to supabase_db_esh-platform: SELECT on ten UI-used
+Platform tables and INSERT/UPDATE on self-scoped active_tenant_preferences, with RLS prerequisite
+assertions. No blanket/anonymous grants, policy rewrite, historical migration change or cloud
+mutation. Read-only role/claim transaction verified local account profile_count=1, unrelated
+identity profile_count=0 and anonymous SELECT=false; rolled back diagnostic session state.
+Owner reloaded and supplied ESH Platform / Your products / Sign out with no error and no products.
+Local signed-in landing-page load after grants is owner-confirmed; empty list matches zero tenants,
+not a complete tenant/invitation acceptance pass. Owner opened /platform and supplied Tenant
+Provisioning / platform_admin / zero visible tenants. Local invitation transport now prepared:
+launcher changes ONLY ignored copied source's Resend endpoint to loopback54428; original app
+email code stays unchanged. Local bridge requires random in-memory launcher authorization,
+accepts only @example.test recipients and forwards to ESH SMTP54425. Unit test passes auth,
+rejected external recipients/header injection and SMTP content capture. Synthetic LOCAL TRANSPORT
+CHECK messages captured in local Mailpit; no tenant/invitation created by Codex. Initial verification
+used obsolete Inbucket mailbox URL (404), then corrected Mailpit /api/v1/messages verified capture
+without exposing message bodies/tokens. Local grants additionally permit UPDATE only on invitation
+token/delivery-status columns used by existing routes; existing RLS unchanged, ESH-local only.
+Restarted isolated launcher session46437: Next Ready and /platform HTTP200, previous13543 stopped.
+Later owner clicked Create tenant and reported Runtime TypeError / Failed to fetch. Read-only
+checks found no listener on3000 or54428, both local HTTP requests ECONNREFUSED, old exec session
+no longer available, and zero tenants/invitations. Thus that attempt created no tenant; precise
+reason the prior process exited is unknown. No production app mutation/error handler change.
+Restarted launcher via hidden persistent Start-Process, PID49664, detached from exec session.
+Verified /platform HTTP200, unauthenticated provisioning POST401 and mail bridge401 (expected
+auth rejection, demonstrating both endpoints reachable). Stdout/stderr redirected to uniquely
+named ignored .cache/local-platform-*.log; never paste raw logs, which could contain URL tokens.
+Owner retried and reports "Tenant provisioned and invitation email sent." This confirms the
+reported application provisioning/send result, not recipient acceptance or product admission.
+Next owner step: open http://127.0.0.1:54424, find invitation addressed to owner@example.test
+for LOCAL TEST ESH, inspect message then follow acceptance workflow. Do not paste its token/link.
+Do not create another tenant or manually add owner membership to bypass acceptance.
+Owner opened the email acceptance flow while admin@example.test was signed in. Read-only check
+confirmed support_contact_email=support@example.test vs invited owner=owner@example.test; guided
+Sign in with another account. Owner tried Sign in, received Invalid login credentials, then used
+Create credentials for the new owner identity. Owner now reports Your products / No operational
+products available, no load error. Read-only ESH-local DB verification confirms invitation=accepted,
+tenant=active, owner membership=active and tenant_owner role=active for owner@example.test.
+Local create -> captured email -> new recipient credentials -> invitation acceptance -> owner
+admission is verified. Product access is being tested next; no operational enrollment yet.
+Subsequent owner-led test: admin@example.test opened /platform, found active LOCAL TEST ESH,
+clicked Grant for Transportation, and supplied Transportation: granted with Suspend/Revoke.
+Community remains not granted; four capabilities enabled, rider/driver disabled, driver/vehicle
+controls untouched. Owner then enabled Transportation via /governance as owner@example.test,
+but zero members enrolled. Owner reports Reason text not persisting. Isolated browser fixture
+reproduced stable typing but rejected enroll RPC cleared Reason: submitEnrollment unconditionally
+cleared state because parent mutate swallowed failure. Minimal uncommitted app fix in
+WorkspaceAdminApp.tsx returns mutation success boolean and clears Reason only on success.
+No auth/RLS/schema changes or deployment. Admin typecheck/scoped ESLint pass; durable fixture
+tooling/scripts/governance-enrollment-check.cjs passes preserved rejected input and correct role/
+reason payload. Browser fixtures do not diagnose the actual owner's prior rejection response.
+Read-only workspace check confirmed Transportation enabled, Community/Student disabled and zero
+enrollments. Actual existing enroll RPC tested as local owner inside BEGIN/ROLLBACK: succeeded,
+one audit event inside transaction, zero persistent enrollments after rollback. No direct lasting
+enrollment bypass. Original reason-loss timing question was asked; owner has not yet answered.
+Restarted only verified local launcher tree49664, new persistent launcher PID40792; app snapshot
+now includes fix. Mail bridge restarts with launcher. Next owner step: reload /governance, enter
+reason and submit once; if rejected, preserve reason and collect visible actual error. Do not
+assume operational app is running (only Platform3000), grant extra capabilities, bypass admission
+or activate Student transport. Local invitation lifecycle passed; no fake external webhooks or
+external provider credentials supplied, and local captured delivery status may remain pending.
+Owner retried and supplied Transportation enrollments / 1 enrolled / owner@example.test /
+Transportation administrator. Real local UI enrollment acceptance is owner-confirmed after fix.
+The proposed retry above is complete: do not repeat enrollment or remove/recreate it. Next owner
+opens http://127.0.0.1:3000 to confirm Transportation card, without launching port3004 yet.
+Only isolated Platform is running; next implementation checkpoint is an isolated local
+Transportation launch and its existing backend/session handoff, preserving working product
+boundaries and avoiding cloud/FairFare envs. No production deployment/change authorized.
+Preserve untracked supabase/snippets/ from owner's Studio activity; do not discard unfamiliar files.
+
+Read-only checker syntax/formatting and scoped diff checks pass. Older local seed/runbook ports
+were corrected and embedded example key/password and routine destructive reset advice removed.
+Owner-requested completion watcher (PID51132, startupPID50092) generated ignored
+tmp/esh-local-setup-status.txt with success text after its own health check. Desktop-dialog code
+was launched, but owner seeing/dismissing the alert is not confirmed. Watcher does not mutate
+Docker resources. Local Platform sign-in, tenant invitation acceptance and Transportation enrollment
+are owner-confirmed. Operational Transportation UI acceptance is next, as detailed above.
+
+Hosted context since older checkpoint: owner reports every app affected, ticket SU-520143
+acknowledged. Official API Gateway / Management API incidents were active under monitoring;
+owner asked to pause app debugging pending provider recovery. Platform retest still reported
+JWT issued at future. Official JWT incident identifies stale time cache and an upgrade recovery
+path (https://status.supabase.com/incidents/01KZZ19EQMSC9DNDA15ZGVY19V), but no project upgrade
+was authorized or performed. Do not resume hosted troubleshooting as part of local setup.
+
+### PAUSED by owner — cross-frontend JWT rejection (2026-10-20)
+
+Owner requested a break and this handoff update. Stop investigation until the owner resumes.
+Current task is read-only diagnosis, not implementation. Owner explicitly requires approval
+before any auth architecture, credential, database policy, provider upgrade or deployment change.
+Do not repeat sign-in, email/account changes, rollback or billing troubleshooting without new
+evidence. Follow the owner's lead and give one step at a time.
+
+Production remains owner-confirmed 3eb3766; local main/origin align. Existing handoff modifications,
+untracked tooling/sql/student-internal-context-diagnostic.sql and backup stash remain preserved.
+No runtime code, Git state, credentials, provider settings or production data changed during this
+investigation. This documentation update is the only new file edit in this pause step.
+
+Decisive new owner evidence: at https://admin.eshapp.com (neutral ESH Platform, separate from
+https://school.eshapp.com/admin), owner reports:
+"Your products / Unable to load workspaces / JWT issued at future".
+Thus data-access failure is reproduced beyond the Student frontend. Student's exact captured
+diagnostic remains "Load staff access: Authentication was rejected. (HTTP 401 / PGRST303)";
+its underlying response message has NOT separately been captured. Do not assert both responses
+were directly inspected or that every product is affected.
+
+Read-only findings:
+- Live Student public bundle exposes one Supabase project origin:
+  https://akoachisjvedvdmwtcvk.supabase.co, with one publishable public key (value not printed).
+  SDK derives Auth/REST from the same base URL. Actual Platform deployed config and failing
+  browser JWT/header have not yet been independently compared.
+- Staff client uses isolated esh-student-transportation-auth storage, persistent session,
+  auto-refresh and built-in callback handling. Installed supabase-js 2.54.0 obtains the session's
+  access_token for Bearer authorization; no Staff global Authorization override found.
+  This is source evidence, not capture of the actual failing request's Authorization header.
+- New public probe, 2026-10-20 06:17:57 UTC: /auth/v1/settings returned 200 with deployed public
+  key. Anonymous POST /rest/v1/rpc/my_student_enrollment_context with {} returned 401 / 42501,
+  "permission denied for function my_student_enrollment_context", proxy-status PostgREST;
+  error=42501, no gateway error code. Expected anonymous denial reaches PostgREST and differs
+  from authenticated PGRST303. Earlier anonymous REST root key-type denial is not a valid
+  reproduction of the signed-in failure. No child data/token/secret printed.
+- Fresh sign-in and restored-session failures have been owner-reported, but actual token iat,
+  exp, iss, aud, sub, role and same-token Auth /user vs REST comparison remain uncollected.
+- Enforced quotas shown are below limits; only log ingestion Upcoming meter exceeded. No 402
+  captured. Free Plan/grace banner is NOT a supported root cause. No upgrade recommendation
+  for billing, no new account, no key rotation or policy/grant repair is justified.
+
+Leading hypothesis: managed PostgREST validation-time problem. Platform's exact message says
+the validator regards JWT iat as future. Upstream v14.18 explicitly fixes sporadic PGRST303
+"JWT issued at future" errors; ESH's running PostgREST version and actual time claims remain
+unknown, so a known-bug match/server clock cause is NOT yet proven. Do not confuse gateway
+HTTP Date with the internal PostgREST validator clock or infer laptop time is the JWT issuer.
+Primary references:
+- https://supabase.com/docs/guides/api/rest/postgrest-error-codes
+- https://github.com/PostgREST/postgrest/releases/tag/v14.18
+- https://github.com/PostgREST/postgrest/issues/5196
+
+Recommended next action on resume: owner-led Supabase support inquiry, not application changes.
+Support steps/message were supplied; submission and ticket number are NOT confirmed. Ask support
+to check project akoachisjvedvdmwtcvk's PostgREST version, cached validation time/clock alignment
+and applicability of the v14.18 issued-at fix. Provide exact errors, endpoint and UTC evidence;
+never keys, full JWTs, magic links or student data. Any proposed provider upgrade/restart or
+application correction requires owner approval first. Additional safe signed-in diagnostics,
+if needed, compare the SAME JWT at Auth /user and read-only REST and report only sanitized
+claims/timestamps and error fields. No connected signed-in browser is available to Codex.
+
+Recurring-planning manual acceptance remains blocked before successful policy save; preserve
+the submitted December TEST request and resume from that checkpoint only after access recovers.
+The sections below retain implementation/history; their older "next" actions are superseded
+by this pause and diagnostic checkpoint.
 
 ### Current authorized work — unified staff portal (2026-10-20)
 
@@ -30,15 +1042,34 @@ and diff whitespace checks PASS. Existing Supabase realtime/Next ESLint plugin w
 SDK source confirms built-in URL handling for both implicit and PKCE callbacks; shell uses that
 single initializer rather than duplicating exchange handlers. No production provider/email calls.
 Read architecture/student-staff-portal.md and operations/student-staff-portal-manual-test.md.
-Next: owner stages scoped consolidation code/tests/docs, commits and pushes main
-through GitHub and confirms Student Ready before one /admin acceptance. No Vercel override,
+Owner pushed consolidation as 3eb3766 and supplied esh-platform-student-transportation Ready /
+Production at that commit. Same monorepo push also shows transport-platform-admin Ready; no
+ordinary Admin runtime change was included. Next: one /admin hosted acceptance, using current
+internal session or admitted internal email only if signed out. Record Staff portal heading,
+sign-in identity and exact safe load diagnostic, not another DevTools/log loop. No Vercel override,
 database/billing/credential/account mutation or repeated manual sign-ins. Production remains
-owner-confirmed 519320b until new push/deploy evidence. Keep existing December source submitted.
+owner-confirmed 3eb3766. Owner opened /admin, then completed ONE internal sign-in and supplied
+Staff portal, Signed in as ishmaelkosh@gmail.com and exact visible error:
+"Load staff access: Authentication was rejected. (HTTP 401 / PGRST303)".
+Canonical shell and identity restore accepted; staff data access remains blocked. Supabase docs
+define PGRST303 as JWT claims validation/parsing failed (time/audience/etc, not proof which).
+No new account, duplicate-email repair, key rotation, migration or repeat sign-in justified.
+Public read-only diagnostic (no student data): bundled publishable key is accepted at Auth
+/auth/v1/settings (200). Anonymous /rest/v1/ without user bearer returns 401 with gateway
+UNAUTHORIZED_INVALID_API_KEY_TYPE; that root/anonymous result does NOT reproduce the logged-in
+PGRST303 and must not be treated as proof of bad public key or generalized API outage. No key
+values printed and no production writes/emails/settings changes performed by Codex.
+Exact failed claim remains unavailable in generic UI/log excerpt. New staff safe classifier
+currently recognizes invalid key, expired JWT and invalid JWT, but not "JWT issued at future"
+or audience mismatch; PGRST303 alone cannot establish cause. Upstream PostgREST/Supabase issue
+reports describe clock-related PGRST303 on fresh tokens, a hypothesis only. Preserve source,
+credentials/billing/roles until a precise provider error or support diagnosis confirms cause.
+Keep December source submitted and stash intact; no successful hosted access load yet.
 
 The detailed rollback/diagnostic checkpoints below are retained evidence; navigation is superseded
 by this local consolidation, not proof that it has been deployed or that API access works.
 
-### Active controlled rollback test — resume here
+### Historical controlled rollback test — superseded by paused checkpoint above
 
 Owner reverted 510fab1 using git revert --no-edit, creating 519320b, verified
 git diff --exit-code b75afc6 HEAD printed nothing, pushed main, and supplied Vercel Ready /
@@ -75,6 +1106,14 @@ is currently restricted or that a 402 occurred. Supabase docs permit dashboard d
 API requests are restricted, so passing SQL + browser failures is compatible with this hypothesis.
 Next owner View usage read-only: identify plan, over-quota metric and any active restriction notice.
 No upgrade/spend-cap/billing changes, deletions or database/auth mutations authorized by this clue.
+Usage evidence supplied 2026-10-20: Free organization, cycle Sep20-Oct20; database18%, functions16%,
+storage10%, egress10%, cached egress<1%, MAU<1%, realtime0. Only overage is Log Ingestion1.047/1GB
+(105%) explicitly labelled Upcoming; log query0/100GB. No active restriction shown in supplied
+usage. Official Supabase changelog discussion50925 (Sep25 announcement) states Upcoming log
+meters are informational, no billing/enforcement during soft launch through early2027 for existing
+organizations. Thus this shown log overage does not explain captured401/PGRST303; no evidence
+supports upgrading to fix the incident. Generic prior grace banner may persist below quotas.
+Return focus to JWT claims validation; do not conflate old grace warning with active restriction.
 Earlier logs showed no entries; owner reports slow internet. No confirmed failed HTTP status yet.
 Owner now supplied unified logs: API Gateway has entries, including health checks 200 and repeated
 POST /rest/v1/rpc/claim_native_push_attempts HTTP 401 from node at one-minute intervals. Scheduled

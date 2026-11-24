@@ -21,6 +21,8 @@ import {
   type RecordSubmission,
 } from "./PlanningRecordEditor";
 import { PlanningScheduleEditor, type ScheduleSubmission } from "./PlanningScheduleEditor";
+import { GuidedRoutePlanner } from "./GuidedRoutePlanner";
+import type { ReviewBinding } from "../lib/guided-planning";
 type RequestRow = Database["public"]["Tables"]["student_transportation_requests"]["Row"];
 type Editor =
   | { kind: "student" | "point" | "policy" | "resource"; record?: PlanningRecord; index?: number }
@@ -183,12 +185,19 @@ export function PlanningWorkspace({
   const [context, setContext] = useState<PlanningContext | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [requestId, setRequest] = useState("");
+  const [guidedOpen, setGuidedOpen] = useState(true);
+  const [plannerGeneration, setPlannerGeneration] = useState(0);
+  const setup = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (editor && setup.current) setup.current.open = true;
+  }, [editor]);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     onBusyChange?.(busy);
     return () => onBusyChange?.(false);
   }, [busy, onBusyChange]);
   const [message, setMessage] = useState("");
+  const [inlineError, setInlineError] = useState("");
   const [selectedPlan, setPlan] = useState("");
   const [preview, setPreview] = useState<
     (GeographicPreview & { planId: string; revision: number }) | null
@@ -290,7 +299,46 @@ export function PlanningWorkspace({
       });
       if (result.error) throw Error(result.error.message);
       await saved();
+      if (mounted.current && jsonObject(result.data) && typeof result.data.id === "string") {
+        setPlan(result.data.id);
+        setGuidedOpen(false);
+      }
     });
+  const saveInlineReview = async (body: RecordSubmission): Promise<ReviewBinding | null> => {
+    let binding: ReviewBinding | null = null;
+    setInlineError("");
+    await run(JSON.stringify(body), async (key) => {
+      try {
+        const result = await client.rpc("save_student_planning_record", {
+          t: tenantId,
+          kind_value: body.kind,
+          customer_value: body.customerId,
+          reference_value: body.reference,
+          entity_value: body.id,
+          expected_revision: body.revision,
+          state_value: body.state,
+          data_value: body.data,
+          reason_value: body.reason,
+          request_key: key,
+        });
+        if (result.error) throw Error(result.error.message);
+        if (
+          !jsonObject(result.data) ||
+          typeof result.data.id !== "string" ||
+          typeof result.data.revision !== "number"
+        )
+          throw Error("Saved review could not be confirmed. Refresh planning before retrying.");
+        await reload();
+        retry.current = null;
+        binding = { id: result.data.id, revision: result.data.revision };
+        if (mounted.current) setMessage("Review saved. Continue planning this request.");
+      } catch (error) {
+        if (mounted.current) setInlineError(errorMessage(error));
+        throw error;
+      }
+    });
+    return binding;
+  };
   const roadPreview = () => {
     if (!plan) return;
     void run(
@@ -371,6 +419,7 @@ export function PlanningWorkspace({
               setHistory(null);
               setVersionHistory(null);
               setEditor(null);
+              setPlannerGeneration((v) => v + 1);
             },
             false,
           )
@@ -394,27 +443,6 @@ export function PlanningWorkspace({
           ) : null}
           {canReview ? (
             <>
-              <h3>1. Review records</h3>
-              <div className="portal-actions">
-                <button
-                  type="button"
-                  disabled={busy || !request}
-                  onClick={() => setEditor({ kind: "policy" })}
-                >
-                  Add qualification policy
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setEditor({ kind: "resource" })}
-                >
-                  Add dedicated resource
-                </button>
-              </div>
-              <p>
-                Select the source request to review that customer's qualification policy, students
-                and loading points.
-              </p>
               <label>
                 Source geographic request
                 <select
@@ -424,6 +452,8 @@ export function PlanningWorkspace({
                   onChange={(e) => {
                     setRequest(e.target.value);
                     setEditor(null);
+                    setGuidedOpen(true);
+                    setMessage("");
                   }}
                 >
                   <option value="">Choose submitted request</option>
@@ -436,63 +466,105 @@ export function PlanningWorkspace({
                     ))}
                 </select>
               </label>
-              {request ? (
-                <>
-                  <h4>Review each requested student</h4>
-                  {readRequestStudents(request.students).map((s, i) => (
-                    <div className="contact-card" key={i}>
-                      <p>
-                        {s.name} · {s.pickupAddress}
-                      </p>
+              {request && guidedOpen ? (
+                <div hidden={!!editor}>
+                  <GuidedRoutePlanner
+                    client={client}
+                    key={`${request.request_id}:${plannerGeneration}`}
+                    request={request}
+                    records={records}
+                    saveError={inlineError}
+                    busy={busy}
+                    onReview={saveInlineReview}
+                    onSave={saveSchedule}
+                  />
+                </div>
+              ) : null}
+              {request && !guidedOpen ? (
+                <button type="button" disabled={busy} onClick={() => setGuidedOpen(true)}>
+                  Plan another schedule for this request
+                </button>
+              ) : null}
+              <details ref={setup}>
+                <summary>School setup and advanced reviews</summary>
+                <p>
+                  Maintain qualification policies, dedicated resources and saved reviews here. These
+                  records are reused when planning a request.
+                </p>
+                <div className="portal-actions">
+                  <button
+                    type="button"
+                    disabled={busy || !request}
+                    onClick={() => setEditor({ kind: "policy" })}
+                  >
+                    Add qualification policy
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setEditor({ kind: "resource" })}
+                  >
+                    Add dedicated resource
+                  </button>
+                </div>
+                {request ? (
+                  <>
+                    <h4>Review each requested student</h4>
+                    {readRequestStudents(request.students).map((s, i) => (
+                      <div className="contact-card" key={i}>
+                        <p>
+                          {s.name} · {s.pickupAddress}
+                        </p>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          aria-expanded={inlineStudentIndex === i}
+                          aria-controls={
+                            inlineStudentIndex === i ? `student-identity-editor-${i}` : undefined
+                          }
+                          onClick={() => {
+                            setMessage("");
+                            setEditor({ kind: "student", index: i });
+                          }}
+                        >
+                          Register student {i + 1} identity
+                        </button>
+                        {inlineStudentIndex === i ? (
+                          <div id={`student-identity-editor-${i}`}>{recordEditor}</div>
+                        ) : null}
+                      </div>
+                    ))}
+                    <div className="portal-actions">
                       <button
                         type="button"
                         disabled={busy}
-                        aria-expanded={inlineStudentIndex === i}
-                        aria-controls={
-                          inlineStudentIndex === i ? `student-identity-editor-${i}` : undefined
-                        }
-                        onClick={() => {
-                          setMessage("");
-                          setEditor({ kind: "student", index: i });
-                        }}
+                        onClick={() => setEditor({ kind: "point" })}
                       >
-                        Register student {i + 1} identity
+                        Review loading point
                       </button>
-                      {inlineStudentIndex === i ? (
-                        <div id={`student-identity-editor-${i}`}>{recordEditor}</div>
-                      ) : null}
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setEditor({ kind: "schedule" })}
+                      >
+                        Create recurring schedule
+                      </button>
                     </div>
-                  ))}
-                  <div className="portal-actions">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => setEditor({ kind: "point" })}
-                    >
-                      Review loading point
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => setEditor({ kind: "schedule" })}
-                    >
-                      Create recurring schedule
-                    </button>
-                  </div>
-                </>
-              ) : null}
-              {inlineStudentIndex === null ? recordEditor : null}
-              {editor?.kind === "schedule" && request ? (
-                <PlanningScheduleEditor
-                  key={`${editor.record?.id ?? "new"}:${requestId}`}
-                  {...(editor.record ? { record: editor.record } : {})}
-                  request={request}
-                  records={records}
-                  busy={busy}
-                  onSave={saveSchedule}
-                  onClose={() => setEditor(null)}
-                />
-              ) : null}
+                  </>
+                ) : null}
+                {inlineStudentIndex === null ? recordEditor : null}
+                {editor?.kind === "schedule" && request ? (
+                  <PlanningScheduleEditor
+                    key={`${editor.record?.id ?? "new"}:${requestId}`}
+                    {...(editor.record ? { record: editor.record } : {})}
+                    request={request}
+                    records={records}
+                    busy={busy}
+                    onSave={saveSchedule}
+                    onClose={() => setEditor(null)}
+                  />
+                ) : null}
+              </details>
             </>
           ) : null}
           <h3>Reviewed record register</h3>

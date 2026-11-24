@@ -1,5 +1,145 @@
 # Product and Platform Roadmap
 
+Current priority (2026-11-24): school-owned Student planning constraints, following owner's
+correction that UI simplification alone did not address fixed rules. Local v2 policies configure
+optional base/equipment qualifications, route attendant minimum, loading procedure and whole-term
+versus per-service-date review coverage. Dedicated student needs/capacity/date validity/isolation/
+immutable history remain enforced. Legacy policies retain their interpretation unless explicitly
+revised. Owner confirmed intended-only dry-run and successful application of migration20261122000100.
+Guided request/stops/schedule work remains included; application commit/push/deployment is next.
+See current handoff and policy acceptance instructions. Older no-migration notes concern layout only.
+
+Current priority (2026-11-21): owner authorized implementation of the simpler Student planning
+flow. Local code now provides Review request -> Review stops -> Schedule/resources, reuses exact
+saved reviews, saves missing reviews inline and carries bindings into a generated-reference draft.
+Policies/resources remain reusable school setup; explicit identity/site/authority and server safety
+gates remain. Local verification and owner release checkpoint: docs/session-handoff.md. No migration
+or live deployment performed. Older design/manual setup notes below are historical, not current
+instructions to repeat accepted tests.
+
+Current priority (2026-11-19): simplify Student planning UX before more manual testing. Owner
+approved a three-step design preview first: request details/reviews loaded -> missing stop
+reviews inline on the map/list -> recurring schedule and compatible resources. Prototype ready
+for feedback, tested320/736 with no network; no runtime/live/database changes. Keep policy and
+resource setup separate from route creation, manage IDs/linking in the app, and preserve explicit
+identity/site/evidence and authoritative safety gates. See architecture/student-recurring-planning.md.
+Manual record-entry tests below are paused historical checkpoints; no more setup from owner now.
+
+Current owner focus (2026-11-11): resume ESH Student Transportation recurring-planning acceptance.
+2026-11-19: recurring draft form open but not saved. All four loading-point dropdowns blank;
+register shows only RETESTING point revision1. Inspect exact source-stop option and complete
+missing point mappings/reviews without duplicating records or discarding the current draft.
+Policy/vehicle/Driver selections remain blank in latest UI. Current order BB,CC,AA,School.
+Latest: Student1 home loading-point review saved without error. Complete remaining three stop
+reviews as batch setup (two homes plus school), then recurring schedule draft; no repeated
+registration/form tests or physical-safety certification inferred from these TEST saves.
+Owner clarified all three student reviews saved without error. Student registration acceptance
+complete for this test; supersedes CC-unconfirmed note. Next loading-point review, then schedule
+setup and explicit canonical mappings. No registration repeats or operational activation.
+Owner now considers registration testing sufficient after AA save and BB re-registration. Stop
+repeated student-entry checks; next loading-point review. CC review remains unconfirmed and is
+still required for any later full three-student plan approval. Preserve all existing records.
+Latest owner acceptance: Student1 review changed/saved without error. Next Student2 (booster
+seat), then Student3, loading-point reviews and recurring schedule planning. Exact saved Student1
+fields/revision not separately supplied; do not recreate it or claim operational approval.
+Current layout improvement: new student identity form opens within the selected student's card,
+directly beneath Register student N identity. Other editor locations and save contracts unchanged.
+Local implementation/three-student browser regression, SQL checks, lint/typecheck and enabled/
+default-off builds PASS. Student1 screenshot inspected; stale success cleared on new registration.
+Owner release and hosted acceptance pending; no migration or existing record recreation needed.
+Latest: owner also reports TEST attendant review saved without error. All three dedicated
+resource saves (vehicle/Driver/attendant) reported successful; next canonical student1 identity
+for the existing December TEST request, then remaining students/loading points/schedule planning.
+2026-11-17: owner reports TEST Driver review saved without error. Local main/origin aref2d0356
+(role dropdown fix); hosted deployment SHA not separately inspected. Preserve saved policy,
+vehicle and Driver. Next matching TEST attendant, then student/loading-point/schedule acceptance.
+This supersedes older release-pending/blocker notes. Student operations remain planning-only.
+2026-11-14 blocker: new resource role reverts to Vehicle with actual dropdown interaction.
+Reproduced locally; one-line fix scopes policy validation updates to policy forms. Native resource
+role and source-stop regression tests added. Saved resource roles remain locked. Browser/SQL
+regressions, lint/typecheck and enabled/default-off builds pass; owner release pending. Do not
+repeat user setup to work around the unfixed live UI. No database migration needed.
+2026-11-12: owner reports dedicated TEST vehicle review saved. Next inspect actual saved policy
+qualification names, then add matching dedicated Driver/attendant evidence; no recreation of saved
+policy/vehicle. Exact vehicle fields/revision not separately inspected. Student operations closed.
+Latest hosted acceptance: simplified policy save returned200 and planning reload200; owner sees
+TESTING TODAY revision1 active in Reviewed record register. Full browser hard-reload persistence
+also owner-confirmed PASS. Next dedicated-resource/student/loading-point/schedule acceptance. Do not repeat
+intake or policy creation. This supersedes older save-failure/release-pending notes below.
+Owner verified internal https://school.eshapp.com/admin access as ishmaelkosh@gmail.com with
+ESH Education selected; previous auth rejection is not reproduced, underlying resolution unknown.
+Next inspect the existing submitted December TEST request and resume qualification-policy save.
+No migrations/intake/reprovisioning needed. Student transport remains planning-only.
+Hosted policy save failed with generic error, open form and empty register. Local browser/actual
+isolated SQL diagnostics pass valid policy data and reproduce poor rejection feedback; blank
+required fields produce no network request. Actual hosted cause unconfirmed. Defensive policy-save
+guards are now implemented locally: Save disabled until required inputs, dates, key formats/counts
+and review confirmation pass; checklist and server errors beside Save. SQL authorization/history
+and retry behavior retained. Local tests/builds pass; owner GitHub deployment and hosted acceptance
+pending. No database migration or sign-in email change included.
+Owner rejected the deployed long formatting checklist. Follow-up asks for ordinary qualification
+names and preserves typed text; formatting/internal matching identifiers are handled by the app.
+One short message replaces the warning list. Actual browser-to-isolated-migration SQL save,
+retry/refresh/reopen/revision passed with owner-style inputs. Server constraints stay intact;
+follow-up release and actual hosted acceptance pending. Do not suggest code-like sample names.
+New requirement: sign-in email identity/content must clearly denote ESH Student Transportation,
+distinguishable from other ESH products. Delivery/template scope review and implementation pending;
+do not globally change shared Auth branding. eFare hosting below is a separate historical effort.
+
+Parallel hosting domain selected: efareride.com (Netlify DNS). Use only new-domain records and
+isolated app deployment settings; eshapp.com live apps/DNS/backend stay unchanged. Backend
+hostname planned api.efareride.com; DNS/HTTPS not yet owner-confirmed configured.
+Owner saved backend A record; DNS verified. On 2026-10-27 the owner accepted Vercel for parallel
+frontend apps and the OVH VPS for self-managed Supabase. Use separate Vercel projects and
+efareride.com hostnames. On 2026-10-28 owner clarified this requires a NEW private GitHub
+repository independent of ESH. Source-only copy prepared under .cache/efare-independent-20261028;
+owner Git initialization/publication pending. All seven web apps and153 migrations retained;
+copy's runtime domain defaults isolated, scheduled jobs disabled for initial setup. Existing
+live apps remain unchanged. Backend HTTPS Auth health with apikey200 and protected Studio401
+verified. Next: owner copies prepared source to its independent folder, creates private repo,
+then separate Vercel deployments/Auth callback configuration and public user/Data API smoke tests.
+
+Owner boundary: VPS-backed ESH is a separate environment with distinct URLs/configuration until
+explicitly ready. All live apps, production Vercel settings/DNS and hosted Supabase stay unchanged.
+No production cutover or live-data migration authorized by the hosting completion work.
+
+Latest scope correction (2026-10-27): finish the parallel VPS backend hosting path (HTTPS/DNS,
+Auth URLs and deliberate app connection/deployment smoke checks). Product journey expansion and
+duplicate-stack rehearsal are set aside. Existing GitHub -> Vercel workflow stays intact.
+VPS contains synthetic test data; no live user/data migration or production switch completed.
+See current session handoff before following older NEXT milestones below.
+
+Current VPS direction (2026-10-27): return to product acceptance on the working stack; set aside
+the failed duplicate-stack preparation. Seven app packages require separate acceptance.
+Canonical register: [VPS product acceptance](operations/vps-product-acceptance.md). Platform/
+Transportation admin workflows passed; Community, Student, Rider/Driver product workflows are
+unverified on VPS. Owner correction: finish Transportation's complete journey before Community.
+Dependency audit/finish line: [Transportation VPS journey](operations/vps-transportation-journey-test.md).
+Use the supported full-wallet funding path first; card/payout certification stays separate.
+
+Recovery rehearsal (2026-10-26): owner verified all153 schema migrations installed on the separate
+OVH self-hosted Supabase. Owner verified Platform bootstrap, tenant invitation/confirmation/
+acceptance, entitlement, workspace enablement and owner Transportation admin enrollment.
+Combined recovery launcher serves Platform3010 and Transportation3014 with captured test
+invitations. Owner verified Transportation sign-in/product entry and populated tenant dashboard
+with audit history, plus authorized settings save/reload/restore (temporary value cleaned up).
+Explicit redirect review, verified backup/restore and wider product acceptance remain pending.
+Update2026-10-26: private logical backup and checksum-verified off-server copy completed; isolated
+database restore PASS after matching source bootstrap administrator. Full app-stack recovery,
+deployment configuration/secrets and storage files now archived with extraction/hash verification
+and verified off-server copies. Full-stack startup from these backups and wider product tests
+remain pending; no production cutover.
+See [VPS recovery rehearsal](development/vps-recovery.md). No production migration/cutover.
+
+Owner decision (2026-10-24): retain local Supabase for development independent of hosted outages.
+Standalone PostgreSQL / full Supabase replacement is deferred; no app/backend rewrite authorized.
+Preserve existing tenant provisioning, email invitation/acceptance and authorization workflows.
+
+Owner-approved local infrastructure work (2026-10-23): independent ESH Supabase development
+stack, project ID `esh-platform`, ports 5442x, separate from the existing FairFare stack on
+5432x. Hosted outage work remains paused; no production configuration changes. See
+`development/local-supabase.md` and the current session handoff for actual startup/test status.
+
 Owner-approved 2026-10-20: consolidate Student staff experience at /admin (Requests and planning,
 Enrollment, Administration) with one sign-in/business selector. Legacy staff URLs redirect;
 /school remains customer-only. Local implementation/verification complete; owner release pending.
